@@ -275,37 +275,23 @@ export default function JoaoFonsecaNews() {
   const fetchNews = async () => {
     setLoading(true); setCacheStatus("loading");
     try {
-      const res = await fetch("/api/news", { method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 4000, tools: [{ type: "web_search_20250305", name: "web_search" }],
-          messages: [{ role: "user", content: `Hoje é ${new Date().toLocaleDateString("pt-BR")}. Busque TODAS as informações mais recentes sobre João Fonseca, tenista brasileiro. Faça MÚLTIPLAS buscas: "João Fonseca tênis hoje", "João Fonseca notícias", "João Fonseca ranking ATP", "João Fonseca próximo torneio". Priorize notícias das últimas 48 horas. Busque em sites como ESPN, GE, UOL, Lance, O Tempo, CNN Brasil, Olympics.com, Tenis News, ATP Tour.
-
-Responda APENAS com JSON (sem markdown, sem backticks):
-{
-  "player": { "ranking": numero, "rankingChange": N (positivo = subiu, negativo = caiu) },
-  "season": { "wins": N, "losses": N, "titles": N, "year": 2026 },
-  "lastMatch": { "result": "V" ou "D", "score": "6-3 6-4", "opponent": "T. Sobrenome", "tournament": "nome curto", "round": "R1/R2/QF/SF/F" },
-  "nextMatch": { "tournament_category": "ATP 250/500/Masters 1000/Grand Slam", "tournament_name": "nome", "surface": "Saibro/Dura/Grama", "city": "cidade", "country": "país", "date": "YYYY-MM-DD ou vazio", "round": "fase ou vazio" },
-  "news": [{ "title": "em português", "summary": "1-2 frases", "source": "veículo", "url": "OBRIGATÓRIO: URL completa (https://...) da notícia encontrada na busca. Nunca vazio.", "image": "URL da imagem/thumbnail ou vazio", "date": "ISO", "category": "Torneio/Resultado/Treino/Declaração/Ranking/Notícia" }]
-}
-10-15 notícias, mais recente primeiro. IMPORTANTE: faça várias buscas web para encontrar o máximo de notícias recentes. Cada notícia DEVE ter URL real. APENAS JSON.` }] }) });
+      const res = await fetch("/api/news");
       if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json();
-      let txt = ""; if (data.content) for (const b of data.content) if (b.type === "text" && b.text) txt += b.text;
-      let c = txt.trim().replace(/```json\s*/g,"").replace(/```\s*/g,"").trim();
-      let p; const os = c.indexOf("{"), oe = c.lastIndexOf("}");
-      if (os !== -1 && oe !== -1) p = JSON.parse(c.substring(os, oe+1));
+      const p = await res.json();
       if (p?.news?.length) {
-        const sortedNews = [...p.news].sort((a, b) => new Date(b.date) - new Date(a.date));
-        setNews(sortedNews); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null);
+        setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null);
         setIsLive(true); setLastUpdate(new Date().toISOString()); setCacheStatus("live");
-        await saveCache({ news:sortedNews, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season });
+        await saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season });
       } else throw new Error("No data");
     } catch(e) { console.error(e); setCacheStatus("error"); }
     finally { setLoading(false); }
   };
 
-  const handleRefresh = async () => { if (cacheExpiresAt && Date.now() < cacheExpiresAt && news.length > 0) return; await fetchNews(); };
-  const handleForce = async () => await fetchNews();
+  const handleRefresh = async () => { await fetchNews(); };
+  const handleForce = async () => {
+    try { await fetch("/api/news", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ force: true }) }); } catch(e) {}
+    await fetchNews();
+  };
 
   useEffect(() => { if (initDone.current) return; initDone.current = true; (async () => { if (!(await loadCache())) await fetchNews(); })(); }, []);
 
