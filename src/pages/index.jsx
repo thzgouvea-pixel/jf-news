@@ -239,7 +239,7 @@ export default function JoaoFonsecaNews() {
     setLoading(true); setCacheStatus("loading");
     try {
       const res = await fetch("/api/news", { method: "POST", headers: {"Content-Type":"application/json"},
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 4000, tools: [{ type: "web_search_20250305", name: "web_search" }],
+        body: JSON.stringify({ model: "claude-haiku-4-5-20251001", max_tokens: 4000, tools: [{ type: "web_search_20250305", name: "web_search" }],
           messages: [{ role: "user", content: `Busque informações COMPLETAS e ATUAIS sobre João Fonseca, tenista brasileiro. Responda APENAS com JSON (sem markdown, sem backticks):
 {
   "player": { "ranking": numero, "rankingChange": N (positivo = subiu no ranking, ex: era 63 agora 59 = +4. Negativo = caiu, ex: era 55 agora 59 = -4) },
