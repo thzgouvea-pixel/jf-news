@@ -188,6 +188,7 @@ export default function JoaoFonsecaNews() {
   const [showInstallPopup, setShowInstallPopup] = useState(false);
   const [popupDismissed, setPopupDismissed] = useState(false);
   const [showBio, setShowBio] = useState(false);
+  const [showTitles, setShowTitles] = useState(false);
   const initDone = useRef(false);
 
   useEffect(() => { if (popupDismissed) return; const t = setTimeout(() => setShowInstallPopup(true), 15000); return () => clearTimeout(t); }, [popupDismissed]);
@@ -447,6 +448,83 @@ export default function JoaoFonsecaNews() {
         </div>
       )}
 
+      {/* TITLES POPUP */}
+      {showTitles && (
+        <div onClick={() => setShowTitles(false)} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInOverlay 0.3s ease", overflowY: "auto" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: BG_WHITE, borderRadius: 20, padding: "28px 24px", maxWidth: 420, width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "slideUp 0.4s ease" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>🏆 Conquistas</h2>
+              <button onClick={() => setShowTitles(false)} style={{ background: "none", border: "none", color: TEXT_DIM, fontSize: 20, cursor: "pointer", padding: "4px 8px" }}>✕</button>
+            </div>
+
+            <p style={{ margin: "0 0 16px", fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+              8 títulos na carreira · 2 ATP Tour · 3 Challengers · 1 NextGen Finals · 1 Duplas · 1 Juvenil
+            </p>
+
+            {/* ATP TOUR */}
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: ACCENT, fontFamily: "'Inter', -apple-system, sans-serif" }}>ATP Tour</p>
+              {[
+                { emoji: "🥇", title: "ATP 500 Basel", date: "Out 2025", surface: "Dura (indoor)", final: "vs A. Davidovich Fokina", score: "6-3 6-4", note: "1º brasileiro a ganhar um ATP 500" },
+                { emoji: "🥇", title: "ATP 250 Buenos Aires", date: "Fev 2025", surface: "Saibro", final: "vs F. Cerúndolo", score: "6-4 7-6(1)", note: "Brasileiro mais jovem a ganhar um ATP" },
+              ].map((t, i) => (
+                <div key={i} style={{ padding: "10px 12px", background: "#F8F9FA", borderRadius: 10, marginBottom: 6, borderLeft: `3px solid ${ACCENT}` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{t.emoji} {t.title}</span>
+                    <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{t.date}</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 12, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>
+                    {t.surface} · Final: {t.final} · {t.score}
+                  </p>
+                  {t.note && <p style={{ margin: "4px 0 0", fontSize: 11, color: ACCENT, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>{t.note}</p>}
+                </div>
+              ))}
+            </div>
+
+            {/* CHALLENGERS */}
+            <div style={{ marginBottom: 16 }}>
+              <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#E8734A", fontFamily: "'Inter', -apple-system, sans-serif" }}>Challengers</p>
+              {[
+                { title: "Challenger 175 Phoenix", date: "Mar 2025", surface: "Dura", final: "vs A. Bublik", score: "7-6(5) 7-6(1)" },
+                { title: "Challenger 125 Canberra", date: "Jan 2025", surface: "Dura", final: "vs E. Quinn", score: "6-4 6-4" },
+                { title: "Challenger 75 Lexington", date: "Ago 2024", surface: "Dura", final: "vs Li Tu", score: "6-1 6-4", note: "1º título profissional · Sem perder sets" },
+              ].map((t, i) => (
+                <div key={i} style={{ padding: "10px 12px", background: "#FFF8F5", borderRadius: 10, marginBottom: 6, borderLeft: "3px solid #E8734A" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>🎯 {t.title}</span>
+                    <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{t.date}</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 12, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+                    {t.surface} · Final: {t.final} · {t.score}
+                  </p>
+                  {t.note && <p style={{ margin: "4px 0 0", fontSize: 11, color: "#E8734A", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>{t.note}</p>}
+                </div>
+              ))}
+            </div>
+
+            {/* OUTROS */}
+            <div>
+              <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#7C3AED", fontFamily: "'Inter', -apple-system, sans-serif" }}>Outros destaques</p>
+              {[
+                { emoji: "⭐", title: "NextGen ATP Finals", date: "Dez 2024", detail: "Torneio sub-20 · Final: vs L. Tien · 3-1 (virada) · Campanha invicta" },
+                { emoji: "🎾", title: "ATP Duplas Rio Open", date: "Fev 2026", detail: "Parceria com Marcelo Melo · 1º título de duplas" },
+                { emoji: "🌟", title: "US Open Juvenil", date: "2023", detail: "Final: vs L. Tien · Nº1 mundial juvenil" },
+                { emoji: "🇧🇷", title: "Copa Davis Juvenil", date: "2023", detail: "1ª conquista brasileira na história" },
+              ].map((t, i) => (
+                <div key={i} style={{ padding: "8px 12px", background: "#F8F5FF", borderRadius: 10, marginBottom: 6, borderLeft: "3px solid #7C3AED" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{t.emoji} {t.title}</span>
+                    <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{t.date}</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: 11.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif" }}>{t.detail}</p>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </div>
+      )}
+
       {/* NEWS FEED with inline bars */}
       <main style={{ maxWidth: 680, margin: "0 auto", background: BG_WHITE, borderLeft: `1px solid ${BORDER}`, borderRight: `1px solid ${BORDER}`, minHeight: "70vh" }}>
         {loading && news.length === 0 && <Skeleton />}
@@ -455,19 +533,23 @@ export default function JoaoFonsecaNews() {
         )}
         <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 24px 40px" }}>
 
-          {/* CONQUISTAS */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
+          {/* CONQUISTAS - clicável */}
+          <div onClick={() => setShowTitles(true)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap", marginBottom: 20, cursor: "pointer", padding: "10px 16px", background: "#F8F9FA", borderRadius: 10, border: `1px solid ${BORDER}`, transition: "background 0.15s" }}>
             {[["🏆","2 títulos ATP"],["🎯","3 Challengers"],["🇧🇷","Nº1 do Brasil"],["⭐","NextGen Champion"]].map(([icon, label], i) => (
               <span key={i} style={{ fontSize: 11, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>
                 {icon} {label}
               </span>
             ))}
+            <span style={{ fontSize: 10, color: ACCENT, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>Ver todos →</span>
           </div>
 
           {/* AÇÕES */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20 }}>
             <button onClick={() => setShowBio(true)} style={{ background: "none", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
               👤 Sobre
+            </button>
+            <button onClick={() => setShowTitles(true)} style={{ background: "none", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
+              🏆 Conquistas
             </button>
             <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ border: `1px solid ${BORDER}`, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>
               📸 Instagram
