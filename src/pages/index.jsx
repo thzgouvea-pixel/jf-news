@@ -15,6 +15,17 @@ const CACHE_DURATION_MS = 30 * 60 * 1000;
 const surfaceEmoji = { "Saibro": "🟠", "Hard": "🔵", "Dura": "🔵", "Grama": "🟢" };
 const surfaceColorMap = { "Saibro": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E" };
 
+const JF_QUOTES = [
+  "Os pequenos detalhes fazem a diferença.",
+  "Mantenho o foco e uma atitude positiva enquanto sigo evoluindo.",
+  "Eu sabia que podia competir nesse nível.",
+  "Cada torneio é uma oportunidade de aprender.",
+  "O trabalho duro não mente.",
+  "Estou evoluindo a cada torneio.",
+  "Quero fazer história pelo Brasil.",
+  "A pressão é um privilégio.",
+];
+
 const SAMPLE_PLAYER = { ranking: 59, rankingChange: "+4" };
 const SAMPLE_SEASON = { wins: 14, losses: 5, titles: 3, year: 2026 };
 const SAMPLE_LAST_MATCH = { result: "V", score: "6-3 6-4", opponent: "T. Nakashima", tournament: "Indian Wells", round: "R2" };
@@ -63,8 +74,11 @@ const LastMatchBar = ({ match }) => {
   const w = match.result === "V";
   return (
     <div style={{ padding: "8px 24px", background: w ? "#F7FDFA" : "#FFFAFA", borderBottom: `1px solid ${BORDER}`, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
-      <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: w ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif" }}>
-        {w ? "Vitória" : "Derrota"}
+      <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+        Última partida
+      </span>
+      <span style={{ fontSize: 10, fontWeight: 700, color: w ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif", background: w ? "#EAFAF3" : "#FEF0F0", padding: "1px 6px", borderRadius: 3 }}>
+        {w ? "V" : "D"}
       </span>
       <span style={{ fontSize: 12.5, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>
         Fonseca <span style={{ color: w ? GREEN : RED }}>{match.score}</span> {match.opponent}
@@ -110,19 +124,37 @@ const NextMatchBanner = ({ match, isLive }) => {
 
 const Skeleton = () => (<div>{[...Array(5)].map((_, i) => (<div key={i} style={{ background: BG_WHITE, padding: "20px 24px", borderBottom: `1px solid ${BORDER}`, animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * .12}s` }}><div style={{ display: "flex", gap: 8, marginBottom: 10 }}><div style={{ height: 20, width: 70, background: "#f0f0f0", borderRadius: 4 }} /><div style={{ height: 20, width: 90, background: "#f5f5f5", borderRadius: 4 }} /></div><div style={{ height: 18, width: "85%", background: "#f0f0f0", borderRadius: 4, marginBottom: 8 }} /><div style={{ height: 14, width: "60%", background: "#f5f5f5", borderRadius: 4 }} /></div>))}</div>);
 
+const catIcon = {
+  "Torneio": "🏟️", "Treino": "💪", "Declaração": "🎙️",
+  "Resultado": "🎾", "Ranking": "📊", "Notícia": "📰",
+};
+
 const NewsCard = ({ item, index }) => {
   const [h, setH] = useState(false);
+  const [imgErr, setImgErr] = useState(false);
   const cat = catCfg[item.category] || catCfg["Notícia"];
+  const icon = catIcon[item.category] || "📰";
+  const hasImg = item.image && !imgErr;
   return (
     <a href={item.url || undefined} target={item.url ? "_blank" : undefined} rel="noopener noreferrer" onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{ display: "block", textDecoration: "none", background: h ? "#F8F9FA" : BG_WHITE, padding: "18px 24px", borderBottom: `1px solid ${BORDER}`, transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: `${index * 0.04}s`, opacity: 0, cursor: item.url ? "pointer" : "default" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-        <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: cat.color, fontFamily: "'Inter', -apple-system, sans-serif", background: cat.bg, padding: "3px 8px", borderRadius: 4 }}>{item.category}</span>
-        <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{item.source}</span>
-        <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", marginLeft: "auto", whiteSpace: "nowrap" }}>{formatTimeAgo(item.date)}</span>
+      style={{ display: "flex", gap: 14, textDecoration: "none", background: h ? "#F8F9FA" : BG_WHITE, padding: "16px 24px", borderBottom: `1px solid ${BORDER}`, transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: `${index * 0.04}s`, opacity: 0, cursor: item.url ? "pointer" : "default", alignItems: "flex-start" }}>
+      {hasImg ? (
+        <img src={item.image} alt="" onError={() => setImgErr(true)}
+          style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0, marginTop: 2, background: "#f0f0f0" }} />
+      ) : (
+        <div style={{ width: 48, height: 48, borderRadius: 10, background: cat.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0, marginTop: 2 }}>
+          {icon}
+        </div>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: cat.color, fontFamily: "'Inter', -apple-system, sans-serif", background: cat.bg, padding: "3px 8px", borderRadius: 4 }}>{item.category}</span>
+          <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{item.source}</span>
+          <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", marginLeft: "auto", whiteSpace: "nowrap" }}>{formatTimeAgo(item.date)}</span>
+        </div>
+        <h3 style={{ margin: "0 0 5px", fontSize: 15.5, fontWeight: 700, color: h ? ACCENT : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4, transition: "color 0.15s" }}>{item.title}</h3>
+        {item.summary && <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
       </div>
-      <h3 style={{ margin: "0 0 6px", fontSize: 16, fontWeight: 700, color: h ? ACCENT : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4, transition: "color 0.15s" }}>{item.title}</h3>
-      {item.summary && <p style={{ margin: 0, fontSize: 13.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.55 }}>{item.summary}</p>}
     </a>
   );
 };
@@ -165,7 +197,7 @@ export default function JoaoFonsecaNews() {
   const [showBio, setShowBio] = useState(false);
   const initDone = useRef(false);
 
-  useEffect(() => { if (popupDismissed) return; const t = setTimeout(() => setShowInstallPopup(true), 5000); return () => clearTimeout(t); }, [popupDismissed]);
+  useEffect(() => { if (popupDismissed) return; const t = setTimeout(() => setShowInstallPopup(true), 15000); return () => clearTimeout(t); }, [popupDismissed]);
   useEffect(() => { if (!cacheExpiresAt) return; const tick = () => setTimeLeft(Math.max(0, cacheExpiresAt - Date.now())); tick(); const iv = setInterval(tick, 15000); return () => clearInterval(iv); }, [cacheExpiresAt]);
 
   // PWA
@@ -220,6 +252,18 @@ export default function JoaoFonsecaNews() {
     let descMeta = document.querySelector('meta[name="description"]');
     if (!descMeta) { descMeta = document.createElement("meta"); descMeta.name = "description"; document.head.appendChild(descMeta); }
     descMeta.content = "Acompanhe as últimas notícias do João Fonseca, tenista brasileiro. Ranking ATP, resultados, próximos torneios e declarações.";
+    // Google Analytics (replace GA_ID with your ID, e.g. "G-XXXXXXXXXX")
+    const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "";
+    if (GA_ID && !document.querySelector(`script[src*="googletagmanager"]`)) {
+      const gaScript = document.createElement("script");
+      gaScript.async = true;
+      gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${GA_ID}`;
+      document.head.appendChild(gaScript);
+      const gaInit = document.createElement("script");
+      gaInit.textContent = `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_ID}');`;
+      document.head.appendChild(gaInit);
+    }
+
     const handler = (e) => { e.preventDefault(); setDeferredPrompt(e); setShowInstallBanner(true); };
     window.addEventListener("beforeinstallprompt", handler);
     if ("serviceWorker" in navigator) { const sw = new Blob([`self.addEventListener('install',e=>{self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(clients.claim())});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>new Response('Offline')))});`], { type: "application/javascript" }); navigator.serviceWorker.register(URL.createObjectURL(sw)).catch(() => {}); }
@@ -246,7 +290,7 @@ export default function JoaoFonsecaNews() {
   "season": { "wins": N, "losses": N, "titles": N, "year": 2026 },
   "lastMatch": { "result": "V" ou "D", "score": "6-3 6-4", "opponent": "T. Sobrenome", "tournament": "nome curto", "round": "R1/R2/QF/SF/F" },
   "nextMatch": { "tournament_category": "ATP 250/500/Masters 1000/Grand Slam", "tournament_name": "nome", "surface": "Saibro/Dura/Grama", "city": "cidade", "country": "país", "date": "YYYY-MM-DD ou vazio", "round": "fase ou vazio" },
-  "news": [{ "title": "em português", "summary": "1-2 frases", "source": "veículo", "url": "link ou vazio", "date": "ISO", "category": "Torneio/Resultado/Treino/Declaração/Ranking/Notícia" }]
+  "news": [{ "title": "em português", "summary": "1-2 frases", "source": "veículo", "url": "link ou vazio", "image": "URL da imagem/thumbnail da notícia se disponível, ou vazio", "date": "ISO", "category": "Torneio/Resultado/Treino/Declaração/Ranking/Notícia" }]
 }
 8-15 notícias, mais recente primeiro. Ranking ATP atualiza toda segunda-feira. APENAS JSON.` }] }) });
       if (!res.ok) throw new Error(`${res.status}`);
@@ -292,26 +336,31 @@ export default function JoaoFonsecaNews() {
         body{background:${BG}}
       `}</style>
 
-      {/* HEADER — clean: name + ranking only */}
-      <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.92)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: `1px solid ${BORDER}` }}>
-        <div style={{ maxWidth: 680, margin: "0 auto", padding: "14px 20px" }}>
+      {/* BRAZILIAN STRIPE */}
+      <div style={{ height: 3, background: "linear-gradient(90deg, #009739 0%, #009739 50%, #FEDD00 50%, #FEDD00 100%)" }} />
+
+      {/* HEADER */}
+      <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: `1px solid ${BORDER}` }}>
+        {/* Mini stripe on sticky header too */}
+        <div style={{ height: 2, background: "linear-gradient(90deg, #009739 0%, #009739 50%, #FEDD00 50%, #FEDD00 100%)" }} />
+        <div style={{ maxWidth: 680, margin: "0 auto", padding: "18px 20px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 42, height: 42, borderRadius: 12, background: `linear-gradient(135deg, ${ACCENT}, #3B82F6)`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", flexShrink: 0 }}>JF</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #0052CC, #3B82F6, #60A5FA)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,102,255,0.25)" }}>JF</div>
               <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <h1 style={{ margin: 0, fontSize: 19, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em" }}>João Fonseca</h1>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em" }}>João Fonseca <span style={{ fontSize: 14, verticalAlign: "middle" }}>🇧🇷</span></h1>
                   {dp && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, background: ACCENT_LIGHT, borderRadius: 8, padding: "3px 8px" }}>
-                      <span style={{ fontSize: 12.5, fontWeight: 800, color: ACCENT, fontFamily: "'Inter', -apple-system, sans-serif" }}>#{dp.ranking}</span>
-                      <span style={{ fontSize: 9.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>ATP</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, background: ACCENT_LIGHT, borderRadius: 8, padding: "4px 10px", border: "1px solid #D0E0FD" }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: ACCENT, fontFamily: "'Inter', -apple-system, sans-serif" }}>#{dp.ranking}</span>
+                      <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>ATP</span>
                       {(() => {
                         const val = typeof dp.rankingChange === "number" ? dp.rankingChange : parseInt(String(dp.rankingChange).replace(/[^0-9-]/g, ""), 10);
                         if (!val || val === 0) return null;
                         // val > 0 = subiu (melhorou), val < 0 = caiu (piorou)
                         const up = val > 0;
                         return (
-                          <span style={{ fontSize: 9.5, fontWeight: 700, color: up ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+                          <span style={{ fontSize: 10, fontWeight: 700, color: up ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif" }}>
                             {up ? "▲" : "▼"}{Math.abs(val)}
                           </span>
                         );
@@ -319,7 +368,7 @@ export default function JoaoFonsecaNews() {
                     </div>
                   )}
                 </div>
-                <p style={{ margin: 0, fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>
+                <p style={{ margin: "2px 0 0 0", fontSize: 11.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>
                   {lastUpdate ? formatTimeAgo(lastUpdate) : "Carregando..."}
                   {dn.length > 0 && ` · ${dn.length} notícias`}
                 </p>
@@ -333,6 +382,13 @@ export default function JoaoFonsecaNews() {
           </div>
         </div>
       </header>
+
+      {/* INSPIRATIONAL QUOTE */}
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "10px 24px", background: BG_WHITE, borderLeft: `1px solid ${BORDER}`, borderRight: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, textAlign: "center" }}>
+        <p style={{ margin: 0, fontSize: 12.5, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", fontStyle: "italic", lineHeight: 1.5 }}>
+          "{JF_QUOTES[Math.floor(Date.now() / 1800000) % JF_QUOTES.length]}"
+        </p>
+      </div>
 
       {/* NEXT MATCH */}
       <NextMatchBanner match={dm} isLive={isLive} />
@@ -422,24 +478,44 @@ export default function JoaoFonsecaNews() {
         {dn.length > 0 && !(loading && news.length === 0) && (
           <div>{buildFeed(dn, ds, dl)}</div>
         )}
-        <div style={{ textAlign: "center", padding: "28px 20px 44px", borderTop: `1px solid ${BORDER}` }}>
-          <button onClick={() => setShowBio(true)} style={{ background: "#F8F9FA", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "7px 18px", fontSize: 12, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 16 }}>
-            👤 Sobre João Fonseca
-          </button>
-          <p style={{ fontSize: 11.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>
-            {isLive ? "Ao vivo · Cache 30 min · Claude AI" : "Preview · Clique Atualizar"}
-          </p>
-          <div style={{ marginTop: 14, padding: "10px 14px", background: "#F8F9FA", borderRadius: 8, display: "inline-block" }}>
-            <p style={{ margin: 0, fontSize: 11, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>📱 Usar como app</p>
-            <p style={{ margin: "3px 0 0", fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>
-              iPhone: Safari → (↑) → "Tela de Início"<br />Android: Chrome → (⋮) → "Tela inicial"
+        <div style={{ borderTop: `1px solid ${BORDER}`, padding: "24px 24px 40px" }}>
+
+          {/* CONQUISTAS */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap", marginBottom: 20 }}>
+            {[["🏆","2 títulos ATP"],["🎯","3 Challengers"],["🇧🇷","Nº1 do Brasil"],["⭐","NextGen Champion"]].map(([icon, label], i) => (
+              <span key={i} style={{ fontSize: 11, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>
+                {icon} {label}
+              </span>
+            ))}
+          </div>
+
+          {/* AÇÕES */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20 }}>
+            <button onClick={() => setShowBio(true)} style={{ background: "none", border: `1px solid ${BORDER}`, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>
+              👤 Sobre
+            </button>
+            <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ border: `1px solid ${BORDER}`, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>
+              📸 Instagram
+            </a>
+          </div>
+
+          {/* STATUS + APP */}
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <p style={{ margin: "0 0 6px 0", fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+              {isLive ? "Ao vivo · Cache 30 min · Claude AI" : "Preview · Clique Atualizar"}
+            </p>
+            <p style={{ margin: 0, fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+              📱 iPhone: Safari → (↑) → "Tela de Início" · Android: Chrome → (⋮) → "Tela inicial"
             </p>
           </div>
-          <div style={{ marginTop: 20, paddingTop: 16, borderTop: `1px solid ${BORDER}` }}>
-            <p style={{ fontSize: 10, color: "#bbb", fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.6, maxWidth: 440, margin: "0 auto" }}>
-              Este é um site independente de fãs, sem qualquer vínculo oficial com João Fonseca, sua equipe ou a ATP. As notícias exibidas são agregadas de fontes públicas com os devidos créditos e links para o conteúdo original. Todas as marcas e nomes mencionados pertencem aos seus respectivos proprietários.
+
+          {/* DISCLAIMER */}
+          <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 14 }}>
+            <p style={{ fontSize: 10, color: "#bbb", fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.6, maxWidth: 440, margin: "0 auto", textAlign: "center" }}>
+              Site independente de fãs, sem vínculo oficial com João Fonseca, sua equipe ou a ATP. Notícias agregadas de fontes públicas com devidos créditos. Marcas e nomes pertencem aos respectivos proprietários.
             </p>
           </div>
+
         </div>
       </main>
     </div>
