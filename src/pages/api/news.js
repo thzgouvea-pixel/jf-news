@@ -1,19 +1,28 @@
-// ===== FONSECA NEWS - API v3 - ZERO CLAUDE COST =====
-// Ranking: SofaScore direct API (free, unlimited)
-// Matches: RapidAPI SofaScore (free, 500 req/month)
+// ===== FONSECA NEWS - API v4 - ZERO CLAUDE COST =====
+// Ranking: SofaScore via RapidAPI (free, 500 req/month)
+// Matches: SofaScore via RapidAPI (free, same quota)
 // News: Google News RSS (free, unlimited)
 
 const FONSECA_TEAM_ID = 403869;
 
 // Cache
-let cache = { news: null, newsAt: 0, ranking: null, rankingAt: 0, matches: null, matchesAt: 0 };
-const NEWS_TTL = 30 * 60 * 1000;      // 30 min
-const RANKING_TTL = 6 * 60 * 60 * 1000; // 6 hours
-const MATCHES_TTL = 6 * 60 * 60 * 1000; // 6 hours
+let cache = { news: null, newsAt: 0, ranking: null, rankingAt: 0, lastMatch: null, lastMatchAt: 0 };
+const NEWS_TTL = 30 * 60 * 1000;       // 30 min
+const RANKING_TTL = 12 * 60 * 60 * 1000; // 12 hours
+const MATCH_TTL = 12 * 60 * 60 * 1000;   // 12 hours
 
 // Fixed season data (update manually when needed)
-const SEASON_DATA = {
-  wins: 5, losses: 5, titles: 1, year: 2026
+const SEASON_DATA = { wins: 5, losses: 5, titles: 1, year: 2026 };
+
+// Fixed next tournament data (update manually between tournaments)
+const NEXT_TOURNAMENT = {
+  tournament_category: "Masters 1000",
+  tournament_name: "Monte Carlo Masters",
+  surface: "Saibro",
+  city: "Monte Carlo",
+  country: "Mônaco",
+  date: "2026-04-05",
+  round: ""
 };
 
 // ===== GOOGLE NEWS RSS (FREE) =====
@@ -53,8 +62,7 @@ async function fetchGoogleNews() {
       const res = await fetch(`https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`, { headers: { "User-Agent": "FonsecaNews/1.0" } });
       if (!res.ok) continue;
       const xml = await res.text();
-      const items = parseRSS(xml);
-      for (const item of items) {
+      for (const item of parseRSS(xml)) {
         const key = item.title.toLowerCase().substring(0, 50);
         if (!seenTitles.has(key)) { seenTitles.add(key); allItems.push(item); }
       }
@@ -64,17 +72,26 @@ async function fetchGoogleNews() {
   return allItems.slice(0, 15);
 }
 
-// ===== SOFASCORE RANKING (FREE, UNLIMITED) =====
-async function fetchRanking() {
+// ===== SOFASCORE RANKING VIA RAPIDAPI =====
+async function fetchRanking(apiKey) {
+  if (!apiKey) return null;
   try {
-    const res = await fetch(`https://api.sofascore.com/api/v1/team/${FONSECA_TEAM_ID}/rankings`, {
-      headers: { "User-Agent": "FonsecaNews/1.0", "Accept": "application/json" }
+    const res = await fetch(`https://sofascore6.p.rapidapi.com/api/sofascore/v1/team/rankings?team_id=${FONSECA_TEAM_ID}`, {
+      headers: {
+        "Content-Type": "application/json",
+        "x-rapidapi-host": "sofascore6.p.rapidapi.com",
+        "x-rapidapi-key": apiKey
+      }
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error("Ranking API error:", res.status);
+      return null;
+    }
     const data = await res.json();
-    if (data.rankings && data.rankings.length > 0) {
-      // First ranking entry is the official ATP ranking
-      const r = data.rankings[0];
+    // Could be array or object with rankings
+    let rankings = Array.isArray(data) ? data : data.rankings;
+    if (rankings && rankings.length > 0) {
+      const r = rankings[0];
       return {
         ranking: r.ranking,
         points: r.points,
@@ -82,130 +99,62 @@ async function fetchRanking() {
         previousPoints: r.previousPoints,
         bestRanking: r.bestRanking,
         tournamentsPlayed: r.tournamentsPlayed,
-        // Calculate rankingChange (positive = improved, negative = worsened)
-        rankingChange: r.previousRanking - r.ranking
+        rankingChange: (r.previousRanking || 0) - (r.ranking || 0)
       };
     }
   } catch (e) { console.error("Ranking error:", e); }
   return null;
 }
 
-// ===== SOFASCORE MATCHES VIA RAPIDAPI (500 req/month FREE) =====
-async function fetchMatches(rapidApiKey) {
-  if (!rapidApiKey) return null;
-  
+// ===== LAST MATCH VIA RAPIDAPI =====
+async function fetchLastMatch(apiKey) {
+  if (!apiKey) return null;
   try {
-    // Fetch last few days to find Fonseca's last match
-    const dates = [];
-    for (let i = 0; i < 7; i++) {
+    // Check last 5 days for Fonseca's most recent match
+    for (let i = 0; i < 5; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      dates.push(d.toISOString().split("T")[0]);
-    }
-    
-    let lastMatch = null;
-    
-    // Search recent days for Fonseca's matches (1 request per day checked)
-    for (const date of dates) {
-      if (lastMatch) break; // Found it, stop searching
-      try {
-        const res = await fetch(`https://sofascore6.p.rapidapi.com/api/sofascore/v1/match/list?date=${date}&sport_slug=tennis`, {
-          headers: {
-            "Content-Type": "application/json",
-            "x-rapidapi-host": "sofascore6.p.rapidapi.com",
-            "x-rapidapi-key": rapidApiKey
-          }
-        });
-        if (!res.ok) continue;
-        const data = await res.json();
-        if (!Array.isArray(data)) continue;
-        
-        // Find Fonseca's match
-        for (const match of data) {
-          const homeId = match.homeTeam?.id;
-          const awayId = match.awayTeam?.id;
-          if (homeId === FONSECA_TEAM_ID || awayId === FONSECA_TEAM_ID) {
-            const isFonsecaHome = homeId === FONSECA_TEAM_ID;
-            const opponent = isFonsecaHome ? match.awayTeam : match.homeTeam;
-            const fonsecaScore = isFonsecaHome ? match.homeScore : match.awayScore;
-            const opponentScore = isFonsecaHome ? match.awayScore : match.homeScore;
-            
-            // Build score string from periods
-            let score = "";
-            if (fonsecaScore && opponentScore) {
-              const periods = [];
-              for (let p = 1; p <= 5; p++) {
-                const fPeriod = fonsecaScore[`period${p}`];
-                const oPeriod = opponentScore[`period${p}`];
-                if (fPeriod !== undefined && oPeriod !== undefined) {
-                  periods.push(`${fPeriod}-${oPeriod}`);
-                }
-              }
-              score = periods.join(" ");
-            }
-            
-            const isFinished = match.status?.type === "finished";
-            const fonsecaWon = fonsecaScore?.current > opponentScore?.current;
-            
-            if (isFinished) {
-              lastMatch = {
-                result: fonsecaWon ? "V" : "D",
-                score: score,
-                opponent: opponent?.shortName || opponent?.name || "?",
-                tournament: match.tournament?.name || "?",
-                round: match.roundInfo?.name || ""
-              };
-            }
-            break;
-          }
+      const date = d.toISOString().split("T")[0];
+      
+      const res = await fetch(`https://sofascore6.p.rapidapi.com/api/sofascore/v1/match/list?date=${date}&sport_slug=tennis`, {
+        headers: {
+          "Content-Type": "application/json",
+          "x-rapidapi-host": "sofascore6.p.rapidapi.com",
+          "x-rapidapi-key": apiKey
         }
-      } catch (e) { console.error("Match fetch error for", date, e); }
-    }
-    
-    // Also check future dates for next match
-    let nextMatch = null;
-    const futureDates = [];
-    for (let i = 1; i <= 14; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() + i);
-      futureDates.push(d.toISOString().split("T")[0]);
-    }
-    
-    // Only check a few future dates to save requests
-    for (const date of futureDates.slice(0, 3)) {
-      if (nextMatch) break;
-      try {
-        const res = await fetch(`https://sofascore6.p.rapidapi.com/api/sofascore/v1/match/list?date=${date}&sport_slug=tennis`, {
-          headers: {
-            "Content-Type": "application/json",
-            "x-rapidapi-host": "sofascore6.p.rapidapi.com",
-            "x-rapidapi-key": rapidApiKey
-          }
-        });
-        if (!res.ok) continue;
-        const data = await res.json();
-        if (!Array.isArray(data)) continue;
-        
-        for (const match of data) {
-          const homeId = match.homeTeam?.id;
-          const awayId = match.awayTeam?.id;
-          if (homeId === FONSECA_TEAM_ID || awayId === FONSECA_TEAM_ID) {
-            if (match.status?.type === "notstarted") {
-              nextMatch = {
-                tournament_name: match.tournament?.name || "?",
-                tournament_category: match.uniqueTournament?.name || "",
-                date: date,
-                round: match.roundInfo?.name || ""
-              };
-            }
-            break;
-          }
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (!Array.isArray(data)) continue;
+
+      for (const m of data) {
+        const homeId = m.homeTeam?.id;
+        const awayId = m.awayTeam?.id;
+        if (homeId !== FONSECA_TEAM_ID && awayId !== FONSECA_TEAM_ID) continue;
+        if (m.status?.type !== "finished") continue;
+
+        const isFonsecaHome = homeId === FONSECA_TEAM_ID;
+        const opponent = isFonsecaHome ? m.awayTeam : m.homeTeam;
+        const fScore = isFonsecaHome ? m.homeScore : m.awayScore;
+        const oScore = isFonsecaHome ? m.awayScore : m.homeScore;
+
+        const periods = [];
+        for (let p = 1; p <= 5; p++) {
+          const fp = fScore?.[`period${p}`];
+          const op = oScore?.[`period${p}`];
+          if (fp !== undefined && op !== undefined) periods.push(`${fp}-${op}`);
         }
-      } catch (e) { console.error("Next match error:", e); }
+
+        return {
+          result: (fScore?.current || 0) > (oScore?.current || 0) ? "V" : "D",
+          score: periods.join(" "),
+          opponent: opponent?.shortName || opponent?.name || "?",
+          tournament: m.tournament?.name || "?",
+          round: m.roundInfo?.name || ""
+        };
+      }
     }
-    
-    return { lastMatch, nextMatch };
-  } catch (e) { console.error("Matches error:", e); }
+  } catch (e) { console.error("LastMatch error:", e); }
   return null;
 }
 
@@ -216,51 +165,39 @@ export default async function handler(req, res) {
   const forceRefresh = req.method === "POST" && req.body?.force === true;
 
   try {
-    // 1. News from Google RSS (free)
+    // 1. News (Google RSS - free)
     if (!cache.news || (now - cache.newsAt) >= NEWS_TTL || forceRefresh) {
-      const freshNews = await fetchGoogleNews();
-      if (freshNews.length > 0) { cache.news = freshNews; cache.newsAt = now; }
+      const fresh = await fetchGoogleNews();
+      if (fresh.length > 0) { cache.news = fresh; cache.newsAt = now; }
     }
 
-    // 2. Ranking from SofaScore direct API (free, unlimited)
+    // 2. Ranking (RapidAPI SofaScore - 1 req every 12h = ~60/month)
     if (!cache.ranking || (now - cache.rankingAt) >= RANKING_TTL || forceRefresh) {
-      const freshRanking = await fetchRanking();
-      if (freshRanking) { cache.ranking = freshRanking; cache.rankingAt = now; }
+      const fresh = await fetchRanking(rapidApiKey);
+      if (fresh) { cache.ranking = fresh; cache.rankingAt = now; }
     }
 
-    // 3. Matches from RapidAPI SofaScore (500 req/month free)
-    if (!cache.matches || (now - cache.matchesAt) >= MATCHES_TTL || forceRefresh) {
-      const freshMatches = await fetchMatches(rapidApiKey);
-      if (freshMatches) { cache.matches = freshMatches; cache.matchesAt = now; }
+    // 3. Last match (RapidAPI SofaScore - max 5 req every 12h = ~10/day worst case, cached)
+    if (!cache.lastMatch || (now - cache.lastMatchAt) >= MATCH_TTL || forceRefresh) {
+      const fresh = await fetchLastMatch(rapidApiKey);
+      if (fresh) { cache.lastMatch = fresh; cache.lastMatchAt = now; }
     }
-
-    // Build response in same format as before
-    const ranking = cache.ranking;
-    const matches = cache.matches;
 
     const result = {
       news: cache.news || [],
-      player: ranking ? {
-        ranking: ranking.ranking,
-        rankingChange: ranking.rankingChange,
-        points: ranking.points,
-        bestRanking: ranking.bestRanking
+      player: cache.ranking ? {
+        ranking: cache.ranking.ranking,
+        rankingChange: cache.ranking.rankingChange,
+        points: cache.ranking.points,
+        bestRanking: cache.ranking.bestRanking
       } : null,
       season: SEASON_DATA,
-      lastMatch: matches?.lastMatch || null,
-      nextMatch: matches?.nextMatch ? {
-        tournament_category: matches.nextMatch.tournament_category,
-        tournament_name: matches.nextMatch.tournament_name,
-        surface: "", // SofaScore doesn't provide this directly
-        city: "",
-        country: "",
-        date: matches.nextMatch.date,
-        round: matches.nextMatch.round
-      } : null,
+      lastMatch: cache.lastMatch || null,
+      nextMatch: NEXT_TOURNAMENT,
       _cache: {
-        newsHit: cache.news && (now - cache.newsAt) < NEWS_TTL && !forceRefresh,
-        rankingHit: cache.ranking && (now - cache.rankingAt) < RANKING_TTL && !forceRefresh,
-        matchesHit: cache.matches && (now - cache.matchesAt) < MATCHES_TTL && !forceRefresh,
+        newsHit: !(!cache.news || (now - cache.newsAt) >= NEWS_TTL || forceRefresh),
+        rankingHit: !(!cache.ranking || (now - cache.rankingAt) >= RANKING_TTL || forceRefresh),
+        matchHit: !(!cache.lastMatch || (now - cache.lastMatchAt) >= MATCH_TTL || forceRefresh),
         source: "sofascore+google_rss",
         claudeCost: "$0.00"
       }
@@ -270,15 +207,14 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error("Handler error:", error);
-    // Return stale cache
     if (cache.news) {
       res.status(200).json({
         news: cache.news,
         player: cache.ranking ? { ranking: cache.ranking.ranking, rankingChange: cache.ranking.rankingChange } : null,
         season: SEASON_DATA,
-        lastMatch: cache.matches?.lastMatch || null,
-        nextMatch: null,
-        _cache: { stale: true }
+        lastMatch: cache.lastMatch || null,
+        nextMatch: NEXT_TOURNAMENT,
+        _cache: { stale: true, source: "sofascore+google_rss", claudeCost: "$0.00" }
       });
     } else {
       res.status(500).json({ error: "Failed to fetch data" });
