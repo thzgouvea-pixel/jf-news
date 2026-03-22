@@ -388,13 +388,6 @@ Responda APENAS com JSON (sem markdown, sem backticks):
       {/* NEXT MATCH */}
       <NextMatchBanner match={dm} isLive={isLive} />
 
-      {/* STATUS */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 24px", background: ca ? "#F0F9F4" : ACCENT_LIGHT, borderBottom: `1px solid ${ca ? "#D4EDDA" : "#D0E0FD"}`, maxWidth: 680, margin: "0 auto" }}>
-        <div style={{ width: 6, height: 6, borderRadius: "50%", background: stClr(), animation: loading ? "pulse 1s ease-in-out infinite" : "none", flexShrink: 0 }} />
-        <span style={{ fontSize: 11, color: TEXT_SECONDARY, fontWeight: 500, fontFamily: "'Inter', -apple-system, sans-serif" }}>{stMsg()}</span>
-        {ca && <button onClick={handleForce} style={{ marginLeft: "auto", background: "none", border: `1px solid ${BORDER}`, borderRadius: 5, padding: "1px 7px", fontSize: 10, color: ACCENT, cursor: "pointer", fontWeight: 600, fontFamily: "'Inter', -apple-system, sans-serif" }}>Forçar</button>}
-      </div>
-
       {/* INSTALL POPUP */}
       {showInstallPopup && !popupDismissed && (
         <div onClick={dismissPopup} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeInOverlay 0.3s ease" }}>
@@ -494,11 +487,8 @@ Responda APENAS com JSON (sem markdown, sem backticks):
             </a>
           </div>
 
-          {/* STATUS + APP */}
+          {/* APP */}
           <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <p style={{ margin: "0 0 6px 0", fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>
-              {isLive ? "Ao vivo · Cache 30 min · Claude AI" : "Preview · Clique Atualizar"}
-            </p>
             <p style={{ margin: 0, fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>
               📱 iPhone: Safari → (↑) → "Tela de Início" · Android: Chrome → (⋮) → "Tela inicial"
             </p>
