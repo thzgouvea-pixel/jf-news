@@ -195,38 +195,38 @@ export default function JoaoFonsecaNews() {
 
   // PWA
   useEffect(() => {
-    const manifest = { name: "João Fonseca News", short_name: "JF News", start_url: "/", display: "standalone", background_color: "#FAFAFA", theme_color: "#0066FF", orientation: "portrait",
-      icons: [{ src: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#0066FF"/><text x="256" y="330" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="240" fill="#fff">JF</text></svg>'), sizes: "512x512", type: "image/svg+xml" }] };
+    const manifest = { name: "Fonseca News", short_name: "Fonseca News", start_url: "/", display: "standalone", background_color: "#FAFAFA", theme_color: "#0066FF", orientation: "portrait",
+      icons: [{ src: "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="100" fill="#0066FF"/><text x="256" y="330" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="220" fill="#fff">FN</text></svg>'), sizes: "512x512", type: "image/svg+xml" }] };
     const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     let link = document.querySelector('link[rel="manifest"]');
     if (!link) { link = document.createElement("link"); link.rel = "manifest"; document.head.appendChild(link); }
     link.href = url;
-    [["theme-color","#0066FF"],["apple-mobile-web-app-capable","yes"],["apple-mobile-web-app-status-bar-style","default"],["apple-mobile-web-app-title","JF News"]].forEach(([n,c]) => { let m = document.querySelector(`meta[name="${n}"]`); if (!m) { m = document.createElement("meta"); m.name = n; document.head.appendChild(m); } m.content = c; });
-    document.title = "JF News · João Fonseca";
+    [["theme-color","#0066FF"],["apple-mobile-web-app-capable","yes"],["apple-mobile-web-app-status-bar-style","default"],["apple-mobile-web-app-title","Fonseca News"]].forEach(([n,c]) => { let m = document.querySelector(`meta[name="${n}"]`); if (!m) { m = document.createElement("meta"); m.name = n; document.head.appendChild(m); } m.content = c; });
+    document.title = "Fonseca News · João Fonseca";
 
     // Favicon
-    const faviconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0066FF"/><text x="16" y="22" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="16" fill="#fff">JF</text></svg>';
+    const faviconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0066FF"/><text x="16" y="22" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="13" fill="#fff">FN</text></svg>';
     let favicon = document.querySelector('link[rel="icon"]');
     if (!favicon) { favicon = document.createElement("link"); favicon.rel = "icon"; document.head.appendChild(favicon); }
     favicon.type = "image/svg+xml";
     favicon.href = "data:image/svg+xml," + encodeURIComponent(faviconSvg);
 
     // Apple touch icon
-    const touchIconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect width="180" height="180" rx="36" fill="#0066FF"/><text x="90" y="118" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="84" fill="#fff">JF</text></svg>';
+    const touchIconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180"><rect width="180" height="180" rx="36" fill="#0066FF"/><text x="90" y="118" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="72" fill="#fff">FN</text></svg>';
     let touchIcon = document.querySelector('link[rel="apple-touch-icon"]');
     if (!touchIcon) { touchIcon = document.createElement("link"); touchIcon.rel = "apple-touch-icon"; document.head.appendChild(touchIcon); }
     touchIcon.href = "data:image/svg+xml," + encodeURIComponent(touchIconSvg);
 
     // Open Graph meta tags (WhatsApp, Twitter, Facebook previews)
     const ogTags = [
-      ["og:title", "JF News · João Fonseca"],
+      ["og:title", "Fonseca News · João Fonseca"],
       ["og:description", "Acompanhe as últimas notícias do João Fonseca, a maior promessa do tênis brasileiro. Ranking, resultados, torneios e mais."],
       ["og:type", "website"],
-      ["og:site_name", "JF News"],
+      ["og:site_name", "Fonseca News"],
       ["og:locale", "pt_BR"],
       ["twitter:card", "summary"],
-      ["twitter:title", "JF News · João Fonseca"],
+      ["twitter:title", "Fonseca News · João Fonseca"],
       ["twitter:description", "Todas as notícias do João Fonseca em um só lugar. Ranking ATP, próximos torneios, resultados ao vivo."],
     ];
     ogTags.forEach(([prop, content]) => {
@@ -327,10 +327,10 @@ export default function JoaoFonsecaNews() {
         <div style={{ maxWidth: 680, margin: "0 auto", padding: "12px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #0052CC, #3B82F6, #60A5FA)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,102,255,0.25)" }}>JF</div>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #0052CC, #3B82F6, #60A5FA)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,102,255,0.25)" }}>FN</div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>João Fonseca 🇧🇷</span>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>Fonseca News</span>
                   {dp && (
                     <div style={{ display: "flex", alignItems: "center", gap: 3, background: ACCENT_LIGHT, borderRadius: 6, padding: "2px 7px", border: "1px solid #D0E0FD" }}>
                       <span style={{ fontSize: 11.5, fontWeight: 800, color: ACCENT, fontFamily: "'Inter', -apple-system, sans-serif" }}>#{dp.ranking}</span>
@@ -349,7 +349,8 @@ export default function JoaoFonsecaNews() {
                   )}
                 </div>
                 <p style={{ margin: "1px 0 0 0", fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>
-                  {lastUpdate ? formatTimeAgo(lastUpdate) : "Carregando..."}
+                  João Fonseca 🇧🇷
+                  {lastUpdate ? ` · ${formatTimeAgo(lastUpdate)}` : " · Carregando..."}
                   {dn.length > 0 && ` · ${dn.length} notícias`}
                 </p>
               </div>
@@ -377,8 +378,8 @@ export default function JoaoFonsecaNews() {
       {showInstallPopup && !popupDismissed && (
         <div onClick={dismissPopup} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeInOverlay 0.3s ease" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: BG_WHITE, borderRadius: 20, padding: "32px 28px", maxWidth: 360, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "slideUp 0.4s ease" }}>
-            <div style={{ width: 56, height: 56, borderRadius: 14, margin: "0 auto 14px", background: `linear-gradient(135deg, ${ACCENT}, #3B82F6)`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 22, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>JF</div>
-            <h2 style={{ margin: "0 0 6px", fontSize: 19, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>Instale o JF News</h2>
+            <div style={{ width: 56, height: 56, borderRadius: 14, margin: "0 auto 14px", background: `linear-gradient(135deg, ${ACCENT}, #3B82F6)`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 20, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>FN</div>
+            <h2 style={{ margin: "0 0 6px", fontSize: 19, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>Instale o Fonseca News</h2>
             <p style={{ margin: "0 0 18px", fontSize: 13.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>Acompanhe o João Fonseca direto da tela inicial</p>
             <div style={{ background: "#F8F9FA", borderRadius: 10, padding: "12px 14px", marginBottom: 18, textAlign: "left" }}>
               <p style={{ margin: "0 0 6px", fontSize: 11.5, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Inter', -apple-system, sans-serif" }}>📱 Como instalar:</p>
@@ -397,7 +398,7 @@ export default function JoaoFonsecaNews() {
           <div onClick={e => e.stopPropagation()} style={{ background: BG_WHITE, borderRadius: 20, padding: "28px 24px", maxWidth: 400, width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "slideUp 0.4s ease" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${ACCENT}, #3B82F6)`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 17, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>JF</div>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: `linear-gradient(135deg, ${ACCENT}, #3B82F6)`, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>FN</div>
                 <div>
                   <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>João Fonseca</h2>
                   <p style={{ margin: 0, fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>Tenista profissional 🇧🇷</p>
@@ -482,7 +483,7 @@ export default function JoaoFonsecaNews() {
           {/* DISCLAIMER */}
           <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 14 }}>
             <p style={{ fontSize: 10, color: "#bbb", fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.6, maxWidth: 440, margin: "0 auto", textAlign: "center" }}>
-              Site independente de fãs, sem vínculo oficial com João Fonseca, sua equipe ou a ATP. Notícias agregadas de fontes públicas com devidos créditos. Marcas e nomes pertencem aos respectivos proprietários.
+              Fonseca News é um site independente de fãs, sem vínculo oficial com João Fonseca, sua equipe ou a ATP. Notícias agregadas de fontes públicas com devidos créditos. Marcas e nomes pertencem aos respectivos proprietários.
             </p>
           </div>
 
