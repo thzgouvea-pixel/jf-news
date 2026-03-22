@@ -295,9 +295,10 @@ Responda APENAS com JSON (sem markdown, sem backticks):
       let p; const os = c.indexOf("{"), oe = c.lastIndexOf("}");
       if (os !== -1 && oe !== -1) p = JSON.parse(c.substring(os, oe+1));
       if (p?.news?.length) {
-        setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null);
+        const sortedNews = [...p.news].sort((a, b) => new Date(b.date) - new Date(a.date));
+        setNews(sortedNews); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null);
         setIsLive(true); setLastUpdate(new Date().toISOString()); setCacheStatus("live");
-        await saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season });
+        await saveCache({ news:sortedNews, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season });
       } else throw new Error("No data");
     } catch(e) { console.error(e); setCacheStatus("error"); }
     finally { setLoading(false); }
