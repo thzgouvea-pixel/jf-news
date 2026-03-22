@@ -337,26 +337,24 @@ Responda APENAS com JSON (sem markdown, sem backticks):
 
       {/* HEADER */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: `1px solid ${BORDER}` }}>
-        {/* Mini stripe on sticky header too */}
         <div style={{ height: 2, background: "linear-gradient(90deg, #009739 0%, #009739 50%, #FEDD00 50%, #FEDD00 100%)" }} />
-        <div style={{ maxWidth: 680, margin: "0 auto", padding: "18px 20px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #0052CC, #3B82F6, #60A5FA)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 18, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,102,255,0.25)" }}>JF</div>
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em" }}>João Fonseca <span style={{ fontSize: 14, verticalAlign: "middle" }}>🇧🇷</span></h1>
+        <div style={{ maxWidth: 680, margin: "0 auto", padding: "12px 16px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #0052CC, #3B82F6, #60A5FA)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 16, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,102,255,0.25)" }}>JF</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>João Fonseca 🇧🇷</span>
                   {dp && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, background: ACCENT_LIGHT, borderRadius: 8, padding: "4px 10px", border: "1px solid #D0E0FD" }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: ACCENT, fontFamily: "'Inter', -apple-system, sans-serif" }}>#{dp.ranking}</span>
-                      <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>ATP</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 3, background: ACCENT_LIGHT, borderRadius: 6, padding: "2px 7px", border: "1px solid #D0E0FD" }}>
+                      <span style={{ fontSize: 11.5, fontWeight: 800, color: ACCENT, fontFamily: "'Inter', -apple-system, sans-serif" }}>#{dp.ranking}</span>
+                      <span style={{ fontSize: 9, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>ATP</span>
                       {(() => {
                         const val = typeof dp.rankingChange === "number" ? dp.rankingChange : parseInt(String(dp.rankingChange).replace(/[^0-9-]/g, ""), 10);
                         if (!val || val === 0) return null;
-                        // val > 0 = subiu (melhorou), val < 0 = caiu (piorou)
                         const up = val > 0;
                         return (
-                          <span style={{ fontSize: 10, fontWeight: 700, color: up ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif" }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: up ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif" }}>
                             {up ? "▲" : "▼"}{Math.abs(val)}
                           </span>
                         );
@@ -364,15 +362,15 @@ Responda APENAS com JSON (sem markdown, sem backticks):
                     </div>
                   )}
                 </div>
-                <p style={{ margin: "2px 0 0 0", fontSize: 11.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>
+                <p style={{ margin: "1px 0 0 0", fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>
                   {lastUpdate ? formatTimeAgo(lastUpdate) : "Carregando..."}
                   {dn.length > 0 && ` · ${dn.length} notícias`}
                 </p>
               </div>
             </div>
             <button onClick={handleRefresh} disabled={loading}
-              style={{ background: loading ? "#f5f5f5" : ACCENT, border: "none", borderRadius: 10, padding: "9px 14px", color: loading ? TEXT_DIM : "#fff", cursor: loading ? "not-allowed" : "pointer", fontSize: 13, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ display: "inline-block", animation: loading ? "spin 1s linear infinite" : "none", fontSize: 14 }}>↻</span>
+              style={{ background: loading ? "#f5f5f5" : ACCENT, border: "none", borderRadius: 10, padding: "8px 12px", color: loading ? TEXT_DIM : "#fff", cursor: loading ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+              <span style={{ display: "inline-block", animation: loading ? "spin 1s linear infinite" : "none", fontSize: 13 }}>↻</span>
               {loading ? "..." : "Atualizar"}
             </button>
           </div>
