@@ -14,6 +14,9 @@ const MATCH_TTL = 12 * 60 * 60 * 1000;   // 12 hours
 // Fixed season data (update manually when needed)
 const SEASON_DATA = { wins: 5, losses: 5, titles: 1, year: 2026 };
 
+// Fixed player ranking (update weekly on Mondays when ATP ranking changes)
+const PLAYER_DATA = { ranking: 39, rankingChange: -4, points: 1135, bestRanking: 24 };
+
 // Fixed next tournament data (update manually between tournaments)
 const NEXT_TOURNAMENT = {
   tournament_category: "Masters 1000",
@@ -190,7 +193,7 @@ export default async function handler(req, res) {
         rankingChange: cache.ranking.rankingChange,
         points: cache.ranking.points,
         bestRanking: cache.ranking.bestRanking
-      } : null,
+      } : PLAYER_DATA,
       season: SEASON_DATA,
       lastMatch: cache.lastMatch || null,
       nextMatch: NEXT_TOURNAMENT,
@@ -210,7 +213,7 @@ export default async function handler(req, res) {
     if (cache.news) {
       res.status(200).json({
         news: cache.news,
-        player: cache.ranking ? { ranking: cache.ranking.ranking, rankingChange: cache.ranking.rankingChange } : null,
+        player: cache.ranking ? { ranking: cache.ranking.ranking, rankingChange: cache.ranking.rankingChange } : PLAYER_DATA,
         season: SEASON_DATA,
         lastMatch: cache.lastMatch || null,
         nextMatch: NEXT_TOURNAMENT,
