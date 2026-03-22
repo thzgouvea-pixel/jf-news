@@ -129,9 +129,12 @@ const NewsCard = ({ item, index }) => {
   const [imgErr, setImgErr] = useState(false);
   const cat = catCfg[item.category] || catCfg["Notícia"];
   const hasImg = item.image && !imgErr;
+  const hasUrl = item.url && item.url.startsWith("http");
+  const Tag = hasUrl ? "a" : "div";
+  const linkProps = hasUrl ? { href: item.url, target: "_blank", rel: "noopener noreferrer" } : {};
   return (
-    <a href={item.url || undefined} target={item.url ? "_blank" : undefined} rel="noopener noreferrer" onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "16px 24px" : "16px 24px 16px 20px", borderBottom: `1px solid ${BORDER}`, borderLeft: hasImg ? "none" : `3px solid ${cat.color}`, transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: `${index * 0.04}s`, opacity: 0, cursor: item.url ? "pointer" : "default", alignItems: "flex-start" }}>
+    <Tag {...linkProps} onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
+      style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h && hasUrl ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "16px 24px" : "16px 24px 16px 20px", borderBottom: `1px solid ${BORDER}`, borderLeft: hasImg ? "none" : `3px solid ${cat.color}`, transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: `${index * 0.04}s`, opacity: 0, cursor: hasUrl ? "pointer" : "default", alignItems: "flex-start" }}>
       {hasImg && (
         <img src={item.image} alt="" onError={() => setImgErr(true)}
           style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0, marginTop: 2, background: "#f0f0f0" }} />
@@ -142,10 +145,10 @@ const NewsCard = ({ item, index }) => {
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{item.source}</span>
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", marginLeft: "auto", whiteSpace: "nowrap" }}>{formatTimeAgo(item.date)}</span>
         </div>
-        <h3 style={{ margin: "0 0 5px", fontSize: 15.5, fontWeight: 700, color: h ? ACCENT : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4, transition: "color 0.15s" }}>{item.title}</h3>
+        <h3 style={{ margin: "0 0 5px", fontSize: 15.5, fontWeight: 700, color: h && hasUrl ? ACCENT : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4, transition: "color 0.15s" }}>{item.title}</h3>
         {item.summary && <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
       </div>
-    </a>
+    </Tag>
   );
 };
 
@@ -280,9 +283,9 @@ export default function JoaoFonsecaNews() {
   "season": { "wins": N, "losses": N, "titles": N, "year": 2026 },
   "lastMatch": { "result": "V" ou "D", "score": "6-3 6-4", "opponent": "T. Sobrenome", "tournament": "nome curto", "round": "R1/R2/QF/SF/F" },
   "nextMatch": { "tournament_category": "ATP 250/500/Masters 1000/Grand Slam", "tournament_name": "nome", "surface": "Saibro/Dura/Grama", "city": "cidade", "country": "país", "date": "YYYY-MM-DD ou vazio", "round": "fase ou vazio" },
-  "news": [{ "title": "em português", "summary": "1-2 frases", "source": "veículo", "url": "link ou vazio", "image": "URL da imagem/thumbnail da notícia se disponível, ou vazio", "date": "ISO", "category": "Torneio/Resultado/Treino/Declaração/Ranking/Notícia" }]
+  "news": [{ "title": "em português", "summary": "1-2 frases", "source": "veículo", "url": "OBRIGATÓRIO: URL completa real da notícia (https://...) que você encontrou na busca web. Nunca deixe vazio.", "image": "URL da imagem/thumbnail se disponível, ou vazio", "date": "ISO", "category": "Torneio/Resultado/Treino/Declaração/Ranking/Notícia" }]
 }
-8-15 notícias, mais recente primeiro. Ranking ATP atualiza toda segunda-feira. APENAS JSON.` }] }) });
+8-15 notícias, mais recente primeiro. Ranking ATP atualiza toda segunda-feira. IMPORTANTE: cada notícia DEVE ter uma URL real da fonte. APENAS JSON.` }] }) });
       if (!res.ok) throw new Error(`${res.status}`);
       const data = await res.json();
       let txt = ""; if (data.content) for (const b of data.content) if (b.type === "text" && b.text) txt += b.text;
