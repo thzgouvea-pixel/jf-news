@@ -14,14 +14,20 @@ export default async function handler(req, res) {
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
+        "anthropic-version": "2025-03-01",
       },
       body: JSON.stringify(req.body),
     });
 
     const data = await response.json();
+    
+    if (!response.ok) {
+      console.error("Anthropic API error:", JSON.stringify(data));
+    }
+    
     res.status(response.status).json(data);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch from API" });
+    console.error("Fetch error:", error);
+    res.status(500).json({ error: "Failed to fetch from API", details: error.message });
   }
 }
