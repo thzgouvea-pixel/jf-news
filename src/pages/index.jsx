@@ -324,13 +324,19 @@ export default function JoaoFonsecaNews() {
       {/* HEADER */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: `1px solid ${BORDER}` }}>
         <div style={{ height: 2, background: "linear-gradient(90deg, #009739 0%, #009739 50%, #FEDD00 50%, #FEDD00 100%)" }} />
-        <div style={{ maxWidth: 680, margin: "0 auto", padding: "12px 16px" }}>
+        {/* FAN DISCLAIMER */}
+        <div style={{ padding: "4px 16px", background: "#F8F9FA", borderBottom: `1px solid ${BORDER}`, textAlign: "center" }}>
+          <span style={{ fontSize: 9.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500, letterSpacing: "0.02em" }}>
+            Site independente de fãs · Não oficial
+          </span>
+        </div>
+        <div style={{ maxWidth: 680, margin: "0 auto", padding: "16px 16px 14px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #0052CC, #3B82F6, #60A5FA)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 15, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,102,255,0.25)" }}>FN</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+              <div style={{ width: 46, height: 46, borderRadius: 14, background: "linear-gradient(135deg, #0052CC, #3B82F6, #60A5FA)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 17, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,102,255,0.25)" }}>FN</div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>Fonseca News</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>Fonseca News</span>
                   {dp && (
                     <div style={{ display: "flex", alignItems: "center", gap: 3, background: ACCENT_LIGHT, borderRadius: 6, padding: "2px 7px", border: "1px solid #D0E0FD" }}>
                       <span style={{ fontSize: 11.5, fontWeight: 800, color: ACCENT, fontFamily: "'Inter', -apple-system, sans-serif" }}>#{dp.ranking}</span>
@@ -355,11 +361,6 @@ export default function JoaoFonsecaNews() {
                 </p>
               </div>
             </div>
-            <button onClick={handleRefresh} disabled={loading}
-              style={{ background: loading ? "#f5f5f5" : ACCENT, border: "none", borderRadius: 10, padding: "8px 12px", color: loading ? TEXT_DIM : "#fff", cursor: loading ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-              <span style={{ display: "inline-block", animation: loading ? "spin 1s linear infinite" : "none", fontSize: 13 }}>↻</span>
-              {loading ? "..." : "Atualizar"}
-            </button>
           </div>
         </div>
       </header>
