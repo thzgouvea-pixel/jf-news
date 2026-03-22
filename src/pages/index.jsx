@@ -124,27 +124,17 @@ const NextMatchBanner = ({ match, isLive }) => {
 
 const Skeleton = () => (<div>{[...Array(5)].map((_, i) => (<div key={i} style={{ background: BG_WHITE, padding: "20px 24px", borderBottom: `1px solid ${BORDER}`, animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * .12}s` }}><div style={{ display: "flex", gap: 8, marginBottom: 10 }}><div style={{ height: 20, width: 70, background: "#f0f0f0", borderRadius: 4 }} /><div style={{ height: 20, width: 90, background: "#f5f5f5", borderRadius: 4 }} /></div><div style={{ height: 18, width: "85%", background: "#f0f0f0", borderRadius: 4, marginBottom: 8 }} /><div style={{ height: 14, width: "60%", background: "#f5f5f5", borderRadius: 4 }} /></div>))}</div>);
 
-const catIcon = {
-  "Torneio": "🏟️", "Treino": "💪", "Declaração": "🎙️",
-  "Resultado": "🎾", "Ranking": "📊", "Notícia": "📰",
-};
-
 const NewsCard = ({ item, index }) => {
   const [h, setH] = useState(false);
   const [imgErr, setImgErr] = useState(false);
   const cat = catCfg[item.category] || catCfg["Notícia"];
-  const icon = catIcon[item.category] || "📰";
   const hasImg = item.image && !imgErr;
   return (
     <a href={item.url || undefined} target={item.url ? "_blank" : undefined} rel="noopener noreferrer" onMouseEnter={() => setH(true)} onMouseLeave={() => setH(false)}
-      style={{ display: "flex", gap: 14, textDecoration: "none", background: h ? "#F8F9FA" : BG_WHITE, padding: "16px 24px", borderBottom: `1px solid ${BORDER}`, transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: `${index * 0.04}s`, opacity: 0, cursor: item.url ? "pointer" : "default", alignItems: "flex-start" }}>
-      {hasImg ? (
+      style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "16px 24px" : "16px 24px 16px 20px", borderBottom: `1px solid ${BORDER}`, borderLeft: hasImg ? "none" : `3px solid ${cat.color}`, transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: `${index * 0.04}s`, opacity: 0, cursor: item.url ? "pointer" : "default", alignItems: "flex-start" }}>
+      {hasImg && (
         <img src={item.image} alt="" onError={() => setImgErr(true)}
           style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0, marginTop: 2, background: "#f0f0f0" }} />
-      ) : (
-        <div style={{ width: 48, height: 48, borderRadius: 10, background: cat.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0, marginTop: 2 }}>
-          {icon}
-        </div>
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
