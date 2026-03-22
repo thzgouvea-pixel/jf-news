@@ -1,29 +1,96 @@
-// Server-side cache - shared across ALL users
-let cachedData = null;
-let cacheTimestamp = 0;
-const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+// Server-side cache
+let newsCache = null;
+let newsCacheTimestamp = 0;
+const NEWS_CACHE_TTL = 30 * 60 * 1000; // 30 min for news
 
-export default async function handler(req, res) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: "API key not configured" });
-  }
+let statsCache = null;
+let statsCacheTimestamp = 0;
+const STATS_CACHE_TTL = 6 * 60 * 60 * 1000; // 6 hours for player stats (ranking, season, matches)
 
-  const now = Date.now();
-  const cacheAge = now - cacheTimestamp;
-  const forceRefresh = req.method === "POST" && req.body?.force === true;
-
-  if (cachedData && cacheAge < CACHE_TTL && !forceRefresh) {
-    return res.status(200).json({
-      ...cachedData,
-      _cache: { hit: true, age: cacheAge, expiresIn: CACHE_TTL - cacheAge }
+// Parse Google News RSS XML
+function parseRSS(xml) {
+  const items = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+  let match;
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const content = match[1];
+    const get = (tag) => {
+      const m = content.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`));
+      return m ? (m[1] || m[2] || "").trim() : "";
+    };
+    
+    const title = get("title");
+    const link = get("link");
+    const pubDate = get("pubDate");
+    const source = get("source");
+    
+    if (title && !title.includes("João Fonseca") && !title.includes("Joao Fonseca") && !title.includes("Fonseca")) continue;
+    
+    // Guess category from title
+    let category = "Notícia";
+    const t = title.toLowerCase();
+    if (t.includes("ranking") || t.includes("posição") || t.includes("posicao") || t.includes("atp")) category = "Ranking";
+    else if (t.includes("vence") || t.includes("perde") || t.includes("derrota") || t.includes("vitória") || t.includes("elimina") || t.includes("sets")) category = "Resultado";
+    else if (t.includes("disse") || t.includes("afirma") || t.includes("elogia") || t.includes("compara") || t.includes("confiante") || t.includes("declarou")) category = "Declaração";
+    else if (t.includes("treino") || t.includes("treina") || t.includes("preparação")) category = "Treino";
+    else if (t.includes("torneio") || t.includes("open") || t.includes("masters") || t.includes("slam") || t.includes("estreia") || t.includes("calendário") || t.includes("próximo")) category = "Torneio";
+    
+    items.push({
+      title,
+      summary: "",
+      source: source || "Google News",
+      url: link,
+      image: "",
+      date: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+      category,
     });
   }
+  return items;
+}
 
+// Fetch news from Google News RSS (FREE)
+async function fetchGoogleNews() {
+  const queries = [
+    "João+Fonseca+tenista",
+    "João+Fonseca+tênis+ATP",
+    "Joao+Fonseca+tennis",
+  ];
+  
+  const allItems = [];
+  const seenTitles = new Set();
+  
+  for (const q of queries) {
+    try {
+      const res = await fetch(`https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`, {
+        headers: { "User-Agent": "FonsecaNews/1.0" }
+      });
+      if (!res.ok) continue;
+      const xml = await res.text();
+      const items = parseRSS(xml);
+      for (const item of items) {
+        const key = item.title.toLowerCase().substring(0, 50);
+        if (!seenTitles.has(key)) {
+          seenTitles.add(key);
+          allItems.push(item);
+        }
+      }
+    } catch (e) {
+      console.error("RSS fetch error:", e);
+    }
+  }
+  
+  // Sort by date, newest first
+  allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
+  
+  // Return top 15
+  return allItems.slice(0, 15);
+}
+
+// Fetch player stats from Claude (CHEAP - only ranking, season, matches)
+async function fetchPlayerStats(apiKey) {
   try {
     const today = new Date().toLocaleDateString("pt-BR");
-    
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -32,62 +99,94 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 4000,
+        max_tokens: 500,
         tools: [{ type: "web_search_20250305", name: "web_search" }],
         messages: [{
           role: "user",
-          content: `Hoje é ${today}. Busque TODAS as informações mais recentes sobre João Fonseca, tenista brasileiro. Faça MÚLTIPLAS buscas: "João Fonseca tênis hoje", "João Fonseca notícias", "João Fonseca ranking ATP", "João Fonseca próximo torneio". Priorize notícias das últimas 48 horas. Busque em sites como ESPN, GE, UOL, Lance, O Tempo, CNN Brasil, Olympics.com, Tenis News, ATP Tour.
-
-Responda APENAS com JSON (sem markdown, sem backticks):
-{
-  "player": { "ranking": numero, "rankingChange": N (positivo = subiu, negativo = caiu) },
-  "season": { "wins": N, "losses": N, "titles": N, "year": 2026 },
-  "lastMatch": { "result": "V" ou "D", "score": "6-3 6-4", "opponent": "T. Sobrenome", "tournament": "nome curto", "round": "R1/R2/QF/SF/F" },
-  "nextMatch": { "tournament_category": "ATP 250/500/Masters 1000/Grand Slam", "tournament_name": "nome", "surface": "Saibro/Dura/Grama", "city": "cidade", "country": "país", "date": "YYYY-MM-DD ou vazio", "round": "fase ou vazio" },
-  "news": [{ "title": "em português", "summary": "1-2 frases", "source": "veículo", "url": "OBRIGATÓRIO: URL completa (https://...) da notícia encontrada na busca. Nunca vazio.", "image": "URL da imagem/thumbnail ou vazio", "date": "ISO", "category": "Torneio/Resultado/Treino/Declaração/Ranking/Notícia" }]
-}
-10-15 notícias, mais recente primeiro. IMPORTANTE: faça várias buscas web para encontrar o máximo de notícias recentes. Cada notícia DEVE ter URL real. APENAS JSON.`
+          content: `Hoje é ${today}. Busque APENAS dados factuais do João Fonseca tenista: ranking ATP atual, variação, próximo torneio, último resultado, e record da temporada 2026. Responda APENAS JSON (sem markdown):
+{"player":{"ranking":N,"rankingChange":N},"season":{"wins":N,"losses":N,"titles":N,"year":2026},"lastMatch":{"result":"V ou D","score":"6-3 6-4","opponent":"Sobrenome","tournament":"nome","round":"fase"},"nextMatch":{"tournament_category":"ATP 250/500/Masters 1000/Grand Slam","tournament_name":"nome","surface":"Saibro/Dura/Grama","city":"cidade","country":"país","date":"YYYY-MM-DD ou vazio","round":""}}`
         }]
       }),
     });
 
-    if (!response.ok) {
-      const errData = await response.json();
-      console.error("Anthropic API error:", JSON.stringify(errData));
-      if (cachedData) {
-        return res.status(200).json({ ...cachedData, _cache: { hit: true, stale: true } });
-      }
-      return res.status(response.status).json(errData);
-    }
-
-    const data = await response.json();
+    if (!res.ok) return null;
+    const data = await res.json();
     let text = "";
-    if (data.content) {
-      for (const block of data.content) {
-        if (block.type === "text" && block.text) text += block.text;
+    if (data.content) for (const b of data.content) if (b.type === "text" && b.text) text += b.text;
+    let cleaned = text.trim().replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
+    const os = cleaned.indexOf("{"), oe = cleaned.lastIndexOf("}");
+    if (os !== -1 && oe !== -1) return JSON.parse(cleaned.substring(os, oe + 1));
+  } catch (e) {
+    console.error("Stats fetch error:", e);
+  }
+  return null;
+}
+
+export default async function handler(req, res) {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return res.status(500).json({ error: "API key not configured" });
+
+  const now = Date.now();
+  const forceRefresh = req.method === "POST" && req.body?.force === true;
+
+  // Check news cache
+  const newsExpired = !newsCache || (now - newsCacheTimestamp) >= NEWS_CACHE_TTL || forceRefresh;
+  const statsExpired = !statsCache || (now - statsCacheTimestamp) >= STATS_CACHE_TTL || forceRefresh;
+
+  try {
+    // Fetch news from Google RSS (FREE) if expired
+    let news = newsCache;
+    if (newsExpired) {
+      const freshNews = await fetchGoogleNews();
+      if (freshNews.length > 0) {
+        news = freshNews;
+        newsCache = freshNews;
+        newsCacheTimestamp = now;
       }
     }
 
-    let cleaned = text.trim().replace(/```json\s*/g, "").replace(/```\s*/g, "").trim();
-    const objStart = cleaned.indexOf("{");
-    const objEnd = cleaned.lastIndexOf("}");
-    
-    if (objStart !== -1 && objEnd !== -1) {
-      const parsed = JSON.parse(cleaned.substring(objStart, objEnd + 1));
-      if (parsed?.news?.length) {
-        parsed.news.sort((a, b) => new Date(b.date) - new Date(a.date));
-        cachedData = parsed;
-        cacheTimestamp = now;
-        return res.status(200).json({ ...parsed, _cache: { hit: false, freshAt: now } });
+    // Fetch stats from Claude (CHEAP) if expired - only every 6 hours
+    let stats = statsCache;
+    if (statsExpired && apiKey) {
+      const freshStats = await fetchPlayerStats(apiKey);
+      if (freshStats) {
+        stats = freshStats;
+        statsCache = freshStats;
+        statsCacheTimestamp = now;
       }
     }
-    throw new Error("Could not parse response");
+
+    // Combine
+    const result = {
+      news: news || [],
+      player: stats?.player || null,
+      season: stats?.season || null,
+      lastMatch: stats?.lastMatch || null,
+      nextMatch: stats?.nextMatch || null,
+      _cache: {
+        newsAge: now - newsCacheTimestamp,
+        statsAge: now - statsCacheTimestamp,
+        newsHit: !newsExpired,
+        statsHit: !statsExpired,
+      }
+    };
+
+    res.status(200).json(result);
 
   } catch (error) {
-    console.error("Fetch error:", error);
-    if (cachedData) {
-      return res.status(200).json({ ...cachedData, _cache: { hit: true, stale: true } });
+    console.error("Handler error:", error);
+    // Return stale cache if available
+    if (newsCache) {
+      res.status(200).json({
+        news: newsCache,
+        player: statsCache?.player || null,
+        season: statsCache?.season || null,
+        lastMatch: statsCache?.lastMatch || null,
+        nextMatch: statsCache?.nextMatch || null,
+        _cache: { stale: true }
+      });
+    } else {
+      res.status(500).json({ error: "Failed to fetch data" });
     }
-    res.status(500).json({ error: "Failed to fetch news" });
   }
 }
