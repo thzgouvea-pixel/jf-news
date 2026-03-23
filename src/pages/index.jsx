@@ -130,8 +130,6 @@ const NextDuelCard = ({ match, player, isLive }) => {
           </div>
           <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{oppName || "A definir"}</p>
           {oppCountry && <p style={{ margin: "2px 0 0", fontSize: 11, color: "#888", fontFamily: "'Inter', sans-serif" }}>{oppCountry}</p>}
-          {oppRanking && <div style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.08)", borderRadius: 6, padding: "2px 8px", marginTop: 4 }}><span style={{ fontSize: 11, fontWeight: 800, color: "#ccc", fontFamily: "'Inter', sans-serif" }}>#{oppRanking}</span><span style={{ fontSize: 9, color: "#888", fontFamily: "'Inter', sans-serif" }}>ATP</span></div>}
-        </div>
       </div>
       <div style={{ display: "flex", justifyContent: "center", gap: 16, padding: "10px 20px 16px", borderTop: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap" }}>
         <span style={{ fontSize: 12, color: "#aaa", fontFamily: "'Inter', sans-serif" }}>📅 {formatMatchDate(match.date)}</span>
