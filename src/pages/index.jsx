@@ -92,39 +92,56 @@ const LastMatchBar = ({ match }) => {
 };
 
 // ===== MAIN COMPONENTS =====
-const NextMatchBanner = ({ match, isLive }) => {
+const NextDuelCard = ({ match, player, isLive }) => {
   if (!match) return null;
   const sc = surfaceColorMap[match.surface] || ACCENT;
-  const se = surfaceEmoji[match.surface] || "🎾";
+  const joaoImg = "https://api.sofascore.app/api/v1/team/403869/image";
+  const oppImg = match.opponent_id ? `https://api.sofascore.app/api/v1/team/${match.opponent_id}/image` : null;
+  const oppName = match.opponent_name || "";
+  const oppRanking = match.opponent_ranking;
+  const oppCountry = match.opponent_country || "";
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", background: `linear-gradient(135deg, ${sc}08, ${sc}15)`, borderBottom: `1px solid ${sc}30`, borderLeft: `1px solid ${BORDER}`, borderRight: `1px solid ${BORDER}`, padding: "10px 24px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 6 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ background: `${sc}18`, border: `1.5px solid ${sc}40`, borderRadius: 6, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{se}</div>
-          <div>
-            <p style={{ margin: 0, fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: sc, fontFamily: "'Inter', -apple-system, sans-serif" }}>Próxima partida</p>
-            <p style={{ margin: "1px 0 0", fontSize: 13.5, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{match.tournament_category || ""}</p>
-            {match.tournament_name && <p style={{ margin: "1px 0 0", fontSize: 10.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>{match.tournament_name}</p>}
-          </div>
+    <div style={{ maxWidth: 680, margin: "0 auto", background: "linear-gradient(135deg, #0a0a1a 0%, #16213e 100%)", borderLeft: `1px solid ${BORDER}`, borderRight: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}`, position: "relative", overflow: "hidden" }}>
+      <div style={{ height: 3, background: "linear-gradient(90deg, #009739, #FEDD00)" }} />
+      <div style={{ textAlign: "center", padding: "16px 20px 8px" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: `${sc}25`, borderRadius: 20, padding: "3px 12px", border: `1px solid ${sc}40` }}>
+          <div style={{ width: 6, height: 6, borderRadius: "50%", background: sc }} />
+          <span style={{ fontSize: 10.5, fontWeight: 700, color: sc, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>{match.surface}</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, background: `${sc}15`, borderRadius: 5, padding: "2px 8px" }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: sc }} />
-            <span style={{ fontSize: 10.5, fontWeight: 600, color: sc, fontFamily: "'Inter', -apple-system, sans-serif" }}>{match.surface}</span>
+        <p style={{ margin: "8px 0 2px", fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{match.tournament_category || match.tournament_name || "Próxima Partida"}</p>
+        {match.tournament_name && match.tournament_category && <p style={{ margin: 0, fontSize: 12, color: "#888", fontFamily: "'Inter', sans-serif" }}>{match.tournament_name}</p>}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 12, padding: "16px 20px" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 80, height: 80, borderRadius: "50%", margin: "0 auto 8px", overflow: "hidden", background: "rgba(255,255,255,0.05)", border: "2px solid rgba(0,168,89,0.4)", boxShadow: "0 0 20px rgba(0,168,89,0.15)" }}>
+            <img src={joaoImg} alt="João Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { e.target.style.display = "none"; }} />
           </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-            <span style={{ fontSize: 11.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', -apple-system, sans-serif" }}>{match.city}{match.country ? `, ${match.country}` : ""}</span>
-            <span style={{ fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{formatMatchDate(match.date)}{match.round ? ` · ${match.round}` : ""}</span>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>J. Fonseca</p>
+          <p style={{ margin: "2px 0 0", fontSize: 11, color: "#888", fontFamily: "'Inter', sans-serif" }}>🇧🇷</p>
+          {player && <div style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(0,168,89,0.15)", borderRadius: 6, padding: "2px 8px", marginTop: 4 }}><span style={{ fontSize: 11, fontWeight: 800, color: "#00E676", fontFamily: "'Inter', sans-serif" }}>#{player.ranking}</span><span style={{ fontSize: 9, color: "#888", fontFamily: "'Inter', sans-serif" }}>ATP</span></div>}
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 22, fontWeight: 900, color: "rgba(255,255,255,0.12)", fontFamily: "'Inter', sans-serif" }}>VS</span>
+          {match.h2h && <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.05)", padding: "4px 10px", borderRadius: 8 }}><span style={{ fontSize: 13, fontWeight: 700, color: "#FFCB05", fontFamily: "'Inter', sans-serif" }}>{match.h2h.joao}</span><span style={{ fontSize: 10, color: "#555" }}>-</span><span style={{ fontSize: 13, fontWeight: 700, color: "#FFCB05", fontFamily: "'Inter', sans-serif" }}>{match.h2h.opponent}</span><span style={{ fontSize: 8, color: "#666", fontWeight: 600, textTransform: "uppercase", marginLeft: 2, fontFamily: "'Inter', sans-serif" }}>H2H</span></div>}
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 80, height: 80, borderRadius: "50%", margin: "0 auto 8px", overflow: "hidden", background: "rgba(255,255,255,0.05)", border: "2px solid rgba(255,255,255,0.1)" }}>
+            {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { e.target.style.display = "none"; }} /> : <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32 }}>🎾</div>}
           </div>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{oppName || "A definir"}</p>
+          {oppCountry && <p style={{ margin: "2px 0 0", fontSize: 11, color: "#888", fontFamily: "'Inter', sans-serif" }}>{oppCountry}</p>}
+          {oppRanking && <div style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.08)", borderRadius: 6, padding: "2px 8px", marginTop: 4 }}><span style={{ fontSize: 11, fontWeight: 800, color: "#ccc", fontFamily: "'Inter', sans-serif" }}>#{oppRanking}</span><span style={{ fontSize: 9, color: "#888", fontFamily: "'Inter', sans-serif" }}>ATP</span></div>}
         </div>
       </div>
-      {!isLive && <p style={{ margin: "4px 0 0 36px", fontSize: 10, color: TEXT_DIM, fontStyle: "italic", fontFamily: "'Inter', -apple-system, sans-serif" }}>Dados de exemplo</p>}
+      <div style={{ display: "flex", justifyContent: "center", gap: 16, padding: "10px 20px 16px", borderTop: "1px solid rgba(255,255,255,0.06)", flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12, color: "#aaa", fontFamily: "'Inter', sans-serif" }}>📅 {formatMatchDate(match.date)}</span>
+        <span style={{ fontSize: 12, color: "#aaa", fontFamily: "'Inter', sans-serif" }}>📍 {match.city}{match.country ? `, ${match.country}` : ""}</span>
+        {match.round && <span style={{ fontSize: 12, color: "#aaa", fontFamily: "'Inter', sans-serif" }}>🏟️ {match.round}</span>}
+      </div>
+      {!isLive && <p style={{ margin: 0, padding: "0 20px 10px", fontSize: 10, color: "#555", fontStyle: "italic", fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Dados de exemplo</p>}
     </div>
   );
 };
-
-const Skeleton = () => (<div>{[...Array(5)].map((_, i) => (<div key={i} style={{ background: BG_WHITE, padding: "20px 24px", borderBottom: `1px solid ${BORDER}`, animation: "pulse 1.8s ease-in-out infinite", animationDelay: `${i * .12}s` }}><div style={{ display: "flex", gap: 8, marginBottom: 10 }}><div style={{ height: 20, width: 70, background: "#f0f0f0", borderRadius: 4 }} /><div style={{ height: 20, width: 90, background: "#f5f5f5", borderRadius: 4 }} /></div><div style={{ height: 18, width: "85%", background: "#f0f0f0", borderRadius: 4, marginBottom: 8 }} /><div style={{ height: 14, width: "60%", background: "#f5f5f5", borderRadius: 4 }} /></div>))}</div>);
-
 const NewsCard = ({ item, index }) => {
   const [h, setH] = useState(false);
   const [imgErr, setImgErr] = useState(false);
@@ -375,7 +392,7 @@ export default function JoaoFonsecaNews() {
       </div>
 
       {/* NEXT MATCH */}
-      <NextMatchBanner match={dm} isLive={isLive} />
+      <NextDuelCard match={dm} player={dp} isLive={isLive} />
 
       {/* INSTALL POPUP */}
       {showInstallPopup && !popupDismissed && (
