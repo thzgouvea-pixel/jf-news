@@ -395,7 +395,12 @@ export default function JoaoFonsecaNews() {
           &quot;{JF_QUOTES[Math.floor(Date.now() / 1800000) % JF_QUOTES.length]}&quot;
         </p>
       </div>
-
+{/* REFRESH BUTTON */}
+      <button onClick={handleRefresh} disabled={loading} style={{ position: "fixed", bottom: 16, right: 16, width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)", color: loading ? "rgba(255,255,255,0.3)" : "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", zIndex: 50, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", transition: "all 0.2s" }} title="Atualizar dados">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={loading ? { animation: "spin 1s linear infinite" } : {}}>
+          <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
+        </svg>
+      </button>
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
 
       {showInstallPopup && !popupDismissed && (
