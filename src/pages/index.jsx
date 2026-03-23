@@ -95,7 +95,7 @@ const LastMatchBar = ({ match }) => {
 const NextDuelCard = ({ match, player, isLive }) => {
   if (!match) return null;
   const sc = surfaceColorMap[match.surface] || ACCENT;
-  const joaoImg = "https://api.sofascore.app/api/v1/team/403869/image";
+  const joaoImg = "https://api.sofascore.app/api/v1/player/403869/image";
   const oppImg = match.opponent_id ? `https://api.sofascore.app/api/v1/team/${match.opponent_id}/image` : null;
   const oppName = match.opponent_name || "";
   const oppRanking = match.opponent_ranking;
@@ -111,7 +111,7 @@ const NextDuelCard = ({ match, player, isLive }) => {
         <p style={{ margin: "8px 0 2px", fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{match.tournament_category || match.tournament_name || "Próxima Partida"}</p>
         {match.tournament_name && match.tournament_category && <p style={{ margin: 0, fontSize: 12, color: "#888", fontFamily: "'Inter', sans-serif" }}>{match.tournament_name}</p>}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 12, padding: "16px 20px" }}>
+      display: "grid", gridTemplateColumns: "1fr 60px 1fr", alignItems: "start", gap: 8, padding: "16px 20px" }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ width: 80, height: 80, borderRadius: "50%", margin: "0 auto 8px", overflow: "hidden", background: "rgba(255,255,255,0.05)", border: "2px solid rgba(0,168,89,0.4)", boxShadow: "0 0 20px rgba(0,168,89,0.15)" }}>
             <img src={joaoImg} alt="João Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={(e) => { e.target.style.display = "none"; }} />
