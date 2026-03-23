@@ -248,7 +248,7 @@ export default function JoaoFonsecaNews() {
     if (!descMeta) { descMeta = document.createElement("meta"); descMeta.name = "description"; document.head.appendChild(descMeta); }
     descMeta.content = "Acompanhe as últimas notícias do João Fonseca, tenista brasileiro. Ranking ATP, resultados, próximos torneios e declarações.";
     // Google Analytics (replace GA_ID with your ID, e.g. "G-XXXXXXXXXX")
-    const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "";
+    const GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-J5CD56E1VX";
     if (GA_ID && !document.querySelector(`script[src*="googletagmanager"]`)) {
       const gaScript = document.createElement("script");
       gaScript.async = true;
