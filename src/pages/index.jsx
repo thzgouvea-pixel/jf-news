@@ -1,4 +1,4 @@
-// v8 final
+// v9 rival-banner
 import { useState, useEffect, useRef } from "react";
 
 const ACCENT = "#00A859";
@@ -117,6 +117,53 @@ var LastMatchBar = function(props) {
       <span style={{ fontSize: 10, fontWeight: 700, color: w ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif", background: w ? "#EAFAF3" : "#FEF0F0", padding: "1px 6px", borderRadius: 3 }}>{w ? "V" : "D"}</span>
       <span style={{ fontSize: 12.5, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>Fonseca <span style={{ color: w ? GREEN : RED }}>{match.score}</span> {match.opponent}</span>
       <span style={{ fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{match.tournament}{match.round ? (" · " + match.round) : ""}</span>
+    </div>
+  );
+};
+
+// ===== RIVAL BANNER (Learner Tien) =====
+var RIVAL_DATA = {
+  name: "Learner Tien",
+  country: "🇺🇸",
+  countryName: "EUA",
+  ranking: 21,
+  age: 20,
+  titles: 1,
+  bestRanking: 21,
+  sofascoreId: 412818,
+  atpCode: "t0ha",
+  h2h: { joao: 1, tien: 1 },
+  description: "Maior rival da nova geração"
+};
+
+var RivalBanner = function() {
+  var r = RIVAL_DATA;
+  var tienImg = "https://www.atptour.com/-/media/alias/player-headshot/" + r.atpCode;
+  return (
+    <div style={{ padding: "12px 24px", background: "linear-gradient(135deg, #f8f0f0 0%, #fff5f5 100%)", borderBottom: "1px solid " + BORDER, cursor: "default" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {/* Rival photo */}
+        <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "#f0f0f0", border: "2px solid #E6394620", flexShrink: 0 }}>
+          <img src={tienImg} alt={r.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44"><rect width="44" height="44" fill="#1a2a3a"/><text x="22" y="28" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="16" fill="#E63946">LT</text></svg>'); }} />
+        </div>
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: RED, fontFamily: "'Inter', sans-serif", background: "#FEF0F0", padding: "2px 7px", borderRadius: 4 }}>Rival</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{r.name}</span>
+            <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{r.country}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: RED, fontFamily: "'Inter', sans-serif" }}>{"#" + r.ranking + " ATP"}</span>
+            <span style={{ fontSize: 10, color: TEXT_DIM }}>·</span>
+            <span style={{ fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{r.titles + " título ATP"}</span>
+            <span style={{ fontSize: 10, color: TEXT_DIM }}>·</span>
+            <span style={{ fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{"H2H: " + r.h2h.joao + "-" + r.h2h.tien}</span>
+            <span style={{ fontSize: 10, color: TEXT_DIM }}>·</span>
+            <span style={{ fontSize: 10.5, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif", fontStyle: "italic" }}>{r.description}</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -322,7 +369,8 @@ var buildFeed = function(newsItems, season, lastMatch) {
   var elements = [];
   var inserts = [
     { at: 3, component: <SeasonBar key="season-bar" season={season} /> },
-    { at: 6, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
+    { at: 5, component: <RivalBanner key="rival-bar" /> },
+    { at: 7, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} />);
@@ -330,7 +378,8 @@ var buildFeed = function(newsItems, season, lastMatch) {
     if (insert) elements.push(insert.component);
   });
   if (newsItems.length < 3 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
-  if (newsItems.length < 6 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
+  if (newsItems.length < 5) elements.push(<RivalBanner key="rival-bar" />);
+  if (newsItems.length < 7 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
   return elements;
 };
 
