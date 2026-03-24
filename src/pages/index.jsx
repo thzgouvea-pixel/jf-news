@@ -455,6 +455,7 @@ export default function JoaoFonsecaNews() {
   var _sb = useState(false); var showBio = _sb[0]; var setShowBio = _sb[1];
   var _st = useState(false); var showTitles = _st[0]; var setShowTitles = _st[1];
   var _ssh = useState(false); var showShare = _ssh[0]; var setShowShare = _ssh[1];
+  var _sm = useState(false); var showMenu = _sm[0]; var setShowMenu = _sm[1];
   var initDone = useRef(false);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 15000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -622,6 +623,75 @@ export default function JoaoFonsecaNews() {
 
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
+
+      {/* EXPANDABLE MENU */}
+      <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
+        <button onClick={function() { setShowMenu(!showMenu); }} style={{ width: "100%", padding: "12px 24px", background: showMenu ? "#F8F9FA" : BG_WHITE, border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "background 0.2s" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14 }}>☰</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em" }}>Explorar</span>
+          </div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEXT_DIM} strokeWidth="2.5" strokeLinecap="round" style={{ transition: "transform 0.3s", transform: showMenu ? "rotate(180deg)" : "rotate(0)" }}>
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+
+        {showMenu && (
+          <div style={{ padding: "8px 16px 12px", borderBottom: "1px solid " + BORDER, animation: "fadeIn 0.25s ease" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+
+              <button onClick={function() { setShowBio(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>👤</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Biografia</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Conheça o João</span>
+                </div>
+              </button>
+
+              <button onClick={function() { setShowTitles(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🏆</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Conquistas</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Títulos e recordes</span>
+                </div>
+              </button>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, opacity: 0.5 }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🎬</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Vídeos</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Em breve</span>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, opacity: 0.5 }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>💬</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Fórum</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Em breve</span>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, opacity: 0.5 }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>📝</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Blog</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Em breve</span>
+                </div>
+              </div>
+
+              <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, textDecoration: "none", cursor: "pointer", transition: "background 0.15s" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>📸</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Instagram</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>@joaoffonseca</span>
+                </div>
+              </a>
+
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* INSTALL POPUP - REDESIGNED */}
       {showInstallPopup && !popupDismissed && (function() {
