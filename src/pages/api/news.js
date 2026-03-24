@@ -1,23 +1,34 @@
-// ===== FONSECA NEWS - API v4 - ZERO CLAUDE COST =====
-// Ranking: SofaScore via RapidAPI (free, 500 req/month)
-// Matches: SofaScore via RapidAPI (free, same quota)
-// News: Google News RSS (free, unlimited)
+// ===== FONSECA NEWS - API v5 - CACHE INTELIGENTE =====
+// Ranking: SofaScore via RapidAPI (1x/dia via cron = ~30 req/mês)
+// Matches: SofaScore via RapidAPI (1x/dia via cron = ~150 req/mês max)
+// News: Google News RSS (free, unlimited, every 30 min)
+// Total SofaScore: ~180/mês (de 500 disponíveis)
 
 const FONSECA_TEAM_ID = 403869;
 
-// Cache
-let cache = { news: null, newsAt: 0, ranking: null, rankingAt: 0, lastMatch: null, lastMatchAt: 0 };
-const NEWS_TTL = 30 * 60 * 1000;       // 30 min
-const RANKING_TTL = 12 * 60 * 60 * 1000; // 12 hours
-const MATCH_TTL = 12 * 60 * 60 * 1000;   // 12 hours
+// ===== PERSISTENT CACHE (survives between requests) =====
+// In Vercel serverless, global vars persist while the function is "warm"
+// When it goes cold, we fall back to fixed data — no API call wasted
+let cache = {
+  news: null,
+  newsAt: 0,
+  ranking: null,
+  rankingAt: 0,
+  lastMatch: null,
+  lastMatchAt: 0,
+  cronLastRun: 0
+};
 
-// Fixed season data (update manually when needed)
+// TTLs
+const NEWS_TTL = 30 * 60 * 1000;         // 30 min (RSS is free)
+const SOFASCORE_TTL = 23 * 60 * 60 * 1000; // 23 hours (only via cron)
+
+// ===== FIXED DATA (update manually when needed) =====
+// These serve as fallback when SofaScore quota is exhausted or cache is cold
 const SEASON_DATA = { wins: 5, losses: 5, titles: 1, year: 2026 };
 
-// Fixed player ranking (update weekly on Mondays when ATP ranking changes)
 const PLAYER_DATA = { ranking: 39, rankingChange: -4, points: 1135, bestRanking: 24 };
 
-// Fixed next tournament data (update manually between tournaments)
 const NEXT_TOURNAMENT = {
   tournament_category: "Masters 1000",
   tournament_name: "Monte Carlo Masters",
@@ -28,7 +39,7 @@ const NEXT_TOURNAMENT = {
   round: ""
 };
 
-// ===== GOOGLE NEWS RSS (FREE) =====
+// ===== GOOGLE NEWS RSS (FREE, UNLIMITED) =====
 function parseRSS(xml) {
   const items = [];
   const itemRegex = /<item>([\s\S]*?)<\/item>/g;
@@ -51,7 +62,15 @@ function parseRSS(xml) {
     else if (t.includes("disse") || t.includes("afirma") || t.includes("elogia") || t.includes("confiante") || t.includes("declarou")) category = "Declaração";
     else if (t.includes("treino") || t.includes("preparação")) category = "Treino";
     else if (t.includes("torneio") || t.includes("open") || t.includes("masters") || t.includes("estreia")) category = "Torneio";
-    items.push({ title, summary: "", source: source || "Google News", url: link, image: "", date: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(), category });
+    items.push({
+      title,
+      summary: "",
+      source: source || "Google News",
+      url: link,
+      image: "",
+      date: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+      category
+    });
   }
   return items;
 }
@@ -62,36 +81,46 @@ async function fetchGoogleNews() {
   const seenTitles = new Set();
   for (const q of queries) {
     try {
-      const res = await fetch(`https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`, { headers: { "User-Agent": "FonsecaNews/1.0" } });
+      const res = await fetch(
+        `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`,
+        { headers: { "User-Agent": "FonsecaNews/1.0" } }
+      );
       if (!res.ok) continue;
       const xml = await res.text();
       for (const item of parseRSS(xml)) {
         const key = item.title.toLowerCase().substring(0, 50);
-        if (!seenTitles.has(key)) { seenTitles.add(key); allItems.push(item); }
+        if (!seenTitles.has(key)) {
+          seenTitles.add(key);
+          allItems.push(item);
+        }
       }
-    } catch (e) { console.error("RSS error:", e); }
+    } catch (e) {
+      console.error("RSS error:", e);
+    }
   }
   allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
   return allItems.slice(0, 15);
 }
 
-// ===== SOFASCORE RANKING VIA RAPIDAPI =====
+// ===== SOFASCORE VIA RAPIDAPI (ONLY CALLED BY CRON) =====
 async function fetchRanking(apiKey) {
   if (!apiKey) return null;
   try {
-    const res = await fetch(`https://sofascore6.p.rapidapi.com/api/sofascore/v1/team/rankings?team_id=${FONSECA_TEAM_ID}`, {
-      headers: {
-        "Content-Type": "application/json",
-        "x-rapidapi-host": "sofascore6.p.rapidapi.com",
-        "x-rapidapi-key": apiKey
+    const res = await fetch(
+      `https://sofascore6.p.rapidapi.com/api/sofascore/v1/team/rankings?team_id=${FONSECA_TEAM_ID}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-rapidapi-host": "sofascore6.p.rapidapi.com",
+          "x-rapidapi-key": apiKey
+        }
       }
-    });
+    );
     if (!res.ok) {
       console.error("Ranking API error:", res.status);
       return null;
     }
     const data = await res.json();
-    // Could be array or object with rankings
     let rankings = Array.isArray(data) ? data : data.rankings;
     if (rankings && rankings.length > 0) {
       const r = rankings[0];
@@ -105,27 +134,31 @@ async function fetchRanking(apiKey) {
         rankingChange: (r.previousRanking || 0) - (r.ranking || 0)
       };
     }
-  } catch (e) { console.error("Ranking error:", e); }
+  } catch (e) {
+    console.error("Ranking error:", e);
+  }
   return null;
 }
 
-// ===== LAST MATCH VIA RAPIDAPI =====
 async function fetchLastMatch(apiKey) {
   if (!apiKey) return null;
   try {
-    // Check last 5 days for Fonseca's most recent match
-    for (let i = 0; i < 5; i++) {
+    // Only check last 3 days (reduced from 5 to save API calls)
+    for (let i = 0; i < 3; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const date = d.toISOString().split("T")[0];
-      
-      const res = await fetch(`https://sofascore6.p.rapidapi.com/api/sofascore/v1/match/list?date=${date}&sport_slug=tennis`, {
-        headers: {
-          "Content-Type": "application/json",
-          "x-rapidapi-host": "sofascore6.p.rapidapi.com",
-          "x-rapidapi-key": apiKey
+
+      const res = await fetch(
+        `https://sofascore6.p.rapidapi.com/api/sofascore/v1/match/list?date=${date}&sport_slug=tennis`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-rapidapi-host": "sofascore6.p.rapidapi.com",
+            "x-rapidapi-key": apiKey
+          }
         }
-      });
+      );
       if (!res.ok) continue;
       const data = await res.json();
       if (!Array.isArray(data)) continue;
@@ -152,12 +185,15 @@ async function fetchLastMatch(apiKey) {
           result: (fScore?.current || 0) > (oScore?.current || 0) ? "V" : "D",
           score: periods.join(" "),
           opponent: opponent?.shortName || opponent?.name || "?",
+          opponent_id: (isFonsecaHome ? awayId : homeId) || null,
           tournament: m.tournament?.name || "?",
           round: m.roundInfo?.name || ""
         };
       }
     }
-  } catch (e) { console.error("LastMatch error:", e); }
+  } catch (e) {
+    console.error("LastMatch error:", e);
+  }
   return null;
 }
 
@@ -165,62 +201,109 @@ async function fetchLastMatch(apiKey) {
 export default async function handler(req, res) {
   const rapidApiKey = process.env.RAPIDAPI_KEY;
   const now = Date.now();
-  const forceRefresh = req.method === "POST" && req.body?.force === true;
+
+  // Check if this is a cron call (daily SofaScore update)
+  const isCron = req.method === "POST" && req.body?.cron === true;
+  const isForce = req.method === "POST" && req.body?.force === true;
 
   try {
-    // 1. News (Google RSS - free)
-    if (!cache.news || (now - cache.newsAt) >= NEWS_TTL || forceRefresh) {
+    // ===== 1. NEWS (Google RSS - always free) =====
+    if (!cache.news || (now - cache.newsAt) >= NEWS_TTL || isForce) {
+      console.log("[news] Fetching Google RSS...");
       const fresh = await fetchGoogleNews();
-      if (fresh.length > 0) { cache.news = fresh; cache.newsAt = now; }
+      if (fresh.length > 0) {
+        cache.news = fresh;
+        cache.newsAt = now;
+      }
+    } else {
+      console.log("[news] Using cached news (" + Math.round((now - cache.newsAt) / 60000) + "min old)");
     }
 
-    // 2. Ranking (RapidAPI SofaScore - 1 req every 12h = ~60/month)
-    if (!cache.ranking || (now - cache.rankingAt) >= RANKING_TTL || forceRefresh) {
-      const fresh = await fetchRanking(rapidApiKey);
-      if (fresh) { cache.ranking = fresh; cache.rankingAt = now; }
+    // ===== 2. SOFASCORE DATA (ONLY via cron or if cache is very old) =====
+    const sofascoreExpired = !cache.ranking || (now - cache.rankingAt) >= SOFASCORE_TTL;
+
+    if (isCron || isForce) {
+      // Cron call: update SofaScore data
+      console.log("[cron] Updating SofaScore data...");
+
+      const freshRanking = await fetchRanking(rapidApiKey);
+      if (freshRanking) {
+        cache.ranking = freshRanking;
+        cache.rankingAt = now;
+        console.log("[cron] Ranking updated: #" + freshRanking.ranking);
+      } else {
+        console.log("[cron] Ranking fetch failed, keeping cached/fixed data");
+      }
+
+      const freshMatch = await fetchLastMatch(rapidApiKey);
+      if (freshMatch) {
+        cache.lastMatch = freshMatch;
+        cache.lastMatchAt = now;
+        console.log("[cron] Last match updated: " + freshMatch.result + " vs " + freshMatch.opponent);
+      } else {
+        console.log("[cron] No recent match found");
+      }
+
+      cache.cronLastRun = now;
+    } else if (sofascoreExpired) {
+      // Normal request but cache is very old (>23h) — DON'T call SofaScore
+      // Just use fixed data as fallback
+      console.log("[cache] SofaScore cache expired, using fixed fallback data");
+    } else {
+      console.log("[cache] Using cached SofaScore data (" + Math.round((now - cache.rankingAt) / 3600000) + "h old)");
     }
 
-    // 3. Last match (RapidAPI SofaScore - max 5 req every 12h = ~10/day worst case, cached)
-    if (!cache.lastMatch || (now - cache.lastMatchAt) >= MATCH_TTL || forceRefresh) {
-      const fresh = await fetchLastMatch(rapidApiKey);
-      if (fresh) { cache.lastMatch = fresh; cache.lastMatchAt = now; }
-    }
+    // ===== BUILD RESPONSE =====
+    const playerData = cache.ranking ? {
+      ranking: cache.ranking.ranking,
+      rankingChange: cache.ranking.rankingChange,
+      points: cache.ranking.points,
+      bestRanking: cache.ranking.bestRanking
+    } : PLAYER_DATA;
 
     const result = {
       news: cache.news || [],
-      player: cache.ranking ? {
-        ranking: cache.ranking.ranking,
-        rankingChange: cache.ranking.rankingChange,
-        points: cache.ranking.points,
-        bestRanking: cache.ranking.bestRanking
-      } : PLAYER_DATA,
+      player: playerData,
       season: SEASON_DATA,
       lastMatch: cache.lastMatch || null,
       nextMatch: NEXT_TOURNAMENT,
       _cache: {
-        newsHit: !(!cache.news || (now - cache.newsAt) >= NEWS_TTL || forceRefresh),
-        rankingHit: !(!cache.ranking || (now - cache.rankingAt) >= RANKING_TTL || forceRefresh),
-        matchHit: !(!cache.lastMatch || (now - cache.lastMatchAt) >= MATCH_TTL || forceRefresh),
-        source: "sofascore+google_rss",
+        newsAge: cache.newsAt ? Math.round((now - cache.newsAt) / 60000) + "min" : "none",
+        rankingAge: cache.rankingAt ? Math.round((now - cache.rankingAt) / 3600000) + "h" : "fixed",
+        matchAge: cache.lastMatchAt ? Math.round((now - cache.lastMatchAt) / 3600000) + "h" : "none",
+        lastCron: cache.cronLastRun ? new Date(cache.cronLastRun).toISOString() : "never",
+        source: "sofascore_cron+google_rss",
+        sofascoreCalls: isCron ? "yes (cron)" : "no (cached)",
         claudeCost: "$0.00"
       }
     };
+
+    // If cron call, return simple confirmation
+    if (isCron) {
+      return res.status(200).json({
+        ok: true,
+        message: "Cron update complete",
+        ranking: playerData.ranking,
+        lastMatch: cache.lastMatch ? (cache.lastMatch.result + " vs " + cache.lastMatch.opponent) : "none",
+        _cache: result._cache
+      });
+    }
 
     res.status(200).json(result);
 
   } catch (error) {
     console.error("Handler error:", error);
-    if (cache.news) {
-      res.status(200).json({
-        news: cache.news,
-        player: cache.ranking ? { ranking: cache.ranking.ranking, rankingChange: cache.ranking.rankingChange } : PLAYER_DATA,
-        season: SEASON_DATA,
-        lastMatch: cache.lastMatch || null,
-        nextMatch: NEXT_TOURNAMENT,
-        _cache: { stale: true, source: "sofascore+google_rss", claudeCost: "$0.00" }
-      });
-    } else {
-      res.status(500).json({ error: "Failed to fetch data" });
-    }
+    // Always return something useful
+    res.status(200).json({
+      news: cache.news || [],
+      player: cache.ranking ? {
+        ranking: cache.ranking.ranking,
+        rankingChange: cache.ranking.rankingChange
+      } : PLAYER_DATA,
+      season: SEASON_DATA,
+      lastMatch: cache.lastMatch || null,
+      nextMatch: NEXT_TOURNAMENT,
+      _cache: { error: true, source: "fallback", claudeCost: "$0.00" }
+    });
   }
 }
