@@ -121,7 +121,7 @@ var LastMatchBar = function(props) {
   );
 };
 
-// ===== RIVAL BANNER (Learner Tien) =====
+// ===== RIVAL BANNER (Learner Tien) - REDESIGNED =====
 var RIVAL_DATA = {
   name: "Learner Tien",
   country: "🇺🇸",
@@ -133,36 +133,59 @@ var RIVAL_DATA = {
   sofascoreId: 412818,
   atpCode: "t0ha",
   h2h: { joao: 1, tien: 1 },
-  description: "Maior rival da nova geração"
 };
 
 var RivalBanner = function() {
   var r = RIVAL_DATA;
   var tienImg = "https://www.atptour.com/-/media/alias/player-headshot/" + r.atpCode;
+  var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   return (
-    <div style={{ padding: "12px 24px", background: "linear-gradient(135deg, #f8f0f0 0%, #fff5f5 100%)", borderBottom: "1px solid " + BORDER, cursor: "default" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {/* Rival photo */}
-        <div style={{ width: 44, height: 44, borderRadius: "50%", overflow: "hidden", background: "#f0f0f0", border: "2px solid #E6394620", flexShrink: 0 }}>
-          <img src={tienImg} alt={r.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44"><rect width="44" height="44" fill="#1a2a3a"/><text x="22" y="28" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="16" fill="#E63946">LT</text></svg>'); }} />
-        </div>
-        {/* Info */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: RED, fontFamily: "'Inter', sans-serif", background: "#FEF0F0", padding: "2px 7px", borderRadius: 4 }}>Rival</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{r.name}</span>
-            <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{r.country}</span>
+    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderBottom: "1px solid " + BORDER, padding: "18px 24px", position: "relative", overflow: "hidden" }}>
+      {/* Decorative elements */}
+      <div style={{ position: "absolute", top: -20, right: -20, width: 100, height: 100, borderRadius: "50%", background: "radial-gradient(circle, rgba(230,57,70,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: -20, left: -20, width: 80, height: 80, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,168,89,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+      {/* Quote */}
+      <p style={{ margin: "0 0 14px", textAlign: "center", fontSize: 11, fontStyle: "italic", color: "rgba(255,255,255,0.35)", fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "0.02em" }}>
+        &quot;Porque todo ídolo de verdade precisa de um grande rival&quot;
+      </p>
+
+      {/* Players face-off */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+        {/* João mini */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 42, height: 42, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2px solid " + GREEN + "40", margin: "0 auto 4px" }}>
+            <img src={joaoImg} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 42"><rect width="42" height="42" fill="#1a2a3a"/><text x="21" y="27" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="14" fill="#00A859">JF</text></svg>'); }} />
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: RED, fontFamily: "'Inter', sans-serif" }}>{"#" + r.ranking + " ATP"}</span>
-            <span style={{ fontSize: 10, color: TEXT_DIM }}>·</span>
-            <span style={{ fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{r.titles + " título ATP"}</span>
-            <span style={{ fontSize: 10, color: TEXT_DIM }}>·</span>
-            <span style={{ fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{"H2H: " + r.h2h.joao + "-" + r.h2h.tien}</span>
-            <span style={{ fontSize: 10, color: TEXT_DIM }}>·</span>
-            <span style={{ fontSize: 10.5, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif", fontStyle: "italic" }}>{r.description}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: GREEN, fontFamily: "'Inter', sans-serif" }}>🇧🇷 #39</span>
+        </div>
+
+        {/* VS / H2H */}
+        <div style={{ textAlign: "center", padding: "0 4px" }}>
+          <div style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(255,255,255,0.25)", fontFamily: "'Inter', sans-serif", marginBottom: 4 }}>H2H</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: GREEN, fontFamily: "'Inter', sans-serif" }}>{r.h2h.joao}</span>
+            <div style={{ width: 20, height: 20, borderRadius: "50%", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 7, fontWeight: 900, color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif" }}>VS</span>
+            </div>
+            <span style={{ fontSize: 18, fontWeight: 900, color: RED, fontFamily: "'Inter', sans-serif" }}>{r.h2h.tien}</span>
           </div>
         </div>
+
+        {/* Tien */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 42, height: 42, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2px solid " + RED + "40", margin: "0 auto 4px" }}>
+            <img src={tienImg} alt={r.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 42"><rect width="42" height="42" fill="#1a2a3a"/><text x="21" y="27" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="14" fill="#E63946">LT</text></svg>'); }} />
+          </div>
+          <span style={{ fontSize: 9, fontWeight: 700, color: RED, fontFamily: "'Inter', sans-serif" }}>{r.country + " #" + r.ranking}</span>
+        </div>
+      </div>
+
+      {/* Names */}
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 28, marginTop: 8 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Fonseca</span>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: RED, fontFamily: "'Inter', sans-serif", background: "rgba(230,57,70,0.12)", padding: "2px 8px", borderRadius: 4, border: "1px solid rgba(230,57,70,0.2)" }}>Rivalidade</span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{r.name}</span>
       </div>
     </div>
   );
@@ -368,18 +391,18 @@ var NewsCard = function(props) {
 var buildFeed = function(newsItems, season, lastMatch) {
   var elements = [];
   var inserts = [
-    { at: 3, component: <SeasonBar key="season-bar" season={season} /> },
-    { at: 5, component: <RivalBanner key="rival-bar" /> },
-    { at: 7, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
+    { at: 5, component: <SeasonBar key="season-bar" season={season} /> },
+    { at: 10, component: <RivalBanner key="rival-bar" /> },
+    { at: 15, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} />);
     var insert = inserts.find(function(ins) { return ins.at === i + 1; });
     if (insert) elements.push(insert.component);
   });
-  if (newsItems.length < 3 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
-  if (newsItems.length < 5) elements.push(<RivalBanner key="rival-bar" />);
-  if (newsItems.length < 7 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
+  if (newsItems.length < 5 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
+  if (newsItems.length < 10) elements.push(<RivalBanner key="rival-bar" />);
+  if (newsItems.length < 15 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
   return elements;
 };
 
