@@ -1,4 +1,4 @@
-// v6 mega-update
+// v8 final
 import { useState, useEffect, useRef } from "react";
 
 const ACCENT = "#00A859";
@@ -121,14 +121,14 @@ var LastMatchBar = function(props) {
   );
 };
 
-// ===== REDESIGNED NEXT DUEL CARD =====
+// ===== REDESIGNED NEXT DUEL CARD (compact) =====
 var NextDuelCard = function(props) {
   var match = props.match; var player = props.player; var isLive = props.isLive;
   var countdown = useCountdown(match ? match.date : null);
   if (!match) return null;
   var sc = surfaceColorMap[match.surface] || ACCENT;
   var se = surfaceEmoji[match.surface] || "🎾";
-  var joaoImg = "https://api.sofascore.app/api/v1/player/403869/image";
+  var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   var oppImg = match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null;
   var oppName = match.opponent_name || "";
   var oppRanking = match.opponent_ranking;
@@ -136,9 +136,9 @@ var NextDuelCard = function(props) {
 
   var CountdownBox = function(p) {
     return (
-      <div style={{ textAlign: "center", minWidth: 48 }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'Inter', sans-serif", lineHeight: 1, background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: "8px 6px", border: "1px solid rgba(255,255,255,0.1)" }}>{String(p.value).padStart(2, "0")}</div>
-        <div style={{ fontSize: 9, color: "#888", fontFamily: "'Inter', sans-serif", marginTop: 4, textTransform: "uppercase", letterSpacing: "0.1em" }}>{p.label}</div>
+      <div style={{ textAlign: "center", minWidth: 40 }}>
+        <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: "'Inter', sans-serif", lineHeight: 1, background: "rgba(255,255,255,0.08)", borderRadius: 8, padding: "6px 4px", border: "1px solid rgba(255,255,255,0.1)" }}>{String(p.value).padStart(2, "0")}</div>
+        <div style={{ fontSize: 8, color: "#777", fontFamily: "'Inter', sans-serif", marginTop: 3, textTransform: "uppercase", letterSpacing: "0.1em" }}>{p.label}</div>
       </div>
     );
   };
@@ -149,67 +149,64 @@ var NextDuelCard = function(props) {
       <div style={{ height: 3, background: "linear-gradient(90deg, " + GREEN + ", " + YELLOW + ")" }} />
 
       {/* Decorative glow */}
-      <div style={{ position: "absolute", top: -60, right: -60, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "15 0%, transparent 70%)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: -40, left: -40, width: 150, height: 150, borderRadius: "50%", background: "radial-gradient(circle, " + GREEN + "10 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: -40, right: -40, width: 140, height: 140, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "12 0%, transparent 70%)", pointerEvents: "none" }} />
 
       {/* Header */}
-      <div style={{ textAlign: "center", padding: "24px 20px 12px", position: "relative" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 12 }}>
+      <div style={{ textAlign: "center", padding: "14px 20px 6px", position: "relative" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Próximo Duelo</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 6 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: sc + "20", borderRadius: 20, padding: "4px 14px", border: "1px solid " + sc + "35" }}>
-            <span style={{ fontSize: 14 }}>{se}</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: sc, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>{match.surface}</span>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: sc + "20", borderRadius: 14, padding: "2px 10px", border: "1px solid " + sc + "30" }}>
+            <span style={{ fontSize: 11 }}>{se}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: "'Inter', sans-serif" }}>{match.surface}</span>
           </div>
         </div>
-        <p style={{ margin: "8px 0 2px", fontSize: 24, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.02em" }}>{match.tournament_category || match.tournament_name || "Próxima Partida"}</p>
+        <p style={{ margin: "6px 0 0", fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.02em" }}>{match.tournament_category || match.tournament_name || "Próxima Partida"}</p>
         {match.tournament_name && match.tournament_category && (
-          <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif" }}>{match.tournament_name}</p>
+          <p style={{ margin: "2px 0 0", fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>{match.tournament_name}</p>
         )}
       </div>
 
       {/* Players */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 60px 1fr", alignItems: "start", gap: 8, padding: "20px 24px 16px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 50px 1fr", alignItems: "start", gap: 6, padding: "14px 20px 10px" }}>
         {/* João */}
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: 90, height: 90, borderRadius: "50%", margin: "0 auto 10px", overflow: "hidden", background: "rgba(255,255,255,0.05)", border: "3px solid " + GREEN + "60", boxShadow: "0 0 30px " + GREEN + "20, inset 0 0 20px rgba(0,0,0,0.3)" }}>
-            <img src={joaoImg} alt="João Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; }} />
+          <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 6px", overflow: "hidden", background: "linear-gradient(135deg, #1a2a3a, #0d1b2e)", border: "2px solid " + GREEN + "50", boxShadow: "0 0 20px " + GREEN + "15" }}>
+            <img src={joaoImg} alt="João Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" fill="#1a2a3a"/><text x="40" y="48" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="24" fill="#00A859">JF</text></svg>'); }} />
           </div>
-          <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>J. Fonseca</p>
-          <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif" }}>🇧🇷 Brasil</p>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>J. Fonseca</p>
+          <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>🇧🇷</p>
           {player && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: GREEN + "20", borderRadius: 8, padding: "3px 10px", marginTop: 6, border: "1px solid " + GREEN + "30" }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: GREEN, fontFamily: "'Inter', sans-serif" }}>{"#" + player.ranking}</span>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>ATP</span>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 3, background: GREEN + "18", borderRadius: 6, padding: "2px 8px", marginTop: 4, border: "1px solid " + GREEN + "25" }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: GREEN, fontFamily: "'Inter', sans-serif" }}>{"#" + player.ranking}</span>
+              <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: "'Inter', sans-serif" }}>ATP</span>
             </div>
           )}
         </div>
 
         {/* VS */}
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 30 }}>
-          <div style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: 14, fontWeight: 900, color: "rgba(255,255,255,0.2)", fontFamily: "'Inter', sans-serif" }}>VS</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 22 }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 11, fontWeight: 900, color: "rgba(255,255,255,0.18)", fontFamily: "'Inter', sans-serif" }}>VS</span>
           </div>
         </div>
 
         {/* Opponent */}
         <div style={{ textAlign: "center" }}>
-          <div style={{ width: 90, height: 90, borderRadius: "50%", margin: "0 auto 10px", overflow: "hidden", background: "rgba(255,255,255,0.05)", border: "3px solid rgba(255,255,255,0.12)", boxShadow: "inset 0 0 20px rgba(0,0,0,0.3)" }}>
+          <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 6px", overflow: "hidden", background: "linear-gradient(135deg, #1a2a3a, #0d1b2e)", border: "2px solid rgba(255,255,255,0.1)" }}>
             {oppImg ? (
               <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; }} />
             ) : (
-              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🎾</div>
+              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>🎾</div>
             )}
           </div>
-          <p style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{oppName || "A definir"}</p>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{oppName || "A definir"}</p>
           {oppCountry && (
-            <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif" }}>{oppCountry}</p>
+            <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>{oppCountry}</p>
           )}
           {oppRanking && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.06)", borderRadius: 8, padding: "3px 10px", marginTop: 6, border: "1px solid rgba(255,255,255,0.1)" }}>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,0.7)", fontFamily: "'Inter', sans-serif" }}>{"#" + oppRanking}</span>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>ATP</span>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "rgba(255,255,255,0.05)", borderRadius: 6, padding: "2px 8px", marginTop: 4, border: "1px solid rgba(255,255,255,0.08)" }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.6)", fontFamily: "'Inter', sans-serif" }}>{"#" + oppRanking}</span>
+              <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif" }}>ATP</span>
             </div>
           )}
         </div>
@@ -217,31 +214,31 @@ var NextDuelCard = function(props) {
 
       {/* Countdown */}
       {!countdown.expired && (
-        <div style={{ padding: "16px 20px 20px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-          <p style={{ margin: "0 0 10px", textAlign: "center", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Começa em</p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 8 }}>
+        <div style={{ padding: "10px 20px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+          <p style={{ margin: "0 0 8px", textAlign: "center", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Começa em</p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
             <CountdownBox value={countdown.days} label="dias" />
-            <div style={{ color: "rgba(255,255,255,0.15)", fontSize: 20, fontWeight: 700, paddingTop: 8 }}>:</div>
+            <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
             <CountdownBox value={countdown.hours} label="hrs" />
-            <div style={{ color: "rgba(255,255,255,0.15)", fontSize: 20, fontWeight: 700, paddingTop: 8 }}>:</div>
+            <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
             <CountdownBox value={countdown.minutes} label="min" />
-            <div style={{ color: "rgba(255,255,255,0.15)", fontSize: 20, fontWeight: 700, paddingTop: 8 }}>:</div>
+            <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
             <CountdownBox value={countdown.seconds} label="seg" />
           </div>
         </div>
       )}
 
       {/* Location & date */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 20, padding: (countdown.expired ? "16px" : "0") + " 20px 20px", flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>📅 {formatMatchDate(match.date)}</span>
-        <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>📍 {match.city}{match.country ? (", " + match.country) : ""}</span>
+      <div style={{ display: "flex", justifyContent: "center", gap: 16, padding: (countdown.expired ? "12px" : "4px") + " 20px 14px", flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>📅 {formatMatchDate(match.date)}</span>
+        <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>📍 {match.city}{match.country ? (", " + match.country) : ""}</span>
         {match.round && (
-          <span style={{ fontSize: 12.5, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>🏟️ {match.round}</span>
+          <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>🏟️ {match.round}</span>
         )}
       </div>
 
       {!isLive && (
-        <p style={{ margin: 0, padding: "0 20px 12px", fontSize: 10, color: "rgba(255,255,255,0.2)", fontStyle: "italic", fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Dados de exemplo</p>
+        <p style={{ margin: 0, padding: "0 20px 10px", fontSize: 9, color: "rgba(255,255,255,0.15)", fontStyle: "italic", fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Dados de exemplo</p>
       )}
     </div>
   );
@@ -314,7 +311,7 @@ var NewsCard = function(props) {
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{item.source}</span>
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", marginLeft: "auto", whiteSpace: "nowrap" }}>{formatTimeAgo(item.date)}</span>
         </div>
-        <h3 style={{ margin: "0 0 5px", fontSize: 15.5, fontWeight: 700, color: h && hasUrl ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4, transition: "color 0.15s" }}>{item.title}</h3>
+        <h3 style={{ margin: "0 0 5px", fontSize: 15.5, fontWeight: 700, color: h && hasUrl ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4, transition: "color 0.15s" }}>{item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title}</h3>
         {item.summary && <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
       </div>
     </Tag>
@@ -387,6 +384,7 @@ export default function JoaoFonsecaNews() {
   var _pd = useState(false); var popupDismissed = _pd[0]; var setPopupDismissed = _pd[1];
   var _sb = useState(false); var showBio = _sb[0]; var setShowBio = _sb[1];
   var _st = useState(false); var showTitles = _st[0]; var setShowTitles = _st[1];
+  var _ssh = useState(false); var showShare = _ssh[0]; var setShowShare = _ssh[1];
   var initDone = useRef(false);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 15000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -503,18 +501,18 @@ export default function JoaoFonsecaNews() {
         <div style={{ padding: "4px 16px", background: "#F8F9FA", borderBottom: "1px solid " + BORDER, textAlign: "center" }}>
           <span style={{ fontSize: 9.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500, letterSpacing: "0.02em" }}>Site independente de fãs · Não oficial</span>
         </div>
-        <div style={{ maxWidth: 680, margin: "0 auto", padding: "14px 16px 12px" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto", padding: "18px 16px 16px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
               {/* GREEN/YELLOW LOGO */}
-              <div style={{ width: 46, height: 46, borderRadius: 14, background: "linear-gradient(135deg, #0a1628, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
-                <span style={{ fontWeight: 900, fontSize: 17, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.02em" }}>
+              <div style={{ width: 52, height: 52, borderRadius: 16, background: "linear-gradient(135deg, #0a1628, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 3px 12px rgba(0,0,0,0.2)" }}>
+                <span style={{ fontWeight: 900, fontSize: 20, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.02em" }}>
                   <span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span>
                 </span>
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>Fonseca News</span>
+                  <span style={{ fontSize: 22, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>Fonseca News</span>
                   {dp && (
                     <div style={{ display: "flex", alignItems: "center", gap: 3, background: ACCENT_LIGHT, borderRadius: 6, padding: "2px 7px", border: "1px solid #C8E6D8" }}>
                       <span style={{ fontSize: 11.5, fontWeight: 800, color: GREEN, fontFamily: "'Inter', -apple-system, sans-serif" }}>{"#" + dp.ranking}</span>
@@ -545,10 +543,10 @@ export default function JoaoFonsecaNews() {
         </div>
       </header>
 
-      {/* QUOTE */}
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "10px 24px", background: BG_WHITE, borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, borderBottom: "1px solid " + BORDER, textAlign: "center" }}>
-        <p style={{ margin: 0, fontSize: 12.5, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", fontStyle: "italic", lineHeight: 1.5 }}>
-          &quot;{JF_QUOTES[Math.floor(Date.now() / 1800000) % JF_QUOTES.length]}&quot;
+      {/* SLOGAN */}
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "12px 24px", background: BG_WHITE, borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, borderBottom: "1px solid " + BORDER, textAlign: "center" }}>
+        <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", fontStyle: "italic", lineHeight: 1.6 }}>
+          🧭 Sua bússola para acompanhar <strong style={{ color: TEXT_PRIMARY }}>João Fonseca</strong>, um futuro ídolo do tênis brasileiro.
         </p>
       </div>
 
@@ -828,23 +826,68 @@ export default function JoaoFonsecaNews() {
         </div>
       )}
 
+      {/* SHARE POPUP */}
+      {showShare && (
+        <div onClick={function() { setShowShare(false); }} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInOverlay 0.3s ease" }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: BG_WHITE, borderRadius: 20, padding: "28px 24px", maxWidth: 340, width: "100%", textAlign: "center", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "slideUp 0.4s ease" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>🔗 Compartilhar</h3>
+              <button onClick={function() { setShowShare(false); }} style={{ background: "none", border: "none", color: TEXT_DIM, fontSize: 18, cursor: "pointer" }}>✕</button>
+            </div>
+            <p style={{ margin: "0 0 16px", fontSize: 12.5, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>Indique o Fonseca News para outros fãs do João!</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <a href={"https://wa.me/?text=" + encodeURIComponent("🎾 Fonseca News — Acompanhe o João Fonseca! fonsecanews.com.br")} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#E8F8E8", borderRadius: 12, textDecoration: "none", border: "1px solid #C8E6C8", transition: "background 0.15s" }}>
+                <span style={{ fontSize: 22 }}>💬</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1A7A1A", fontFamily: "'Inter', sans-serif", display: "block" }}>WhatsApp</span>
+                  <span style={{ fontSize: 10.5, color: "#5A8A5A", fontFamily: "'Inter', sans-serif" }}>Enviar para contato ou grupo</span>
+                </div>
+              </a>
+              <a href={"mailto:?subject=" + encodeURIComponent("Fonseca News — João Fonseca") + "&body=" + encodeURIComponent("Olha esse site sobre o João Fonseca! 🎾🇧🇷\n\nfonsecanews.com.br")} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#F0F4FF", borderRadius: 12, textDecoration: "none", border: "1px solid #D0DFFF", transition: "background 0.15s" }}>
+                <span style={{ fontSize: 22 }}>✉️</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: "#2A5AA0", fontFamily: "'Inter', sans-serif", display: "block" }}>Email</span>
+                  <span style={{ fontSize: 10.5, color: "#6A8ABB", fontFamily: "'Inter', sans-serif" }}>Compartilhar por email</span>
+                </div>
+              </a>
+              <button onClick={function() { navigator.clipboard.writeText("fonsecanews.com.br").then(function() { setShowShare(false); }); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#F8F9FA", borderRadius: 12, border: "1px solid " + BORDER, cursor: "pointer", width: "100%", transition: "background 0.15s" }}>
+                <span style={{ fontSize: 22 }}>📋</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 13.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Copiar link</span>
+                  <span style={{ fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>fonsecanews.com.br</span>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* NEWS FEED */}
       <main style={{ maxWidth: 680, margin: "0 auto", background: BG_WHITE, borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, minHeight: "70vh" }}>
+        {/* Section label */}
+        <div style={{ padding: "14px 24px 8px", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ height: 1, flex: 1, background: BORDER }} />
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: TEXT_DIM, fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap" }}>Últimas Notícias</span>
+          <div style={{ height: 1, flex: 1, background: BORDER }} />
+        </div>
         {loading && news.length === 0 && <Skeleton />}
         {dn.length > 0 && !(loading && news.length === 0) && (
           <div>{buildFeed(dn, ds, dl)}</div>
         )}
         <div style={{ borderTop: "1px solid " + BORDER, padding: "24px 24px 32px" }}>
+          {/* Conquistas bar */}
           <div onClick={function() { setShowTitles(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap", marginBottom: 20, cursor: "pointer", padding: "10px 16px", background: "#F8F9FA", borderRadius: 10, border: "1px solid " + BORDER }}>
             {[["🏆","2 títulos ATP"],["🎯","3 Challengers"],["🇧🇷","Nº1 do Brasil"],["⭐","NextGen Champion"]].map(function(pair, i) { return (
               <span key={i} style={{ fontSize: 11, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>{pair[0]} {pair[1]}</span>
             ); })}
             <span style={{ fontSize: 10, color: GREEN, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>Ver todos →</span>
           </div>
+
+          {/* Action buttons - no duplicate */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
             <button onClick={function() { setShowBio(true); }} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>👤 Sobre</button>
-            <button onClick={function() { setShowTitles(true); }} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>🏆 Conquistas</button>
             <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>📸 Instagram</a>
+            <button onClick={function() { setShowShare(true); }} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>🔗 Compartilhar</button>
             <PixDonation />
           </div>
 
