@@ -1,5 +1,6 @@
-// ===== FONSECA NEWS - TWITTER BOT v3 =====
-// Uses X API v1.1 statuses/update endpoint
+// ===== FONSECA NEWS - TWITTER BOT v4 =====
+// Improved tweet formatting with result emojis, varied styles
+// Uses X API v2 tweets endpoint
 
 import crypto from "crypto";
 
@@ -15,18 +16,17 @@ function percentEncode(str) {
 }
 
 async function postTweet(text) {
-  const ck = process.env.TWITTER_CONSUMER_KEY;
-  const cs = process.env.TWITTER_CONSUMER_SECRET;
-  const at = process.env.TWITTER_ACCESS_TOKEN;
-  const ats = process.env.TWITTER_ACCESS_TOKEN_SECRET;
+  var ck = process.env.TWITTER_CONSUMER_KEY;
+  var cs = process.env.TWITTER_CONSUMER_SECRET;
+  var at = process.env.TWITTER_ACCESS_TOKEN;
+  var ats = process.env.TWITTER_ACCESS_TOKEN_SECRET;
   if (!ck || !cs || !at || !ats) throw new Error("Missing Twitter credentials");
 
-  const url = "https://api.x.com/2/tweets";
-  const ts = Math.floor(Date.now() / 1000).toString();
-  const nonce = crypto.randomBytes(16).toString("hex");
+  var url = "https://api.x.com/2/tweets";
+  var ts = Math.floor(Date.now() / 1000).toString();
+  var nonce = crypto.randomBytes(16).toString("hex");
 
-  // All OAuth params
-  const oauthData = {
+  var oauthData = {
     oauth_consumer_key: ck,
     oauth_nonce: nonce,
     oauth_signature_method: "HMAC-SHA1",
@@ -35,110 +35,205 @@ async function postTweet(text) {
     oauth_version: "1.0"
   };
 
-  // Create signature base string - for JSON body POST, only include oauth params
-  const sortedParams = Object.keys(oauthData).sort();
-  const paramPairs = sortedParams.map(k => percentEncode(k) + "=" + percentEncode(oauthData[k]));
-  const paramString = paramPairs.join("&");
-  const baseString = "POST" + "&" + percentEncode(url) + "&" + percentEncode(paramString);
-  const signingKey = percentEncode(cs) + "&" + percentEncode(ats);
-  
-  const sig = crypto.createHmac("sha1", signingKey).update(baseString).digest("base64");
-  
-  // Build header
-  const headerParams = { ...oauthData, oauth_signature: sig };
-  const headerParts = Object.keys(headerParams).sort().map(k => 
-    percentEncode(k) + '="' + percentEncode(headerParams[k]) + '"'
-  );
-  const authHeader = "OAuth " + headerParts.join(", ");
+  var sortedParams = Object.keys(oauthData).sort();
+  var paramPairs = sortedParams.map(function(k) { return percentEncode(k) + "=" + percentEncode(oauthData[k]); });
+  var paramString = paramPairs.join("&");
+  var baseString = "POST" + "&" + percentEncode(url) + "&" + percentEncode(paramString);
+  var signingKey = percentEncode(cs) + "&" + percentEncode(ats);
 
-  console.log("URL:", url);
-  console.log("Auth header length:", authHeader.length);
-  console.log("Body:", JSON.stringify({ text }));
+  var sig = crypto.createHmac("sha1", signingKey).update(baseString).digest("base64");
 
-  const res = await fetch(url, {
+  var headerParams = Object.assign({}, oauthData, { oauth_signature: sig });
+  var headerParts = Object.keys(headerParams).sort().map(function(k) {
+    return percentEncode(k) + '="' + percentEncode(headerParams[k]) + '"';
+  });
+  var authHeader = "OAuth " + headerParts.join(", ");
+
+  var res = await fetch(url, {
     method: "POST",
     headers: {
       "Authorization": authHeader,
       "Content-Type": "application/json",
       "User-Agent": "FonsecaNewsBot/1.0"
     },
-    body: JSON.stringify({ text })
+    body: JSON.stringify({ text: text })
   });
 
-  const raw = await res.text();
-  console.log("Response status:", res.status);
-  console.log("Response body:", raw.substring(0, 500));
+  var raw = await res.text();
+  console.log("[tweet] Status:", res.status, "Body:", raw.substring(0, 300));
 
   if (!res.ok) {
-    throw new Error(`Twitter error: ${res.status} - ${raw.substring(0, 300)}`);
+    throw new Error("Twitter error: " + res.status + " - " + raw.substring(0, 300));
   }
 
   return JSON.parse(raw);
 }
 
-function formatTweet(newsItem) {
-  const catEmoji = {
-    "Resultado": "🏆", "Ranking": "📊", "Declaração": "🗣️",
-    "Torneio": "🎾", "Treino": "💪", "Notícia": "📰"
-  };
-  const emoji = catEmoji[newsItem.category] || "🎾";
-  let title = newsItem.title;
-  const dashIdx = title.lastIndexOf(" - ");
-  if (dashIdx > 0) title = title.substring(0, dashIdx);
-  const source = newsItem.source ? `\n\n📰 ${newsItem.source}` : "";
-  const link = "\n\n🔗 fonsecanews.com.br";
-  const hashtags = "\n\n#JoãoFonseca #ATP";
-  let tweet = `${emoji} ${title}${source}${link}${hashtags}`;
+// ===== SMART TWEET FORMATTING =====
+function cleanTitle(title, source) {
+  // Remove source name from title (e.g., "Título da notícia - UOL" → "Título da notícia")
+  if (!title) return "";
+  var cleaned = title;
+  if (source) {
+    cleaned = cleaned.replace(" - " + source, "");
+    cleaned = cleaned.replace(" | " + source, "");
+    cleaned = cleaned.replace(" · " + source, "");
+  }
+  // Also try common patterns
+  var dashIdx = cleaned.lastIndexOf(" - ");
+  if (dashIdx > cleaned.length * 0.5) {
+    cleaned = cleaned.substring(0, dashIdx);
+  }
+  return cleaned.trim();
+}
+
+function formatTweet(newsItem, lastMatch, player) {
+  var title = cleanTitle(newsItem.title, newsItem.source);
+  var category = newsItem.category || "Notícia";
+
+  // Category-specific formatting
+  var tweet = "";
+
+  switch (category) {
+    case "Resultado":
+      // Check if it's a win or loss from the title
+      var isWin = /vence|vitória|elimina|avança|classificad/i.test(title);
+      var isLoss = /perde|derrota|eliminad|cai|queda/i.test(title);
+      if (isWin) {
+        tweet = "🟢 VITÓRIA! 🇧🇷🎾\n\n" + title;
+      } else if (isLoss) {
+        tweet = "🔴 " + title;
+      } else {
+        tweet = "🎾 " + title;
+      }
+      // Add last match score if available
+      if (lastMatch && lastMatch.score) {
+        tweet += "\n\n📊 " + lastMatch.score;
+        if (lastMatch.tournament) tweet += " · " + lastMatch.tournament;
+      }
+      break;
+
+    case "Ranking":
+      tweet = "📊 RANKING ATP\n\n" + title;
+      if (player && player.ranking) {
+        tweet += "\n\n🇧🇷 João Fonseca: #" + player.ranking + " ATP";
+      }
+      break;
+
+    case "Declaração":
+      tweet = "🗣️ " + title;
+      break;
+
+    case "Torneio":
+      tweet = "🎾 " + title;
+      break;
+
+    case "Treino":
+      tweet = "💪 " + title;
+      break;
+
+    default:
+      tweet = "📰 " + title;
+      break;
+  }
+
+  // Add source
+  if (newsItem.source) {
+    tweet += "\n\n📌 " + newsItem.source;
+  }
+
+  // Add site link
+  tweet += "\n🔗 fonsecanews.com.br";
+
+  // Add hashtags
+  tweet += "\n\n#JoãoFonseca #Tennis #ATP";
+
+  // Ensure within 280 chars
   if (tweet.length > 280) {
-    tweet = `${emoji} ${title}${source}${link}`;
+    // Remove hashtags first
+    tweet = tweet.replace("\n\n#JoãoFonseca #Tennis #ATP", "");
+    tweet += "\n\n#JoãoFonseca";
   }
   if (tweet.length > 280) {
-    const max = 280 - source.length - link.length - 4;
-    tweet = `${emoji} ${title.substring(0, max)}...${source}${link}`;
+    // Truncate title
+    var suffix = "\n\n📌 " + (newsItem.source || "") + "\n🔗 fonsecanews.com.br\n\n#JoãoFonseca";
+    var maxTitle = 280 - suffix.length - 5;
+    var headerEnd = tweet.indexOf(title);
+    var header = tweet.substring(0, headerEnd);
+    tweet = header + title.substring(0, maxTitle) + "..." + suffix;
   }
+
   return tweet;
 }
 
+// ===== MAIN HANDLER =====
 export default async function handler(req, res) {
   // Quick auth test mode
   if (req.query.test === "1") {
     try {
-      const result = await postTweet("🎾 Teste do Fonseca News Bot! fonsecanews.com.br");
-      return res.status(200).json({ success: true, result });
+      var result = await postTweet("🎾 Teste do Fonseca News Bot! fonsecanews.com.br #JoãoFonseca");
+      return res.status(200).json({ success: true, result: result });
     } catch (e) {
       return res.status(200).json({ success: false, error: e.message });
     }
   }
 
   try {
-    const protocol = req.headers["x-forwarded-proto"] || "https";
-    const host = req.headers.host;
-    const newsRes = await fetch(`${protocol}://${host}/api/news`);
+    var protocol = req.headers["x-forwarded-proto"] || "https";
+    var host = req.headers.host;
+    var newsRes = await fetch(protocol + "://" + host + "/api/news");
     if (!newsRes.ok) throw new Error("Failed to fetch news");
-    const newsData = await newsRes.json();
+    var newsData = await newsRes.json();
+
     if (!newsData.news || newsData.news.length === 0) {
       return res.status(200).json({ message: "No news to post", posted: 0 });
     }
-    const newItems = newsData.news.filter(item => !postedTitles.has(item.title));
+
+    // Filter out already posted
+    var newItems = newsData.news.filter(function(item) {
+      return !postedTitles.has(item.title);
+    });
+
     if (newItems.length === 0) {
       return res.status(200).json({ message: "All news already posted", posted: 0 });
     }
-    const toPost = newItems.slice(0, 1); // Post only 1 at a time for testing
-    const posted = [];
-    for (const item of toPost) {
+
+    // Post 1 tweet per cron call
+    var toPost = newItems.slice(0, 1);
+    var posted = [];
+
+    for (var i = 0; i < toPost.length; i++) {
+      var item = toPost[i];
       try {
-        const tweetText = formatTweet(item);
-        const result = await postTweet(tweetText);
+        var tweetText = formatTweet(item, newsData.lastMatch, newsData.player);
+        var tweetResult = await postTweet(tweetText);
         postedTitles.add(item.title);
-        posted.push({ title: item.title, tweetId: result.data?.id, text: tweetText });
+        posted.push({
+          title: item.title,
+          tweetId: tweetResult.data ? tweetResult.data.id : null,
+          text: tweetText,
+          chars: tweetText.length
+        });
+        console.log("[tweet] Posted successfully:", item.title.substring(0, 50));
       } catch (e) {
         posted.push({ title: item.title, error: e.message });
+        console.error("[tweet] Error posting:", e.message);
         break;
       }
     }
-    if (postedTitles.size > 100) postedTitles = new Set(Array.from(postedTitles).slice(-50));
-    res.status(200).json({ message: `Posted ${posted.filter(p => !p.error).length} tweets`, posted });
+
+    // Keep posted titles set manageable
+    if (postedTitles.size > 100) {
+      postedTitles = new Set(Array.from(postedTitles).slice(-50));
+    }
+
+    res.status(200).json({
+      message: "Posted " + posted.filter(function(p) { return !p.error; }).length + " tweets",
+      posted: posted
+    });
+
   } catch (error) {
+    console.error("[tweet] Handler error:", error);
     res.status(500).json({ error: error.message });
   }
 }
