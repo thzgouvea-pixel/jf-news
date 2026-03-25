@@ -443,8 +443,6 @@ var GameBanner = function() {
 // ===== VIDEO BANNER =====
 var VideoBanner = function(props) {
   var onOpen = props.onOpen;
-  var vid = { id: "cVYRsHvGx04", title: "Fonseca vs Rublev — Australian Open 2025" };
-  var thumb = "https://img.youtube.com/vi/" + vid.id + "/mqdefault.jpg";
   return (
     <div style={{ borderBottom: "1px solid " + BORDER, background: BG_WHITE, padding: "16px 24px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
@@ -452,16 +450,14 @@ var VideoBanner = function(props) {
         <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#FF0000", fontFamily: "'Inter', sans-serif" }}>Destaque</span>
         <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: "'Inter', sans-serif", marginLeft: "auto" }}>Ver todos →</button>
       </div>
-      <a href={"https://www.youtube.com/watch?v=" + vid.id} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
-        <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: "#000" }}>
-          <img src={thumb} alt={vid.title} style={{ width: "100%", height: "auto", display: "block", aspectRatio: "16/9", objectFit: "cover" }} />
-          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.25)" }}>
-            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
-              <span style={{ fontSize: 20, color: "#fff", marginLeft: 3 }}>▶</span>
-            </div>
+      <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
+        <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", padding: "24px 20px", textAlign: "center" }}>
+          <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(255,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", boxShadow: "0 4px 20px rgba(255,0,0,0.3)" }}>
+            <span style={{ fontSize: 22, color: "#fff", marginLeft: 3 }}>▶</span>
           </div>
+          <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Melhores momentos do João</p>
+          <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif" }}>Highlights, entrevistas e jogadas incríveis</p>
         </div>
-        <p style={{ margin: "8px 0 0", fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{vid.title}</p>
       </a>
     </div>
   );
@@ -1614,11 +1610,8 @@ export default function JoaoFonsecaNews() {
             <p style={{ margin: "0 0 12px", padding: "0 8px", fontSize: 12, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>Melhores momentos e highlights</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "0 8px" }}>
               {[
-                { id: "cVYRsHvGx04", title: "Fonseca vs Rublev — Australian Open 2025" },
-                { id: "HfC_VYJaXbE", title: "Fonseca vs Humbert — Miami 2025 Highlights" },
-                { id: "RlWMdGmOev4", title: "Fonseca: The Tennis Phenomenon To Watch" },
-                { id: "Q6JKlx4qW-g", title: "Fonseca campeão do Basel 500!" },
-                { id: "IcSVMBXXk1s", title: "NextGen ATP Finals 2024 — Champion!" },
+                { id: "fddSkeUwti4", title: "Fonseca vs Rublev — Australian Open 2025" },
+                { id: "mJbJWh20K8Y", title: "Fonseca: estrela nascendo no AO 2025" },
               ].map(function(vid) {
                 return (
                   <div key={vid.id} style={{ borderRadius: 12, overflow: "hidden", border: "1px solid " + BORDER }}>
