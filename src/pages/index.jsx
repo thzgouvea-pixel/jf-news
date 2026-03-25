@@ -412,6 +412,76 @@ var CareerTimeline = function() {
   );
 };
 
+// ===== ATP CALENDAR 2026 =====
+var ATPCalendar = function() {
+  var now = new Date();
+  var events = [
+    { month: "JAN", name: "Australian Open", cat: "Grand Slam", surface: "Duro", city: "Melbourne", date: "12 Jan - 1 Fev", done: true, result: "R1" },
+    { month: "FEV", name: "Rio Open", cat: "ATP 500", surface: "Saibro", city: "Rio de Janeiro", date: "16-22 Fev", done: true, result: "Duplas 🏆" },
+    { month: "MAR", name: "Indian Wells", cat: "Masters 1000", surface: "Duro", city: "Califórnia", date: "4-15 Mar", done: true, result: "R3" },
+    { month: "MAR", name: "Miami Open", cat: "Masters 1000", surface: "Duro", city: "Miami", date: "18-29 Mar", done: true, result: "R3" },
+    { month: "ABR", name: "Monte Carlo", cat: "Masters 1000", surface: "Saibro", city: "Mônaco", date: "5-12 Abr", done: false, next: true },
+    { month: "ABR", name: "Madrid Open", cat: "Masters 1000", surface: "Saibro", city: "Madri", date: "22 Abr - 3 Mai", done: false },
+    { month: "MAI", name: "Roma Masters", cat: "Masters 1000", surface: "Saibro", city: "Roma", date: "6-17 Mai", done: false },
+    { month: "MAI", name: "Roland Garros", cat: "Grand Slam", surface: "Saibro", city: "Paris", date: "24 Mai - 7 Jun", done: false },
+    { month: "JUN", name: "Wimbledon", cat: "Grand Slam", surface: "Grama", city: "Londres", date: "29 Jun - 12 Jul", done: false },
+    { month: "AGO", name: "Montreal", cat: "Masters 1000", surface: "Duro", city: "Montreal", date: "2-12 Ago", done: false },
+    { month: "AGO", name: "Cincinnati", cat: "Masters 1000", surface: "Duro", city: "Cincinnati", date: "13-23 Ago", done: false },
+    { month: "AGO", name: "US Open", cat: "Grand Slam", surface: "Duro", city: "Nova York", date: "31 Ago - 13 Set", done: false },
+    { month: "OUT", name: "Shanghai", cat: "Masters 1000", surface: "Duro", city: "Xangai", date: "7-18 Out", done: false },
+    { month: "NOV", name: "Paris Masters", cat: "Masters 1000", surface: "Duro (indoor)", city: "Paris", date: "2-8 Nov", done: false },
+    { month: "NOV", name: "ATP Finals", cat: "Finals", surface: "Duro (indoor)", city: "Turim", date: "15-22 Nov", done: false },
+  ];
+
+  var catColors = { "Grand Slam": "#8B5CF6", "Masters 1000": "#E8593C", "ATP 500": "#3B82F6", "Finals": YELLOW };
+  var surfaceEmojis = { "Saibro": "🟤", "Duro": "🔵", "Grama": "🟢", "Duro (indoor)": "🏠" };
+
+  return (
+    <div style={{ padding: "16px 16px 20px", maxHeight: "70vh", overflowY: "auto" }}>
+      {events.map(function(ev, i) {
+        var catColor = catColors[ev.cat] || TEXT_DIM;
+        var isNext = ev.next;
+        return (
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 8px", borderBottom: i < events.length - 1 ? "1px solid " + BORDER : "none", background: isNext ? GREEN + "08" : "transparent", borderRadius: isNext ? 10 : 0, marginBottom: isNext ? 4 : 0, border: isNext ? "1px solid " + GREEN + "20" : "none" }}>
+            {/* Month pill */}
+            <div style={{ width: 40, textAlign: "center", flexShrink: 0, paddingTop: 2 }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: ev.done ? TEXT_DIM : catColor, fontFamily: "'Inter', sans-serif", letterSpacing: "0.05em" }}>{ev.month}</span>
+            </div>
+
+            {/* Event info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13.5, fontWeight: 700, color: ev.done ? TEXT_DIM : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", textDecoration: ev.done ? "none" : "none" }}>{ev.name}</span>
+                {isNext && (
+                  <span style={{ fontSize: 8, fontWeight: 700, color: GREEN, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.1em", background: GREEN + "15", padding: "2px 6px", borderRadius: 4 }}>Próximo</span>
+                )}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: catColor, fontFamily: "'Inter', sans-serif", background: catColor + "12", padding: "1px 6px", borderRadius: 4 }}>{ev.cat}</span>
+                <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{surfaceEmojis[ev.surface] || ""} {ev.surface}</span>
+                <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>· {ev.city}</span>
+              </div>
+              <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{ev.date}</span>
+            </div>
+
+            {/* Result or status */}
+            <div style={{ flexShrink: 0, textAlign: "right", paddingTop: 2 }}>
+              {ev.done ? (
+                <span style={{ fontSize: 10, fontWeight: 700, color: ev.result && ev.result.includes("🏆") ? GREEN : TEXT_DIM, fontFamily: "'Inter', sans-serif", background: ev.result && ev.result.includes("🏆") ? GREEN + "12" : "#F0F0F0", padding: "2px 8px", borderRadius: 4 }}>{ev.result || "—"}</span>
+              ) : isNext ? (
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: GREEN, display: "inline-block", animation: "pulse 1.5s ease-in-out infinite" }} />
+              ) : (
+                <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>—</span>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      <p style={{ margin: "12px 0 0", fontSize: 9, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center", fontStyle: "italic" }}>Calendário simplificado. Torneios ATP 250 e outros eventos não listados.</p>
+    </div>
+  );
+};
+
 // ===== QUIZ: Quanto você conhece o João? =====
 var QuizGame = function() {
   var _q = useState(0); var currentQ = _q[0]; var setCurrentQ = _q[1];
@@ -905,6 +975,7 @@ export default function JoaoFonsecaNews() {
   var _sr = useState(false); var showRanking = _sr[0]; var setShowRanking = _sr[1];
   var _sng = useState(false); var showNextGen = _sng[0]; var setShowNextGen = _sng[1];
   var _stl = useState(false); var showTimeline = _stl[0]; var setShowTimeline = _stl[1];
+  var _scal = useState(false); var showCalendar = _scal[0]; var setShowCalendar = _scal[1];
   var initDone = useRef(false);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 15000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -1160,13 +1231,13 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, opacity: 0.5 }}>
-                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🎬</span>
+              <button onClick={function() { setShowCalendar(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🗓️</span>
                 <div style={{ textAlign: "left" }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Vídeos</span>
-                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Em breve</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Calendário</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>ATP 2026</span>
                 </div>
-              </div>
+              </button>
 
               <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, textDecoration: "none", cursor: "pointer", transition: "background 0.15s" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>📸</span>
@@ -1458,6 +1529,20 @@ export default function JoaoFonsecaNews() {
                 </div>
               ); })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ATP CALENDAR POPUP */}
+      {showCalendar && (
+        <div onClick={function() { setShowCalendar(false); }} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInOverlay 0.3s ease", overflowY: "auto" }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: BG_WHITE, borderRadius: 20, padding: "24px 16px", maxWidth: 520, width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "slideUp 0.4s ease" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, padding: "0 8px" }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>🗓️ Calendário ATP 2026</h2>
+              <button onClick={function() { setShowCalendar(false); }} style={{ background: "none", border: "none", color: TEXT_DIM, fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+            <p style={{ margin: "0 0 4px", padding: "0 8px", fontSize: 12, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>Grand Slams, Masters 1000 e Finals</p>
+            <ATPCalendar />
           </div>
         </div>
       )}
