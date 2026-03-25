@@ -659,7 +659,7 @@ var NextDuelCard = function(props) {
       <div style={{ position: "absolute", top: -40, right: -40, width: 140, height: 140, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "12 0%, transparent 70%)", pointerEvents: "none" }} />
 
       {/* Header */}
-      <div style={{ textAlign: "center", padding: "14px 20px 6px", position: "relative" }}>
+      <div style={{ textAlign: "center", padding: "18px 20px 8px", position: "relative" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Próximo Duelo</span>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: sc + "20", borderRadius: 14, padding: "2px 10px", border: "1px solid " + sc + "30" }}>
@@ -667,18 +667,25 @@ var NextDuelCard = function(props) {
             <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: "'Inter', sans-serif" }}>{match.surface}</span>
           </div>
         </div>
-        <p style={{ margin: "6px 0 0", fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.02em" }}>{match.tournament_category || match.tournament_name || "Próxima Partida"}</p>
+        <p style={{ margin: "8px 0 0", fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.02em" }}>{match.tournament_category || match.tournament_name || "Próxima Partida"}</p>
         {match.tournament_name && match.tournament_category && (
           <p style={{ margin: "2px 0 0", fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>{match.tournament_name}</p>
         )}
       </div>
 
       {/* Players */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 50px 1fr", alignItems: "start", gap: 6, padding: "14px 20px 10px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 50px 1fr", alignItems: "start", gap: 6, padding: "18px 20px 14px" }}>
         {/* João */}
         <div style={{ textAlign: "center" }}>
           <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 6px", overflow: "hidden", background: "linear-gradient(135deg, #1a2a3a, #0d1b2e)", border: "2px solid " + GREEN + "50", boxShadow: "0 0 20px " + GREEN + "15" }}>
-            <img src={joaoImg} alt="João Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" fill="#1a2a3a"/><text x="40" y="48" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="24" fill="#00A859">JF</text></svg>'); }} />
+            <img src={joaoImg} alt="João Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) {
+              if (e.target.src.includes("atptour")) {
+                e.target.src = "https://api.sofascore.app/api/v1/player/403869/image";
+              } else {
+                e.target.onerror = null;
+                e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80"><rect width="80" height="80" fill="#1a2a3a"/><text x="40" y="48" text-anchor="middle" font-family="Georgia,serif" font-weight="800" font-size="24" fill="#00A859">JF</text></svg>');
+              }
+            }} />
           </div>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>J. Fonseca</p>
           <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>🇧🇷</p>
@@ -721,7 +728,7 @@ var NextDuelCard = function(props) {
 
       {/* Countdown */}
       {!countdown.expired && (
-        <div style={{ padding: "10px 20px 14px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ padding: "14px 20px 18px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <p style={{ margin: "0 0 8px", textAlign: "center", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Começa em</p>
           <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
             <CountdownBox value={countdown.days} label="dias" />
@@ -736,7 +743,7 @@ var NextDuelCard = function(props) {
       )}
 
       {/* Location & date */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 16, padding: (countdown.expired ? "12px" : "4px") + " 20px 14px", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: 16, padding: (countdown.expired ? "16px" : "6px") + " 20px 18px", flexWrap: "wrap" }}>
         <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>📅 {formatMatchDate(match.date)}</span>
         <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>📍 {match.city}{match.country ? (", " + match.country) : ""}</span>
         {match.round && (
@@ -912,7 +919,7 @@ export default function JoaoFonsecaNews() {
     if (!link) { link = document.createElement("link"); link.rel = "manifest"; document.head.appendChild(link); }
     link.href = url;
     [["theme-color","#00A859"],["apple-mobile-web-app-capable","yes"],["apple-mobile-web-app-status-bar-style","default"],["apple-mobile-web-app-title","Fonseca News"]].forEach(function(pair) { var n = pair[0]; var c = pair[1]; var m = document.querySelector('meta[name="' + n + '"]'); if (!m) { m = document.createElement("meta"); m.name = n; document.head.appendChild(m); } m.content = c; });
-    document.title = "Fonseca News · João Fonseca";
+    document.title = "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 39) + " ATP";
 
     var faviconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a1628"/><text x="3" y="24" font-family="Georgia,serif" font-weight="900" font-size="18" fill="#00A859">F</text><text x="17" y="24" font-family="Georgia,serif" font-weight="900" font-size="18" fill="#FFCB05">N</text></svg>';
     var favicon = document.querySelector('link[rel="icon"]');
@@ -926,11 +933,16 @@ export default function JoaoFonsecaNews() {
     touchIcon.href = "data:image/svg+xml," + encodeURIComponent(touchIconSvg);
 
     var ogTags = [
-      ["og:title", "Fonseca News · João Fonseca"],
-      ["og:description", "Acompanhe as últimas notícias do João Fonseca, a maior promessa do tênis brasileiro."],
+      ["og:title", "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 39) + " ATP"],
+      ["og:description", "🎾 Sua bússola para acompanhar João Fonseca. Ranking #" + (dp ? dp.ranking : 39) + " ATP · Notícias, resultados, quiz e enquetes."],
       ["og:type", "website"], ["og:site_name", "Fonseca News"], ["og:locale", "pt_BR"],
-      ["twitter:card", "summary"], ["twitter:title", "Fonseca News · João Fonseca"],
-      ["twitter:description", "Todas as notícias do João Fonseca em um só lugar."],
+      ["og:url", "https://fonsecanews.com.br"],
+      ["og:image", "https://www.atptour.com/-/media/alias/player-headshot/f0fv"],
+      ["twitter:card", "summary"],
+      ["twitter:site", "@JFonsecaNews"],
+      ["twitter:title", "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 39) + " ATP"],
+      ["twitter:description", "🎾 Notícias, ranking, quiz e enquetes sobre o João Fonseca. Acesse agora!"],
+      ["twitter:image", "https://www.atptour.com/-/media/alias/player-headshot/f0fv"],
     ];
     ogTags.forEach(function(pair) {
       var prop = pair[0]; var content = pair[1]; var isOg = prop.startsWith("og:");
@@ -941,7 +953,7 @@ export default function JoaoFonsecaNews() {
     });
     var descMeta = document.querySelector('meta[name="description"]');
     if (!descMeta) { descMeta = document.createElement("meta"); descMeta.name = "description"; document.head.appendChild(descMeta); }
-    descMeta.content = "Acompanhe as últimas notícias do João Fonseca, tenista brasileiro. Ranking ATP, resultados, próximos torneios e declarações.";
+    descMeta.content = "Fonseca News — Sua bússola para acompanhar João Fonseca, #" + (dp ? dp.ranking : 39) + " ATP. Notícias, resultados, ranking, quiz interativo e enquetes diárias sobre o maior talento do tênis brasileiro.";
 
     var GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-J5CD56E1VX";
     if (GA_ID && !document.querySelector('script[src*="googletagmanager"]')) {
