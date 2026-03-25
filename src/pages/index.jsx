@@ -121,6 +121,123 @@ var LastMatchBar = function(props) {
   );
 };
 
+// ===== RANKING EVOLUTION CHART =====
+var RankingChart = function(props) {
+  var currentRanking = props.currentRanking || 39;
+  // Historical data points: [month_label, ranking, event_label]
+  var data = [
+    { month: "Dez/24", rank: 145, label: "NextGen Champion" },
+    { month: "Jan/25", rank: 113, label: "Canberra" },
+    { month: "Fev/25", rank: 68, label: "1º título ATP" },
+    { month: "Mar/25", rank: 55, label: "Phoenix" },
+    { month: "Mai/25", rank: 49, label: "" },
+    { month: "Jul/25", rank: 42, label: "Wimbledon R3" },
+    { month: "Ago/25", rank: 35, label: "Top 40" },
+    { month: "Out/25", rank: 24, label: "Basel 500 🏆" },
+    { month: "Jan/26", rank: 29, label: "" },
+    { month: "Mar/26", rank: currentRanking, label: "Atual" },
+  ];
+
+  // Chart dimensions
+  var W = 600;
+  var H = 260;
+  var padL = 45;
+  var padR = 20;
+  var padT = 30;
+  var padB = 50;
+  var chartW = W - padL - padR;
+  var chartH = H - padT - padB;
+
+  // Scale: ranking goes from high number (bad) to low (good), so invert Y
+  var maxRank = 160;
+  var minRank = 10;
+  var rankRange = maxRank - minRank;
+
+  var getX = function(i) { return padL + (i / (data.length - 1)) * chartW; };
+  var getY = function(rank) { return padT + ((rank - minRank) / rankRange) * chartH; };
+
+  // Build SVG path
+  var points = data.map(function(d, i) { return getX(i) + "," + getY(d.rank); });
+  var linePath = "M" + points.join("L");
+
+  // Area path (fill under line)
+  var areaPath = linePath + "L" + getX(data.length - 1) + "," + (padT + chartH) + "L" + padL + "," + (padT + chartH) + "Z";
+
+  // Y axis labels
+  var yLabels = [20, 50, 100, 150];
+
+  return (
+    <div style={{ padding: "20px 16px", overflowX: "auto" }}>
+      <svg viewBox={"0 0 " + W + " " + H} style={{ width: "100%", maxWidth: W, height: "auto" }}>
+        {/* Grid lines */}
+        {yLabels.map(function(rank) {
+          var y = getY(rank);
+          return (
+            <g key={rank}>
+              <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="#EBEBEB" strokeWidth="1" />
+              <text x={padL - 8} y={y + 4} textAnchor="end" fill="#999" fontSize="9" fontFamily="Inter, sans-serif">{"#" + rank}</text>
+            </g>
+          );
+        })}
+
+        {/* Area fill */}
+        <defs>
+          <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#00A859" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#00A859" stopOpacity="0.02" />
+          </linearGradient>
+        </defs>
+        <path d={areaPath} fill="url(#areaGrad)" />
+
+        {/* Line */}
+        <path d={linePath} fill="none" stroke="#00A859" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Data points */}
+        {data.map(function(d, i) {
+          var x = getX(i);
+          var y = getY(d.rank);
+          var isLast = i === data.length - 1;
+          var isBest = d.rank === Math.min.apply(null, data.map(function(p) { return p.rank; }));
+          return (
+            <g key={i}>
+              {/* Dot */}
+              <circle cx={x} cy={y} r={isLast ? 5 : (d.label ? 4 : 3)} fill={isLast ? "#FFCB05" : (isBest ? "#00A859" : "#fff")} stroke={isLast ? "#FFCB05" : "#00A859"} strokeWidth="2" />
+              {/* Rank number */}
+              {(d.label || isLast) && (
+                <text x={x} y={y - 12} textAnchor="middle" fill={isLast ? "#FFCB05" : "#00A859"} fontSize="10" fontWeight="800" fontFamily="Inter, sans-serif">{"#" + d.rank}</text>
+              )}
+              {/* Event label */}
+              {d.label && (
+                <text x={x} y={y - 22} textAnchor="middle" fill="#666" fontSize="7.5" fontFamily="Inter, sans-serif" fontWeight="600">{d.label}</text>
+              )}
+              {/* Month label */}
+              {(i % 2 === 0 || isLast) && (
+                <text x={x} y={H - padB + 18} textAnchor="middle" fill="#999" fontSize="8" fontFamily="Inter, sans-serif">{d.month}</text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+
+      {/* Stats bar */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+        <div style={{ background: "#E8F8F0", border: "1px solid #C8E6D8", borderRadius: 8, padding: "6px 14px", textAlign: "center" }}>
+          <span style={{ fontSize: 10, color: "#00A859", fontFamily: "'Inter', sans-serif", fontWeight: 700 }}>Maior Ascensão</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#007A3D", fontFamily: "'Inter', sans-serif", display: "block" }}>+121 posições</span>
+        </div>
+        <div style={{ background: "#FFF8E8", border: "1px solid #FFE8A8", borderRadius: 8, padding: "6px 14px", textAlign: "center" }}>
+          <span style={{ fontSize: 10, color: "#B8860B", fontFamily: "'Inter', sans-serif", fontWeight: 700 }}>Melhor Ranking</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#8B6914", fontFamily: "'Inter', sans-serif", display: "block" }}>#24 ATP</span>
+        </div>
+        <div style={{ background: "#E8F0FE", border: "1px solid #D0DFFF", borderRadius: 8, padding: "6px 14px", textAlign: "center" }}>
+          <span style={{ fontSize: 10, color: "#2A5AA0", fontFamily: "'Inter', sans-serif", fontWeight: 700 }}>Títulos</span>
+          <span style={{ fontSize: 12, fontWeight: 800, color: "#1A3A70", fontFamily: "'Inter', sans-serif", display: "block" }}>🏆 2 ATP Tour</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ===== QUIZ: Quanto você conhece o João? =====
 var QuizGame = function() {
   var _q = useState(0); var currentQ = _q[0]; var setCurrentQ = _q[1];
@@ -604,6 +721,7 @@ export default function JoaoFonsecaNews() {
   var _st = useState(false); var showTitles = _st[0]; var setShowTitles = _st[1];
   var _ssh = useState(false); var showShare = _ssh[0]; var setShowShare = _ssh[1];
   var _sm = useState(true); var showMenu = _sm[0]; var setShowMenu = _sm[1];
+  var _sr = useState(false); var showRanking = _sr[0]; var setShowRanking = _sr[1];
   var initDone = useRef(false);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 15000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -797,11 +915,19 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
-              <button onClick={function() { setShowTitles(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s" }}>
+              <button onClick={function() { setShowTitles(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🏆</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Conquistas</span>
                   <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Títulos e recordes</span>
+                </div>
+              </button>
+
+              <button onClick={function() { setShowRanking(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>📈</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Evolução Ranking</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Gráfico interativo</span>
                 </div>
               </button>
 
@@ -1119,6 +1245,20 @@ export default function JoaoFonsecaNews() {
                 </div>
               ); })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* RANKING CHART POPUP */}
+      {showRanking && (
+        <div onClick={function() { setShowRanking(false); }} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInOverlay 0.3s ease", overflowY: "auto" }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: BG_WHITE, borderRadius: 20, padding: "24px 16px", maxWidth: 650, width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "slideUp 0.4s ease" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, padding: "0 8px" }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>📈 Evolução no Ranking</h2>
+              <button onClick={function() { setShowRanking(false); }} style={{ background: "none", border: "none", color: TEXT_DIM, fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+            <p style={{ margin: "0 0 8px", padding: "0 8px", fontSize: 12, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>Posição de João Fonseca no ranking ATP ao longo do tempo</p>
+            <RankingChart currentRanking={dp ? dp.ranking : 39} />
           </div>
         </div>
       )}
