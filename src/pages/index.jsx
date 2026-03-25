@@ -440,6 +440,24 @@ var GameBanner = function() {
   );
 };
 
+// ===== VIDEO BANNER =====
+var VideoBanner = function(props) {
+  var onOpen = props.onOpen;
+  return (
+    <div onClick={onOpen} style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #0d0d20 40%, #0a1628 100%)", padding: "20px 24px", cursor: "pointer", borderBottom: "1px solid " + BORDER }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <span style={{ fontSize: 14 }}>🎬</span>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#FF0000", fontFamily: "'Inter', sans-serif" }}>Último vídeo</span>
+      </div>
+      <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Assista os melhores momentos do João Fonseca</p>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Highlights, entrevistas e mais</span>
+        <div style={{ background: "#FF0000", padding: "8px 16px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif", display: "flex", alignItems: "center", gap: 4 }}>▶ Assistir</div>
+      </div>
+    </div>
+  );
+};
+
 // ===== ATP CALENDAR 2026 =====
 var ATPCalendar = function() {
   var now = new Date();
@@ -972,7 +990,7 @@ var NewsCard = function(props) {
   );
 };
 
-var buildFeed = function(newsItems, season, lastMatch) {
+var buildFeed = function(newsItems, season, lastMatch, onOpenVideos) {
   var elements = [];
   var inserts = [
     { at: 3, component: <DailyPoll key="poll-bar" /> },
@@ -980,6 +998,7 @@ var buildFeed = function(newsItems, season, lastMatch) {
     { at: 9, component: <SeasonBar key="season-bar" season={season} /> },
     { at: 12, component: <GameBanner key="game-banner" /> },
     { at: 15, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
+    { at: 18, component: <VideoBanner key="video-banner" onOpen={onOpenVideos} /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} />);
@@ -991,6 +1010,7 @@ var buildFeed = function(newsItems, season, lastMatch) {
   if (newsItems.length < 9 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
   if (newsItems.length < 12) elements.push(<GameBanner key="game-banner" />);
   if (newsItems.length < 15 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
+  if (newsItems.length < 18) elements.push(<VideoBanner key="video-banner" onOpen={onOpenVideos} />);
   return elements;
 };
 
@@ -1715,7 +1735,7 @@ export default function JoaoFonsecaNews() {
         </div>
         {loading && news.length === 0 && <Skeleton />}
         {dn.length > 0 && !(loading && news.length === 0) && (
-          <div>{buildFeed(dn, ds, dl)}</div>
+          <div>{buildFeed(dn, ds, dl, function() { setShowVideos(true); })}</div>
         )}
         <div style={{ borderTop: "1px solid " + BORDER, padding: "28px 24px 36px" }}>
           {/* Conquistas bar */}
