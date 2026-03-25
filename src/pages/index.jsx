@@ -416,29 +416,15 @@ var CareerTimeline = function() {
 var GameBanner = function() {
   return (
     <a href="/game" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #0d1130 40%, #1a0a2e 100%)", padding: "20px 24px", position: "relative", overflow: "hidden", cursor: "pointer", transition: "all 0.2s" }}>
-        {/* Decorative elements */}
-        <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: -20, left: -20, width: 80, height: 80, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,168,89,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          {/* Pixel art icon */}
-          <div style={{ width: 56, height: 56, borderRadius: 12, background: "linear-gradient(135deg, #1a1d34, #0b0e1a)", border: "2px solid rgba(255,215,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 20px rgba(255,215,0,0.1)" }}>
-            <span style={{ fontSize: 28 }}>🎮</span>
-          </div>
-
-          {/* Text */}
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #0d1130 40%, #1a0a2e 100%)", padding: "12px 24px", cursor: "pointer", transition: "all 0.2s", borderBottom: "1px solid " + BORDER }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <span style={{ fontSize: 24, flexShrink: 0 }}>🎮</span>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: "0 0 2px", fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "#ffd700", fontFamily: "'Inter', sans-serif" }}>Novo jogo</p>
-            <p style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Tennis Career 26</p>
-            <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>Crie sua carreira no tênis profissional!</p>
+            <p style={{ margin: 0, fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#ffd700", fontFamily: "'Inter', sans-serif" }}>Novo jogo</p>
+            <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Tennis Career 26</p>
+            <p style={{ margin: "2px 0 0", fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Crie sua carreira no tênis profissional!</p>
           </div>
-
-          {/* Play button */}
-          <div style={{ flexShrink: 0, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "10px 18px", borderRadius: 10, display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 14px rgba(0,168,89,0.3)" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "'Inter', sans-serif" }}>Jogar</span>
-            <span style={{ fontSize: 14 }}>▶</span>
-          </div>
+          <div style={{ flexShrink: 0, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 16px", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar ▶</div>
         </div>
       </div>
     </a>
@@ -685,49 +671,41 @@ var RivalBanner = function() {
   var tienImg = "https://www.atptour.com/-/media/alias/player-headshot/" + r.atpCode;
   var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   return (
-    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderBottom: "1px solid " + BORDER, padding: "28px 24px 24px", position: "relative", overflow: "hidden" }}>
-      {/* Decorative elements */}
-      <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(230,57,70,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: -30, left: -30, width: 100, height: 100, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,168,89,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
-
-      {/* Quote */}
-      <p style={{ margin: "0 0 18px", textAlign: "center", fontSize: 11.5, fontStyle: "italic", color: "rgba(255,255,255,0.35)", fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "0.02em" }}>
+    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderBottom: "1px solid " + BORDER, padding: "12px 24px" }}>
+      <p style={{ margin: "0 0 8px", textAlign: "center", fontSize: 10, fontStyle: "italic", color: "rgba(255,255,255,0.3)", fontFamily: "'Source Serif 4', Georgia, serif" }}>
         &quot;Porque todo ídolo de verdade precisa de um grande rival&quot;
       </p>
-
-      {/* Players face-off */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
         {/* João */}
-        <div style={{ textAlign: "center", minWidth: 80 }}>
-          <div style={{ width: 56, height: 56, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2.5px solid " + GREEN + "50", margin: "0 auto 8px", boxShadow: "0 0 16px " + GREEN + "15" }}>
-            <img src={joaoImg} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56"><rect width="56" height="56" fill="#1a2a3a"/><text x="28" y="35" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="18" fill="#00A859">JF</text></svg>'); }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2px solid " + GREEN + "50", flexShrink: 0 }}>
+            <img src={joaoImg} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#1a2a3a"/><text x="16" y="21" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="12" fill="#00A859">JF</text></svg>'); }} />
           </div>
-          <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Fonseca</p>
-          <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, fontFamily: "'Inter', sans-serif" }}>🇧🇷 #39 ATP</span>
+          <div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", display: "block" }}>Fonseca</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: GREEN, fontFamily: "'Inter', sans-serif" }}>🇧🇷 #39</span>
+          </div>
         </div>
 
-        {/* VS / H2H */}
-        <div style={{ textAlign: "center", padding: "0 8px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif", marginBottom: 6 }}>H2H</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 24, fontWeight: 900, color: GREEN, fontFamily: "'Inter', sans-serif" }}>{r.h2h.joao}</span>
-            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 8, fontWeight: 900, color: "rgba(255,255,255,0.25)", fontFamily: "'Inter', sans-serif" }}>VS</span>
-            </div>
-            <span style={{ fontSize: 24, fontWeight: 900, color: RED, fontFamily: "'Inter', sans-serif" }}>{r.h2h.tien}</span>
+        {/* H2H */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: GREEN, fontFamily: "'Inter', sans-serif" }}>{r.h2h.joao}</span>
+            <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.2)", fontFamily: "'Inter', sans-serif" }}>VS</span>
+            <span style={{ fontSize: 18, fontWeight: 900, color: RED, fontFamily: "'Inter', sans-serif" }}>{r.h2h.tien}</span>
           </div>
-          <div style={{ marginTop: 8 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: RED, fontFamily: "'Inter', sans-serif", background: "rgba(230,57,70,0.12)", padding: "3px 10px", borderRadius: 4, border: "1px solid rgba(230,57,70,0.2)" }}>Rivalidade</span>
-          </div>
+          <span style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: RED, fontFamily: "'Inter', sans-serif", background: "rgba(230,57,70,0.12)", padding: "1px 6px", borderRadius: 3 }}>Rivalidade</span>
         </div>
 
         {/* Tien */}
-        <div style={{ textAlign: "center", minWidth: 80 }}>
-          <div style={{ width: 56, height: 56, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2.5px solid " + RED + "50", margin: "0 auto 8px", boxShadow: "0 0 16px " + RED + "15" }}>
-            <img src={tienImg} alt={r.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 56"><rect width="56" height="56" fill="#1a2a3a"/><text x="28" y="35" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="18" fill="#E63946">LT</text></svg>'); }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", display: "block", textAlign: "right" }}>{r.name}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: RED, fontFamily: "'Inter', sans-serif" }}>{r.country + " #" + r.ranking}</span>
           </div>
-          <p style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{r.name}</p>
-          <span style={{ fontSize: 10, fontWeight: 700, color: RED, fontFamily: "'Inter', sans-serif" }}>{r.country + " #" + r.ranking + " ATP"}</span>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2px solid " + RED + "50", flexShrink: 0 }}>
+            <img src={tienImg} alt={r.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#1a2a3a"/><text x="16" y="21" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="12" fill="#E63946">LT</text></svg>'); }} />
+          </div>
         </div>
       </div>
     </div>
