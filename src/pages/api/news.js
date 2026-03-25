@@ -99,7 +99,7 @@ async function fetchGoogleNews() {
     }
   }
   allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
-  return allItems.slice(0, 15);
+  return allItems.slice(0, 25);
 }
 
 // ===== SOFASCORE VIA RAPIDAPI (ONLY CALLED BY CRON) =====
