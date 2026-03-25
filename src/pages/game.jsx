@@ -1,135 +1,26 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import * as Tone from "tone";
+
 
 // ===== SOUND SYSTEM =====
 const SFX = {
-  _muted: false,
-  _started: false,
-  async _ensure() {
-    if (!this._started) {
-      try { await Tone.start(); this._started = true; } catch(e) {}
-    }
-  },
+  _muted: true,
   toggle() { this._muted = !this._muted; return this._muted; },
   isMuted() { return this._muted; },
-
-  // Match sounds
-  async ballHit() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"triangle"},envelope:{attack:0.001,decay:0.08,sustain:0,release:0.05},volume:-12}).toDestination();
-    s.triggerAttackRelease("C6","32n"); setTimeout(()=>s.dispose(),200);
-  },
-  async setWon() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"square"},envelope:{attack:0.01,decay:0.15,sustain:0.1,release:0.2},volume:-14}).toDestination();
-    const now = Tone.now();
-    s.triggerAttackRelease("C5","16n",now);
-    s.triggerAttackRelease("E5","16n",now+0.12);
-    s.triggerAttackRelease("G5","8n",now+0.24);
-    setTimeout(()=>s.dispose(),800);
-  },
-  async setLost() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:0.01,decay:0.3,sustain:0,release:0.3},volume:-16}).toDestination();
-    const now = Tone.now();
-    s.triggerAttackRelease("E4","8n",now);
-    s.triggerAttackRelease("C4","8n",now+0.2);
-    setTimeout(()=>s.dispose(),800);
-  },
-  async matchWon() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"square"},envelope:{attack:0.01,decay:0.12,sustain:0.15,release:0.3},volume:-10}).toDestination();
-    const now = Tone.now();
-    s.triggerAttackRelease("C5","16n",now);
-    s.triggerAttackRelease("E5","16n",now+0.1);
-    s.triggerAttackRelease("G5","16n",now+0.2);
-    s.triggerAttackRelease("C6","4n",now+0.32);
-    setTimeout(()=>s.dispose(),1200);
-  },
-  async matchLost() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:0.02,decay:0.4,sustain:0,release:0.5},volume:-14}).toDestination();
-    const now = Tone.now();
-    s.triggerAttackRelease("G4","8n",now);
-    s.triggerAttackRelease("Eb4","8n",now+0.25);
-    s.triggerAttackRelease("C4","4n",now+0.5);
-    setTimeout(()=>s.dispose(),1500);
-  },
-
-  // Tournament sounds
-  async title() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"square"},envelope:{attack:0.01,decay:0.1,sustain:0.2,release:0.4},volume:-8}).toDestination();
-    const now = Tone.now();
-    [["C5",0],["E5",0.1],["G5",0.2],["C6",0.32],["E6",0.44],["G6",0.56],["C7",0.72]].forEach(([n,t])=>{
-      s.triggerAttackRelease(n,"16n",now+t);
-    });
-    setTimeout(()=>s.dispose(),2000);
-  },
-  async quizCorrect() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:0.005,decay:0.1,sustain:0.05,release:0.1},volume:-10}).toDestination();
-    const now = Tone.now();
-    s.triggerAttackRelease("E5","16n",now);
-    s.triggerAttackRelease("A5","8n",now+0.1);
-    setTimeout(()=>s.dispose(),500);
-  },
-  async quizWrong() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"sawtooth"},envelope:{attack:0.01,decay:0.2,sustain:0,release:0.1},volume:-16}).toDestination();
-    s.triggerAttackRelease("C3","8n");
-    setTimeout(()=>s.dispose(),500);
-  },
-
-  // Hub sounds
-  async buy() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.MetalSynth({envelope:{attack:0.001,decay:0.12,release:0.1},volume:-18,harmonicity:5.1,modulationIndex:16,resonance:3000}).toDestination();
-    const now = Tone.now();
-    s.triggerAttackRelease("16n",now);
-    s.triggerAttackRelease("16n",now+0.1);
-    setTimeout(()=>s.dispose(),500);
-  },
-  async achievement() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"triangle"},envelope:{attack:0.01,decay:0.15,sustain:0.2,release:0.5},volume:-8}).toDestination();
-    const now = Tone.now();
-    [["G4",0],["B4",0.12],["D5",0.24],["G5",0.36],["B5",0.5],["D6",0.65]].forEach(([n,t])=>{
-      s.triggerAttackRelease(n,"16n",now+t);
-    });
-    setTimeout(()=>s.dispose(),2000);
-  },
-  async rankUp() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:0.01,decay:0.15,sustain:0.1,release:0.2},volume:-12}).toDestination();
-    const now = Tone.now();
-    s.triggerAttackRelease("C5","16n",now);
-    s.triggerAttackRelease("G5","8n",now+0.12);
-    setTimeout(()=>s.dispose(),600);
-  },
-  async rankDown() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:0.01,decay:0.2,sustain:0,release:0.2},volume:-16}).toDestination();
-    const now = Tone.now();
-    s.triggerAttackRelease("G4","16n",now);
-    s.triggerAttackRelease("E4","8n",now+0.12);
-    setTimeout(()=>s.dispose(),600);
-  },
-  async wildcard() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"triangle"},envelope:{attack:0.02,decay:0.2,sustain:0.15,release:0.4},volume:-10}).toDestination();
-    const now = Tone.now();
-    [["E5",0],["G5",0.1],["B5",0.2],["E6",0.32],["G6",0.44]].forEach(([n,t])=>{
-      s.triggerAttackRelease(n,"16n",now+t);
-    });
-    setTimeout(()=>s.dispose(),1500);
-  },
-  async click() {
-    if (this._muted) return; await this._ensure();
-    const s = new Tone.Synth({oscillator:{type:"sine"},envelope:{attack:0.001,decay:0.04,sustain:0,release:0.02},volume:-20}).toDestination();
-    s.triggerAttackRelease("A5","64n");
-    setTimeout(()=>s.dispose(),150);
-  },
+  async ballHit() {},
+  async setWon() {},
+  async setLost() {},
+  async matchWon() {},
+  async matchLost() {},
+  async titleWon() {},
+  async click() {},
+  async levelUp() {},
+  async injury() {},
+  async menuOpen() {},
+  async menuClose() {},
+  async achievement() {},
+  async coin() {},
+  async error() {},
+  async save() {},
 };
 
 // ===== CALENDAR =====
@@ -793,10 +684,7 @@ function simMatchScore(p1Skill, p2Skill, isGS, roundIdx) {
 
 export default function App(){
 
-// Page meta
-useEffect(function() {
-  document.title = "Tennis Career 26 · Fonseca News";
-}, []);
+useEffect(function() { document.title = "Tennis Career 26 · Fonseca News"; }, []);
 const[screen,setScreen]=useState("title");
 const[player,setPlayer]=useState(null);
 const[rivals,setRivals]=useState([]);
