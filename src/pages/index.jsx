@@ -1,4 +1,4 @@
-// v11 mega-features
+// v12 breathing-revolution
 import { useState, useEffect, useRef } from "react";
 
 const ACCENT = "#00A859";
@@ -93,7 +93,7 @@ var SeasonBar = function(props) {
   if (!season) return null;
   var pct = season.wins + season.losses > 0 ? Math.round((season.wins / (season.wins + season.losses)) * 100) : 0;
   return (
-    <div style={{ padding: "8px 24px", background: "#F8F9FA", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
+    <div style={{ padding: "12px 24px", background: "#F8F9FA", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
       <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>Temporada {season.year}</span>
       <span style={{ fontSize: 12, fontWeight: 700, color: GREEN, fontFamily: "'Inter', -apple-system, sans-serif" }}>{season.wins}V</span>
       <span style={{ fontSize: 10, color: TEXT_DIM }}>·</span>
@@ -112,7 +112,7 @@ var LastMatchBar = function(props) {
   if (!match) return null;
   var w = match.result === "V";
   return (
-    <div style={{ padding: "8px 24px", background: w ? "#F7FDFA" : "#FFFAFA", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+    <div style={{ padding: "12px 24px", background: w ? "#F7FDFA" : "#FFFAFA", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
       <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>Última partida</span>
       <span style={{ fontSize: 10, fontWeight: 700, color: w ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif", background: w ? "#EAFAF3" : "#FEF0F0", padding: "1px 6px", borderRadius: 3 }}>{w ? "V" : "D"}</span>
       <span style={{ fontSize: 12.5, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>Fonseca <span style={{ color: w ? GREEN : RED }}>{match.score}</span> {match.opponent}</span>
@@ -273,8 +273,8 @@ var DailyPoll = function() {
 
   return (
     <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
-      <div style={{ padding: "16px 24px", background: "linear-gradient(135deg, #FAFDF7 0%, #F5FAF0 100%)", borderBottom: "1px solid " + BORDER }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+      <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #FAFDF7 0%, #F5FAF0 100%)", borderBottom: "1px solid " + BORDER }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
           <span style={{ fontSize: 16 }}>📊</span>
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, fontFamily: "'Inter', sans-serif" }}>Enquete do dia</span>
         </div>
@@ -579,7 +579,7 @@ var RivalBanner = function() {
   var tienImg = "https://www.atptour.com/-/media/alias/player-headshot/" + r.atpCode;
   var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   return (
-    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderBottom: "1px solid " + BORDER, padding: "22px 24px 20px", position: "relative", overflow: "hidden" }}>
+    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderBottom: "1px solid " + BORDER, padding: "28px 24px 24px", position: "relative", overflow: "hidden" }}>
       {/* Decorative elements */}
       <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(230,57,70,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
       <div style={{ position: "absolute", bottom: -30, left: -30, width: 100, height: 100, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,168,89,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
@@ -807,7 +807,7 @@ var NewsCard = function(props) {
   var linkProps = hasUrl ? { href: item.url, target: "_blank", rel: "noopener noreferrer" } : {};
   return (
     <Tag {...linkProps} onMouseEnter={function() { setH(true); }} onMouseLeave={function() { setH(false); }}
-      style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h && hasUrl ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "16px 24px" : "16px 24px 16px 20px", borderBottom: "1px solid " + BORDER, borderLeft: hasImg ? "none" : ("3px solid " + cat.color), transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0, cursor: hasUrl ? "pointer" : "default", alignItems: "flex-start" }}>
+      style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h && hasUrl ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "20px 24px" : "20px 24px 20px 20px", borderBottom: "1px solid " + BORDER, borderLeft: hasImg ? "none" : ("3px solid " + cat.color), transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0, cursor: hasUrl ? "pointer" : "default", alignItems: "flex-start" }}>
       {hasImg && (
         <img src={item.image} alt="" onError={function() { setImgErr(true); }}
           style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0, marginTop: 2, background: "#f0f0f0" }} />
@@ -818,7 +818,7 @@ var NewsCard = function(props) {
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{item.source}</span>
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", marginLeft: "auto", whiteSpace: "nowrap" }}>{formatTimeAgo(item.date)}</span>
         </div>
-        <h3 style={{ margin: "0 0 5px", fontSize: 15.5, fontWeight: 700, color: h && hasUrl ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4, transition: "color 0.15s" }}>{item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title}</h3>
+        <h3 style={{ margin: "0 0 5px", fontSize: 16, fontWeight: 700, color: h && hasUrl ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.45, transition: "color 0.15s" }}>{item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title}</h3>
         {item.summary && <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
       </div>
     </Tag>
@@ -1014,7 +1014,7 @@ export default function JoaoFonsecaNews() {
         <div style={{ padding: "4px 16px", background: "#F8F9FA", borderBottom: "1px solid " + BORDER, textAlign: "center" }}>
           <span style={{ fontSize: 9.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500, letterSpacing: "0.02em" }}>Site independente de fãs · Não oficial</span>
         </div>
-        <div style={{ maxWidth: 680, margin: "0 auto", padding: "18px 16px 16px" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto", padding: "22px 16px 20px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
               {/* GREEN/YELLOW LOGO */}
@@ -1073,7 +1073,7 @@ export default function JoaoFonsecaNews() {
       </header>
 
       {/* SLOGAN */}
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "12px 24px", background: BG_WHITE, borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, borderBottom: "1px solid " + BORDER, textAlign: "center" }}>
+      <div style={{ maxWidth: 680, margin: "0 auto", padding: "14px 24px", background: BG_WHITE, borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, borderBottom: "1px solid " + BORDER, textAlign: "center" }}>
         <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", fontStyle: "italic", lineHeight: 1.6 }}>
           🧭 Sua bússola para acompanhar <strong style={{ color: TEXT_PRIMARY }}>João Fonseca</strong>, um futuro ídolo do tênis brasileiro.
         </p>
@@ -1085,8 +1085,14 @@ export default function JoaoFonsecaNews() {
       {/* QUIZ */}
       <QuizGame />
 
+      {/* Spacer */}
+      <div style={{ maxWidth: 680, margin: "0 auto", height: 8, background: "#F5F5F5", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }} />
+
       {/* DAILY POLL */}
       <DailyPoll />
+
+      {/* Spacer */}
+      <div style={{ maxWidth: 680, margin: "0 auto", height: 8, background: "#F5F5F5", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }} />
 
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
@@ -1522,10 +1528,13 @@ export default function JoaoFonsecaNews() {
         </div>
       )}
 
+      {/* Spacer before news */}
+      <div style={{ maxWidth: 680, margin: "0 auto", height: 6, background: "#F5F5F5", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }} />
+
       {/* NEWS FEED */}
       <main style={{ maxWidth: 680, margin: "0 auto", background: BG_WHITE, borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, minHeight: "70vh" }}>
         {/* Section label */}
-        <div style={{ padding: "14px 24px 8px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ padding: "20px 24px 12px", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ height: 1, flex: 1, background: BORDER }} />
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: TEXT_DIM, fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap" }}>Últimas Notícias</span>
           <div style={{ height: 1, flex: 1, background: BORDER }} />
@@ -1534,9 +1543,9 @@ export default function JoaoFonsecaNews() {
         {dn.length > 0 && !(loading && news.length === 0) && (
           <div>{buildFeed(dn, ds, dl)}</div>
         )}
-        <div style={{ borderTop: "1px solid " + BORDER, padding: "24px 24px 32px" }}>
+        <div style={{ borderTop: "1px solid " + BORDER, padding: "28px 24px 36px" }}>
           {/* Conquistas bar */}
-          <div onClick={function() { setShowTitles(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap", marginBottom: 20, cursor: "pointer", padding: "10px 16px", background: "#F8F9FA", borderRadius: 10, border: "1px solid " + BORDER }}>
+          <div onClick={function() { setShowTitles(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap", marginBottom: 24, cursor: "pointer", padding: "12px 16px", background: "#F8F9FA", borderRadius: 12, border: "1px solid " + BORDER }}>
             {[["🏆","2 títulos ATP"],["🎯","3 Challengers"],["🇧🇷","Nº1 do Brasil"],["⭐","NextGen Champion"]].map(function(pair, i) { return (
               <span key={i} style={{ fontSize: 11, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>{pair[0]} {pair[1]}</span>
             ); })}
@@ -1544,7 +1553,7 @@ export default function JoaoFonsecaNews() {
           </div>
 
           {/* Action buttons */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
             <button onClick={function() { setShowShare(true); }} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>🔗 Compartilhar</button>
             <PixDonation />
           </div>
@@ -1552,10 +1561,10 @@ export default function JoaoFonsecaNews() {
           {/* VISITOR COUNTER */}
           <VisitorCounter />
 
-          <div style={{ textAlign: "center", marginTop: 12, marginBottom: 16 }}>
+          <div style={{ textAlign: "center", marginTop: 16, marginBottom: 20 }}>
             <p style={{ margin: 0, fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>📱 iPhone: Safari → (↑) → &quot;Tela de Início&quot; · Android: Chrome → (⋮) → &quot;Tela inicial&quot;</p>
           </div>
-          <div style={{ borderTop: "1px solid " + BORDER, paddingTop: 14 }}>
+          <div style={{ borderTop: "1px solid " + BORDER, paddingTop: 18 }}>
             <p style={{ fontSize: 10, color: "#bbb", fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.6, maxWidth: 440, margin: "0 auto", textAlign: "center" }}>Fonseca News é um site independente de fãs, sem vínculo oficial com João Fonseca, sua equipe ou a ATP. Notícias agregadas de fontes públicas com devidos créditos.</p>
           </div>
         </div>
