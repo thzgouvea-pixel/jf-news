@@ -222,6 +222,13 @@ function getTodayPromoTweet() {
 
 // ===== MAIN HANDLER =====
 export default async function handler(req, res) {
+  // Check if within posting hours (6h-00h Brasília = 9h-3h UTC)
+  var nowUTC = new Date().getUTCHours();
+  var brasilia = (nowUTC - 3 + 24) % 24; // UTC-3
+  if (brasilia < 6) {
+    return res.status(200).json({ message: "Outside posting hours (6h-00h BRT). Current: " + brasilia + "h", posted: 0 });
+  }
+
   // Quick auth test mode
   if (req.query.test === "1") {
     try {
