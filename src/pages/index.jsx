@@ -240,14 +240,15 @@ var RankingChart = function(props) {
 
 // ===== DAILY POLL =====
 var DailyPoll = function() {
-  var today = new Date().toISOString().split("T")[0];
+  var now = new Date();
+  var today = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
   var pollKey = "fn_poll_" + today;
   var _v = useState(function() { try { return localStorage.getItem(pollKey); } catch(e) { return null; } });
   var vote = _v[0]; var setVote = _v[1];
   var _r = useState(function() { try { var d = JSON.parse(localStorage.getItem(pollKey + "_r") || "null"); return d; } catch(e) { return null; } });
   var results = _r[0]; var setResults = _r[1];
 
-  // Poll question changes daily based on date
+  // Poll question changes daily based on LOCAL date
   var polls = [
     { q: "João vence o primeiro jogo em Monte Carlo?", a: "Sim", b: "Não" },
     { q: "João chega ao Top 30 até o fim de 2026?", a: "Com certeza", b: "Difícil" },
@@ -256,8 +257,16 @@ var DailyPoll = function() {
     { q: "João chega às quartas em Roland Garros?", a: "Vai sim!", b: "Ainda cedo" },
     { q: "João pode ser Top 10 até 2027?", a: "Claro!", b: "Precisa de tempo" },
     { q: "Quem é mais talentoso: João ou Alcaraz aos 19?", a: "João 🇧🇷", b: "Alcaraz 🇪🇸" },
+    { q: "João será top 5 antes dos 21 anos?", a: "Sem dúvida!", b: "Muito cedo" },
+    { q: "João vence Djokovic se enfrentarem?", a: "João ganha!", b: "Djoko ainda é rei" },
+    { q: "O João é o melhor tenista sub-20 do mundo?", a: "É sim!", b: "Tien tá na frente" },
+    { q: "João vai ganhar um Grand Slam até 2028?", a: "Com certeza!", b: "Precisa evoluir" },
+    { q: "Quem tem o melhor forehand: João ou Sinner?", a: "João 🇧🇷", b: "Sinner 🇮🇹" },
+    { q: "O João vai ser nº1 do mundo algum dia?", a: "Vai sim!", b: "Difícil prever" },
+    { q: "Qual superfície favorita do João?", a: "Saibro 🟤", b: "Duro 🔵" },
   ];
-  var dayIdx = Math.floor(Date.now() / 86400000) % polls.length;
+  var dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  var dayIdx = dayOfYear % polls.length;
   var poll = polls[dayIdx];
 
   var handleVote = function(choice) {
@@ -509,8 +518,9 @@ var QuizGame = function() {
   var _done = useState(false); var done = _done[0]; var setDone = _done[1];
   var _started = useState(false); var started = _started[0]; var setStarted = _started[1];
   var _revealed = useState(false); var revealed = _revealed[0]; var setRevealed = _revealed[1];
+  var _seed = useState(function() { return Date.now(); }); var seed = _seed[0]; var setSeed = _seed[1];
 
-  var questions = [
+  var allQuestions = [
     { q: "Em que bairro do Rio de Janeiro o João nasceu?", opts: ["Copacabana", "Ipanema", "Leblon", "Barra da Tijuca"], answer: 1, points: 10, fun: "Ele cresceu a 10 minutos do local do Rio Open!" },
     { q: "Qual esporte o João praticava antes do tênis?", opts: ["Futebol", "Natação", "Futsal", "Surf"], answer: 2, points: 10, fun: "Trocou a bola redonda pela raquete aos 4 anos!" },
     { q: "Qual Grand Slam juvenil o João conquistou em 2023?", opts: ["Australian Open", "Roland Garros", "Wimbledon", "US Open"], answer: 3, points: 10, fun: "Derrotou Learner Tien na final!" },
@@ -522,6 +532,18 @@ var QuizGame = function() {
     { q: "Quem é o ídolo do João que ele conheceu aos 4 anos no Rio Open?", opts: ["Federer", "Nadal", "Djokovic", "Guga"], answer: 1, points: 10, fun: "Ele mostrou a foto desse encontro pro Nadal no NextGen Finals!" },
     { q: "Quantos títulos profissionais o João já tem na carreira?", opts: ["4", "5", "6", "8"], answer: 3, points: 15, fun: "2 ATP Tour + 3 Challengers + NextGen Finals + 1 Duplas + US Open Jr!" },
   ];
+
+  // Shuffle questions using seed (changes each time quiz restarts)
+  var questions = useMemo(function() {
+    var arr = allQuestions.slice();
+    var s = seed;
+    for (var i = arr.length - 1; i > 0; i--) {
+      s = (s * 9301 + 49297) % 233280;
+      var j = Math.floor((s / 233280) * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }, [seed]);
 
   var totalPoints = questions.reduce(function(sum, q) { return sum + q.points; }, 0);
   var maxQ = questions.length;
@@ -546,7 +568,7 @@ var QuizGame = function() {
   };
 
   var handleRestart = function() {
-    setCurrentQ(0); setScore(0); setSelected(null); setDone(false); setStarted(false); setRevealed(false);
+    setCurrentQ(0); setScore(0); setSelected(null); setDone(false); setStarted(false); setRevealed(false); setSeed(Date.now());
   };
 
   var getResultMsg = function() {
