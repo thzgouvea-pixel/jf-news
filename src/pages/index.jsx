@@ -518,7 +518,6 @@ var QuizGame = function() {
   var _done = useState(false); var done = _done[0]; var setDone = _done[1];
   var _started = useState(false); var started = _started[0]; var setStarted = _started[1];
   var _revealed = useState(false); var revealed = _revealed[0]; var setRevealed = _revealed[1];
-  var _seed = useState(function() { return Date.now(); }); var seed = _seed[0]; var setSeed = _seed[1];
 
   var allQuestions = [
     { q: "Em que bairro do Rio de Janeiro o João nasceu?", opts: ["Copacabana", "Ipanema", "Leblon", "Barra da Tijuca"], answer: 1, points: 10, fun: "Ele cresceu a 10 minutos do local do Rio Open!" },
@@ -534,16 +533,17 @@ var QuizGame = function() {
   ];
 
   // Shuffle questions using seed (changes each time quiz restarts)
-  var questions = useMemo(function() {
+  var _shuf = useState(function() {
     var arr = allQuestions.slice();
-    var s = seed;
+    var s = Date.now();
     for (var i = arr.length - 1; i > 0; i--) {
       s = (s * 9301 + 49297) % 233280;
       var j = Math.floor((s / 233280) * (i + 1));
       var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
     }
     return arr;
-  }, [seed]);
+  });
+  var questions = _shuf[0]; var setQuestions = _shuf[1];
 
   var totalPoints = questions.reduce(function(sum, q) { return sum + q.points; }, 0);
   var maxQ = questions.length;
@@ -568,7 +568,15 @@ var QuizGame = function() {
   };
 
   var handleRestart = function() {
-    setCurrentQ(0); setScore(0); setSelected(null); setDone(false); setStarted(false); setRevealed(false); setSeed(Date.now());
+    var arr = allQuestions.slice();
+    var s = Date.now();
+    for (var i = arr.length - 1; i > 0; i--) {
+      s = (s * 9301 + 49297) % 233280;
+      var j = Math.floor((s / 233280) * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    setQuestions(arr);
+    setCurrentQ(0); setScore(0); setSelected(null); setDone(false); setStarted(false); setRevealed(false);
   };
 
   var getResultMsg = function() {
