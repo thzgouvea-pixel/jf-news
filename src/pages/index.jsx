@@ -924,7 +924,7 @@ var NewsCard = function(props) {
         </div>
         <h3 style={{ margin: "0 0 5px", fontSize: 16, fontWeight: 700, color: h && hasUrl ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.45, transition: "color 0.15s" }}>{item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title}</h3>
         {item.summary && <p style={{ margin: "0 0 4px", fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10 }}>
           <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "none", cursor: rx.v ? "default" : "pointer", display: "flex", alignItems: "center", gap: 4, padding: 0, opacity: rx.v && rx.v !== "l" ? 0.2 : (rx.v === "l" ? 1 : 0.35), transition: "opacity 0.2s" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill={rx.v === "l" ? GREEN : "none"} stroke={rx.v === "l" ? GREEN : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
             {rx.l > 0 && <span style={{ fontSize: 10, color: rx.v === "l" ? GREEN : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.l}</span>}
@@ -949,8 +949,7 @@ var buildFeed = function(newsItems, season, lastMatch) {
     { at: 6, component: <QuizGame key="quiz-bar" /> },
     { at: 9, component: <SeasonBar key="season-bar" season={season} /> },
     { at: 12, component: <GameBanner key="game-banner" /> },
-    { at: 15, component: <RivalBanner key="rival-bar" /> },
-    { at: 18, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
+    { at: 15, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} />);
@@ -961,8 +960,7 @@ var buildFeed = function(newsItems, season, lastMatch) {
   if (newsItems.length < 6) elements.push(<QuizGame key="quiz-bar" />);
   if (newsItems.length < 9 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
   if (newsItems.length < 12) elements.push(<GameBanner key="game-banner" />);
-  if (newsItems.length < 15) elements.push(<RivalBanner key="rival-bar" />);
-  if (newsItems.length < 18 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
+  if (newsItems.length < 15 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
   return elements;
 };
 
