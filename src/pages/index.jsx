@@ -891,6 +891,22 @@ var NewsCard = function(props) {
   var item = props.item; var index = props.index;
   var _s = useState(false); var h = _s[0]; var setH = _s[1];
   var _i = useState(false); var imgErr = _i[0]; var setImgErr = _i[1];
+  var likeKey = "fn_r_" + (item.title || "").substring(0, 30).replace(/\s/g, "_");
+  var _lk = useState(function() { try { return JSON.parse(localStorage.getItem(likeKey) || '{"l":0,"d":0,"v":null}'); } catch(e) { return {l:0,d:0,v:null}; } });
+  var rx = _lk[0]; var setRx = _lk[1];
+  var handleRx = function(type, e) {
+    e.preventDefault(); e.stopPropagation();
+    if (rx.v) return;
+    var u = { l: rx.l, d: rx.d, v: type };
+    if (type === "l") u.l += 1; else u.d += 1;
+    setRx(u);
+    try { localStorage.setItem(likeKey, JSON.stringify(u)); } catch(e) {}
+  };
+  var handleSh = function(e) {
+    e.preventDefault(); e.stopPropagation();
+    if (navigator.share) { navigator.share({ title: item.title, url: item.url || "https://fonsecanews.com.br" }).catch(function() {}); }
+    else { try { navigator.clipboard.writeText(item.title + "\n" + (item.url || "fonsecanews.com.br")); } catch(e) {} }
+  };
   var cat = catCfg[item.category] || catCfg["Notícia"];
   var hasImg = item.image && !imgErr;
   var hasUrl = item.url && item.url.startsWith("http");
@@ -910,7 +926,20 @@ var NewsCard = function(props) {
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", marginLeft: "auto", whiteSpace: "nowrap" }}>{formatTimeAgo(item.date)}</span>
         </div>
         <h3 style={{ margin: "0 0 5px", fontSize: 16, fontWeight: 700, color: h && hasUrl ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.45, transition: "color 0.15s" }}>{item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title}</h3>
-        {item.summary && <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
+        {item.summary && <p style={{ margin: "0 0 4px", fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
+          <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "none", cursor: rx.v ? "default" : "pointer", display: "flex", alignItems: "center", gap: 3, padding: 0, opacity: rx.v && rx.v !== "l" ? 0.25 : 0.6, transition: "opacity 0.2s" }}>
+            <span style={{ fontSize: 13 }}>👍</span>
+            {rx.l > 0 && <span style={{ fontSize: 10, color: rx.v === "l" ? GREEN : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.l}</span>}
+          </button>
+          <button onClick={function(e) { handleRx("d", e); }} style={{ background: "none", border: "none", cursor: rx.v ? "default" : "pointer", display: "flex", alignItems: "center", gap: 3, padding: 0, opacity: rx.v && rx.v !== "d" ? 0.25 : 0.6, transition: "opacity 0.2s" }}>
+            <span style={{ fontSize: 13 }}>👎</span>
+            {rx.d > 0 && <span style={{ fontSize: 10, color: rx.v === "d" ? RED : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.d}</span>}
+          </button>
+          <button onClick={handleSh} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginLeft: "auto", opacity: 0.4, display: "flex", alignItems: "center" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={TEXT_DIM} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          </button>
+        </div>
       </div>
     </Tag>
   );
@@ -941,36 +970,6 @@ var buildFeed = function(newsItems, season, lastMatch) {
 };
 
 // ===== VISITOR COUNTER =====
-var VisitorCounter = function() {
-  var _s = useState(null); var count = _s[0]; var setCount = _s[1];
-  useEffect(function() {
-    try {
-      var key = "fn-visit-count";
-      var today = new Date().toDateString();
-      var data = JSON.parse(localStorage.getItem(key) || '{"total":0,"today":0,"date":""}');
-      if (data.date !== today) { data.today = 0; data.date = today; }
-      data.total += 1;
-      data.today += 1;
-      localStorage.setItem(key, JSON.stringify(data));
-      setCount(data);
-    } catch(e) {}
-  }, []);
-  if (!count) return null;
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, padding: "8px 0" }}>
-      <div style={{ textAlign: "center" }}>
-        <span style={{ fontSize: 16, fontWeight: 800, color: GREEN, fontFamily: "'Inter', sans-serif" }}>{count.total}</span>
-        <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", display: "block" }}>visitas totais</span>
-      </div>
-      <div style={{ width: 1, height: 24, background: BORDER }} />
-      <div style={{ textAlign: "center" }}>
-        <span style={{ fontSize: 16, fontWeight: 800, color: YELLOW, fontFamily: "'Inter', sans-serif" }}>{count.today}</span>
-        <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", display: "block" }}>visitas hoje</span>
-      </div>
-    </div>
-  );
-};
-
 // ===== MAIN APP =====
 export default function JoaoFonsecaNews() {
   var _n = useState([]); var news = _n[0]; var setNews = _n[1];
@@ -1662,9 +1661,6 @@ export default function JoaoFonsecaNews() {
             <button onClick={function() { setShowShare(true); }} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>🔗 Compartilhar</button>
             <PixDonation />
           </div>
-
-          {/* VISITOR COUNTER */}
-          <VisitorCounter />
 
           <div style={{ textAlign: "center", marginTop: 16, marginBottom: 20 }}>
             <p style={{ margin: 0, fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>📱 iPhone: Safari → (↑) → &quot;Tela de Início&quot; · Android: Chrome → (⋮) → &quot;Tela inicial&quot;</p>
