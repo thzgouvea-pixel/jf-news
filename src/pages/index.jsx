@@ -121,7 +121,155 @@ var LastMatchBar = function(props) {
   );
 };
 
-// ===== RIVAL BANNER (Learner Tien) - REDESIGNED =====
+// ===== QUIZ: Quanto você conhece o João? =====
+var QuizGame = function() {
+  var _q = useState(0); var currentQ = _q[0]; var setCurrentQ = _q[1];
+  var _sc = useState(0); var score = _sc[0]; var setScore = _sc[1];
+  var _sel = useState(null); var selected = _sel[0]; var setSelected = _sel[1];
+  var _done = useState(false); var done = _done[0]; var setDone = _done[1];
+  var _started = useState(false); var started = _started[0]; var setStarted = _started[1];
+  var _revealed = useState(false); var revealed = _revealed[0]; var setRevealed = _revealed[1];
+
+  var questions = [
+    { q: "Em que bairro do Rio de Janeiro o João nasceu?", opts: ["Copacabana", "Ipanema", "Leblon", "Barra da Tijuca"], answer: 1, points: 10, fun: "Ele cresceu a 10 minutos do local do Rio Open!" },
+    { q: "Qual esporte o João praticava antes do tênis?", opts: ["Futebol", "Natação", "Futsal", "Surf"], answer: 2, points: 10, fun: "Trocou a bola redonda pela raquete aos 4 anos!" },
+    { q: "Qual Grand Slam juvenil o João conquistou em 2023?", opts: ["Australian Open", "Roland Garros", "Wimbledon", "US Open"], answer: 3, points: 10, fun: "Derrotou Learner Tien na final!" },
+    { q: "Quem o João derrotou na estreia do Australian Open 2025?", opts: ["Djokovic", "Alcaraz", "Rublev", "Medvedev"], answer: 2, points: 15, fun: "Primeiro adolescente a derrotar um top 10 em 1ª rodada de Grand Slam desde 2002!" },
+    { q: "Qual foi o primeiro título ATP do João?", opts: ["Basel 500", "Rio Open 250", "Buenos Aires 250", "Lexington Challenger"], answer: 2, points: 10, fun: "Brasileiro mais jovem a conquistar um título ATP!" },
+    { q: "Com que idade o João se tornou nº1 mundial juvenil?", opts: ["15 anos", "16 anos", "17 anos", "18 anos"], answer: 2, points: 10, fun: "Primeiro brasileiro da história a terminar a temporada como nº1 juvenil!" },
+    { q: "Qual torneio o João venceu invicto com 5 vitórias em 2024?", opts: ["ATP Finals", "NextGen ATP Finals", "Copa Davis", "Laver Cup"], answer: 1, points: 15, fun: "Primeiro sul-americano campeão do NextGen Finals!" },
+    { q: "Qual ATP 500 o João conquistou em outubro de 2025?", opts: ["Viena", "Hamburgo", "Basel", "Barcelona"], answer: 2, points: 15, fun: "Primeiro brasileiro a ganhar um ATP 500 na história!" },
+    { q: "Quem é o ídolo do João que ele conheceu aos 4 anos no Rio Open?", opts: ["Federer", "Nadal", "Djokovic", "Guga"], answer: 1, points: 10, fun: "Ele mostrou a foto desse encontro pro Nadal no NextGen Finals!" },
+    { q: "Quantos títulos profissionais o João já tem na carreira?", opts: ["4", "5", "6", "8"], answer: 3, points: 15, fun: "2 ATP Tour + 3 Challengers + NextGen Finals + 1 Duplas + US Open Jr!" },
+  ];
+
+  var totalPoints = questions.reduce(function(sum, q) { return sum + q.points; }, 0);
+  var maxQ = questions.length;
+
+  var handleAnswer = function(idx) {
+    if (revealed) return;
+    setSelected(idx);
+    setRevealed(true);
+    if (idx === questions[currentQ].answer) {
+      setScore(score + questions[currentQ].points);
+    }
+  };
+
+  var handleNext = function() {
+    if (currentQ < maxQ - 1) {
+      setCurrentQ(currentQ + 1);
+      setSelected(null);
+      setRevealed(false);
+    } else {
+      setDone(true);
+    }
+  };
+
+  var handleRestart = function() {
+    setCurrentQ(0); setScore(0); setSelected(null); setDone(false); setStarted(false); setRevealed(false);
+  };
+
+  var getResultMsg = function() {
+    var pct = Math.round((score / totalPoints) * 100);
+    if (pct === 100) return { emoji: "🏆", msg: "Perfeito! Você é um verdadeiro fã do João!" };
+    if (pct >= 80) return { emoji: "🔥", msg: "Impressionante! Você conhece bem o João!" };
+    if (pct >= 60) return { emoji: "🎾", msg: "Bom! Você acompanha o João de perto!" };
+    if (pct >= 40) return { emoji: "👏", msg: "Legal! Está no caminho pra ser um grande fã!" };
+    return { emoji: "📚", msg: "Continue acompanhando o João aqui no Fonseca News!" };
+  };
+
+  // Card de início
+  if (!started) {
+    return (
+      <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+        <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", padding: "24px", textAlign: "center", cursor: "pointer", position: "relative", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
+          <div style={{ position: "absolute", top: -20, left: -20, width: 100, height: 100, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,203,5,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
+          <span style={{ fontSize: 32 }}>🎾</span>
+          <h3 style={{ margin: "8px 0 4px", fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Quiz: Quanto você conhece o João?</h3>
+          <p style={{ margin: "0 0 14px", fontSize: 12.5, color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif" }}>10 perguntas · {totalPoints} pontos · Teste seus conhecimentos!</p>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "10px 24px", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "'Inter', sans-serif", boxShadow: "0 4px 14px rgba(0,168,89,0.3)" }}>
+            Jogar agora
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Tela de resultado
+  if (done) {
+    var result = getResultMsg();
+    return (
+      <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+        <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", padding: "28px 24px", textAlign: "center" }}>
+          <span style={{ fontSize: 48 }}>{result.emoji}</span>
+          <h3 style={{ margin: "10px 0 4px", fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{score}/{totalPoints} pontos</h3>
+          <p style={{ margin: "0 0 16px", fontSize: 13.5, color: "rgba(255,255,255,0.6)", fontFamily: "'Inter', sans-serif" }}>{result.msg}</p>
+          <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+            <button onClick={handleRestart} style={{ padding: "10px 20px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>🔄 Jogar de novo</button>
+            <button onClick={function() { setStarted(false); setDone(false); setCurrentQ(0); setScore(0); }} style={{ padding: "10px 20px", background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>Fechar</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Tela de pergunta
+  var q = questions[currentQ];
+  return (
+    <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", padding: "20px 24px", position: "relative" }}>
+        {/* Progress */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: YELLOW, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.1em" }}>Pergunta {currentQ + 1}/{maxQ}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: "'Inter', sans-serif" }}>{score} pts</span>
+        </div>
+        <div style={{ height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 2, marginBottom: 16 }}>
+          <div style={{ height: 3, background: "linear-gradient(90deg, " + GREEN + ", " + YELLOW + ")", borderRadius: 2, width: ((currentQ + 1) / maxQ * 100) + "%", transition: "width 0.3s" }} />
+        </div>
+
+        {/* Question */}
+        <p style={{ margin: "0 0 4px", fontSize: 15.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.5 }}>{q.q}</p>
+        <span style={{ fontSize: 10, color: YELLOW, fontFamily: "'Inter', sans-serif", fontWeight: 600 }}>{q.points} pontos</span>
+
+        {/* Options */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+          {q.opts.map(function(opt, idx) {
+            var isCorrect = idx === q.answer;
+            var isSelected = idx === selected;
+            var bg = "rgba(255,255,255,0.06)";
+            var borderColor = "rgba(255,255,255,0.1)";
+            var textColor = "rgba(255,255,255,0.8)";
+            if (revealed) {
+              if (isCorrect) { bg = GREEN + "25"; borderColor = GREEN + "50"; textColor = GREEN; }
+              else if (isSelected && !isCorrect) { bg = RED + "25"; borderColor = RED + "50"; textColor = RED; }
+              else { bg = "rgba(255,255,255,0.03)"; textColor = "rgba(255,255,255,0.3)"; }
+            }
+            return (
+              <button key={idx} onClick={function() { handleAnswer(idx); }} disabled={revealed} style={{ padding: "12px 16px", background: bg, border: "1px solid " + borderColor, borderRadius: 10, cursor: revealed ? "default" : "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10, transition: "all 0.2s" }}>
+                <span style={{ width: 24, height: 24, borderRadius: "50%", background: revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : "rgba(255,255,255,0.08)"), border: "1px solid " + (revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : "rgba(255,255,255,0.15)")), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: revealed && (isCorrect || isSelected) ? "#fff" : "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif", flexShrink: 0 }}>
+                  {revealed && isCorrect ? "✓" : (revealed && isSelected && !isCorrect ? "✗" : String.fromCharCode(65 + idx))}
+                </span>
+                <span style={{ fontSize: 13.5, fontWeight: 600, color: textColor, fontFamily: "'Inter', sans-serif" }}>{opt}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Fun fact + Next */}
+        {revealed && (
+          <div style={{ marginTop: 14, animation: "fadeIn 0.3s ease" }}>
+            <div style={{ padding: "10px 14px", background: "rgba(255,203,5,0.08)", borderRadius: 10, border: "1px solid rgba(255,203,5,0.15)", marginBottom: 12 }}>
+              <p style={{ margin: 0, fontSize: 12, color: YELLOW, fontFamily: "'Inter', sans-serif", lineHeight: 1.5 }}>💡 {q.fun}</p>
+            </div>
+            <button onClick={handleNext} style={{ width: "100%", padding: "12px", background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "'Inter', sans-serif" }}>
+              {currentQ < maxQ - 1 ? "Próxima pergunta →" : "Ver resultado 🏆"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 var RIVAL_DATA = {
   name: "Learner Tien",
   country: "🇺🇸",
@@ -623,6 +771,9 @@ export default function JoaoFonsecaNews() {
 
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
+
+      {/* QUIZ */}
+      <QuizGame />
 
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
