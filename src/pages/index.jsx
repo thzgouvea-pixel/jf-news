@@ -941,20 +941,24 @@ var NewsCard = function(props) {
 var buildFeed = function(newsItems, season, lastMatch) {
   var elements = [];
   var inserts = [
-    { at: 5, component: <SeasonBar key="season-bar" season={season} /> },
-    { at: 8, component: <GameBanner key="game-banner" /> },
-    { at: 10, component: <RivalBanner key="rival-bar" /> },
-    { at: 12, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
+    { at: 3, component: <DailyPoll key="poll-bar" /> },
+    { at: 6, component: <QuizGame key="quiz-bar" /> },
+    { at: 9, component: <SeasonBar key="season-bar" season={season} /> },
+    { at: 12, component: <GameBanner key="game-banner" /> },
+    { at: 15, component: <RivalBanner key="rival-bar" /> },
+    { at: 18, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} />);
     var insert = inserts.find(function(ins) { return ins.at === i + 1; });
     if (insert) elements.push(insert.component);
   });
-  if (newsItems.length < 5 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
-  if (newsItems.length < 8) elements.push(<GameBanner key="game-banner" />);
-  if (newsItems.length < 10) elements.push(<RivalBanner key="rival-bar" />);
-  if (newsItems.length < 12 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
+  if (newsItems.length < 3) elements.push(<DailyPoll key="poll-bar" />);
+  if (newsItems.length < 6) elements.push(<QuizGame key="quiz-bar" />);
+  if (newsItems.length < 9 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
+  if (newsItems.length < 12) elements.push(<GameBanner key="game-banner" />);
+  if (newsItems.length < 15) elements.push(<RivalBanner key="rival-bar" />);
+  if (newsItems.length < 18 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
   return elements;
 };
 
@@ -1009,7 +1013,7 @@ export default function JoaoFonsecaNews() {
   var _sb = useState(false); var showBio = _sb[0]; var setShowBio = _sb[1];
   var _st = useState(false); var showTitles = _st[0]; var setShowTitles = _st[1];
   var _ssh = useState(false); var showShare = _ssh[0]; var setShowShare = _ssh[1];
-  var _sm = useState(true); var showMenu = _sm[0]; var setShowMenu = _sm[1];
+  var _sm = useState(false); var showMenu = _sm[0]; var setShowMenu = _sm[1];
   var _sr = useState(false); var showRanking = _sr[0]; var setShowRanking = _sr[1];
   var _sng = useState(false); var showNextGen = _sng[0]; var setShowNextGen = _sng[1];
   var _stl = useState(false); var showTimeline = _stl[0]; var setShowTimeline = _stl[1];
@@ -1202,18 +1206,6 @@ export default function JoaoFonsecaNews() {
 
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
-
-      {/* QUIZ */}
-      <QuizGame />
-
-      {/* Spacer */}
-      <div style={{ maxWidth: 680, margin: "0 auto", height: 8, background: "#F5F5F5", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }} />
-
-      {/* DAILY POLL */}
-      <DailyPoll />
-
-      {/* Spacer */}
-      <div style={{ maxWidth: 680, margin: "0 auto", height: 8, background: "#F5F5F5", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }} />
 
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
