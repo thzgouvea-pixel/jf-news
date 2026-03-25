@@ -443,27 +443,26 @@ var GameBanner = function() {
 // ===== VIDEO BANNER =====
 var VideoBanner = function(props) {
   var onOpen = props.onOpen;
-  var featuredVideoId = "cVYRsHvGx04"; // Fonseca vs Rublev AO 2025
-  var featuredTitle = "Fonseca vs Rublev — Australian Open 2025";
+  var vid = { id: "cVYRsHvGx04", title: "Fonseca vs Rublev — Australian Open 2025" };
+  var thumb = "https://img.youtube.com/vi/" + vid.id + "/mqdefault.jpg";
   return (
-    <div style={{ borderBottom: "1px solid " + BORDER, background: BG_WHITE }}>
-      {/* Header */}
-      <div style={{ padding: "16px 24px 10px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 14 }}>🎬</span>
-          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#FF0000", fontFamily: "'Inter', sans-serif" }}>Destaque</span>
-        </div>
-        <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 11, fontWeight: 600, color: GREEN, fontFamily: "'Inter', sans-serif" }}>Ver todos →</button>
+    <div style={{ borderBottom: "1px solid " + BORDER, background: BG_WHITE, padding: "16px 24px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <span style={{ fontSize: 14 }}>🎬</span>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#FF0000", fontFamily: "'Inter', sans-serif" }}>Destaque</span>
+        <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: "'Inter', sans-serif", marginLeft: "auto" }}>Ver todos →</button>
       </div>
-      {/* Video embed */}
-      <div style={{ padding: "0 24px 12px" }}>
-        <div style={{ borderRadius: 12, overflow: "hidden", border: "1px solid " + BORDER }}>
-          <div style={{ position: "relative", paddingBottom: "56.25%", height: 0, background: "#000" }}>
-            <iframe src={"https://www.youtube.com/embed/" + featuredVideoId} title={featuredTitle} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }} loading="lazy" />
+      <a href={"https://www.youtube.com/watch?v=" + vid.id} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
+        <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: "#000" }}>
+          <img src={thumb} alt={vid.title} style={{ width: "100%", height: "auto", display: "block", aspectRatio: "16/9", objectFit: "cover" }} />
+          <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.25)" }}>
+            <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 16px rgba(0,0,0,0.3)" }}>
+              <span style={{ fontSize: 20, color: "#fff", marginLeft: 3 }}>▶</span>
+            </div>
           </div>
         </div>
-        <p style={{ margin: "8px 0 0", fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{featuredTitle}</p>
-      </div>
+        <p style={{ margin: "8px 0 0", fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{vid.title}</p>
+      </a>
     </div>
   );
 };
