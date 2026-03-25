@@ -7,8 +7,6 @@
 const FONSECA_TEAM_ID = 403869;
 
 // ===== PERSISTENT CACHE (survives between requests) =====
-// In Vercel serverless, global vars persist while the function is "warm"
-// When it goes cold, we fall back to fixed data — no API call wasted
 let cache = {
   news: null,
   newsAt: 0,
@@ -16,6 +14,10 @@ let cache = {
   rankingAt: 0,
   lastMatch: null,
   lastMatchAt: 0,
+  nextTournament: null,
+  nextTournamentAt: 0,
+  seasonStats: null,
+  seasonStatsAt: 0,
   cronLastRun: 0
 };
 
@@ -197,6 +199,98 @@ async function fetchLastMatch(apiKey) {
   return null;
 }
 
+// ===== NEXT TOURNAMENT VIA RAPIDAPI =====
+async function fetchNextTournament(apiKey) {
+  if (!apiKey) return null;
+  try {
+    // Get upcoming events for Fonseca
+    const res = await fetch(
+      `https://sofascore6.p.rapidapi.com/api/sofascore/v1/team/near-events?team_id=${FONSECA_TEAM_ID}&upcoming=true`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-rapidapi-host": "sofascore6.p.rapidapi.com",
+          "x-rapidapi-key": apiKey
+        }
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const events = Array.isArray(data) ? data : (data.events || data.nearEvents || []);
+    if (events.length === 0) return null;
+
+    // Find the next upcoming match
+    const next = events[0];
+    const surfaceMap = { 1: "Duro", 2: "Saibro", 3: "Grama", 4: "Carpet", 5: "Duro (indoor)" };
+    const tournament = next.tournament || {};
+    const season = next.season || {};
+    const isFonsecaHome = next.homeTeam?.id === FONSECA_TEAM_ID;
+    const opponent = isFonsecaHome ? next.awayTeam : next.homeTeam;
+
+    return {
+      tournament_category: tournament.uniqueTournament?.category?.name || tournament.name || "",
+      tournament_name: tournament.name || season.name || "",
+      surface: surfaceMap[tournament.uniqueTournament?.groundType] || "Duro",
+      city: tournament.uniqueTournament?.city || "",
+      country: tournament.uniqueTournament?.country || "",
+      date: next.startTimestamp ? new Date(next.startTimestamp * 1000).toISOString().split("T")[0] : "",
+      round: next.roundInfo?.name || "",
+      opponent_name: opponent?.shortName || opponent?.name || "",
+      opponent_id: opponent?.id || null,
+      opponent_ranking: null,
+      opponent_country: ""
+    };
+  } catch (e) {
+    console.error("NextTournament error:", e);
+  }
+  return null;
+}
+
+// ===== SEASON STATS VIA RAPIDAPI =====
+async function fetchSeasonStats(apiKey) {
+  if (!apiKey) return null;
+  try {
+    const res = await fetch(
+      `https://sofascore6.p.rapidapi.com/api/sofascore/v1/team/results?team_id=${FONSECA_TEAM_ID}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "x-rapidapi-host": "sofascore6.p.rapidapi.com",
+          "x-rapidapi-key": apiKey
+        }
+      }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const results = Array.isArray(data) ? data : (data.events || data.results || []);
+
+    // Count wins/losses for current year
+    const currentYear = new Date().getFullYear();
+    let wins = 0;
+    let losses = 0;
+    let titles = 0;
+
+    for (const match of results) {
+      if (!match.startTimestamp) continue;
+      const matchYear = new Date(match.startTimestamp * 1000).getFullYear();
+      if (matchYear !== currentYear) continue;
+      if (match.status?.type !== "finished") continue;
+
+      const isFonsecaHome = match.homeTeam?.id === FONSECA_TEAM_ID;
+      const fScore = isFonsecaHome ? match.homeScore?.current : match.awayScore?.current;
+      const oScore = isFonsecaHome ? match.awayScore?.current : match.homeScore?.current;
+
+      if (fScore > oScore) wins++;
+      else losses++;
+    }
+
+    return { wins, losses, titles: SEASON_DATA.titles, year: currentYear };
+  } catch (e) {
+    console.error("SeasonStats error:", e);
+  }
+  return null;
+}
+
 // ===== MAIN HANDLER =====
 export default async function handler(req, res) {
   const rapidApiKey = process.env.RAPIDAPI_KEY;
@@ -244,6 +338,24 @@ export default async function handler(req, res) {
         console.log("[cron] No recent match found");
       }
 
+      const freshTournament = await fetchNextTournament(rapidApiKey);
+      if (freshTournament && freshTournament.date) {
+        cache.nextTournament = freshTournament;
+        cache.nextTournamentAt = now;
+        console.log("[cron] Next tournament updated: " + freshTournament.tournament_name);
+      } else {
+        console.log("[cron] No upcoming tournament found, keeping fixed data");
+      }
+
+      const freshSeason = await fetchSeasonStats(rapidApiKey);
+      if (freshSeason) {
+        cache.seasonStats = freshSeason;
+        cache.seasonStatsAt = now;
+        console.log("[cron] Season stats updated: " + freshSeason.wins + "W-" + freshSeason.losses + "L");
+      } else {
+        console.log("[cron] Season stats fetch failed, keeping fixed data");
+      }
+
       cache.cronLastRun = now;
     } else if (sofascoreExpired) {
       // Normal request but cache is very old (>23h) — DON'T call SofaScore
@@ -264,13 +376,15 @@ export default async function handler(req, res) {
     const result = {
       news: cache.news || [],
       player: playerData,
-      season: SEASON_DATA,
+      season: cache.seasonStats || SEASON_DATA,
       lastMatch: cache.lastMatch || null,
-      nextMatch: NEXT_TOURNAMENT,
+      nextMatch: cache.nextTournament || NEXT_TOURNAMENT,
       _cache: {
         newsAge: cache.newsAt ? Math.round((now - cache.newsAt) / 60000) + "min" : "none",
         rankingAge: cache.rankingAt ? Math.round((now - cache.rankingAt) / 3600000) + "h" : "fixed",
         matchAge: cache.lastMatchAt ? Math.round((now - cache.lastMatchAt) / 3600000) + "h" : "none",
+        tournamentAge: cache.nextTournamentAt ? Math.round((now - cache.nextTournamentAt) / 3600000) + "h" : "fixed",
+        seasonAge: cache.seasonStatsAt ? Math.round((now - cache.seasonStatsAt) / 3600000) + "h" : "fixed",
         lastCron: cache.cronLastRun ? new Date(cache.cronLastRun).toISOString() : "never",
         source: "sofascore_cron+google_rss",
         sofascoreCalls: isCron ? "yes (cron)" : "no (cached)",
@@ -300,9 +414,9 @@ export default async function handler(req, res) {
         ranking: cache.ranking.ranking,
         rankingChange: cache.ranking.rankingChange
       } : PLAYER_DATA,
-      season: SEASON_DATA,
+      season: cache.seasonStats || SEASON_DATA,
       lastMatch: cache.lastMatch || null,
-      nextMatch: NEXT_TOURNAMENT,
+      nextMatch: cache.nextTournament || NEXT_TOURNAMENT,
       _cache: { error: true, source: "fallback", claudeCost: "$0.00" }
     });
   }
