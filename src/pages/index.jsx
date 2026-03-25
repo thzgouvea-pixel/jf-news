@@ -455,7 +455,7 @@ export default function JoaoFonsecaNews() {
   var _sb = useState(false); var showBio = _sb[0]; var setShowBio = _sb[1];
   var _st = useState(false); var showTitles = _st[0]; var setShowTitles = _st[1];
   var _ssh = useState(false); var showShare = _ssh[0]; var setShowShare = _ssh[1];
-  var _sm = useState(false); var showMenu = _sm[0]; var setShowMenu = _sm[1];
+  var _sm = useState(true); var showMenu = _sm[0]; var setShowMenu = _sm[1];
   var initDone = useRef(false);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 15000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -626,11 +626,9 @@ export default function JoaoFonsecaNews() {
 
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
-        <button onClick={function() { setShowMenu(!showMenu); }} style={{ width: "100%", padding: "12px 24px", background: showMenu ? "#F8F9FA" : BG_WHITE, border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", transition: "background 0.2s" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14 }}>☰</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em" }}>Explorar</span>
-          </div>
+        <button onClick={function() { setShowMenu(!showMenu); }} style={{ width: "100%", padding: "12px 24px", background: showMenu ? "#F8F9FA" : BG_WHITE, border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "background 0.2s" }}>
+          <span style={{ fontSize: 14 }}>☰</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.08em" }}>Mais</span>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={TEXT_DIM} strokeWidth="2.5" strokeLinecap="round" style={{ transition: "transform 0.3s", transform: showMenu ? "rotate(180deg)" : "rotate(0)" }}>
             <polyline points="6 9 12 15 18 9" />
           </svg>
@@ -687,6 +685,14 @@ export default function JoaoFonsecaNews() {
                   <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>@joaoffonseca</span>
                 </div>
               </a>
+
+              <button onClick={function() { setShowShare(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🔗</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Compartilhar</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>WhatsApp, Email, Link</span>
+                </div>
+              </button>
 
             </div>
           </div>
@@ -1023,10 +1029,8 @@ export default function JoaoFonsecaNews() {
             <span style={{ fontSize: 10, color: GREEN, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>Ver todos →</span>
           </div>
 
-          {/* Action buttons - no duplicate */}
+          {/* Action buttons */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-            <button onClick={function() { setShowBio(true); }} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>👤 Sobre</button>
-            <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 5 }}>📸 Instagram</a>
             <button onClick={function() { setShowShare(true); }} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>🔗 Compartilhar</button>
             <PixDonation />
           </div>
