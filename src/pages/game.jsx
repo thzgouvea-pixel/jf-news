@@ -803,13 +803,13 @@ const saveGame=async()=>{
 if(!player)return;
 try{
 const saveData=JSON.stringify({player,rivals:rivals.map(r=>({name:r.name,rank:r.rank,skill:r.skill,points:r.points})),season,weekIdx,sLog,prevRank,energy,injury,h2hLog,unlockedAchievements,moral,personalBest,winStreak});
-await window.storage.set("tc98-save",saveData);
+try { localStorage.setItem("tc98-save",saveData); } catch(e) { console.log("Save error:",e); }
 notify("Jogo salvo!");
 }catch(e){console.error("Save failed",e)}
 };
 const loadGame=async()=>{
 try{
-const result=await window.storage.get("tc98-save");
+const stored=localStorage.getItem("tc98-save"); const result=stored?{value:stored}:null;
 if(result&&result.value){
 const d=JSON.parse(result.value);
 setPlayer(d.player);setRivals(d.rivals);setSeason(d.season);setWeekIdx(d.weekIdx);setSLog(d.sLog||[]);setPrevRank(d.prevRank||450);setEnergy(d.energy||100);setInjury(d.injury||0);setH2hLog(d.h2hLog||{});setUnlockedAchievements(d.unlockedAchievements||[]);setMoral(d.moral||60);setPersonalBest(d.personalBest||{});setWinStreak(d.winStreak||0);setShowTutorial(false);setScreen("career");
@@ -819,7 +819,7 @@ return true;
 return false;
 };
 const hasSave=useRef(false);
-useEffect(()=>{(async()=>{try{const r=await window.storage.get("tc98-save");hasSave.current=!!r}catch(e){}})()},[]);
+useEffect(()=>{(async()=>{try{const r=localStorage.getItem("tc98-save");hasSave.current=!!r}catch(e){}})()},[]);
 useEffect(()=>{if(screen==="career"&&player)saveGame()},[screen]);
 
 useEffect(()=>{const l=document.createElement("link");l.href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap";l.rel="stylesheet";document.head.appendChild(l)},[]);
@@ -1585,7 +1585,8 @@ if(screen==="title")return(<div style={ctn}><div style={scan}/><div style={{padd
 
 <div style={{marginTop:24,paddingTop:12,borderTop:"1px solid #1a1a2e"}}>
 <Px size={6} color="#555" style={{display:"block"}}>© 2026 Thomaz Gouvea. Todos os direitos reservados.</Px>
-<Px size={6} color="#555" style={{display:"block",marginTop:4}}>Tennis Career 26 — Versão 1.0</Px>
+<Px size={6} color="#555" style={{display:"block",marginTop:4}}>Tennis Career 26 — Beta v0.9</Px>
+<Px size={5} color="#f59e0b" style={{display:"block",marginTop:6}}>⚠️ Versão beta · Jogo em desenvolvimento · Progresso salvo no navegador</Px>
 <Px size={6} color="#555" style={{display:"block",marginTop:3}}>Proibida a reprodução total ou parcial sem autorização.</Px>
 </div>
 </div><style>{CSS}</style></div>);
