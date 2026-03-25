@@ -416,15 +416,15 @@ var CareerTimeline = function() {
 var GameBanner = function() {
   return (
     <a href="/game" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #0d1130 40%, #1a0a2e 100%)", padding: "12px 24px", cursor: "pointer", transition: "all 0.2s", borderBottom: "1px solid " + BORDER }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <span style={{ fontSize: 24, flexShrink: 0 }}>🎮</span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ margin: 0, fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#ffd700", fontFamily: "'Inter', sans-serif" }}>Novo jogo</p>
-            <p style={{ margin: "2px 0 0", fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Tennis Career 26</p>
-            <p style={{ margin: "2px 0 0", fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Crie sua carreira no tênis profissional!</p>
-          </div>
-          <div style={{ flexShrink: 0, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 16px", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar ▶</div>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #0d1130 40%, #1a0a2e 100%)", padding: "20px 24px", cursor: "pointer", transition: "all 0.2s", borderBottom: "1px solid " + BORDER }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+          <span style={{ fontSize: 14 }}>🎮</span>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffd700", fontFamily: "'Inter', sans-serif" }}>Novo jogo</span>
+        </div>
+        <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Tennis Career 26</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Crie sua carreira no tênis profissional!</span>
+          <div style={{ background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 16px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar ▶</div>
         </div>
       </div>
     </a>
@@ -562,16 +562,15 @@ var QuizGame = function() {
   if (!started) {
     return (
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
-        <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", padding: "14px 24px", cursor: "pointer", position: "relative", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <span style={{ fontSize: 24, flexShrink: 0 }}>🎾</span>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Quiz: Quanto você conhece o João?</h3>
-              <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>10 perguntas · {totalPoints} pontos</p>
-            </div>
-            <div style={{ flexShrink: 0, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 16px", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>
-              Jogar
-            </div>
+        <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", padding: "20px 24px", cursor: "pointer", position: "relative", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            <span style={{ fontSize: 14 }}>🎾</span>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Quiz interativo</span>
+          </div>
+          <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Quanto você conhece o João Fonseca?</p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>10 perguntas · {totalPoints} pontos</span>
+            <div style={{ background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 16px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
           </div>
         </div>
       </div>
@@ -671,40 +670,38 @@ var RivalBanner = function() {
   var tienImg = "https://www.atptour.com/-/media/alias/player-headshot/" + r.atpCode;
   var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   return (
-    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderBottom: "1px solid " + BORDER, padding: "12px 24px" }}>
-      <p style={{ margin: "0 0 8px", textAlign: "center", fontSize: 10, fontStyle: "italic", color: "rgba(255,255,255,0.3)", fontFamily: "'Source Serif 4', Georgia, serif" }}>
+    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderBottom: "1px solid " + BORDER, padding: "20px 24px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <span style={{ fontSize: 14 }}>⚔️</span>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: RED, fontFamily: "'Inter', sans-serif" }}>Rivalidade</span>
+      </div>
+      <p style={{ margin: "0 0 10px", textAlign: "center", fontSize: 10.5, fontStyle: "italic", color: "rgba(255,255,255,0.35)", fontFamily: "'Source Serif 4', Georgia, serif" }}>
         &quot;Porque todo ídolo de verdade precisa de um grande rival&quot;
       </p>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-        {/* João */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2px solid " + GREEN + "50", flexShrink: 0 }}>
-            <img src={joaoImg} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#1a2a3a"/><text x="16" y="21" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="12" fill="#00A859">JF</text></svg>'); }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2px solid " + GREEN + "50", flexShrink: 0 }}>
+            <img src={joaoImg} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><rect width="36" height="36" fill="#1a2a3a"/><text x="18" y="23" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="13" fill="#00A859">JF</text></svg>'); }} />
           </div>
           <div>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", display: "block" }}>Fonseca</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", display: "block" }}>Fonseca</span>
             <span style={{ fontSize: 9, fontWeight: 700, color: GREEN, fontFamily: "'Inter', sans-serif" }}>🇧🇷 #39</span>
           </div>
         </div>
-
-        {/* H2H */}
         <div style={{ textAlign: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 18, fontWeight: 900, color: GREEN, fontFamily: "'Inter', sans-serif" }}>{r.h2h.joao}</span>
-            <span style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.2)", fontFamily: "'Inter', sans-serif" }}>VS</span>
-            <span style={{ fontSize: 18, fontWeight: 900, color: RED, fontFamily: "'Inter', sans-serif" }}>{r.h2h.tien}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 20, fontWeight: 900, color: GREEN, fontFamily: "'Inter', sans-serif" }}>{r.h2h.joao}</span>
+            <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.2)", fontFamily: "'Inter', sans-serif" }}>VS</span>
+            <span style={{ fontSize: 20, fontWeight: 900, color: RED, fontFamily: "'Inter', sans-serif" }}>{r.h2h.tien}</span>
           </div>
-          <span style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: RED, fontFamily: "'Inter', sans-serif", background: "rgba(230,57,70,0.12)", padding: "1px 6px", borderRadius: 3 }}>Rivalidade</span>
         </div>
-
-        {/* Tien */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", display: "block", textAlign: "right" }}>{r.name}</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", display: "block", textAlign: "right" }}>{r.name}</span>
             <span style={{ fontSize: 9, fontWeight: 700, color: RED, fontFamily: "'Inter', sans-serif" }}>{r.country + " #" + r.ranking}</span>
           </div>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2px solid " + RED + "50", flexShrink: 0 }}>
-            <img src={tienImg} alt={r.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" fill="#1a2a3a"/><text x="16" y="21" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="12" fill="#E63946">LT</text></svg>'); }} />
+          <div style={{ width: 36, height: 36, borderRadius: "50%", overflow: "hidden", background: "#1a2a3a", border: "2px solid " + RED + "50", flexShrink: 0 }}>
+            <img src={tienImg} alt={r.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.onerror = null; e.target.src = "data:image/svg+xml," + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><rect width="36" height="36" fill="#1a2a3a"/><text x="18" y="23" text-anchor="middle" font-family="Georgia" font-weight="800" font-size="13" fill="#E63946">LT</text></svg>'); }} />
           </div>
         </div>
       </div>
@@ -927,17 +924,17 @@ var NewsCard = function(props) {
         </div>
         <h3 style={{ margin: "0 0 5px", fontSize: 16, fontWeight: 700, color: h && hasUrl ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.45, transition: "color 0.15s" }}>{item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title}</h3>
         {item.summary && <p style={{ margin: "0 0 4px", fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 6 }}>
-          <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "none", cursor: rx.v ? "default" : "pointer", display: "flex", alignItems: "center", gap: 3, padding: 0, opacity: rx.v && rx.v !== "l" ? 0.25 : 0.6, transition: "opacity 0.2s" }}>
-            <span style={{ fontSize: 13 }}>👍</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 6 }}>
+          <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "none", cursor: rx.v ? "default" : "pointer", display: "flex", alignItems: "center", gap: 4, padding: 0, opacity: rx.v && rx.v !== "l" ? 0.2 : (rx.v === "l" ? 1 : 0.35), transition: "opacity 0.2s" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill={rx.v === "l" ? GREEN : "none"} stroke={rx.v === "l" ? GREEN : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
             {rx.l > 0 && <span style={{ fontSize: 10, color: rx.v === "l" ? GREEN : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.l}</span>}
           </button>
-          <button onClick={function(e) { handleRx("d", e); }} style={{ background: "none", border: "none", cursor: rx.v ? "default" : "pointer", display: "flex", alignItems: "center", gap: 3, padding: 0, opacity: rx.v && rx.v !== "d" ? 0.25 : 0.6, transition: "opacity 0.2s" }}>
-            <span style={{ fontSize: 13 }}>👎</span>
+          <button onClick={function(e) { handleRx("d", e); }} style={{ background: "none", border: "none", cursor: rx.v ? "default" : "pointer", display: "flex", alignItems: "center", gap: 4, padding: 0, opacity: rx.v && rx.v !== "d" ? 0.2 : (rx.v === "d" ? 1 : 0.35), transition: "opacity 0.2s" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill={rx.v === "d" ? RED : "none"} stroke={rx.v === "d" ? RED : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
             {rx.d > 0 && <span style={{ fontSize: 10, color: rx.v === "d" ? RED : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.d}</span>}
           </button>
-          <button onClick={handleSh} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginLeft: "auto", opacity: 0.4, display: "flex", alignItems: "center" }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={TEXT_DIM} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          <button onClick={handleSh} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginLeft: "auto", opacity: 0.3, display: "flex", alignItems: "center", transition: "opacity 0.2s" }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           </button>
         </div>
       </div>
@@ -1659,6 +1656,7 @@ export default function JoaoFonsecaNews() {
           {/* Action buttons */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
             <button onClick={function() { setShowShare(true); }} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>🔗 Compartilhar</button>
+            <a href="mailto:thzgouvea@gmail.com?subject=Fonseca News — Contato" style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5, textDecoration: "none" }}>✉️ Fale conosco</a>
             <PixDonation />
           </div>
 
