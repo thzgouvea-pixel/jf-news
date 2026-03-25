@@ -412,6 +412,39 @@ var CareerTimeline = function() {
   );
 };
 
+// ===== GAME BANNER =====
+var GameBanner = function() {
+  return (
+    <a href="/game" style={{ textDecoration: "none", display: "block" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #0d1130 40%, #1a0a2e 100%)", padding: "20px 24px", position: "relative", overflow: "hidden", cursor: "pointer", transition: "all 0.2s" }}>
+        {/* Decorative elements */}
+        <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,215,0,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -20, left: -20, width: 80, height: 80, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,168,89,0.08) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {/* Pixel art icon */}
+          <div style={{ width: 56, height: 56, borderRadius: 12, background: "linear-gradient(135deg, #1a1d34, #0b0e1a)", border: "2px solid rgba(255,215,0,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 0 20px rgba(255,215,0,0.1)" }}>
+            <span style={{ fontSize: 28 }}>🎮</span>
+          </div>
+
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ margin: "0 0 2px", fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: "#ffd700", fontFamily: "'Inter', sans-serif" }}>Novo jogo</p>
+            <p style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Tennis Career 26</p>
+            <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>Crie sua carreira no tênis profissional!</p>
+          </div>
+
+          {/* Play button */}
+          <div style={{ flexShrink: 0, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "10px 18px", borderRadius: 10, display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 14px rgba(0,168,89,0.3)" }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: "'Inter', sans-serif" }}>Jogar</span>
+            <span style={{ fontSize: 14 }}>▶</span>
+          </div>
+        </div>
+      </div>
+    </a>
+  );
+};
+
 // ===== ATP CALENDAR 2026 =====
 var ATPCalendar = function() {
   var now = new Date();
@@ -906,6 +939,7 @@ var buildFeed = function(newsItems, season, lastMatch) {
   var elements = [];
   var inserts = [
     { at: 5, component: <SeasonBar key="season-bar" season={season} /> },
+    { at: 8, component: <GameBanner key="game-banner" /> },
     { at: 10, component: <RivalBanner key="rival-bar" /> },
     { at: 12, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
   ];
@@ -915,6 +949,7 @@ var buildFeed = function(newsItems, season, lastMatch) {
     if (insert) elements.push(insert.component);
   });
   if (newsItems.length < 5 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
+  if (newsItems.length < 8) elements.push(<GameBanner key="game-banner" />);
   if (newsItems.length < 10) elements.push(<RivalBanner key="rival-bar" />);
   if (newsItems.length < 12 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
   return elements;
