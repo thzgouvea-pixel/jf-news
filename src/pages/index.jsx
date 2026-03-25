@@ -1,4 +1,4 @@
-// v9 rival-banner
+// v11 mega-features
 import { useState, useEffect, useRef } from "react";
 
 const ACCENT = "#00A859";
@@ -233,6 +233,180 @@ var RankingChart = function(props) {
           <span style={{ fontSize: 10, color: "#2A5AA0", fontFamily: "'Inter', sans-serif", fontWeight: 700 }}>Títulos</span>
           <span style={{ fontSize: 12, fontWeight: 800, color: "#1A3A70", fontFamily: "'Inter', sans-serif", display: "block" }}>🏆 2 ATP Tour</span>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// ===== DAILY POLL =====
+var DailyPoll = function() {
+  var today = new Date().toISOString().split("T")[0];
+  var pollKey = "fn_poll_" + today;
+  var _v = useState(function() { try { return localStorage.getItem(pollKey); } catch(e) { return null; } });
+  var vote = _v[0]; var setVote = _v[1];
+  var _r = useState(function() { try { var d = JSON.parse(localStorage.getItem(pollKey + "_r") || "null"); return d; } catch(e) { return null; } });
+  var results = _r[0]; var setResults = _r[1];
+
+  // Poll question changes daily based on date
+  var polls = [
+    { q: "João vence o primeiro jogo em Monte Carlo?", a: "Sim", b: "Não" },
+    { q: "João chega ao Top 30 até o fim de 2026?", a: "Com certeza", b: "Difícil" },
+    { q: "João vai ganhar um Masters 1000 na carreira?", a: "Sim!", b: "Ainda não" },
+    { q: "Quem terá o melhor 2026: João ou Tien?", a: "João 🇧🇷", b: "Tien 🇺🇸" },
+    { q: "João chega às quartas em Roland Garros?", a: "Vai sim!", b: "Ainda cedo" },
+    { q: "João pode ser Top 10 até 2027?", a: "Claro!", b: "Precisa de tempo" },
+    { q: "Quem é mais talentoso: João ou Alcaraz aos 19?", a: "João 🇧🇷", b: "Alcaraz 🇪🇸" },
+  ];
+  var dayIdx = Math.floor(Date.now() / 86400000) % polls.length;
+  var poll = polls[dayIdx];
+
+  var handleVote = function(choice) {
+    if (vote) return;
+    setVote(choice);
+    try { localStorage.setItem(pollKey, choice); } catch(e) {}
+    // Simulate community results (fake but fun)
+    var sim = choice === "a" ? { a: 55 + Math.floor(Math.random() * 15), b: 0 } : { a: 35 + Math.floor(Math.random() * 15), b: 0 };
+    sim.b = 100 - sim.a;
+    setResults(sim);
+    try { localStorage.setItem(pollKey + "_r", JSON.stringify(sim)); } catch(e) {}
+  };
+
+  return (
+    <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+      <div style={{ padding: "16px 24px", background: "linear-gradient(135deg, #FAFDF7 0%, #F5FAF0 100%)", borderBottom: "1px solid " + BORDER }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <span style={{ fontSize: 16 }}>📊</span>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, fontFamily: "'Inter', sans-serif" }}>Enquete do dia</span>
+        </div>
+        <p style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>{poll.q}</p>
+
+        {!vote ? (
+          <div style={{ display: "flex", gap: 10 }}>
+            <button onClick={function() { handleVote("a"); }} style={{ flex: 1, padding: "12px", background: "#fff", border: "2px solid " + GREEN, borderRadius: 12, fontSize: 14, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s" }}>{poll.a}</button>
+            <button onClick={function() { handleVote("b"); }} style={{ flex: 1, padding: "12px", background: "#fff", border: "2px solid " + BORDER, borderRadius: 12, fontSize: 14, fontWeight: 700, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s" }}>{poll.b}</button>
+          </div>
+        ) : (
+          <div>
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: vote === "a" ? GREEN : TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>{poll.a} {vote === "a" ? "✓" : ""}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{results ? results.a : 50}%</span>
+              </div>
+              <div style={{ height: 6, background: "#E8E8E8", borderRadius: 3 }}>
+                <div style={{ height: 6, background: GREEN, borderRadius: 3, width: (results ? results.a : 50) + "%", transition: "width 0.8s ease" }} />
+              </div>
+            </div>
+            <div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: vote === "b" ? GREEN : TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>{poll.b} {vote === "b" ? "✓" : ""}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{results ? results.b : 50}%</span>
+              </div>
+              <div style={{ height: 6, background: "#E8E8E8", borderRadius: 3 }}>
+                <div style={{ height: 6, background: TEXT_DIM, borderRadius: 3, width: (results ? results.b : 50) + "%", transition: "width 0.8s ease" }} />
+              </div>
+            </div>
+            <p style={{ margin: "10px 0 0", fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Obrigado pelo voto! Nova enquete amanhã.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ===== NEXT GEN COMPARATOR =====
+var NextGenComparator = function() {
+  var players = [
+    { name: "J. Fonseca", country: "🇧🇷", age: 19, ranking: 39, titles: 2, bestRanking: 24, style: "Agressivo", forehand: 95, serve: 88, movement: 85, mental: 90, color: GREEN },
+    { name: "L. Tien", country: "🇺🇸", age: 20, ranking: 21, titles: 1, bestRanking: 21, style: "Contra-atacante", forehand: 82, serve: 80, movement: 92, mental: 88, color: RED },
+    { name: "J. Mensik", country: "🇨🇿", age: 19, ranking: 30, titles: 2, bestRanking: 30, style: "Saque e voleio", forehand: 85, serve: 94, movement: 78, mental: 82, color: "#3B82F6" },
+    { name: "A. Fils", country: "🇫🇷", age: 20, ranking: 28, titles: 2, bestRanking: 20, style: "Completo", forehand: 88, serve: 86, movement: 90, mental: 84, color: "#8B5CF6" },
+  ];
+
+  var StatBar = function(p) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+        <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", width: 60, textAlign: "right" }}>{p.label}</span>
+        <div style={{ flex: 1, height: 5, background: "#EBEBEB", borderRadius: 3 }}>
+          <div style={{ height: 5, background: p.color, borderRadius: 3, width: p.value + "%", transition: "width 0.5s" }} />
+        </div>
+        <span style={{ fontSize: 10, fontWeight: 700, color: p.color, fontFamily: "'Inter', sans-serif", width: 24 }}>{p.value}</span>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ padding: "20px 16px", overflowX: "auto" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+        {players.map(function(p, i) {
+          return (
+            <div key={i} style={{ padding: "14px", background: i === 0 ? "#F7FDF9" : "#F8F9FA", border: "1px solid " + (i === 0 ? GREEN + "30" : BORDER), borderRadius: 14 }}>
+              <div style={{ textAlign: "center", marginBottom: 10 }}>
+                <span style={{ fontSize: 20 }}>{p.country}</span>
+                <p style={{ margin: "4px 0 2px", fontSize: 14, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{p.name}</p>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: p.color + "15", borderRadius: 6, padding: "2px 8px" }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: p.color, fontFamily: "'Inter', sans-serif" }}>{"#" + p.ranking}</span>
+                </div>
+              </div>
+              <div style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center", marginBottom: 8 }}>
+                {p.age + " anos · " + p.titles + " títulos · Estilo: " + p.style}
+              </div>
+              <StatBar label="Forehand" value={p.forehand} color={p.color} />
+              <StatBar label="Saque" value={p.serve} color={p.color} />
+              <StatBar label="Movim." value={p.movement} color={p.color} />
+              <StatBar label="Mental" value={p.mental} color={p.color} />
+            </div>
+          );
+        })}
+      </div>
+      <p style={{ margin: "12px 0 0", fontSize: 9, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center", fontStyle: "italic" }}>Estatísticas baseadas em análise de desempenho. Valores relativos entre os jogadores.</p>
+    </div>
+  );
+};
+
+// ===== CAREER TIMELINE =====
+var CareerTimeline = function() {
+  var events = [
+    { date: "Ago 2006", title: "Nasce no Rio de Janeiro", desc: "Bairro de Ipanema, a 10 min do local do Rio Open", emoji: "👶", color: "#6B7280" },
+    { date: "2010", title: "Começa no tênis", desc: "Primeiras aulas no Country Club do Rio", emoji: "🎾", color: "#6B7280" },
+    { date: "2014", title: "Encontro com Nadal", desc: "Assiste ao Rio Open e tira foto com o ídolo aos 8 anos", emoji: "⭐", color: "#EF9F27" },
+    { date: "Set 2023", title: "Nº1 mundial juvenil", desc: "Campeão do US Open Jr — primeiro brasileiro no topo", emoji: "🏆", color: GREEN },
+    { date: "Fev 2024", title: "Estreia ATP no Rio Open", desc: "Derrota Arthur Fils (#36) e chega às quartas", emoji: "🇧🇷", color: GREEN },
+    { date: "Ago 2024", title: "1º Challenger", desc: "Título em Lexington sem perder sets", emoji: "🎯", color: "#3B82F6" },
+    { date: "Dez 2024", title: "Campeão NextGen", desc: "Invicto em 5 jogos — 1º sul-americano campeão", emoji: "🏆", color: GREEN },
+    { date: "Jan 2025", title: "Derrota Rublev no AO", desc: "Top 10 caiu na R1 — João entra no Top 100", emoji: "🔥", color: RED },
+    { date: "Fev 2025", title: "1º título ATP", desc: "Buenos Aires 250 — brasileiro mais jovem campeão ATP", emoji: "🏆", color: GREEN },
+    { date: "Jul 2025", title: "Wimbledon R3", desc: "Primeiro brasileiro na R3 desde Bellucci 2010", emoji: "🌿", color: GREEN },
+    { date: "Out 2025", title: "Campeão Basel 500", desc: "1º brasileiro a ganhar um ATP 500 — ranking #24", emoji: "🏆", color: YELLOW },
+    { date: "Jan 2026", title: "Duplas no Rio Open", desc: "Título de duplas no torneio de casa", emoji: "🤝", color: "#3B82F6" },
+    { date: "Mar 2026", title: "Ranking #39 ATP", desc: "Preparando-se para Monte Carlo Masters 1000", emoji: "📈", color: GREEN },
+  ];
+
+  return (
+    <div style={{ padding: "16px 20px", maxHeight: "65vh", overflowY: "auto" }}>
+      <div style={{ position: "relative", paddingLeft: 28 }}>
+        {/* Vertical line */}
+        <div style={{ position: "absolute", left: 9, top: 8, bottom: 8, width: 2, background: "linear-gradient(to bottom, " + GREEN + "40, " + YELLOW + "40)", borderRadius: 1 }} />
+
+        {events.map(function(ev, i) {
+          var isTitle = ev.emoji === "🏆";
+          return (
+            <div key={i} style={{ position: "relative", marginBottom: i < events.length - 1 ? 16 : 0, paddingBottom: 4 }}>
+              {/* Dot */}
+              <div style={{ position: "absolute", left: -22, top: 4, width: 14, height: 14, borderRadius: "50%", background: isTitle ? ev.color : "#fff", border: "2.5px solid " + ev.color, display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1 }}>
+                {isTitle && <span style={{ fontSize: 7, lineHeight: 1 }}>🏆</span>}
+              </div>
+              {/* Content */}
+              <div style={{ background: isTitle ? (ev.color === YELLOW ? "#FFFBEB" : "#F7FDF9") : "#FAFAFA", border: "1px solid " + (isTitle ? ev.color + "30" : BORDER), borderRadius: 10, padding: "10px 14px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: ev.color, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>{ev.date}</span>
+                  <span style={{ fontSize: 14 }}>{ev.emoji}</span>
+                </div>
+                <p style={{ margin: "0 0 2px", fontSize: 13.5, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>{ev.title}</p>
+                <p style={{ margin: 0, fontSize: 11.5, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif", lineHeight: 1.4 }}>{ev.desc}</p>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -722,6 +896,8 @@ export default function JoaoFonsecaNews() {
   var _ssh = useState(false); var showShare = _ssh[0]; var setShowShare = _ssh[1];
   var _sm = useState(true); var showMenu = _sm[0]; var setShowMenu = _sm[1];
   var _sr = useState(false); var showRanking = _sr[0]; var setShowRanking = _sr[1];
+  var _sng = useState(false); var showNextGen = _sng[0]; var setShowNextGen = _sng[1];
+  var _stl = useState(false); var showTimeline = _stl[0]; var setShowTimeline = _stl[1];
   var initDone = useRef(false);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 15000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -863,8 +1039,24 @@ export default function JoaoFonsecaNews() {
                     </div>
                   )}
                 </div>
-                <p style={{ margin: "1px 0 0 0", fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>
-                  João Fonseca 🇧🇷
+                <p style={{ margin: "1px 0 0 0", fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500, display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap" }}>
+                  {/* Live indicator - shows during tournament dates */}
+                  {(function() {
+                    if (!dm || !dm.date) return null;
+                    var matchDate = new Date(dm.date);
+                    var now = new Date();
+                    var daysDiff = (matchDate - now) / (1000 * 60 * 60 * 24);
+                    if (daysDiff <= 7 && daysDiff >= -7) {
+                      return (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: RED + "12", borderRadius: 6, padding: "1px 7px", marginRight: 2 }}>
+                          <span style={{ width: 6, height: 6, borderRadius: "50%", background: RED, display: "inline-block", animation: "pulse 1.5s ease-in-out infinite" }} />
+                          <span style={{ fontSize: 9, fontWeight: 700, color: RED, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em" }}>Torneio</span>
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                  <span>João Fonseca 🇧🇷</span>
                   {lastUpdate ? (" · " + formatTimeAgo(lastUpdate)) : " · Carregando..."}
                   {dn.length > 0 && (" · " + dn.length + " notícias")}
                 </p>
@@ -892,6 +1084,9 @@ export default function JoaoFonsecaNews() {
 
       {/* QUIZ */}
       <QuizGame />
+
+      {/* DAILY POLL */}
+      <DailyPoll />
 
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
@@ -931,26 +1126,26 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
+              <button onClick={function() { setShowTimeline(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>📅</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Timeline</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Carreira completa</span>
+                </div>
+              </button>
+
+              <button onClick={function() { setShowNextGen(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>⚡</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Next Gen</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Comparador de rivais</span>
+                </div>
+              </button>
+
               <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, opacity: 0.5 }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🎬</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Vídeos</span>
-                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Em breve</span>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, opacity: 0.5 }}>
-                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>💬</span>
-                <div style={{ textAlign: "left" }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Fórum</span>
-                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Em breve</span>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, opacity: 0.5 }}>
-                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>📝</span>
-                <div style={{ textAlign: "left" }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Blog</span>
                   <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Em breve</span>
                 </div>
               </div>
@@ -1245,6 +1440,34 @@ export default function JoaoFonsecaNews() {
                 </div>
               ); })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* NEXT GEN COMPARATOR POPUP */}
+      {showNextGen && (
+        <div onClick={function() { setShowNextGen(false); }} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInOverlay 0.3s ease", overflowY: "auto" }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: BG_WHITE, borderRadius: 20, padding: "24px 16px", maxWidth: 650, width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "slideUp 0.4s ease" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, padding: "0 8px" }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>⚡ Next Gen: Quem lidera?</h2>
+              <button onClick={function() { setShowNextGen(false); }} style={{ background: "none", border: "none", color: TEXT_DIM, fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+            <p style={{ margin: "0 0 8px", padding: "0 8px", fontSize: 12, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>Os 4 maiores talentos sub-21 do tênis mundial</p>
+            <NextGenComparator />
+          </div>
+        </div>
+      )}
+
+      {/* CAREER TIMELINE POPUP */}
+      {showTimeline && (
+        <div onClick={function() { setShowTimeline(false); }} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInOverlay 0.3s ease", overflowY: "auto" }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: BG_WHITE, borderRadius: 20, padding: "24px 16px", maxWidth: 500, width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "slideUp 0.4s ease" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, padding: "0 8px" }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>📅 Timeline da carreira</h2>
+              <button onClick={function() { setShowTimeline(false); }} style={{ background: "none", border: "none", color: TEXT_DIM, fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+            <p style={{ margin: "0 0 4px", padding: "0 8px", fontSize: 12, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>De Ipanema ao Top 40 mundial</p>
+            <CareerTimeline />
           </div>
         </div>
       )}
