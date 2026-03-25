@@ -1012,6 +1012,7 @@ export default function JoaoFonsecaNews() {
   var _sng = useState(false); var showNextGen = _sng[0]; var setShowNextGen = _sng[1];
   var _stl = useState(false); var showTimeline = _stl[0]; var setShowTimeline = _stl[1];
   var _scal = useState(false); var showCalendar = _scal[0]; var setShowCalendar = _scal[1];
+  var _svid = useState(false); var showVideos = _svid[0]; var setShowVideos = _svid[1];
   var initDone = useRef(false);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 15000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -1260,6 +1261,14 @@ export default function JoaoFonsecaNews() {
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Calendário</span>
                   <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>ATP 2026</span>
+                </div>
+              </button>
+
+              <button onClick={function() { setShowVideos(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🎬</span>
+                <div style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Vídeos</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Highlights e entrevistas</span>
                 </div>
               </button>
 
@@ -1552,6 +1561,42 @@ export default function JoaoFonsecaNews() {
                   <p style={{ margin: 0, fontSize: 11.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif" }}>{t.detail}</p>
                 </div>
               ); })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIDEOS POPUP */}
+      {showVideos && (
+        <div onClick={function() { setShowVideos(false); }} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInOverlay 0.3s ease", overflowY: "auto" }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: BG_WHITE, borderRadius: 20, padding: "24px 16px", maxWidth: 560, width: "100%", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.2)", animation: "slideUp 0.4s ease" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, padding: "0 8px" }}>
+              <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>🎬 Vídeos do João</h2>
+              <button onClick={function() { setShowVideos(false); }} style={{ background: "none", border: "none", color: TEXT_DIM, fontSize: 20, cursor: "pointer" }}>✕</button>
+            </div>
+            <p style={{ margin: "0 0 12px", padding: "0 8px", fontSize: 12, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>Melhores momentos e highlights</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, padding: "0 8px" }}>
+              {[
+                { id: "cVYRsHvGx04", title: "Fonseca vs Rublev — Australian Open 2025" },
+                { id: "HfC_VYJaXbE", title: "Fonseca vs Humbert — Miami 2025 Highlights" },
+                { id: "RlWMdGmOev4", title: "Fonseca: The Tennis Phenomenon To Watch" },
+                { id: "Q6JKlx4qW-g", title: "Fonseca campeão do Basel 500!" },
+                { id: "IcSVMBXXk1s", title: "NextGen ATP Finals 2024 — Champion!" },
+              ].map(function(vid) {
+                return (
+                  <div key={vid.id} style={{ borderRadius: 12, overflow: "hidden", border: "1px solid " + BORDER }}>
+                    <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                      <iframe src={"https://www.youtube.com/embed/" + vid.id} title={vid.title} frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }} />
+                    </div>
+                    <div style={{ padding: "8px 12px" }}>
+                      <p style={{ margin: 0, fontSize: 12, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif" }}>{vid.title}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+              <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "#FF0000", color: "#fff", borderRadius: 10, fontSize: 13, fontWeight: 700, fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>▶ Ver mais no YouTube</a>
             </div>
           </div>
         </div>
