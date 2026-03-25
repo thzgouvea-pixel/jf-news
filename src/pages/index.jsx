@@ -273,39 +273,39 @@ var DailyPoll = function() {
 
   return (
     <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
-      <div style={{ padding: "20px 24px", background: "linear-gradient(135deg, #FAFDF7 0%, #F5FAF0 100%)", borderBottom: "1px solid " + BORDER }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-          <span style={{ fontSize: 16 }}>📊</span>
-          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, fontFamily: "'Inter', sans-serif" }}>Enquete do dia</span>
+      <div style={{ padding: "12px 24px", background: "linear-gradient(135deg, #FAFDF7 0%, #F5FAF0 100%)", borderBottom: "1px solid " + BORDER }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <span style={{ fontSize: 13 }}>📊</span>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: GREEN, fontFamily: "'Inter', sans-serif" }}>Enquete do dia</span>
         </div>
-        <p style={{ margin: "0 0 12px", fontSize: 15, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>{poll.q}</p>
+        <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>{poll.q}</p>
 
         {!vote ? (
-          <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={function() { handleVote("a"); }} style={{ flex: 1, padding: "12px", background: "#fff", border: "2px solid " + GREEN, borderRadius: 12, fontSize: 14, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s" }}>{poll.a}</button>
-            <button onClick={function() { handleVote("b"); }} style={{ flex: 1, padding: "12px", background: "#fff", border: "2px solid " + BORDER, borderRadius: 12, fontSize: 14, fontWeight: 700, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s" }}>{poll.b}</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={function() { handleVote("a"); }} style={{ flex: 1, padding: "8px", background: "#fff", border: "1.5px solid " + GREEN, borderRadius: 8, fontSize: 12, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s" }}>{poll.a}</button>
+            <button onClick={function() { handleVote("b"); }} style={{ flex: 1, padding: "8px", background: "#fff", border: "1.5px solid " + BORDER, borderRadius: 8, fontSize: 12, fontWeight: 700, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.2s" }}>{poll.b}</button>
           </div>
         ) : (
           <div>
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: vote === "a" ? GREEN : TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>{poll.a} {vote === "a" ? "✓" : ""}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{results ? results.a : 50}%</span>
+            <div style={{ marginBottom: 6 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: vote === "a" ? GREEN : TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>{poll.a} {vote === "a" ? "✓" : ""}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{results ? results.a : 50}%</span>
               </div>
-              <div style={{ height: 6, background: "#E8E8E8", borderRadius: 3 }}>
-                <div style={{ height: 6, background: GREEN, borderRadius: 3, width: (results ? results.a : 50) + "%", transition: "width 0.8s ease" }} />
+              <div style={{ height: 4, background: "#E8E8E8", borderRadius: 2 }}>
+                <div style={{ height: 4, background: GREEN, borderRadius: 2, width: (results ? results.a : 50) + "%", transition: "width 0.8s ease" }} />
               </div>
             </div>
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: vote === "b" ? GREEN : TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>{poll.b} {vote === "b" ? "✓" : ""}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{results ? results.b : 50}%</span>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: vote === "b" ? GREEN : TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>{poll.b} {vote === "b" ? "✓" : ""}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{results ? results.b : 50}%</span>
               </div>
-              <div style={{ height: 6, background: "#E8E8E8", borderRadius: 3 }}>
-                <div style={{ height: 6, background: TEXT_DIM, borderRadius: 3, width: (results ? results.b : 50) + "%", transition: "width 0.8s ease" }} />
+              <div style={{ height: 4, background: "#E8E8E8", borderRadius: 2 }}>
+                <div style={{ height: 4, background: TEXT_DIM, borderRadius: 2, width: (results ? results.b : 50) + "%", transition: "width 0.8s ease" }} />
               </div>
             </div>
-            <p style={{ margin: "10px 0 0", fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Obrigado pelo voto! Nova enquete amanhã.</p>
+            <p style={{ margin: "6px 0 0", fontSize: 9, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Nova enquete amanhã!</p>
           </div>
         )}
       </div>
@@ -576,13 +576,16 @@ var QuizGame = function() {
   if (!started) {
     return (
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
-        <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", padding: "24px", textAlign: "center", cursor: "pointer", position: "relative", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
-          <div style={{ position: "absolute", top: -20, left: -20, width: 100, height: 100, borderRadius: "50%", background: "radial-gradient(circle, rgba(255,203,5,0.1) 0%, transparent 70%)", pointerEvents: "none" }} />
-          <span style={{ fontSize: 32 }}>🎾</span>
-          <h3 style={{ margin: "8px 0 4px", fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Quiz: Quanto você conhece o João?</h3>
-          <p style={{ margin: "0 0 14px", fontSize: 12.5, color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif" }}>10 perguntas · {totalPoints} pontos · Teste seus conhecimentos!</p>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "10px 24px", borderRadius: 12, color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "'Inter', sans-serif", boxShadow: "0 4px 14px rgba(0,168,89,0.3)" }}>
-            Jogar agora
+        <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", padding: "14px 24px", cursor: "pointer", position: "relative", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <span style={{ fontSize: 24, flexShrink: 0 }}>🎾</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h3 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Quiz: Quanto você conhece o João?</h3>
+              <p style={{ margin: "2px 0 0", fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>10 perguntas · {totalPoints} pontos</p>
+            </div>
+            <div style={{ flexShrink: 0, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 16px", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>
+              Jogar
+            </div>
           </div>
         </div>
       </div>
