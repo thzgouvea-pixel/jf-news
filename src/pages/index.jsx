@@ -449,7 +449,7 @@ var GameBanner = function() {
         </div>
         <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Tennis Career 26</p>
         <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif", display: "block", marginBottom: 10 }}>Crie sua carreira no tênis profissional!</span>
-        <div style={{ textAlign: "center" }}>
+        <div style={{ textAlign: "right" }}>
           <div style={{ display: "inline-block", background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 24px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
         </div>
       </div>
@@ -656,7 +656,7 @@ var QuizGame = function() {
           </div>
           <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Quanto você conhece o João Fonseca?</p>
           <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif", display: "block", marginBottom: 10 }}>10 perguntas · {totalPoints} pontos</span>
-          <div style={{ textAlign: "center" }}>
+          <div style={{ textAlign: "right" }}>
             <div style={{ display: "inline-block", background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 24px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
           </div>
         </div>
@@ -897,10 +897,7 @@ var NextDuelCard = function(props) {
       {/* Countdown + Assistir */}
       {!countdown.expired && (
         <div style={{ padding: "14px 20px 18px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 8 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Começa em</span>
-            <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ background: "rgba(79,195,247,0.15)", padding: "4px 12px", borderRadius: 6, color: "#4FC3F7", fontSize: 10, fontWeight: 600, fontFamily: "'Inter', sans-serif", textDecoration: "none", border: "1px solid rgba(79,195,247,0.2)" }}>Assistir</a>
-          </div>
+          <p style={{ margin: "0 0 8px", textAlign: "center", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Começa em</p>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             <CountdownBox value={countdown.days} label="dias" />
             <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
@@ -909,6 +906,9 @@ var NextDuelCard = function(props) {
             <CountdownBox value={countdown.minutes} label="min" />
             <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
             <CountdownBox value={countdown.seconds} label="seg" />
+          </div>
+          <div style={{ textAlign: "right", marginTop: 10 }}>
+            <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ background: "rgba(79,195,247,0.15)", padding: "5px 14px", borderRadius: 6, color: "#4FC3F7", fontSize: 10, fontWeight: 600, fontFamily: "'Inter', sans-serif", textDecoration: "none", border: "1px solid rgba(79,195,247,0.2)" }}>Assistir</a>
           </div>
         </div>
       )}
