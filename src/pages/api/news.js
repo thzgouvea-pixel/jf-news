@@ -38,7 +38,8 @@ const NEXT_TOURNAMENT = {
   city: "Monte Carlo",
   country: "Mônaco",
   date: "2026-04-05",
-  round: ""
+  round: "",
+  channels: []
 };
 
 // ===== GOOGLE NEWS RSS (FREE, UNLIMITED) =====
