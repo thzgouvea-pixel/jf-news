@@ -988,12 +988,12 @@ var NewsCard = function(props) {
   var item = props.item; var index = props.index;
   var _s = useState(false); var h = _s[0]; var setH = _s[1];
   var _i = useState(false); var imgErr = _i[0]; var setImgErr = _i[1];
+  var _reading = useState(false); var reading = _reading[0]; var setReading = _reading[1];
   var likeId = (item.title || "").substring(0, 40).replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
   var _lk = useState({ likes: 0, dislikes: 0 }); var rx = _lk[0]; var setRx = _lk[1];
   var _voted = useState(function() { try { return localStorage.getItem("fn_v_" + likeId); } catch(e) { return null; } });
   var voted = _voted[0]; var setVoted = _voted[1];
 
-  // Load real counts from API
   useEffect(function() {
     if (!likeId) return;
     fetch("/api/likes?id=" + likeId).then(function(r) { return r.json(); }).then(function(d) {
@@ -1020,11 +1020,11 @@ var NewsCard = function(props) {
   var cat = catCfg[item.category] || catCfg["Notícia"];
   var hasImg = item.image && !imgErr;
   var hasUrl = item.url && item.url.startsWith("http");
-  var Tag = hasUrl ? "a" : "div";
-  var linkProps = hasUrl ? { href: item.url, target: "_blank", rel: "noopener noreferrer" } : {};
+  var cleanTitle = item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title;
   return (
-    <Tag {...linkProps} onMouseEnter={function() { setH(true); }} onMouseLeave={function() { setH(false); }}
-      style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h && hasUrl ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "20px 24px" : "20px 24px 20px 20px", borderBottom: "1px solid " + BORDER, borderLeft: hasImg ? "none" : ("3px solid " + cat.color), transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0, cursor: hasUrl ? "pointer" : "default", alignItems: "flex-start" }}>
+    <>
+    <div onClick={function() { setReading(true); }} onMouseEnter={function() { setH(true); }} onMouseLeave={function() { setH(false); }}
+      style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "20px 24px" : "20px 24px 20px 20px", borderBottom: "1px solid " + BORDER, borderLeft: hasImg ? "none" : ("3px solid " + cat.color), transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0, cursor: "pointer", alignItems: "flex-start" }}>
       {hasImg && (
         <img src={item.image} alt="" onError={function() { setImgErr(true); }}
           style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0, marginTop: 2, background: "#f0f0f0" }} />
@@ -1035,7 +1035,7 @@ var NewsCard = function(props) {
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{item.source}</span>
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", marginLeft: "auto", whiteSpace: "nowrap" }}>{formatTimeAgo(item.date)}</span>
         </div>
-        <h3 style={{ margin: "0 0 5px", fontSize: 16, fontWeight: 700, color: h && hasUrl ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.45, transition: "color 0.15s" }}>{item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title}</h3>
+        <h3 style={{ margin: "0 0 5px", fontSize: 16, fontWeight: 700, color: h ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.45, transition: "color 0.15s" }}>{cleanTitle}</h3>
         {item.summary && <p style={{ margin: "0 0 4px", fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10 }}>
           <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "none", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 4, padding: 0, opacity: voted && voted !== "l" ? 0.2 : (voted === "l" ? 1 : 0.35), transition: "opacity 0.2s" }}>
@@ -1051,7 +1051,76 @@ var NewsCard = function(props) {
           </button>
         </div>
       </div>
-    </Tag>
+    </div>
+
+    {/* READING MODE MODAL */}
+    {reading && (
+      <div onClick={function() { setReading(false); }} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)", display: "flex", alignItems: "flex-end", justifyContent: "center", animation: "fadeInOverlay 0.25s ease" }}>
+        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: BG_WHITE, borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", animation: "slideUp 0.35s ease", boxShadow: "0 -10px 40px rgba(0,0,0,0.15)" }}>
+          {/* Handle bar */}
+          <div style={{ textAlign: "center", padding: "10px 0 4px" }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: "#ddd", margin: "0 auto" }} />
+          </div>
+
+          {/* Header */}
+          <div style={{ padding: "12px 24px 16px", borderBottom: "1px solid " + BORDER }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: cat.color, fontFamily: "'Inter', sans-serif", background: cat.bg, padding: "3px 8px", borderRadius: 4 }}>{item.category}</span>
+              <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{item.source}</span>
+              <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", marginLeft: "auto" }}>{formatTimeAgo(item.date)}</span>
+            </div>
+            <button onClick={function() { setReading(false); }} style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", fontSize: 18, color: TEXT_DIM, cursor: "pointer" }}>✕</button>
+          </div>
+
+          {/* Image */}
+          {hasImg && (
+            <div style={{ padding: "0 24px", marginTop: 16 }}>
+              <img src={item.image} alt="" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 12, background: "#f0f0f0" }} />
+            </div>
+          )}
+
+          {/* Content */}
+          <div style={{ padding: "20px 24px 24px" }}>
+            <h2 style={{ margin: "0 0 16px", fontSize: 22, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.35 }}>{cleanTitle}</h2>
+
+            {item.summary && (
+              <p style={{ margin: "0 0 20px", fontSize: 15, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.7 }}>{item.summary}</p>
+            )}
+
+            <div style={{ background: "#F8F9FA", borderRadius: 12, padding: "16px 20px", marginBottom: 20, border: "1px solid " + BORDER }}>
+              <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif", lineHeight: 1.6, fontStyle: "italic" }}>Este é um resumo da notícia. Para ler a matéria completa, clique no botão abaixo.</p>
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {hasUrl && (
+                <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "14px 20px", background: GREEN, color: "#fff", borderRadius: 12, fontSize: 14, fontWeight: 700, fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>
+                  Ler matéria completa
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                </a>
+              )}
+              <div style={{ display: "flex", justifyContent: "center", gap: 20 }}>
+                <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "1px solid " + (voted === "l" ? GREEN : BORDER), borderRadius: 10, padding: "10px 20px", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 6, opacity: voted && voted !== "l" ? 0.3 : 1 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill={voted === "l" ? GREEN : "none"} stroke={voted === "l" ? GREEN : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                  {rx.likes > 0 && <span style={{ fontSize: 12, color: voted === "l" ? GREEN : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.likes}</span>}
+                </button>
+                <button onClick={function(e) { handleRx("d", e); }} style={{ background: "none", border: "1px solid " + (voted === "d" ? RED : BORDER), borderRadius: 10, padding: "10px 20px", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 6, opacity: voted && voted !== "d" ? 0.3 : 1 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill={voted === "d" ? RED : "none"} stroke={voted === "d" ? RED : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                  {rx.dislikes > 0 && <span style={{ fontSize: 12, color: voted === "d" ? RED : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.dislikes}</span>}
+                </button>
+                <button onClick={handleSh} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 10, padding: "10px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Source attribution */}
+            <p style={{ margin: "16px 0 0", fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Fonte: {item.source} · via Fonseca News</p>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
