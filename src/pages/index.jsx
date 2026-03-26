@@ -985,21 +985,21 @@ var PixDonation = function() {
 var Skeleton = function() { return (<div>{[...Array(5)].map(function(_, i) { return (<div key={i} style={{ background: BG_WHITE, padding: "20px 24px", borderBottom: "1px solid " + BORDER, animation: "pulse 1.8s ease-in-out infinite", animationDelay: (i * .12) + "s" }}><div style={{ display: "flex", gap: 8, marginBottom: 10 }}><div style={{ height: 20, width: 70, background: "#f0f0f0", borderRadius: 4 }} /><div style={{ height: 20, width: 90, background: "#f5f5f5", borderRadius: 4 }} /></div><div style={{ height: 18, width: "85%", background: "#f0f0f0", borderRadius: 4, marginBottom: 8 }} /><div style={{ height: 14, width: "60%", background: "#f5f5f5", borderRadius: 4 }} /></div>); })}</div>); };
 
 var NewsCard = function(props) {
-  var item = props.item; var index = props.index;
+  var item = props.item; var index = props.index; var allLikes = props.allLikes || {};
   var _s = useState(false); var h = _s[0]; var setH = _s[1];
   var _i = useState(false); var imgErr = _i[0]; var setImgErr = _i[1];
   var _reading = useState(false); var reading = _reading[0]; var setReading = _reading[1];
   var likeId = (item.title || "").substring(0, 40).replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
-  var _lk = useState({ likes: 0, dislikes: 0 }); var rx = _lk[0]; var setRx = _lk[1];
+  var initialLikes = allLikes[likeId] || { likes: 0, dislikes: 0 };
+  var _lk = useState(initialLikes); var rx = _lk[0]; var setRx = _lk[1];
   var _voted = useState(function() { try { return localStorage.getItem("fn_v_" + likeId); } catch(e) { return null; } });
   var voted = _voted[0]; var setVoted = _voted[1];
 
+  // Update when allLikes changes
   useEffect(function() {
-    if (!likeId) return;
-    fetch("/api/likes?id=" + likeId).then(function(r) { return r.json(); }).then(function(d) {
-      if (d && typeof d.likes === "number") setRx(d);
-    }).catch(function() {});
-  }, [likeId]);
+    var fresh = allLikes[likeId];
+    if (fresh && typeof fresh.likes === "number") setRx(fresh);
+  }, [allLikes[likeId]]);
 
   var handleRx = function(type, e) {
     e.preventDefault(); e.stopPropagation();
@@ -1139,7 +1139,7 @@ var NewsCard = function(props) {
   );
 };
 
-var buildFeed = function(newsItems, season, lastMatch, onOpenVideos) {
+var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes) {
   var elements = [];
   var inserts = [
     { at: 3, component: <DailyPoll key="poll-bar" /> },
@@ -1150,7 +1150,7 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos) {
     { at: 18, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
   ];
   newsItems.forEach(function(item, i) {
-    elements.push(<NewsCard key={"news-" + i} item={item} index={i} />);
+    elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
     var insert = inserts.find(function(ins) { return ins.at === i + 1; });
     if (insert) elements.push(insert.component);
   });
@@ -1190,6 +1190,7 @@ export default function JoaoFonsecaNews() {
   var _stl = useState(false); var showTimeline = _stl[0]; var setShowTimeline = _stl[1];
   var _scal = useState(false); var showCalendar = _scal[0]; var setShowCalendar = _scal[1];
   var _svid = useState(false); var showVideos = _svid[0]; var setShowVideos = _svid[1];
+  var _allLikes = useState({}); var allLikes = _allLikes[0]; var setAllLikes = _allLikes[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
   var _fbCounts = useState({ up: 0, down: 0 }); var fbCounts = _fbCounts[0]; var setFbCounts = _fbCounts[1];
@@ -1311,6 +1312,13 @@ export default function JoaoFonsecaNews() {
         if (el && d.visitors) el.textContent = d.visitors;
       }).catch(function() {});
     }
+  }, []);
+
+  // Load all likes in one request
+  useEffect(function() {
+    fetch("/api/likes-all").then(function(r) { return r.json(); }).then(function(d) {
+      if (d && typeof d === "object") setAllLikes(d);
+    }).catch(function() {});
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
@@ -1938,7 +1946,7 @@ export default function JoaoFonsecaNews() {
         </div>
         {loading && news.length === 0 && <Skeleton />}
         {dn.length > 0 && !(loading && news.length === 0) && (
-          <div>{buildFeed(dn, ds, dl, function() { setShowVideos(true); })}</div>
+          <div>{buildFeed(dn, ds, dl, function() { setShowVideos(true); }, allLikes)}</div>
         )}
         <div style={{ borderTop: "1px solid " + BORDER, padding: "28px 24px 36px" }}>
           {/* Conquistas bar */}
