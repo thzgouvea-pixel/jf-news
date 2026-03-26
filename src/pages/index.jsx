@@ -1062,60 +1062,75 @@ var NewsCard = function(props) {
             <div style={{ width: 36, height: 4, borderRadius: 2, background: "#ddd", margin: "0 auto" }} />
           </div>
 
-          {/* Header */}
-          <div style={{ padding: "12px 24px 16px", borderBottom: "1px solid " + BORDER }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: cat.color, fontFamily: "'Inter', sans-serif", background: cat.bg, padding: "3px 8px", borderRadius: 4 }}>{item.category}</span>
-              <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{item.source}</span>
-              <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", marginLeft: "auto" }}>{formatTimeAgo(item.date)}</span>
+          {/* Hero image or branded header */}
+          {hasImg ? (
+            <div style={{ position: "relative", margin: "0 16px", borderRadius: 14, overflow: "hidden" }}>
+              <img src={item.image} alt="" style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }} />
+              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }} />
+              <div style={{ position: "absolute", bottom: 10, left: 14 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#fff", fontFamily: "'Inter', sans-serif", background: cat.color, padding: "3px 8px", borderRadius: 4 }}>{item.category}</span>
+              </div>
+              <button onClick={function() { setReading(false); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.4)", border: "none", width: 30, height: 30, borderRadius: "50%", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
-            <button onClick={function() { setReading(false); }} style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", fontSize: 18, color: TEXT_DIM, cursor: "pointer" }}>✕</button>
-          </div>
-
-          {/* Image */}
-          {hasImg && (
-            <div style={{ padding: "0 24px", marginTop: 16 }}>
-              <img src={item.image} alt="" style={{ width: "100%", height: 200, objectFit: "cover", borderRadius: 12, background: "#f0f0f0" }} />
+          ) : (
+            <div style={{ position: "relative", margin: "0 16px", borderRadius: 14, overflow: "hidden", background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", padding: "28px 20px", textAlign: "center" }}>
+              <div style={{ fontSize: 28, fontWeight: 800, fontFamily: "'Inter', sans-serif", marginBottom: 6 }}>
+                <span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span>
+              </div>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif" }}>FONSECA NEWS</span>
+              <div style={{ position: "absolute", bottom: 10, left: 14 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#fff", fontFamily: "'Inter', sans-serif", background: cat.color, padding: "3px 8px", borderRadius: 4 }}>{item.category}</span>
+              </div>
+              <button onClick={function() { setReading(false); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(255,255,255,0.1)", border: "none", width: 30, height: 30, borderRadius: "50%", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
           )}
 
+          {/* Source & time */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 24px 0" }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>{item.source}</span>
+            <span style={{ fontSize: 10, color: TEXT_DIM }}>·</span>
+            <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{formatTimeAgo(item.date)}</span>
+          </div>
+
           {/* Content */}
-          <div style={{ padding: "20px 24px 24px" }}>
+          <div style={{ padding: "12px 24px 24px" }}>
             <h2 style={{ margin: "0 0 16px", fontSize: 22, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.35 }}>{cleanTitle}</h2>
 
-            {item.summary && (
-              <p style={{ margin: "0 0 20px", fontSize: 15, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.7 }}>{item.summary}</p>
+            {item.summary ? (
+              <p style={{ margin: "0 0 16px", fontSize: 15.5, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.75 }}>{item.summary}</p>
+            ) : (
+              <p style={{ margin: "0 0 16px", fontSize: 15.5, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.75 }}>Notícia sobre João Fonseca publicada pela {item.source}. Clique abaixo para ler a matéria completa com todos os detalhes.</p>
             )}
 
-            <div style={{ background: "#F8F9FA", borderRadius: 12, padding: "16px 20px", marginBottom: 20, border: "1px solid " + BORDER }}>
-              <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif", lineHeight: 1.6, fontStyle: "italic" }}>Este é um resumo da notícia. Para ler a matéria completa, clique no botão abaixo.</p>
+            <div style={{ background: "linear-gradient(135deg, #F8FAF5 0%, #F5F8F0 100%)", borderRadius: 12, padding: "14px 18px", marginBottom: 20, borderLeft: "3px solid " + GREEN }}>
+              <p style={{ margin: 0, fontSize: 12.5, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif", lineHeight: 1.6 }}>📰 Leia a matéria completa no site da <strong>{item.source}</strong> para todos os detalhes, declarações e análises.</p>
             </div>
 
-            {/* Actions */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {hasUrl && (
-                <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "14px 20px", background: GREEN, color: "#fff", borderRadius: 12, fontSize: 14, fontWeight: 700, fontFamily: "'Inter', sans-serif", textDecoration: "none" }}>
-                  Ler matéria completa
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                </a>
-              )}
-              <div style={{ display: "flex", justifyContent: "center", gap: 20 }}>
-                <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "1px solid " + (voted === "l" ? GREEN : BORDER), borderRadius: 10, padding: "10px 20px", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 6, opacity: voted && voted !== "l" ? 0.3 : 1 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill={voted === "l" ? GREEN : "none"} stroke={voted === "l" ? GREEN : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-                  {rx.likes > 0 && <span style={{ fontSize: 12, color: voted === "l" ? GREEN : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.likes}</span>}
-                </button>
-                <button onClick={function(e) { handleRx("d", e); }} style={{ background: "none", border: "1px solid " + (voted === "d" ? RED : BORDER), borderRadius: 10, padding: "10px 20px", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 6, opacity: voted && voted !== "d" ? 0.3 : 1 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill={voted === "d" ? RED : "none"} stroke={voted === "d" ? RED : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
-                  {rx.dislikes > 0 && <span style={{ fontSize: 12, color: voted === "d" ? RED : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.dislikes}</span>}
-                </button>
-                <button onClick={handleSh} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 10, padding: "10px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                </button>
-              </div>
+            {/* CTA */}
+            {hasUrl && (
+              <a href={item.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 20px", background: GREEN, color: "#fff", borderRadius: 12, fontSize: 14, fontWeight: 700, fontFamily: "'Inter', sans-serif", textDecoration: "none", marginBottom: 16, boxShadow: "0 4px 12px rgba(0,168,89,0.25)" }}>
+                Ler matéria completa
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </a>
+            )}
+
+            {/* Reactions */}
+            <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 12 }}>
+              <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "1px solid " + (voted === "l" ? GREEN : BORDER), borderRadius: 10, padding: "10px 20px", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 6, opacity: voted && voted !== "l" ? 0.3 : 1, transition: "all 0.2s" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={voted === "l" ? GREEN : "none"} stroke={voted === "l" ? GREEN : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                {rx.likes > 0 && <span style={{ fontSize: 12, color: voted === "l" ? GREEN : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.likes}</span>}
+              </button>
+              <button onClick={function(e) { handleRx("d", e); }} style={{ background: "none", border: "1px solid " + (voted === "d" ? RED : BORDER), borderRadius: 10, padding: "10px 20px", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 6, opacity: voted && voted !== "d" ? 0.3 : 1, transition: "all 0.2s" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill={voted === "d" ? RED : "none"} stroke={voted === "d" ? RED : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                {rx.dislikes > 0 && <span style={{ fontSize: 12, color: voted === "d" ? RED : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.dislikes}</span>}
+              </button>
+              <button onClick={handleSh} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 10, padding: "10px 20px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, transition: "all 0.2s" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              </button>
             </div>
 
             {/* Source attribution */}
-            <p style={{ margin: "16px 0 0", fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Fonte: {item.source} · via Fonseca News</p>
+            <p style={{ margin: 0, fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Fonte: {item.source} · via Fonseca News</p>
           </div>
         </div>
       </div>
