@@ -462,6 +462,25 @@ var VideoBanner = function(props) {
   );
 };
 
+// ===== TENNIS TV BANNER =====
+var TennisTVBanner = function() {
+  return (
+    <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a2540 0%, #0d3b66 100%)", padding: "20px 24px", borderBottom: "1px solid " + BORDER }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+          <span style={{ fontSize: 14 }}>📺</span>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#4FC3F7", fontFamily: "'Inter', sans-serif" }}>Ao vivo</span>
+        </div>
+        <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Assista o João ao vivo no TennisTV</p>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Streaming oficial do ATP Tour</span>
+          <div style={{ background: "#4FC3F7", padding: "8px 16px", borderRadius: 8, color: "#0a2540", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Assistir</div>
+        </div>
+      </div>
+    </a>
+  );
+};
+
 // ===== ATP CALENDAR 2026 =====
 var ATPCalendar = function() {
   var now = new Date();
@@ -1003,6 +1022,7 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos) {
     { at: 12, component: <GameBanner key="game-banner" /> },
     { at: 15, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
     { at: 18, component: <VideoBanner key="video-banner" onOpen={onOpenVideos} /> },
+    { at: 21, component: <TennisTVBanner key="tennistv-banner" /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} />);
@@ -1015,6 +1035,7 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos) {
   if (newsItems.length < 12) elements.push(<GameBanner key="game-banner" />);
   if (newsItems.length < 15 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
   if (newsItems.length < 18) elements.push(<VideoBanner key="video-banner" onOpen={onOpenVideos} />);
+  if (newsItems.length < 21) elements.push(<TennisTVBanner key="tennistv-banner" />);
   return elements;
 };
 
