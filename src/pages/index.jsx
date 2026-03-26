@@ -269,15 +269,32 @@ var DailyPoll = function() {
   var dayIdx = dayOfYear % polls.length;
   var poll = polls[dayIdx];
 
+  // Load real results on mount
+  useEffect(function() {
+    fetch("/api/poll").then(function(r) { return r.json(); }).then(function(d) {
+      if (d && typeof d.a === "number" && d.total > 0) {
+        setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total });
+      }
+    }).catch(function() {});
+  }, []);
+
   var handleVote = function(choice) {
     if (vote) return;
     setVote(choice);
     try { localStorage.setItem(pollKey, choice); } catch(e) {}
-    // Simulate community results (fake but fun)
-    var sim = choice === "a" ? { a: 55 + Math.floor(Math.random() * 15), b: 0 } : { a: 35 + Math.floor(Math.random() * 15), b: 0 };
-    sim.b = 100 - sim.a;
-    setResults(sim);
-    try { localStorage.setItem(pollKey + "_r", JSON.stringify(sim)); } catch(e) {}
+    // Send real vote to API
+    fetch("/api/poll?vote=" + choice, { method: "POST" })
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d && typeof d.a === "number" && d.total > 0) {
+          setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total });
+        }
+      })
+      .catch(function() {
+        // Fallback to simulated if API fails
+        var sim = choice === "a" ? { a: 62, b: 38 } : { a: 45, b: 55 };
+        setResults(sim);
+      });
   };
 
   return (
@@ -959,16 +976,29 @@ var NewsCard = function(props) {
   var item = props.item; var index = props.index;
   var _s = useState(false); var h = _s[0]; var setH = _s[1];
   var _i = useState(false); var imgErr = _i[0]; var setImgErr = _i[1];
-  var likeKey = "fn_r_" + (item.title || "").substring(0, 30).replace(/\s/g, "_");
-  var _lk = useState(function() { try { return JSON.parse(localStorage.getItem(likeKey) || '{"l":0,"d":0,"v":null}'); } catch(e) { return {l:0,d:0,v:null}; } });
-  var rx = _lk[0]; var setRx = _lk[1];
+  var likeId = (item.title || "").substring(0, 40).replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
+  var _lk = useState({ likes: 0, dislikes: 0 }); var rx = _lk[0]; var setRx = _lk[1];
+  var _voted = useState(function() { try { return localStorage.getItem("fn_v_" + likeId); } catch(e) { return null; } });
+  var voted = _voted[0]; var setVoted = _voted[1];
+
+  // Load real counts from API
+  useEffect(function() {
+    if (!likeId) return;
+    fetch("/api/likes?id=" + likeId).then(function(r) { return r.json(); }).then(function(d) {
+      if (d && typeof d.likes === "number") setRx(d);
+    }).catch(function() {});
+  }, [likeId]);
+
   var handleRx = function(type, e) {
     e.preventDefault(); e.stopPropagation();
-    if (rx.v) return;
-    var u = { l: rx.l, d: rx.d, v: type };
-    if (type === "l") u.l += 1; else u.d += 1;
-    setRx(u);
-    try { localStorage.setItem(likeKey, JSON.stringify(u)); } catch(e) {}
+    if (voted) return;
+    var action = type === "l" ? "like" : "dislike";
+    fetch("/api/likes?id=" + likeId + "&action=" + action, { method: "POST" })
+      .then(function(r) { return r.json(); })
+      .then(function(d) { if (d && typeof d.likes === "number") setRx(d); })
+      .catch(function() {});
+    setVoted(type);
+    try { localStorage.setItem("fn_v_" + likeId, type); } catch(e) {}
   };
   var handleSh = function(e) {
     e.preventDefault(); e.stopPropagation();
@@ -996,13 +1026,13 @@ var NewsCard = function(props) {
         <h3 style={{ margin: "0 0 5px", fontSize: 16, fontWeight: 700, color: h && hasUrl ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.45, transition: "color 0.15s" }}>{item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title}</h3>
         {item.summary && <p style={{ margin: "0 0 4px", fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10 }}>
-          <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "none", cursor: rx.v ? "default" : "pointer", display: "flex", alignItems: "center", gap: 4, padding: 0, opacity: rx.v && rx.v !== "l" ? 0.2 : (rx.v === "l" ? 1 : 0.35), transition: "opacity 0.2s" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={rx.v === "l" ? GREEN : "none"} stroke={rx.v === "l" ? GREEN : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-            {rx.l > 0 && <span style={{ fontSize: 10, color: rx.v === "l" ? GREEN : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.l}</span>}
+          <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "none", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 4, padding: 0, opacity: voted && voted !== "l" ? 0.2 : (voted === "l" ? 1 : 0.35), transition: "opacity 0.2s" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill={voted === "l" ? GREEN : "none"} stroke={voted === "l" ? GREEN : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            {rx.likes > 0 && <span style={{ fontSize: 10, color: voted === "l" ? GREEN : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.likes}</span>}
           </button>
-          <button onClick={function(e) { handleRx("d", e); }} style={{ background: "none", border: "none", cursor: rx.v ? "default" : "pointer", display: "flex", alignItems: "center", gap: 4, padding: 0, opacity: rx.v && rx.v !== "d" ? 0.2 : (rx.v === "d" ? 1 : 0.35), transition: "opacity 0.2s" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={rx.v === "d" ? RED : "none"} stroke={rx.v === "d" ? RED : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
-            {rx.d > 0 && <span style={{ fontSize: 10, color: rx.v === "d" ? RED : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.d}</span>}
+          <button onClick={function(e) { handleRx("d", e); }} style={{ background: "none", border: "none", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 4, padding: 0, opacity: voted && voted !== "d" ? 0.2 : (voted === "d" ? 1 : 0.35), transition: "opacity 0.2s" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill={voted === "d" ? RED : "none"} stroke={voted === "d" ? RED : TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+            {rx.dislikes > 0 && <span style={{ fontSize: 10, color: voted === "d" ? RED : TEXT_DIM, fontWeight: 600, fontFamily: "'Inter', sans-serif" }}>{rx.dislikes}</span>}
           </button>
           <button onClick={handleSh} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginLeft: "auto", opacity: 0.3, display: "flex", alignItems: "center", transition: "opacity 0.2s" }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={TEXT_DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
@@ -1156,6 +1186,23 @@ export default function JoaoFonsecaNews() {
   var handleRefresh = async function() { await fetchNews(); };
 
   useEffect(function() { if (initDone.current) return; initDone.current = true; (async function() { if (!(await loadCache())) await fetchNews(); })(); }, []);
+
+  // Track unique visitors
+  useEffect(function() {
+    var isNew = !localStorage.getItem("fn_visited");
+    if (isNew) {
+      fetch("/api/visitors", { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) {
+        var el = document.getElementById("fn-visitors");
+        if (el && d.visitors) el.textContent = d.visitors;
+      }).catch(function() {});
+      try { localStorage.setItem("fn_visited", "1"); } catch(e) {}
+    } else {
+      fetch("/api/visitors").then(function(r) { return r.json(); }).then(function(d) {
+        var el = document.getElementById("fn-visitors");
+        if (el && d.visitors) el.textContent = d.visitors;
+      }).catch(function() {});
+    }
+  }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
   var dm = nextMatch || (news.length === 0 ? SAMPLE_NEXT_MATCH : null);
@@ -1809,6 +1856,11 @@ export default function JoaoFonsecaNews() {
 
           {/* PWA hint */}
           <p style={{ margin: "0 0 16px", fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>📱 Adicione à tela inicial: Safari (↑) · Chrome (⋮)</p>
+
+          {/* Visitor counter */}
+          <div style={{ textAlign: "center", marginBottom: 12 }}>
+            <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>👥 <span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}>...</span> visitantes únicos</span>
+          </div>
 
           {/* Disclaimer */}
           <div style={{ borderTop: "1px solid " + BORDER, paddingTop: 16 }}>
