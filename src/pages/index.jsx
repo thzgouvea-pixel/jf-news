@@ -269,13 +269,16 @@ var DailyPoll = function() {
   var dayIdx = dayOfYear % polls.length;
   var poll = polls[dayIdx];
 
-  // Load real results on mount
+  // Load real results on mount (poll data comes from parent via stats, but also check local)
   useEffect(function() {
-    fetch("/api/poll").then(function(r) { return r.json(); }).then(function(d) {
-      if (d && typeof d.a === "number" && d.total > 0) {
-        setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total });
-      }
-    }).catch(function() {});
+    if (vote) {
+      // Already voted, try to get results from API
+      fetch("/api/poll").then(function(r) { return r.json(); }).then(function(d) {
+        if (d && typeof d.a === "number" && d.total > 0) {
+          setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total });
+        }
+      }).catch(function() {});
+    }
   }, []);
 
   var handleVote = function(choice) {
@@ -1027,7 +1030,7 @@ var NewsCard = function(props) {
       style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "20px 24px" : "20px 24px 20px 20px", borderBottom: "1px solid " + BORDER, borderLeft: hasImg ? "none" : ("3px solid " + cat.color), transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0, cursor: "pointer", alignItems: "flex-start" }}>
       {hasImg && (
         <img src={item.image} alt="" onError={function() { setImgErr(true); }}
-          style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0, marginTop: 2, background: "#f0f0f0" }} />
+          style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0, marginTop: 2, background: "#f0f0f0" }} loading="lazy" />
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
@@ -1191,6 +1194,7 @@ export default function JoaoFonsecaNews() {
   var _scal = useState(false); var showCalendar = _scal[0]; var setShowCalendar = _scal[1];
   var _svid = useState(false); var showVideos = _svid[0]; var setShowVideos = _svid[1];
   var _allLikes = useState({}); var allLikes = _allLikes[0]; var setAllLikes = _allLikes[1];
+  var _visibleCount = useState(10); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
   var _fbCounts = useState({ up: 0, down: 0 }); var fbCounts = _fbCounts[0]; var setFbCounts = _fbCounts[1];
@@ -1297,28 +1301,22 @@ export default function JoaoFonsecaNews() {
 
   useEffect(function() { if (initDone.current) return; initDone.current = true; (async function() { if (!(await loadCache())) await fetchNews(); })(); }, []);
 
-  // Track unique visitors
+  // Load all KV stats in ONE request
   useEffect(function() {
+    fetch("/api/stats").then(function(r) { return r.json(); }).then(function(d) {
+      if (d.likes) setAllLikes(d.likes);
+      if (d.visitors) {
+        var el = document.getElementById("fn-visitors");
+        if (el) el.textContent = d.visitors;
+      }
+    }).catch(function() {});
+
+    // Track new visitor (separate POST only for new visitors)
     var isNew = !localStorage.getItem("fn_visited");
     if (isNew) {
-      fetch("/api/visitors", { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) {
-        var el = document.getElementById("fn-visitors");
-        if (el && d.visitors) el.textContent = d.visitors;
-      }).catch(function() {});
+      fetch("/api/visitors", { method: "POST" }).catch(function() {});
       try { localStorage.setItem("fn_visited", "1"); } catch(e) {}
-    } else {
-      fetch("/api/visitors").then(function(r) { return r.json(); }).then(function(d) {
-        var el = document.getElementById("fn-visitors");
-        if (el && d.visitors) el.textContent = d.visitors;
-      }).catch(function() {});
     }
-  }, []);
-
-  // Load all likes in one request
-  useEffect(function() {
-    fetch("/api/likes-all").then(function(r) { return r.json(); }).then(function(d) {
-      if (d && typeof d === "object") setAllLikes(d);
-    }).catch(function() {});
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
@@ -1946,7 +1944,14 @@ export default function JoaoFonsecaNews() {
         </div>
         {loading && news.length === 0 && <Skeleton />}
         {dn.length > 0 && !(loading && news.length === 0) && (
-          <div>{buildFeed(dn, ds, dl, function() { setShowVideos(true); }, allLikes)}</div>
+          <div>{buildFeed(dn.slice(0, visibleCount), ds, dl, function() { setShowVideos(true); }, allLikes)}</div>
+          {visibleCount < dn.length && (
+            <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+              <button onClick={function() { setVisibleCount(function(v) { return Math.min(v + 10, dn.length); }); }} style={{ width: "100%", padding: "14px", background: "#F8F9FA", border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", fontSize: 13, fontWeight: 600, color: GREEN, fontFamily: "'Inter', sans-serif", transition: "background 0.2s" }}>
+                Carregar mais notícias ({dn.length - visibleCount} restantes)
+              </button>
+            </div>
+          )}
         )}
         <div style={{ borderTop: "1px solid " + BORDER, padding: "28px 24px 36px" }}>
           {/* Conquistas bar */}
