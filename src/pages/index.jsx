@@ -1022,7 +1022,6 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos) {
     { at: 12, component: <GameBanner key="game-banner" /> },
     { at: 15, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
     { at: 18, component: <VideoBanner key="video-banner" onOpen={onOpenVideos} /> },
-    { at: 21, component: <TennisTVBanner key="tennistv-banner" /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} />);
@@ -1035,7 +1034,6 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos) {
   if (newsItems.length < 12) elements.push(<GameBanner key="game-banner" />);
   if (newsItems.length < 15 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
   if (newsItems.length < 18) elements.push(<VideoBanner key="video-banner" onOpen={onOpenVideos} />);
-  if (newsItems.length < 21) elements.push(<TennisTVBanner key="tennistv-banner" />);
   return elements;
 };
 
@@ -1235,12 +1233,20 @@ export default function JoaoFonsecaNews() {
                 </p>
               </div>
             </div>
-            {/* REFRESH BUTTON IN HEADER */}
-            <button onClick={handleRefresh} disabled={loading} style={{ flexShrink: 0, width: 36, height: 36, borderRadius: 10, background: loading ? "#F0F0F0" : "#F8F9FA", border: "1px solid " + BORDER, color: loading ? TEXT_DIM : TEXT_SECONDARY, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", transition: "all 0.2s" }} title="Atualizar dados">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}>
-                <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
-              </svg>
-            </button>
+            {/* SOCIAL + REFRESH */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+              <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ width: 32, height: 32, borderRadius: 8, background: "#F8F9FA", border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "background 0.2s" }} title="Instagram do João">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={TEXT_SECONDARY} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill={TEXT_SECONDARY} stroke="none"/></svg>
+              </a>
+              <a href="https://x.com/JFonsecaNews" target="_blank" rel="noopener noreferrer" style={{ width: 32, height: 32, borderRadius: 8, background: "#F8F9FA", border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", transition: "background 0.2s" }} title="@JFonsecaNews no X">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill={TEXT_SECONDARY}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              </a>
+              <button onClick={handleRefresh} disabled={loading} style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 8, background: loading ? "#F0F0F0" : "#F8F9FA", border: "1px solid " + BORDER, color: loading ? TEXT_DIM : TEXT_SECONDARY, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", transition: "all 0.2s" }} title="Atualizar dados">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}>
+                  <path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -1254,6 +1260,22 @@ export default function JoaoFonsecaNews() {
 
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
+
+      {/* TENNIS TV - DESTAQUE */}
+      <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+        <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
+          <div style={{ background: "linear-gradient(135deg, #0a2540 0%, #0d3b66 100%)", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, borderBottom: "1px solid " + BORDER }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 18 }}>📺</span>
+              <div>
+                <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Assista o João ao vivo</p>
+                <p style={{ margin: "2px 0 0", fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>Streaming oficial · TennisTV</p>
+              </div>
+            </div>
+            <div style={{ background: "#4FC3F7", padding: "6px 14px", borderRadius: 8, color: "#0a2540", fontSize: 11, fontWeight: 700, fontFamily: "'Inter', sans-serif", flexShrink: 0 }}>Assistir</div>
+          </div>
+        </a>
+      </div>
 
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
@@ -1768,18 +1790,30 @@ export default function JoaoFonsecaNews() {
             <span style={{ fontSize: 10, color: GREEN, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>Ver todos →</span>
           </div>
 
-          {/* Action buttons */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
-            <button onClick={function() { setShowShare(true); }} style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, cursor: "pointer", fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5 }}>🔗 Compartilhar</button>
-            <a href="mailto:thzgouvea@gmail.com?subject=Fonseca News — Contato" style={{ background: "none", border: "1px solid " + BORDER, borderRadius: 8, padding: "7px 16px", fontSize: 11.5, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 5, textDecoration: "none" }}>✉️ Fale conosco</a>
+          {/* Social links + actions */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ width: 36, height: 36, borderRadius: 10, background: "#F8F9FA", border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }} title="Instagram do João">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TEXT_SECONDARY} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill={TEXT_SECONDARY} stroke="none"/></svg>
+            </a>
+            <a href="https://x.com/JFonsecaNews" target="_blank" rel="noopener noreferrer" style={{ width: 36, height: 36, borderRadius: 10, background: "#F8F9FA", border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }} title="@JFonsecaNews">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill={TEXT_SECONDARY}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+            <button onClick={function() { setShowShare(true); }} style={{ width: 36, height: 36, borderRadius: 10, background: "#F8F9FA", border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }} title="Compartilhar">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT_SECONDARY} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            </button>
+            <a href="mailto:thzgouvea@gmail.com?subject=Fonseca News — Contato" style={{ width: 36, height: 36, borderRadius: 10, background: "#F8F9FA", border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }} title="Fale conosco">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT_SECONDARY} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+            </a>
             <PixDonation />
           </div>
 
-          <div style={{ textAlign: "center", marginTop: 16, marginBottom: 20 }}>
-            <p style={{ margin: 0, fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>📱 iPhone: Safari → (↑) → &quot;Tela de Início&quot; · Android: Chrome → (⋮) → &quot;Tela inicial&quot;</p>
-          </div>
-          <div style={{ borderTop: "1px solid " + BORDER, paddingTop: 18 }}>
-            <p style={{ fontSize: 10, color: "#bbb", fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.6, maxWidth: 440, margin: "0 auto", textAlign: "center" }}>Fonseca News é um site independente de fãs, sem vínculo oficial com João Fonseca, sua equipe ou a ATP. Notícias agregadas de fontes públicas com devidos créditos.</p>
+          {/* PWA hint */}
+          <p style={{ margin: "0 0 16px", fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>📱 Adicione à tela inicial: Safari (↑) · Chrome (⋮)</p>
+
+          {/* Disclaimer */}
+          <div style={{ borderTop: "1px solid " + BORDER, paddingTop: 16 }}>
+            <p style={{ fontSize: 9.5, color: "#bbb", fontFamily: "'Inter', sans-serif", lineHeight: 1.6, maxWidth: 400, margin: "0 auto", textAlign: "center" }}>Fonseca News é um site independente de fãs. Sem vínculo com João Fonseca, sua equipe ou a ATP. Notícias de fontes públicas com devidos créditos.</p>
+            <p style={{ fontSize: 9, color: "#ccc", fontFamily: "'Inter', sans-serif", textAlign: "center", marginTop: 8 }}>© 2026 Fonseca News · fonsecanews.com.br</p>
           </div>
         </div>
       </main>
