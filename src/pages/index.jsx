@@ -448,9 +448,9 @@ var GameBanner = function() {
           <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffd700", fontFamily: "'Inter', sans-serif" }}>Novo jogo</span>
         </div>
         <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Tennis Career 26</p>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Crie sua carreira no tênis profissional!</span>
-          <div style={{ background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 16px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif", display: "block", marginBottom: 10 }}>Crie sua carreira no tênis profissional!</span>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ display: "inline-block", background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 24px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
         </div>
       </div>
     </a>
@@ -468,7 +468,7 @@ var VideoBanner = function(props) {
       <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
         <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", padding: "24px 20px", textAlign: "center" }}>
           <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(255,0,0,0.9)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", boxShadow: "0 4px 20px rgba(255,0,0,0.3)" }}>
-            <span style={{ fontSize: 22, color: "#fff", marginLeft: 3 }}>▶</span>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
           </div>
           <p style={{ margin: "0 0 4px", fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Melhores momentos do João</p>
           <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif" }}>Highlights, entrevistas e jogadas incríveis</p>
@@ -655,9 +655,9 @@ var QuizGame = function() {
             <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Quiz interativo</span>
           </div>
           <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Quanto você conhece o João Fonseca?</p>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>10 perguntas · {totalPoints} pontos</span>
-            <div style={{ background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 16px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif", display: "block", marginBottom: 10 }}>10 perguntas · {totalPoints} pontos</span>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ display: "inline-block", background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 24px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
           </div>
         </div>
       </div>
@@ -897,7 +897,10 @@ var NextDuelCard = function(props) {
       {/* Countdown + Assistir */}
       {!countdown.expired && (
         <div style={{ padding: "14px 20px 18px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-          <p style={{ margin: "0 0 8px", textAlign: "center", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Começa em</p>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 8 }}>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Começa em</span>
+            <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ background: "rgba(79,195,247,0.15)", padding: "4px 12px", borderRadius: 6, color: "#4FC3F7", fontSize: 10, fontWeight: 600, fontFamily: "'Inter', sans-serif", textDecoration: "none", border: "1px solid rgba(79,195,247,0.2)" }}>Assistir</a>
+          </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             <CountdownBox value={countdown.days} label="dias" />
             <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
@@ -906,7 +909,6 @@ var NextDuelCard = function(props) {
             <CountdownBox value={countdown.minutes} label="min" />
             <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
             <CountdownBox value={countdown.seconds} label="seg" />
-            <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 12, background: "#4FC3F7", padding: "8px 14px", borderRadius: 8, color: "#0a2540", fontSize: 11, fontWeight: 700, fontFamily: "'Inter', sans-serif", textDecoration: "none", flexShrink: 0 }}>Assistir</a>
           </div>
         </div>
       )}
@@ -1104,6 +1106,19 @@ export default function JoaoFonsecaNews() {
   var _stl = useState(false); var showTimeline = _stl[0]; var setShowTimeline = _stl[1];
   var _scal = useState(false); var showCalendar = _scal[0]; var setShowCalendar = _scal[1];
   var _svid = useState(false); var showVideos = _svid[0]; var setShowVideos = _svid[1];
+  var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
+  var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
+  var _fbCounts = useState({ up: 0, down: 0 }); var fbCounts = _fbCounts[0]; var setFbCounts = _fbCounts[1];
+
+  var handleSiteFeedback = function(vote) {
+    if (siteFeedback) return;
+    fetch("/api/feedback?vote=" + vote, { method: "POST" })
+      .then(function(r) { return r.json(); })
+      .then(function(d) { if (d && typeof d.up === "number") setFbCounts(d); })
+      .catch(function() {});
+    setSiteFeedback(vote);
+    try { localStorage.setItem("fn_site_fb", vote); } catch(e) {}
+  };
   var initDone = useRef(false);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 15000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -1395,6 +1410,25 @@ export default function JoaoFonsecaNews() {
                   <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>@joaoffonseca</span>
                 </div>
               </a>
+
+              {/* Site feedback */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: siteFeedback ? (siteFeedback === "up" ? "#F0FFF4" : "#FFF5F5") : "#F8F9FA", border: "1px solid " + (siteFeedback === "up" ? GREEN + "40" : siteFeedback === "down" ? RED + "40" : BORDER), borderRadius: 12, width: "100%" }}>
+                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>{siteFeedback === "up" ? "💚" : siteFeedback === "down" ? "😢" : "💬"}</span>
+                <div style={{ flex: 1, textAlign: "left" }}>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>{siteFeedback ? "Obrigado pelo feedback!" : "Gostando do site?"}</span>
+                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{siteFeedback ? (siteFeedback === "up" ? "Que bom! 🎾" : "Vamos melhorar!") : "Sua opinião importa"}</span>
+                </div>
+                {!siteFeedback && (
+                  <div style={{ display: "flex", gap: 6 }}>
+                    <button onClick={function() { handleSiteFeedback("up"); }} style={{ background: "none", border: "1px solid " + GREEN + "40", borderRadius: 8, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                    </button>
+                    <button onClick={function() { handleSiteFeedback("down"); }} style={{ background: "none", border: "1px solid " + RED + "40", borderRadius: 8, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                    </button>
+                  </div>
+                )}
+              </div>
 
               <button onClick={function() { setShowShare(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🔗</span>
