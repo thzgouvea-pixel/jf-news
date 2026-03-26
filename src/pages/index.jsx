@@ -448,7 +448,6 @@ var VideoBanner = function(props) {
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         <span style={{ fontSize: 14 }}>🎬</span>
         <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#FF0000", fontFamily: "'Inter', sans-serif" }}>Destaque</span>
-        <button onClick={onOpen} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: "'Inter', sans-serif", marginLeft: "auto" }}>Ver todos →</button>
       </div>
       <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
         <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", padding: "24px 20px", textAlign: "center" }}>
