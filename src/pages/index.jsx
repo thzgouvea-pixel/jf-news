@@ -463,8 +463,7 @@ var VideoBanner = function(props) {
   return (
     <div style={{ borderBottom: "1px solid " + BORDER, background: BG_WHITE, padding: "16px 24px" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-        <span style={{ fontSize: 14 }}>🎬</span>
-        <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#FF0000", fontFamily: "'Inter', sans-serif" }}>Destaque</span>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#FF0000", fontFamily: "'Inter', sans-serif" }}>🔥 Vídeos em alta</span>
       </div>
       <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
         <div style={{ position: "relative", borderRadius: 10, overflow: "hidden", background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", padding: "24px 20px", textAlign: "center" }}>
@@ -895,11 +894,11 @@ var NextDuelCard = function(props) {
         </div>
       </div>
 
-      {/* Countdown */}
+      {/* Countdown + Assistir */}
       {!countdown.expired && (
         <div style={{ padding: "14px 20px 18px", borderTop: "1px solid rgba(255,255,255,0.05)" }}>
           <p style={{ margin: "0 0 8px", textAlign: "center", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Começa em</p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             <CountdownBox value={countdown.days} label="dias" />
             <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
             <CountdownBox value={countdown.hours} label="hrs" />
@@ -907,7 +906,18 @@ var NextDuelCard = function(props) {
             <CountdownBox value={countdown.minutes} label="min" />
             <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
             <CountdownBox value={countdown.seconds} label="seg" />
+            <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 12, background: "#4FC3F7", padding: "8px 14px", borderRadius: 8, color: "#0a2540", fontSize: 11, fontWeight: 700, fontFamily: "'Inter', sans-serif", textDecoration: "none", flexShrink: 0 }}>Assistir</a>
           </div>
+        </div>
+      )}
+
+      {/* TV Channels - shows when match data has broadcast info */}
+      {match.channels && match.channels.length > 0 && (
+        <div style={{ padding: "0 20px 14px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif" }}>📺 Transmissão:</span>
+          {match.channels.map(function(ch, i) {
+            return <span key={i} style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", fontFamily: "'Inter', sans-serif", background: "rgba(255,255,255,0.08)", padding: "3px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)" }}>{ch}</span>;
+          })}
         </div>
       )}
 
@@ -1050,8 +1060,8 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos) {
     { at: 6, component: <QuizGame key="quiz-bar" /> },
     { at: 9, component: <SeasonBar key="season-bar" season={season} /> },
     { at: 12, component: <GameBanner key="game-banner" /> },
-    { at: 15, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
-    { at: 18, component: <VideoBanner key="video-banner" onOpen={onOpenVideos} /> },
+    { at: 15, component: <VideoBanner key="video-banner" onOpen={onOpenVideos} /> },
+    { at: 18, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} />);
@@ -1307,22 +1317,6 @@ export default function JoaoFonsecaNews() {
 
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
-
-      {/* TENNIS TV - DESTAQUE */}
-      <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
-        <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
-          <div style={{ background: "linear-gradient(135deg, #0a2540 0%, #0d3b66 100%)", padding: "12px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, borderBottom: "1px solid " + BORDER }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 18 }}>📺</span>
-              <div>
-                <p style={{ margin: 0, fontSize: 12.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>Assista o João ao vivo</p>
-                <p style={{ margin: "2px 0 0", fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: "'Inter', sans-serif" }}>Streaming oficial · TennisTV</p>
-              </div>
-            </div>
-            <div style={{ background: "#4FC3F7", padding: "6px 14px", borderRadius: 8, color: "#0a2540", fontSize: 11, fontWeight: 700, fontFamily: "'Inter', sans-serif", flexShrink: 0 }}>Assistir</div>
-          </div>
-        </a>
-      </div>
 
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
@@ -1859,7 +1853,7 @@ export default function JoaoFonsecaNews() {
 
           {/* Visitor counter */}
           <div style={{ textAlign: "center", marginBottom: 12 }}>
-            <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>👥 <span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}>...</span> visitantes únicos</span>
+            <span style={{ fontSize: 11, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}><span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}>...</span> visitantes únicos</span>
           </div>
 
           {/* Disclaimer */}
