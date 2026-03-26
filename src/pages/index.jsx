@@ -1944,6 +1944,7 @@ export default function JoaoFonsecaNews() {
         </div>
         {loading && news.length === 0 && <Skeleton />}
         {dn.length > 0 && !(loading && news.length === 0) && (
+          <>
           <div>{buildFeed(dn.slice(0, visibleCount), ds, dl, function() { setShowVideos(true); }, allLikes)}</div>
           {visibleCount < dn.length && (
             <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
@@ -1952,6 +1953,7 @@ export default function JoaoFonsecaNews() {
               </button>
             </div>
           )}
+          </>
         )}
         <div style={{ borderTop: "1px solid " + BORDER, padding: "28px 24px 36px" }}>
           {/* Conquistas bar */}
