@@ -250,20 +250,20 @@ var DailyPoll = function() {
 
   // Poll question changes daily based on LOCAL date
   var polls = [
-    { q: "João vence o primeiro jogo em Monte Carlo?", a: "Sim", b: "Não" },
-    { q: "João chega ao Top 30 até o fim de 2026?", a: "Com certeza", b: "Difícil" },
-    { q: "João vai ganhar um Masters 1000 na carreira?", a: "Sim!", b: "Ainda não" },
-    { q: "Quem terá o melhor 2026: João ou Tien?", a: "João 🇧🇷", b: "Tien 🇺🇸" },
-    { q: "João chega às quartas em Roland Garros?", a: "Vai sim!", b: "Ainda cedo" },
-    { q: "João pode ser Top 10 até 2027?", a: "Claro!", b: "Precisa de tempo" },
-    { q: "Quem é mais talentoso: João ou Alcaraz aos 19?", a: "João 🇧🇷", b: "Alcaraz 🇪🇸" },
-    { q: "João será top 5 antes dos 21 anos?", a: "Sem dúvida!", b: "Muito cedo" },
-    { q: "João vence Djokovic se enfrentarem?", a: "João ganha!", b: "Djoko ainda é rei" },
-    { q: "O João é o melhor tenista sub-20 do mundo?", a: "É sim!", b: "Tien tá na frente" },
-    { q: "João vai ganhar um Grand Slam até 2028?", a: "Com certeza!", b: "Precisa evoluir" },
-    { q: "Quem tem o melhor forehand: João ou Sinner?", a: "João 🇧🇷", b: "Sinner 🇮🇹" },
-    { q: "O João vai ser nº1 do mundo algum dia?", a: "Vai sim!", b: "Difícil prever" },
-    { q: "Qual superfície favorita do João?", a: "Saibro 🟤", b: "Duro 🔵" },
+    { q: "O João vai vencer o primeiro jogo em Monte Carlo?", a: "Sim!", b: "Não" },
+    { q: "O João chega ao Top 30 até o fim de 2026?", a: "Com certeza!", b: "Difícil" },
+    { q: "O João vai conquistar um Masters 1000 na carreira?", a: "Vai sim!", b: "Acho que não" },
+    { q: "Quem vai ter a melhor temporada 2026?", a: "João 🇧🇷", b: "Tien 🇺🇸" },
+    { q: "O João chega às quartas de final em Roland Garros?", a: "Chega sim!", b: "Ainda é cedo" },
+    { q: "O João entra no Top 10 até 2027?", a: "Com certeza!", b: "Precisa de tempo" },
+    { q: "Quem é mais talentoso aos 19 anos?", a: "João 🇧🇷", b: "Alcaraz 🇪🇸" },
+    { q: "O João chega ao Top 5 antes dos 21 anos?", a: "Sem dúvida!", b: "É muito cedo" },
+    { q: "Se enfrentarem, quem vence: João ou Djokovic?", a: "João!", b: "Djokovic" },
+    { q: "Quem é o melhor tenista sub-20 do mundo hoje?", a: "João 🇧🇷", b: "Tien 🇺🇸" },
+    { q: "O João conquista um Grand Slam até 2028?", a: "Conquista!", b: "Precisa evoluir" },
+    { q: "Quem tem o forehand mais forte?", a: "João 🇧🇷", b: "Sinner 🇮🇹" },
+    { q: "O João vai ser número 1 do mundo um dia?", a: "Vai sim!", b: "Difícil prever" },
+    { q: "Qual a melhor superfície do João?", a: "Saibro 🟤", b: "Quadra dura 🔵" },
   ];
   var dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
   var dayIdx = dayOfYear % polls.length;
@@ -586,7 +586,7 @@ var QuizGame = function() {
     { q: "Qual esporte o João praticava antes do tênis?", opts: ["Futebol", "Natação", "Futsal", "Surf"], answer: 2, points: 10, fun: "Trocou a bola redonda pela raquete aos 4 anos!" },
     { q: "Qual Grand Slam juvenil o João conquistou em 2023?", opts: ["Australian Open", "Roland Garros", "Wimbledon", "US Open"], answer: 3, points: 10, fun: "Derrotou Learner Tien na final!" },
     { q: "Quem o João derrotou na estreia do Australian Open 2025?", opts: ["Djokovic", "Alcaraz", "Rublev", "Medvedev"], answer: 2, points: 15, fun: "Primeiro adolescente a derrotar um top 10 em 1ª rodada de Grand Slam desde 2002!" },
-    { q: "Qual foi o primeiro título ATP do João?", opts: ["Basel 500", "Rio Open 250", "Buenos Aires 250", "Lexington Challenger"], answer: 2, points: 10, fun: "Brasileiro mais jovem a conquistar um título ATP!" },
+    { q: "Qual foi o primeiro título ATP do João?", opts: ["Basel 500", "Rio Open 500", "Buenos Aires 250", "Lexington Challenger"], answer: 2, points: 10, fun: "Brasileiro mais jovem a conquistar um título ATP!" },
     { q: "Com que idade o João se tornou nº1 mundial juvenil?", opts: ["15 anos", "16 anos", "17 anos", "18 anos"], answer: 2, points: 10, fun: "Primeiro brasileiro da história a terminar a temporada como nº1 juvenil!" },
     { q: "Qual torneio o João venceu invicto com 5 vitórias em 2024?", opts: ["ATP Finals", "NextGen ATP Finals", "Copa Davis", "Laver Cup"], answer: 1, points: 15, fun: "Primeiro sul-americano campeão do NextGen Finals!" },
     { q: "Qual ATP 500 o João conquistou em outubro de 2025?", opts: ["Viena", "Hamburgo", "Basel", "Barcelona"], answer: 2, points: 15, fun: "Primeiro brasileiro a ganhar um ATP 500 na história!" },
