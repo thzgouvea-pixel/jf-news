@@ -450,10 +450,12 @@ var GameBanner = function() {
           <span style={{ fontSize: 14 }}>🎮</span>
           <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffd700", fontFamily: "'Inter', sans-serif" }}>Novo jogo</span>
         </div>
-        <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Tennis Career 26</p>
-        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif", display: "block", marginBottom: 10 }}>Crie sua carreira no tênis profissional!</span>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ display: "inline-block", background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 24px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <p style={{ margin: "0 0 4px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Tennis Career 26</p>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Crie sua carreira no tênis profissional!</span>
+          </div>
+          <div style={{ flexShrink: 0, marginLeft: 16, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 24px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
         </div>
       </div>
     </a>
@@ -657,10 +659,12 @@ var QuizGame = function() {
             <span style={{ fontSize: 14 }}>🎾</span>
             <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Quiz interativo</span>
           </div>
-          <p style={{ margin: "0 0 10px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Quanto você conhece o João Fonseca?</p>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif", display: "block", marginBottom: 10 }}>10 perguntas · {totalPoints} pontos</span>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ display: "inline-block", background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 24px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ margin: "0 0 4px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Quanto você conhece o João Fonseca?</p>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>10 perguntas · {totalPoints} pontos</span>
+            </div>
+            <div style={{ flexShrink: 0, marginLeft: 16, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 24px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Jogar</div>
           </div>
         </div>
       </div>
@@ -873,6 +877,7 @@ var NextDuelCard = function(props) {
           <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ fontSize: 11, fontWeight: 900, color: "rgba(255,255,255,0.18)", fontFamily: "'Inter', sans-serif" }}>VS</span>
           </div>
+          <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ marginTop: 10, background: "rgba(79,195,247,0.15)", padding: "5px 12px", borderRadius: 6, color: "#4FC3F7", fontSize: 9, fontWeight: 600, fontFamily: "'Inter', sans-serif", textDecoration: "none", border: "1px solid rgba(79,195,247,0.2)" }}>Assistir</a>
         </div>
 
         {/* Opponent */}
@@ -881,7 +886,7 @@ var NextDuelCard = function(props) {
             {oppImg ? (
               <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; }} />
             ) : (
-              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>🎾</div>
+              <div style={{ width: "100%", height: "100%", background: "linear-gradient(135deg, #1a2a3a, #0d1b2e)" }}></div>
             )}
           </div>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif" }}>{oppName || "A definir"}</p>
@@ -909,9 +914,6 @@ var NextDuelCard = function(props) {
             <CountdownBox value={countdown.minutes} label="min" />
             <div style={{ color: "rgba(255,255,255,0.12)", fontSize: 16, fontWeight: 700, paddingTop: 6 }}>:</div>
             <CountdownBox value={countdown.seconds} label="seg" />
-          </div>
-          <div style={{ textAlign: "right", marginTop: 10 }}>
-            <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ background: "rgba(79,195,247,0.15)", padding: "5px 14px", borderRadius: 6, color: "#4FC3F7", fontSize: 10, fontWeight: 600, fontFamily: "'Inter', sans-serif", textDecoration: "none", border: "1px solid rgba(79,195,247,0.2)" }}>Assistir</a>
           </div>
         </div>
       )}
