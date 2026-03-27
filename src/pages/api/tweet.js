@@ -196,16 +196,18 @@ function getTodayPollTweet() {
 
 // ===== PROMOTIONAL TWEETS (rotate daily) =====
 var PROMO_TWEETS = [
-  "🎮 Já jogou Tennis Career 26?\n\nCrie seu jogador, dispute torneios e chegue ao topo do ranking mundial!\n\n▶️ Jogue grátis agora\n🔗 fonsecanews.com.br/game\n\n#JoãoFonseca #TennisGame",
-  "📈 Sabia que o João Fonseca subiu mais de 120 posições no ranking em 1 ano?\n\nVeja a evolução completa no nosso gráfico interativo!\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #ATP",
-  "🎾 Tennis Career 26 — O jogo!\n\nEscolha sua superfície favorita, enfrente rivais e conquiste títulos ATP.\n\n🏆 Você consegue chegar ao #1 do mundo?\n\n▶️ fonsecanews.com.br/game\n\n#Tennis #JoãoFonseca",
-  "⚡ Fonseca vs Tien vs Mensik vs Fils\n\nQuem é o melhor da nova geração? Compare os stats no nosso comparador exclusivo!\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #NextGen #ATP",
-  "🧠 Quiz: Quanto você conhece o João Fonseca?\n\n10 perguntas, 120 pontos. Será que você acerta tudo?\n\n🎾 Teste agora!\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis",
-  "🗓️ Próximo torneio: Monte Carlo Masters 1000!\n\nAcompanhe o calendário ATP completo do João no Fonseca News.\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #MonteCarlo #ATP",
-  "🇧🇷 Fonseca News — Sua bússola para acompanhar João Fonseca\n\n📰 Notícias em tempo real\n📊 Ranking e evolução\n🎮 Jogo Tennis Career 26\n📅 Calendário ATP\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca",
-  "🎮 No Tennis Career 26 você pode:\n\n🎯 Criar seu próprio tenista\n🏆 Disputar Grand Slams\n📈 Subir no ranking ATP\n💪 Treinar e evoluir\n\nJogue grátis!\n🔗 fonsecanews.com.br/game\n\n#Tennis #JoãoFonseca",
-  "📅 Timeline completa da carreira do João Fonseca\n\nDe Ipanema ao Top 40 mundial — veja todos os marcos!\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis #ATP",
-  "🏆 João Fonseca já tem 2 títulos ATP com apenas 19 anos!\n\nBuenos Aires 250 🇦🇷 + Basel 500 🇨🇭\n\nAcompanhe tudo no Fonseca News\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #ATP",
+  "🎮 Já jogou Tennis Career 26?\n\nCrie seu jogador, dispute torneios e chegue ao topo do ranking!\n\n▶️ Jogue grátis agora\n🔗 fonsecanews.com.br/game\n\n#JoãoFonseca #TennisGame",
+  "📈 O João subiu +120 posições no ranking em 1 ano!\n\nVeja a evolução completa no gráfico interativo\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #ATP",
+  "⚡ Fonseca vs Tien vs Mensik vs Fils\n\nQuem é o melhor da nova geração? Compare os stats!\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #NextGen #ATP",
+  "🧠 Quiz: Quanto você conhece o João Fonseca?\n\n10 perguntas, 120 pontos. Acerta tudo?\n\n🎾 Teste agora!\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis",
+  "🗓️ Monte Carlo Masters 1000 vem aí!\n\nCalendário ATP completo + countdown no site\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #MonteCarlo #ATP",
+  "🇧🇷 Fonseca News — Tudo sobre João Fonseca\n\n📰 Notícias em tempo real\n📊 Ranking e evolução\n🎮 Jogo exclusivo\n📅 Calendário ATP\n\n🔗 fonsecanews.com.br",
+  "📅 A carreira completa do João em uma timeline\n\nDe Ipanema ao Top 40 mundial!\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis #ATP",
+  "🏆 2 títulos ATP com apenas 19 anos!\n\nBuenos Aires 250 🇦🇷 + Basel 500 🇨🇭\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #ATP",
+  "📺 Assista o João ao vivo no TennisTV!\n\nAcompanhe cada ponto no streaming oficial do ATP\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #TennisTV",
+  "🔥 Vídeos em alta do João Fonseca!\n\nHighlights, entrevistas e jogadas incríveis\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis",
+  "📊 Vote na enquete do dia sobre o João!\n\nSua opinião importa. Nova pergunta todo dia\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #ATP",
+  "📰 Modo leitura no Fonseca News!\n\nLeia as notícias sem sair do site, sem anúncios\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis",
 ];
 
 function getTodayPromoTweet() {
