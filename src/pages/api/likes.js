@@ -1,37 +1,52 @@
-// ===== API: All Likes (single request) =====
+// ===== API: Likes & Dislikes (Vercel KV) =====
 import { kv } from "@vercel/kv";
 
 export default async function handler(req, res) {
+  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    // Scan all keys starting with "likes:"
-    const keys = [];
-    let cursor = 0;
-    do {
-      const [newCursor, foundKeys] = await kv.scan(cursor, { match: "likes:*", count: 100 });
-      cursor = newCursor;
-      keys.push(...foundKeys);
-    } while (cursor !== 0);
+    const { id, action } = req.query;
 
-    if (keys.length === 0) {
-      return res.status(200).json({});
+    if (!id) {
+      return res.status(400).json({ error: "Missing id parameter" });
     }
 
-    // Get all values in one batch
-    const values = await kv.mget(...keys);
-    const result = {};
-    keys.forEach(function(key, i) {
-      var id = key.replace("likes:", "");
-      result[id] = values[i] || { likes: 0, dislikes: 0 };
-    });
+    const key = "likes:" + id;
 
-    return res.status(200).json(result);
+    if (req.method === "GET") {
+      // Get current likes/dislikes for an article
+      const data = await kv.get(key);
+      return res.status(200).json(data || { likes: 0, dislikes: 0 });
+    }
+
+    if (req.method === "POST") {
+      if (!action || (action !== "like" && action !== "dislike")) {
+        return res.status(400).json({ error: "action must be 'like' or 'dislike'" });
+      }
+
+      // Get current data
+      const current = (await kv.get(key)) || { likes: 0, dislikes: 0 };
+
+      // Increment
+      if (action === "like") {
+        current.likes += 1;
+      } else {
+        current.dislikes += 1;
+      }
+
+      // Save
+      await kv.set(key, current);
+
+      return res.status(200).json(current);
+    }
+
+    return res.status(405).json({ error: "Method not allowed" });
   } catch (error) {
-    console.error("[likes-all] Error:", error);
-    return res.status(200).json({});
+    console.error("[likes] Error:", error);
+    return res.status(500).json({ error: error.message });
   }
 }
