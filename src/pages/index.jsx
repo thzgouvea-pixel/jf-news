@@ -1175,16 +1175,16 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes) {
     <VideoBanner key="video-banner" onOpen={onOpenVideos} />,
     <LastMatchBar key="last-match-bar" match={lastMatch} />,
   ];
+  // Insert banners after these news positions: 2, 4, 7, 10, 13, 16, 19
+  var insertAfter = [2, 4, 7, 10, 13, 16, 19];
   var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
-    // Insert a banner every 3 news items
-    if ((i + 1) % 3 === 0 && bannerIdx < banners.length) {
+    if (bannerIdx < banners.length && insertAfter.indexOf(i + 1) !== -1) {
       elements.push(banners[bannerIdx]);
       bannerIdx++;
     }
   });
-  // Add remaining banners at the end
   while (bannerIdx < banners.length) {
     elements.push(banners[bannerIdx]);
     bannerIdx++;
@@ -1458,17 +1458,6 @@ export default function JoaoFonsecaNews() {
 
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
-
-      {/* RAQUETES CTA */}
-      <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
-        <a href="/raquetes" style={{ textDecoration: "none", display: "block" }}>
-          <div style={{ background: "linear-gradient(135deg, " + YELLOW + " 0%, #E8B800 100%)", padding: "10px 24px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, borderBottom: "1px solid " + BORDER }}>
-            <span style={{ fontSize: 15 }}>🎾</span>
-            <span style={{ fontSize: 12.5, fontWeight: 800, color: "#1a1a0a", fontFamily: "'Inter', sans-serif" }}>Venda sua raquete usada!</span>
-            <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(26,26,10,0.5)", fontFamily: "'Inter', sans-serif" }}>→</span>
-          </div>
-        </a>
-      </div>
 
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
