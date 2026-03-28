@@ -196,18 +196,30 @@ function getTodayPollTweet() {
 
 // ===== PROMOTIONAL TWEETS (rotate daily) =====
 var PROMO_TWEETS = [
+  // Features do site
   "🎮 Já jogou Tennis Career 26?\n\nCrie seu jogador, dispute torneios e chegue ao topo do ranking!\n\n▶️ Jogue grátis agora\n🔗 fonsecanews.com.br/game\n\n#JoãoFonseca #TennisGame",
   "📈 O João subiu +120 posições no ranking em 1 ano!\n\nVeja a evolução completa no gráfico interativo\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #ATP",
   "⚡ Fonseca vs Tien vs Mensik vs Fils\n\nQuem é o melhor da nova geração? Compare os stats!\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #NextGen #ATP",
   "🧠 Quiz: Quanto você conhece o João Fonseca?\n\n10 perguntas, 120 pontos. Acerta tudo?\n\n🎾 Teste agora!\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis",
   "🗓️ Monte Carlo Masters 1000 vem aí!\n\nCalendário ATP completo + countdown no site\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #MonteCarlo #ATP",
   "🇧🇷 Fonseca News — Tudo sobre João Fonseca\n\n📰 Notícias em tempo real\n📊 Ranking e evolução\n🎮 Jogo exclusivo\n📅 Calendário ATP\n\n🔗 fonsecanews.com.br",
-  "📅 A carreira completa do João em uma timeline\n\nDe Ipanema ao Top 40 mundial!\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis #ATP",
-  "🏆 2 títulos ATP com apenas 19 anos!\n\nBuenos Aires 250 🇦🇷 + Basel 500 🇨🇭\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #ATP",
   "📺 Assista o João ao vivo no TennisTV!\n\nAcompanhe cada ponto no streaming oficial do ATP\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #TennisTV",
-  "🔥 Vídeos em alta do João Fonseca!\n\nHighlights, entrevistas e jogadas incríveis\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis",
   "📊 Vote na enquete do dia sobre o João!\n\nSua opinião importa. Nova pergunta todo dia\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #ATP",
   "📰 Modo leitura no Fonseca News!\n\nLeia as notícias sem sair do site, sem anúncios\n\n🔗 fonsecanews.com.br\n\n#JoãoFonseca #Tennis",
+  // Telegram / Raquetes
+  "🏷️ Tem uma raquete parada em casa?\n\nAnuncie grátis no nosso grupo do Telegram!\n\n⚠️ O Fonseca News não se responsabiliza pelas transações. É um fórum entre fãs.\n\n🔗 fonsecanews.com.br/raquetes\n\n#Tennis #Raquete",
+  "🎾 Procurando raquete usada com bom preço?\n\nConfira os anúncios da comunidade Fonseca News no Telegram!\n\n📲 t.me/raquetesfn\n\n#Tennis #Raquete #JoãoFonseca",
+  // Opiniões e engajamento
+  "Só eu acho que o tênis era mais lento antigamente? Hoje o jogo tá num nível absurdo de velocidade 🔥\n\n#Tennis #ATP",
+  "O forehand do João Fonseca é o mais bonito do circuito atualmente. Mudo de opinião? Não.\n\n🇧🇷🎾 #JoãoFonseca #ATP",
+  "Unpopular opinion: o NextGen Finals deveria valer pontos pro ranking. Mudaria tudo.\n\n#ATP #Tennis #NextGen",
+  "Se o João Fonseca fosse argentino ou espanhol, a mídia mundial já teria colocado ele no top 3 de promessas. O Brasil precisa valorizar mais. 🇧🇷\n\n#JoãoFonseca",
+  "Quem assistiu o João contra o Rublev no Australian Open sabe: aquele jogo mudou tudo. O mundo conheceu o Fonseca ali. 🔥\n\n#JoãoFonseca #AusOpen",
+  "O saibro do João ou a quadra dura do João? Eu fico com o saibro. Monte Carlo vai ser especial. 🟤\n\n#JoãoFonseca #MonteCarlo #ATP",
+  "Alguém mais acha que o Federer assistindo o João jogar ficaria impressionado? O estilo é parecido, mas com mais potência.\n\n#JoãoFonseca #Federer #Tennis",
+  "O tênis brasileiro não tinha um fenômeno assim desde o Guga. E olha que o João tem 19 anos. Imagina com 25. 🤯\n\n#JoãoFonseca #Guga #TenisBrasileiro",
+  "Hot take: o João Fonseca vai ganhar Roland Garros antes de completar 22 anos. Anotem. 📝\n\n#JoãoFonseca #RolandGarros #ATP",
+  "Vocês preferem assistir tênis na TV ou no estádio? Eu acho que no estádio é outra coisa, a velocidade da bola é surreal.\n\n#Tennis #ATP",
 ];
 
 function getTodayPromoTweet() {
