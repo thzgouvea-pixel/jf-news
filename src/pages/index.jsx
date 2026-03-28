@@ -1166,26 +1166,29 @@ var NewsCard = function(props) {
 
 var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes) {
   var elements = [];
-  var inserts = [
-    { at: 2, component: <DailyPoll key="poll-bar" /> },
-    { at: 4, component: <QuizGame key="quiz-bar" /> },
-    { at: 6, component: <SeasonBar key="season-bar" season={season} /> },
-    { at: 8, component: <GameBanner key="game-banner" /> },
-    { at: 10, component: <VideoBanner key="video-banner" onOpen={onOpenVideos} /> },
-    { at: 12, component: <RaquetesBanner key="raquetes-banner" /> },
-    { at: 14, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
+  var banners = [
+    <DailyPoll key="poll-bar" />,
+    <QuizGame key="quiz-bar" />,
+    <SeasonBar key="season-bar" season={season} />,
+    <GameBanner key="game-banner" />,
+    <RaquetesBanner key="raquetes-banner" />,
+    <VideoBanner key="video-banner" onOpen={onOpenVideos} />,
+    <LastMatchBar key="last-match-bar" match={lastMatch} />,
   ];
+  var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
-    var insert = inserts.find(function(ins) { return ins.at === i + 1; });
-    if (insert) elements.push(insert.component);
+    // Insert a banner every 3 news items
+    if ((i + 1) % 3 === 0 && bannerIdx < banners.length) {
+      elements.push(banners[bannerIdx]);
+      bannerIdx++;
+    }
   });
-  if (newsItems.length < 3) elements.push(<DailyPoll key="poll-bar" />);
-  if (newsItems.length < 6) elements.push(<QuizGame key="quiz-bar" />);
-  if (newsItems.length < 9 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
-  if (newsItems.length < 12) elements.push(<GameBanner key="game-banner" />);
-  if (newsItems.length < 15 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
-  if (newsItems.length < 18) elements.push(<VideoBanner key="video-banner" onOpen={onOpenVideos} />);
+  // Add remaining banners at the end
+  while (bannerIdx < banners.length) {
+    elements.push(banners[bannerIdx]);
+    bannerIdx++;
+  }
   return elements;
 };
 
@@ -1445,6 +1448,17 @@ export default function JoaoFonsecaNews() {
 
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
+
+      {/* RAQUETES CTA */}
+      <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+        <a href="/raquetes" style={{ textDecoration: "none", display: "block" }}>
+          <div style={{ background: "linear-gradient(135deg, " + YELLOW + " 0%, #E8B800 100%)", padding: "10px 24px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, borderBottom: "1px solid " + BORDER }}>
+            <span style={{ fontSize: 15 }}>🎾</span>
+            <span style={{ fontSize: 12.5, fontWeight: 800, color: "#1a1a0a", fontFamily: "'Inter', sans-serif" }}>Venda sua raquete usada!</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(26,26,10,0.5)", fontFamily: "'Inter', sans-serif" }}>→</span>
+          </div>
+        </a>
+      </div>
 
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
