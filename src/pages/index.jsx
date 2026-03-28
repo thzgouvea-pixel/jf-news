@@ -506,17 +506,16 @@ var TennisTVBanner = function() {
 var RaquetesBanner = function() {
   return (
     <a href="/raquetes" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2a11 40%, #1a1e0a 100%)", padding: "20px 24px", borderBottom: "1px solid " + BORDER }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>🏷️ Comunidade</span>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <p style={{ margin: "0 0 4px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Venda sua raquete usada</p>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Anuncie grátis no nosso grupo do Telegram</span>
+      <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 50%, #1a1e0a 100%)", padding: "14px 24px", display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid " + BORDER, cursor: "pointer" }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#1a1a0a", fontFamily: "'Inter', sans-serif", background: YELLOW, padding: "2px 6px", borderRadius: 3 }}>Novo</span>
+            <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Comunidade Fonseca News</span>
           </div>
-          <div style={{ flexShrink: 0, marginLeft: 16, background: "linear-gradient(135deg, " + YELLOW + ", #D4A800)", padding: "8px 18px", borderRadius: 8, color: "#1a1a0a", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Anunciar</div>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.3 }}>Tem uma raquete parada? Venda pra quem vai usar!</p>
+          <p style={{ margin: "3px 0 0", fontSize: 10.5, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Anuncie grátis no Telegram da comunidade</p>
         </div>
+        <div style={{ flexShrink: 0, background: YELLOW, padding: "8px 16px", borderRadius: 8, color: "#1a1a0a", fontSize: 11, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Anunciar</div>
       </div>
     </a>
   );
@@ -1167,16 +1166,16 @@ var NewsCard = function(props) {
 var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes) {
   var elements = [];
   var banners = [
-    <DailyPoll key="poll-bar" />,
+    <LastMatchBar key="last-match-bar" match={lastMatch} />,
     <QuizGame key="quiz-bar" />,
     <SeasonBar key="season-bar" season={season} />,
+    <DailyPoll key="poll-bar" />,
     <GameBanner key="game-banner" />,
     <RaquetesBanner key="raquetes-banner" />,
     <VideoBanner key="video-banner" onOpen={onOpenVideos} />,
-    <LastMatchBar key="last-match-bar" match={lastMatch} />,
   ];
-  // Insert banners after these news positions: 2, 4, 7, 10, 13, 16, 19
-  var insertAfter = [2, 5, 8, 11, 14, 17, 20];
+  // Insert banners after every 2 news items (2+1 pattern)
+  var insertAfter = [2, 4, 6, 8, 10, 12, 14];
   var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
@@ -1440,21 +1439,9 @@ export default function JoaoFonsecaNews() {
       </header>
 
       {/* RAQUETES CTA BANNER */}
-      <a href="/raquetes" style={{ textDecoration: "none", display: "block" }}>
-        <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
-          <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 50%, #1a1e0a 100%)", padding: "14px 24px", display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid " + BORDER, cursor: "pointer" }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                <span style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#1a1a0a", fontFamily: "'Inter', sans-serif", background: YELLOW, padding: "2px 6px", borderRadius: 3 }}>Novo</span>
-                <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Comunidade Fonseca News</span>
-              </div>
-              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.3 }}>Tem uma raquete parada? Venda pra quem vai usar!</p>
-              <p style={{ margin: "3px 0 0", fontSize: 10.5, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Anuncie grátis no Telegram da comunidade</p>
-            </div>
-            <div style={{ flexShrink: 0, background: YELLOW, padding: "8px 16px", borderRadius: 8, color: "#1a1a0a", fontSize: 11, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Anunciar</div>
-          </div>
-        </div>
-      </a>
+      <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+        <RaquetesBanner />
+      </div>
 
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
