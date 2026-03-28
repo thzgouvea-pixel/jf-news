@@ -52,7 +52,7 @@ export default function Raquetes() {
 
   var handleSubmit = function() {
     if (!isValid) return;
-    var msg = "🎾 *Raquete à venda — Fonseca News*\n\n";
+    var msg = "🎾 Raquete à venda — Fonseca News\n\n";
     msg += "📌 Marca: " + marca + "\n";
     msg += "📌 Modelo: " + modelo + "\n";
     if (grip) msg += "📌 Grip: " + grip + "\n";
@@ -63,9 +63,26 @@ export default function Raquetes() {
     if (obs) msg += "\n💬 " + obs + "\n";
     msg += "\nInteressados, me chamem! 🏷️";
 
-    var encoded = encodeURIComponent(msg);
-    window.open("https://t.me/raquetesfn?text=" + encoded, "_blank");
-    setSent(true);
+    // Copy to clipboard
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(msg).then(function() {
+        setSent(true);
+        setTimeout(function() {
+          window.open("https://t.me/raquetesfn", "_blank");
+        }, 500);
+      });
+    } else {
+      var ta = document.createElement("textarea");
+      ta.value = msg;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      setSent(true);
+      setTimeout(function() {
+        window.open("https://t.me/raquetesfn", "_blank");
+      }, 500);
+    }
   };
 
   return (
@@ -116,16 +133,16 @@ export default function Raquetes() {
               )}
 
               <button onClick={handleSubmit} disabled={!isValid} style={{ width: "100%", padding: "14px", background: isValid ? GREEN : "#ccc", color: "#fff", border: "none", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: isValid ? "pointer" : "default", fontFamily: "'Inter', sans-serif", transition: "all 0.2s", boxShadow: isValid ? "0 4px 12px rgba(0,168,89,0.25)" : "none" }}>
-                Anunciar no Telegram
+                Copiar anúncio e abrir Telegram
               </button>
 
-              <p style={{ margin: "12px 0 0", fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>Você será redirecionado para o grupo no Telegram</p>
+              <p style={{ margin: "12px 0 0", fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", textAlign: "center" }}>O anúncio será copiado. Cole no grupo do Telegram.</p>
             </div>
           ) : (
             <div style={{ background: "#fff", borderRadius: 16, padding: "40px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", border: "1px solid " + BORDER, textAlign: "center" }}>
               <span style={{ fontSize: 48 }}>🎾</span>
-              <h2 style={{ margin: "12px 0 8px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: "'Source Serif 4', Georgia, serif" }}>Anúncio criado!</h2>
-              <p style={{ margin: "0 0 20px", fontSize: 14, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Cole a mensagem no grupo do Telegram para publicar.</p>
+              <h2 style={{ margin: "12px 0 8px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: "'Source Serif 4', Georgia, serif" }}>Anúncio copiado!</h2>
+              <p style={{ margin: "0 0 20px", fontSize: 14, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", lineHeight: 1.5 }}>Seu anúncio foi copiado. Abra o grupo no Telegram e <strong>cole a mensagem</strong> (segurar → colar).</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <a href="https://t.me/raquetesfn" target="_blank" rel="noopener noreferrer" style={{ padding: "12px", background: "#0088cc", color: "#fff", borderRadius: 10, fontSize: 14, fontWeight: 700, fontFamily: "'Inter', sans-serif", textDecoration: "none", textAlign: "center" }}>Abrir grupo no Telegram</a>
                 <button onClick={function() { setSent(false); setMarca(""); setModelo(""); setGrip(""); setPeso(""); setEstado(""); setPreco(""); setCidade(""); setObs(""); }} style={{ padding: "12px", background: "#F8F9FA", color: TEXT, border: "1px solid " + BORDER, borderRadius: 10, fontSize: 14, fontWeight: 600, fontFamily: "'Inter', sans-serif", cursor: "pointer" }}>Criar outro anúncio</button>
