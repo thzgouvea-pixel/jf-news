@@ -897,7 +897,7 @@ var NextDuelCard = function(props) {
           <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <span style={{ fontSize: 11, fontWeight: 900, color: "rgba(255,255,255,0.18)", fontFamily: "'Inter', sans-serif" }}>VS</span>
           </div>
-          <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ marginTop: 10, background: "rgba(79,195,247,0.15)", padding: "5px 12px", borderRadius: 6, color: "#4FC3F7", fontSize: 9, fontWeight: 600, fontFamily: "'Inter', sans-serif", textDecoration: "none", border: "1px solid rgba(79,195,247,0.2)" }}>Assistir</a>
+          <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ marginTop: 16, background: "rgba(79,195,247,0.15)", padding: "5px 12px", borderRadius: 6, color: "#4FC3F7", fontSize: 9, fontWeight: 600, fontFamily: "'Inter', sans-serif", textDecoration: "none", border: "1px solid rgba(79,195,247,0.2)" }}>Assistir</a>
         </div>
 
         {/* Opponent */}
@@ -1176,7 +1176,7 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes) {
     <LastMatchBar key="last-match-bar" match={lastMatch} />,
   ];
   // Insert banners after these news positions: 2, 4, 7, 10, 13, 16, 19
-  var insertAfter = [2, 4, 7, 10, 13, 16, 19];
+  var insertAfter = [2, 5, 8, 11, 14, 17, 20];
   var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
@@ -1220,7 +1220,7 @@ export default function JoaoFonsecaNews() {
   var _scal = useState(false); var showCalendar = _scal[0]; var setShowCalendar = _scal[1];
   var _svid = useState(false); var showVideos = _svid[0]; var setShowVideos = _svid[1];
   var _allLikes = useState({}); var allLikes = _allLikes[0]; var setAllLikes = _allLikes[1];
-  var _visibleCount = useState(10); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
+  var _visibleCount = useState(12); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
   var _fbCounts = useState({ up: 0, down: 0 }); var fbCounts = _fbCounts[0]; var setFbCounts = _fbCounts[1];
