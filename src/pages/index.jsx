@@ -1439,12 +1439,22 @@ export default function JoaoFonsecaNews() {
         </div>
       </header>
 
-      {/* SLOGAN */}
-      <div style={{ maxWidth: 680, margin: "0 auto", padding: "14px 24px", background: BG_WHITE, borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, borderBottom: "1px solid " + BORDER, textAlign: "center" }}>
-        <p style={{ margin: 0, fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", fontStyle: "italic", lineHeight: 1.6 }}>
-          🧭 Sua bússola para acompanhar <strong style={{ color: TEXT_PRIMARY }}>João Fonseca</strong>, um futuro ídolo do tênis brasileiro.
-        </p>
-      </div>
+      {/* RAQUETES CTA BANNER */}
+      <a href="/raquetes" style={{ textDecoration: "none", display: "block" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+          <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 50%, #1a1e0a 100%)", padding: "14px 24px", display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid " + BORDER, cursor: "pointer" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                <span style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#1a1a0a", fontFamily: "'Inter', sans-serif", background: YELLOW, padding: "2px 6px", borderRadius: 3 }}>Novo</span>
+                <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Comunidade Fonseca News</span>
+              </div>
+              <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.3 }}>Tem uma raquete parada? Venda pra quem vai usar!</p>
+              <p style={{ margin: "3px 0 0", fontSize: 10.5, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Anuncie grátis no Telegram da comunidade</p>
+            </div>
+            <div style={{ flexShrink: 0, background: YELLOW, padding: "8px 16px", borderRadius: 8, color: "#1a1a0a", fontSize: 11, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Anunciar</div>
+          </div>
+        </div>
+      </a>
 
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
