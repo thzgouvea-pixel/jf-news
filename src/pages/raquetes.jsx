@@ -12,6 +12,31 @@ var MARCAS = ["Wilson", "Babolat", "Head", "Yonex", "Prince", "Tecnifibre", "Dun
 var ESTADOS = ["Novo (sem uso)", "Seminovo (poucos jogos)", "Usado — Bom estado", "Usado — Marcas de uso", "Precisa de encordoamento"];
 var GRIPS = ["L0", "L1", "L2", "L3", "L4", "L5"];
 
+var SelectField = function(props) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>{props.label} {props.required && <span style={{ color: "#E63946" }}>*</span>}</label>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        {props.options.map(function(opt) {
+          var active = props.value === opt;
+          return (
+            <button key={opt} onClick={function() { props.onChange(opt); }} style={{ padding: "8px 14px", borderRadius: 8, border: "1.5px solid " + (active ? GREEN : BORDER), background: active ? GREEN + "10" : "#fff", color: active ? GREEN : TEXT, fontSize: 12.5, fontWeight: active ? 700 : 500, cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.15s" }}>{opt}</button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+var InputField = function(props) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>{props.label} {props.required && <span style={{ color: "#E63946" }}>*</span>}</label>
+      <input type={props.type || "text"} value={props.value} onChange={function(e) { props.onChange(e.target.value); }} placeholder={props.placeholder} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid " + BORDER, fontSize: 14, fontFamily: "'Inter', sans-serif", color: TEXT, outline: "none", boxSizing: "border-box", transition: "border 0.2s" }} />
+    </div>
+  );
+};
+
 export default function Raquetes() {
   var _marca = useState(""); var marca = _marca[0]; var setMarca = _marca[1];
   var _modelo = useState(""); var modelo = _modelo[0]; var setModelo = _modelo[1];
@@ -41,31 +66,6 @@ export default function Raquetes() {
     var encoded = encodeURIComponent(msg);
     window.open("https://t.me/raquetesfn?text=" + encoded, "_blank");
     setSent(true);
-  };
-
-  var SelectField = function(props) {
-    return (
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>{props.label} {props.required && <span style={{ color: "#E63946" }}>*</span>}</label>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          {props.options.map(function(opt) {
-            var active = props.value === opt;
-            return (
-              <button key={opt} onClick={function() { props.onChange(opt); }} style={{ padding: "8px 14px", borderRadius: 8, border: "1.5px solid " + (active ? GREEN : BORDER), background: active ? GREEN + "10" : "#fff", color: active ? GREEN : TEXT, fontSize: 12.5, fontWeight: active ? 700 : 500, cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.15s" }}>{opt}</button>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
-
-  var InputField = function(props) {
-    return (
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: "block", fontSize: 11, fontWeight: 600, color: TEXT_DIM, fontFamily: "'Inter', sans-serif", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>{props.label} {props.required && <span style={{ color: "#E63946" }}>*</span>}</label>
-        <input type={props.type || "text"} value={props.value} onChange={function(e) { props.onChange(e.target.value); }} placeholder={props.placeholder} style={{ width: "100%", padding: "10px 14px", borderRadius: 10, border: "1.5px solid " + BORDER, fontSize: 14, fontFamily: "'Inter', sans-serif", color: TEXT, outline: "none", boxSizing: "border-box", transition: "border 0.2s" }} />
-      </div>
-    );
   };
 
   return (
