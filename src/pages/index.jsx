@@ -521,6 +521,109 @@ var RaquetesBanner = function() {
   );
 };
 
+// ===== MATCH PREDICTION =====
+var MatchPrediction = function(props) {
+  var match = props.match;
+  if (!match || !match.date) return null;
+  var matchDate = new Date(match.date);
+  var now = new Date();
+  var isPast = now > matchDate;
+  var daysDiff = Math.ceil((matchDate - now) / (1000 * 60 * 60 * 24));
+  // Only show within 7 days before the match
+  if (daysDiff > 7 && !isPast) return null;
+
+  var oppName = match.opponent_name || "Adversário";
+  var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
+  var matchKey = "fn_pred_" + (match.tournament_name || "match").replace(/[^a-zA-Z0-9]/g, "_") + "_" + match.date;
+
+  var _p = useState(function() { try { return JSON.parse(localStorage.getItem(matchKey)); } catch(e) { return null; } });
+  var prediction = _p[0]; var setPrediction = _p[1];
+
+  var options = [
+    { label: "João 2x0", sets: "2-0", winner: "joao" },
+    { label: "João 2x1", sets: "2-1", winner: "joao" },
+    { label: oppShort + " 2x1", sets: "1-2", winner: "opp" },
+    { label: oppShort + " 2x0", sets: "0-2", winner: "opp" },
+  ];
+
+  // For Grand Slams (best of 5)
+  var isGrandSlam = match.tournament_category && match.tournament_category.toLowerCase().includes("grand slam");
+  if (isGrandSlam) {
+    options = [
+      { label: "João 3x0", sets: "3-0", winner: "joao" },
+      { label: "João 3x1", sets: "3-1", winner: "joao" },
+      { label: "João 3x2", sets: "3-2", winner: "joao" },
+      { label: oppShort + " 3x2", sets: "2-3", winner: "opp" },
+      { label: oppShort + " 3x1", sets: "1-3", winner: "opp" },
+      { label: oppShort + " 3x0", sets: "0-3", winner: "opp" },
+    ];
+  }
+
+  var handlePredict = function(opt) {
+    if (prediction) return;
+    var pred = { sets: opt.sets, winner: opt.winner, label: opt.label, timestamp: Date.now() };
+    setPrediction(pred);
+    try { localStorage.setItem(matchKey, JSON.stringify(pred)); } catch(e) {}
+    // TODO abril: POST to /api/prediction
+  };
+
+  // Get streak from localStorage
+  var _streak = useState(function() { try { return parseInt(localStorage.getItem("fn_pred_streak") || "0", 10); } catch(e) { return 0; } });
+  var streak = _streak[0];
+
+  return (
+    <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
+      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #12203a 50%, #0d1a30 100%)", padding: "16px 24px", borderBottom: "1px solid " + BORDER }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 14 }}>🔮</span>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#B388FF", fontFamily: "'Inter', sans-serif" }}>Palpite</span>
+          </div>
+          {streak > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, background: "rgba(255,203,5,0.12)", borderRadius: 6, padding: "2px 8px", border: "1px solid rgba(255,203,5,0.2)" }}>
+              <span style={{ fontSize: 10 }}>🔥</span>
+              <span style={{ fontSize: 9, fontWeight: 700, color: YELLOW, fontFamily: "'Inter', sans-serif" }}>{streak} acerto{streak > 1 ? "s" : ""}</span>
+            </div>
+          )}
+        </div>
+
+        {!prediction ? (
+          <>
+            <p style={{ margin: "0 0 4px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Qual o placar de {match.tournament_name || "hoje"}?</p>
+            <p style={{ margin: "0 0 12px", fontSize: 10.5, color: "rgba(255,255,255,0.35)", fontFamily: "'Inter', sans-serif" }}>Fonseca vs {oppName}{match.round ? (" · " + match.round) : ""}</p>
+            <div style={{ display: "grid", gridTemplateColumns: isGrandSlam ? "repeat(3, 1fr)" : "repeat(4, 1fr)", gap: 6 }}>
+              {options.map(function(opt) {
+                var isJoao = opt.winner === "joao";
+                return (
+                  <button key={opt.sets} onClick={function() { handlePredict(opt); }} style={{
+                    padding: "10px 4px", background: isJoao ? "rgba(0,168,89,0.1)" : "rgba(230,57,70,0.1)",
+                    border: "1px solid " + (isJoao ? "rgba(0,168,89,0.25)" : "rgba(230,57,70,0.25)"),
+                    borderRadius: 8, cursor: "pointer", textAlign: "center", transition: "all 0.2s"
+                  }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: isJoao ? GREEN : RED, fontFamily: "'Inter', sans-serif", display: "block" }}>{opt.sets.replace("-", "x")}</span>
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>{isJoao ? "Fonseca" : oppShort}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        ) : (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: prediction.winner === "joao" ? "rgba(0,168,89,0.12)" : "rgba(230,57,70,0.12)", borderRadius: 10, padding: "8px 16px", border: "1px solid " + (prediction.winner === "joao" ? "rgba(0,168,89,0.25)" : "rgba(230,57,70,0.25)"), marginBottom: 8 }}>
+              <span style={{ fontSize: 16 }}>{prediction.winner === "joao" ? "🇧🇷" : "🎾"}</span>
+              <div style={{ textAlign: "left" }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: prediction.winner === "joao" ? GREEN : RED, fontFamily: "'Inter', sans-serif", display: "block" }}>Seu palpite: {prediction.label}</span>
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>{match.tournament_name || "Partida"}</span>
+              </div>
+            </div>
+            <p style={{ margin: 0, fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: "'Inter', sans-serif" }}>Resultado será revelado após o jogo!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 // ===== ATP CALENDAR 2026 =====
 var ATPCalendar = function() {
   var now = new Date();
@@ -1163,9 +1266,10 @@ var NewsCard = function(props) {
   );
 };
 
-var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes) {
+var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, nextMatch) {
   var elements = [];
   var banners = [
+    <MatchPrediction key="prediction-bar" match={nextMatch} />,
     <LastMatchBar key="last-match-bar" match={lastMatch} />,
     <QuizGame key="quiz-bar" />,
     <SeasonBar key="season-bar" season={season} />,
@@ -1175,7 +1279,7 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes) {
     <VideoBanner key="video-banner" onOpen={onOpenVideos} />,
   ];
   // Insert banners after every 2 news items (2+1 pattern)
-  var insertAfter = [2, 4, 6, 8, 10, 12, 14];
+  var insertAfter = [2, 4, 6, 8, 10, 12, 14, 16];
   var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
@@ -1515,33 +1619,6 @@ export default function JoaoFonsecaNews() {
                   <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Highlights e entrevistas</span>
                 </div>
               </button>
-
-              <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, textDecoration: "none", cursor: "pointer", transition: "background 0.15s" }}>
-                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>📸</span>
-                <div style={{ textAlign: "left" }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Instagram</span>
-                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>@joaoffonseca</span>
-                </div>
-              </a>
-
-              {/* Site feedback */}
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: siteFeedback ? (siteFeedback === "up" ? "#F0FFF4" : "#FFF5F5") : "#F8F9FA", border: "1px solid " + (siteFeedback === "up" ? GREEN + "40" : siteFeedback === "down" ? RED + "40" : BORDER), borderRadius: 12, width: "100%" }}>
-                <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>{siteFeedback === "up" ? "💚" : siteFeedback === "down" ? "😢" : "💬"}</span>
-                <div style={{ flex: 1, textAlign: "left" }}>
-                  <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>{siteFeedback ? "Obrigado pelo feedback!" : "Gostando do site?"}</span>
-                  <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{siteFeedback ? (siteFeedback === "up" ? "Que bom! 🎾" : "Vamos melhorar!") : "Sua opinião importa"}</span>
-                </div>
-                {!siteFeedback && (
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button onClick={function() { handleSiteFeedback("up"); }} style={{ background: "none", border: "1px solid " + GREEN + "40", borderRadius: 8, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-                    </button>
-                    <button onClick={function() { handleSiteFeedback("down"); }} style={{ background: "none", border: "1px solid " + RED + "40", borderRadius: 8, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
-                    </button>
-                  </div>
-                )}
-              </div>
 
               <button onClick={function() { setShowShare(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🔗</span>
@@ -1968,7 +2045,7 @@ export default function JoaoFonsecaNews() {
         {loading && news.length === 0 && <Skeleton />}
         {dn.length > 0 && !(loading && news.length === 0) && (
           <>
-          <div>{buildFeed(dn.slice(0, visibleCount), ds, dl, function() { setShowVideos(true); }, allLikes)}</div>
+          <div>{buildFeed(dn.slice(0, visibleCount), ds, dl, function() { setShowVideos(true); }, allLikes, dm)}</div>
           {visibleCount < dn.length && (
             <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }}>
               <button onClick={function() { setVisibleCount(function(v) { return Math.min(v + 10, dn.length); }); }} style={{ width: "100%", padding: "14px", background: "#F8F9FA", border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", fontSize: 13, fontWeight: 600, color: GREEN, fontFamily: "'Inter', sans-serif", transition: "background 0.2s" }}>
@@ -2002,6 +2079,21 @@ export default function JoaoFonsecaNews() {
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={TEXT_SECONDARY} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
             </a>
             <PixDonation />
+          </div>
+
+          {/* Site feedback */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16, padding: "10px 16px", background: siteFeedback ? (siteFeedback === "up" ? "#F0FFF4" : "#FFF5F5") : "#F8F9FA", borderRadius: 10, border: "1px solid " + (siteFeedback === "up" ? GREEN + "30" : siteFeedback === "down" ? RED + "30" : BORDER) }}>
+            <span style={{ fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif", fontWeight: 500 }}>{siteFeedback ? (siteFeedback === "up" ? "💚 Obrigado pelo feedback!" : "😢 Vamos melhorar!") : "Gostando do site?"}</span>
+            {!siteFeedback && (
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={function() { handleSiteFeedback("up"); }} style={{ background: "none", border: "1px solid " + GREEN + "40", borderRadius: 8, width: 32, height: 32, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+                </button>
+                <button onClick={function() { handleSiteFeedback("down"); }} style={{ background: "none", border: "1px solid " + RED + "40", borderRadius: 8, width: 32, height: 32, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* PWA hint */}
