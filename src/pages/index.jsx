@@ -1167,13 +1167,13 @@ var NewsCard = function(props) {
 var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes) {
   var elements = [];
   var inserts = [
-    { at: 3, component: <DailyPoll key="poll-bar" /> },
-    { at: 6, component: <QuizGame key="quiz-bar" /> },
-    { at: 9, component: <SeasonBar key="season-bar" season={season} /> },
-    { at: 12, component: <GameBanner key="game-banner" /> },
-    { at: 15, component: <VideoBanner key="video-banner" onOpen={onOpenVideos} /> },
-    { at: 18, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
-    { at: 21, component: <RaquetesBanner key="raquetes-banner" /> },
+    { at: 2, component: <DailyPoll key="poll-bar" /> },
+    { at: 4, component: <QuizGame key="quiz-bar" /> },
+    { at: 6, component: <SeasonBar key="season-bar" season={season} /> },
+    { at: 8, component: <GameBanner key="game-banner" /> },
+    { at: 10, component: <VideoBanner key="video-banner" onOpen={onOpenVideos} /> },
+    { at: 12, component: <RaquetesBanner key="raquetes-banner" /> },
+    { at: 14, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
