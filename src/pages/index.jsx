@@ -502,6 +502,26 @@ var TennisTVBanner = function() {
   );
 };
 
+// ===== RAQUETES BANNER =====
+var RaquetesBanner = function() {
+  return (
+    <a href="/raquetes" style={{ textDecoration: "none", display: "block" }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2a11 40%, #1a1e0a 100%)", padding: "20px 24px", borderBottom: "1px solid " + BORDER }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>🏷️ Comunidade</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div>
+            <p style={{ margin: "0 0 4px", fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4 }}>Venda sua raquete usada</p>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Anuncie grátis no nosso grupo do Telegram</span>
+          </div>
+          <div style={{ flexShrink: 0, marginLeft: 16, background: "linear-gradient(135deg, " + YELLOW + ", #D4A800)", padding: "8px 18px", borderRadius: 8, color: "#1a1a0a", fontSize: 12, fontWeight: 700, fontFamily: "'Inter', sans-serif" }}>Anunciar</div>
+        </div>
+      </div>
+    </a>
+  );
+};
+
 // ===== ATP CALENDAR 2026 =====
 var ATPCalendar = function() {
   var now = new Date();
@@ -1153,6 +1173,7 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes) {
     { at: 12, component: <GameBanner key="game-banner" /> },
     { at: 15, component: <VideoBanner key="video-banner" onOpen={onOpenVideos} /> },
     { at: 18, component: <LastMatchBar key="last-match-bar" match={lastMatch} /> },
+    { at: 21, component: <RaquetesBanner key="raquetes-banner" /> },
   ];
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
