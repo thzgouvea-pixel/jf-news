@@ -539,8 +539,6 @@ var NextDuelCard = function(props) {
       {/* Header line */}
       <div style={{ textAlign: "center", marginBottom: 16 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próximo jogo</span>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>·</span>
           <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: SANS }}>{match.surface}</span>
           <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>·</span>
           <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{match.city}</span>
@@ -998,6 +996,7 @@ export default function JoaoFonsecaNews() {
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px" }}>
         {/* NEXT DUEL */}
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "20px 0 10px" }}>Próximo duelo</h2>
         <NextDuelCard match={dm} player={dp} isLive={isLive} />
 
         {/* QUICK NAV */}
