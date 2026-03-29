@@ -532,7 +532,7 @@ var NextDuelCard = function(props) {
   var oppCountry = match.opponent_country || "";
   var sc = surfaceColorMap[match.surface] || "#999";
   return (
-    <section style={{ margin: "16px -20px 0", padding: "24px 24px 20px", background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
+    <section style={{ margin: "4px -20px 0", padding: "24px 24px 20px", background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
       {/* Subtle glow */}
       <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "15 0%, transparent 70%)", pointerEvents: "none" }} />
 
@@ -996,7 +996,7 @@ export default function JoaoFonsecaNews() {
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px" }}>
         {/* NEXT DUEL */}
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "20px 0 12px" }}>Próximo duelo</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 6px" }}>Próximo duelo</h2>
         <NextDuelCard match={dm} player={dp} isLive={isLive} />
 
         {/* QUICK NAV */}
