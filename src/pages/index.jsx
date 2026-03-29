@@ -658,7 +658,7 @@ var NewsCard = function(props) {
   var cleanTitle = item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title;
   return (
     <>
-    <article onClick={function() { setReading(true); }} onMouseEnter={function() { setH(true); }} onMouseLeave={function() { setH(false); }}
+    <article onClick={function() { if (hasUrl) { window.open(item.url, "_blank", "noopener,noreferrer"); } }} onMouseEnter={function() { setH(true); }} onMouseLeave={function() { setH(false); }}
       style={{ padding: "20px 0", borderBottom: "1px solid " + BORDER, cursor: "pointer", transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0 }}>
       <div style={{ display: "flex", gap: 14 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -892,7 +892,7 @@ export default function JoaoFonsecaNews() {
   var handleSiteFeedback = function(vote) { if (siteFeedback) return; fetch("/api/feedback?vote=" + vote, { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) {}).catch(function() {}); setSiteFeedback(vote); try { localStorage.setItem("fn_site_fb", vote); } catch(e) {} };
   var initDone = useRef(false);
 
-  useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 15000); return function() { clearTimeout(t); }; }, [popupDismissed]);
+  useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 60000); return function() { clearTimeout(t); }; }, [popupDismissed]);
   useEffect(function() { if (!cacheExpiresAt) return; var tick = function() { setTimeLeft(Math.max(0, cacheExpiresAt - Date.now())); }; tick(); var iv = setInterval(tick, 15000); return function() { clearInterval(iv); }; }, [cacheExpiresAt]);
 
   useEffect(function() {
@@ -982,7 +982,7 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: TEXT, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>Fonseca News</span>
                 {dp && <span style={{ fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: SANS, background: GREEN + "08", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0 }}>#{dp.ranking}</span>}
               </div>
-              <p style={{ margin: "2px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>{lastUpdate ? formatTimeAgo(lastUpdate) : ""}{dn.length > 0 ? " · " + dn.length + " notícias" : ""}</p>
+              <p style={{ margin: "2px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>Site de fãs{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}{dn.length > 0 ? " · " + dn.length + " notícias" : ""}</p>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
@@ -1001,7 +1001,7 @@ export default function JoaoFonsecaNews() {
 
         {/* QUICK NAV */}
         <section style={{ padding: "14px 0", borderBottom: "1px solid " + BORDER }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 6 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
             <button onClick={function(){setShowBio(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Biografia</span>
@@ -1015,20 +1015,30 @@ export default function JoaoFonsecaNews() {
               <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Calendário</span>
             </button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-            <button onClick={function(){setShowTitles(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
-              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Conquistas</span>
-            </button>
-            <button onClick={function(){setShowNextGen(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><path d="M6 3v12"/><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M15 6a9 9 0 0 1-9 9"/></svg>
-              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Next Gen</span>
-            </button>
-            <button onClick={function(){setShowTimeline(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
-            </button>
-          </div>
+        </section>
+
+        {/* MORE MENU */}
+        <section style={{ borderBottom: "1px solid " + BORDER }}>
+          <button onClick={function() { setShowMenu(!showMenu); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Mais</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5" style={{ transition: "transform 0.3s", transform: showMenu ? "rotate(180deg)" : "rotate(0)" }}><polyline points="6 9 12 15 18 9" /></svg>
+          </button>
+          {showMenu && (
+            <div style={{ paddingBottom: 10, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, animation: "fadeIn 0.2s ease" }}>
+              <button onClick={function(){setShowTitles(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Conquistas</span>
+              </button>
+              <button onClick={function(){setShowNextGen(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M6 3v12"/><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M15 6a9 9 0 0 1-9 9"/></svg>
+                <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Next Gen</span>
+              </button>
+              <button onClick={function(){setShowTimeline(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
+              </button>
+            </div>
+          )}
         </section>
 
         {/* NEWS FEED */}
