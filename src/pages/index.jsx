@@ -865,15 +865,17 @@ export default function JoaoFonsecaNews() {
 
       {/* HEADER */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-            <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, letterSpacing: "-0.04em", flexShrink: 0 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
+              <span style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
+            </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: TEXT, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>Fonseca News</span>
+                <span style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: TEXT, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>Fonseca News</span>
                 {dp && <span style={{ fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: SANS, background: GREEN + "08", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0 }}>#{dp.ranking}</span>}
               </div>
-              <p style={{ margin: "1px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>{lastUpdate ? formatTimeAgo(lastUpdate) : ""}{dn.length > 0 ? " · " + dn.length + " notícias" : ""}</p>
+              <p style={{ margin: "2px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>{lastUpdate ? formatTimeAgo(lastUpdate) : ""}{dn.length > 0 ? " · " + dn.length + " notícias" : ""}</p>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
@@ -892,10 +894,32 @@ export default function JoaoFonsecaNews() {
         {/* QUICK NAV */}
         <section style={{ padding: "14px 0", borderBottom: "1px solid " + BORDER }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 6 }}>
-            {[["Biografia","👤",function(){setShowBio(true);}],["Ranking","📈",function(){setShowRanking(true);}],["Calendário","🗓️",function(){setShowCalendar(true);}]].map(function(item) { return (<button key={item[0]} onClick={item[2]} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 15, display: "block", marginBottom: 3 }}>{item[1]}</span><span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{item[0]}</span></button>); })}
+            <button onClick={function(){setShowBio(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Biografia</span>
+            </button>
+            <button onClick={function(){setShowRanking(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Ranking</span>
+            </button>
+            <button onClick={function(){setShowCalendar(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Calendário</span>
+            </button>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-            {[["Conquistas","🏆",function(){setShowTitles(true);}],["Next Gen","⚡",function(){setShowNextGen(true);}],["Timeline","📅",function(){setShowTimeline(true);}]].map(function(item) { return (<button key={item[0]} onClick={item[2]} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 15, display: "block", marginBottom: 3 }}>{item[1]}</span><span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{item[0]}</span></button>); })}
+            <button onClick={function(){setShowTitles(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Conquistas</span>
+            </button>
+            <button onClick={function(){setShowNextGen(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><path d="M6 3v12"/><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M15 6a9 9 0 0 1-9 9"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Next Gen</span>
+            </button>
+            <button onClick={function(){setShowTimeline(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
+            </button>
           </div>
         </section>
 
