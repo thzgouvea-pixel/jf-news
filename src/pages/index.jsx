@@ -194,27 +194,28 @@ var DailyPoll = function() {
     fetch("/api/poll?vote=" + choice, { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) { if (d && typeof d.a === "number" && d.total > 0) { setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total }); } }).catch(function() { var sim = choice === "a" ? { a: 62, b: 38 } : { a: 45, b: 55 }; setResults(sim); });
   };
   return (
-    <div style={{ padding: "18px 20px", background: "linear-gradient(135deg, #F5FAF0 0%, #F0F7E8 100%)", borderRadius: 16, margin: "4px 0", border: "1px solid " + GREEN + "15" }}>
+    <div style={{ padding: "18px 20px", background: "linear-gradient(135deg, #0a1a10 0%, #0d2818 100%)", borderRadius: 16, margin: "4px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Enquete do dia</span>
+          <span style={{ fontSize: 13 }}>📊</span>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: GREEN, fontFamily: SANS }}>Enquete do dia</span>
         </div>
-        <p style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: TEXT, fontFamily: SERIF, lineHeight: 1.4 }}>{poll.q}</p>
+        <p style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.4 }}>{poll.q}</p>
         {!vote ? (
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={function() { handleVote("a"); }} style={{ flex: 1, padding: "10px", background: BG, border: "1px solid " + GREEN + "30", borderRadius: 10, fontSize: 13, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: SANS }}>{poll.a}</button>
-            <button onClick={function() { handleVote("b"); }} style={{ flex: 1, padding: "10px", background: BG, border: "1px solid " + BORDER, borderRadius: 10, fontSize: 13, fontWeight: 700, color: SUB, cursor: "pointer", fontFamily: SANS }}>{poll.b}</button>
+            <button onClick={function() { handleVote("a"); }} style={{ flex: 1, padding: "10px", background: "rgba(0,168,89,0.12)", border: "1px solid rgba(0,168,89,0.25)", borderRadius: 10, fontSize: 13, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: SANS }}>{poll.a}</button>
+            <button onClick={function() { handleVote("b"); }} style={{ flex: 1, padding: "10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.7)", cursor: "pointer", fontFamily: SANS }}>{poll.b}</button>
           </div>
         ) : (
           <div>
             <div style={{ marginBottom: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, fontWeight: 600, color: vote === "a" ? GREEN : SUB, fontFamily: SANS }}>{poll.a} {vote === "a" ? "✓" : ""}</span><span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>{results ? results.a : 50}%</span></div>
-              <div style={{ height: 4, background: "#eee", borderRadius: 2 }}><div style={{ height: 4, background: GREEN, borderRadius: 2, width: (results ? results.a : 50) + "%", transition: "width 0.8s ease" }} /></div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, fontWeight: 600, color: vote === "a" ? GREEN : "rgba(255,255,255,0.6)", fontFamily: SANS }}>{poll.a} {vote === "a" ? "✓" : ""}</span><span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{results ? results.a : 50}%</span></div>
+              <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2 }}><div style={{ height: 4, background: GREEN, borderRadius: 2, width: (results ? results.a : 50) + "%", transition: "width 0.8s ease" }} /></div>
             </div>
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, fontWeight: 600, color: vote === "b" ? GREEN : SUB, fontFamily: SANS }}>{poll.b} {vote === "b" ? "✓" : ""}</span><span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>{results ? results.b : 50}%</span></div>
-              <div style={{ height: 4, background: "#eee", borderRadius: 2 }}><div style={{ height: 4, background: DIM, borderRadius: 2, width: (results ? results.b : 50) + "%", transition: "width 0.8s ease" }} /></div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, fontWeight: 600, color: vote === "b" ? GREEN : "rgba(255,255,255,0.6)", fontFamily: SANS }}>{poll.b} {vote === "b" ? "✓" : ""}</span><span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{results ? results.b : 50}%</span></div>
+              <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2 }}><div style={{ height: 4, background: "rgba(255,255,255,0.35)", borderRadius: 2, width: (results ? results.b : 50) + "%", transition: "width 0.8s ease" }} /></div>
             </div>
-            <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>Nova enquete amanhã</p>
+            <p style={{ margin: "8px 0 0", fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textAlign: "center" }}>Nova enquete amanhã</p>
           </div>
         )}
     </div>
@@ -605,7 +606,7 @@ var NextDuelCard = function(props) {
         <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, textDecoration: "none", padding: "6px 14px", borderRadius: 8, background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.15)" }}>Assistir ao vivo →</a>
       </div>
 
-      {!isLive && <p style={{ margin: "10px 0 0", fontSize: 9, color: "rgba(255,255,255,0.15)", fontStyle: "italic", fontFamily: SANS, textAlign: "center" }}>Dados de exemplo</p>}
+      {!isLive && <p style={{ margin: "10px 0 0", fontSize: 9, color: "rgba(255,255,255,0.1)", fontStyle: "italic", fontFamily: SANS, textAlign: "center" }}>Atualizado automaticamente</p>}
     </section>
   );
 };
@@ -648,6 +649,7 @@ var NewsCard = function(props) {
   var item = props.item; var index = props.index; var allLikes = props.allLikes || {};
   var _s = useState(false); var h = _s[0]; var setH = _s[1];
   var _i = useState(false); var imgErr = _i[0]; var setImgErr = _i[1];
+  var hasImg = item.image && !imgErr;
   var _reading = useState(false); var reading = _reading[0]; var setReading = _reading[1];
   var likeId = (item.title || "").substring(0, 40).replace(/[^a-zA-Z0-9]/g, "_").toLowerCase();
   var initialLikes = allLikes[likeId] || { likes: 0, dislikes: 0 };
@@ -664,10 +666,12 @@ var NewsCard = function(props) {
     <>
     <article onClick={function() { setReading(true); }} onMouseEnter={function() { setH(true); }} onMouseLeave={function() { setH(false); }}
       style={{ padding: "20px 0", borderBottom: "1px solid " + BORDER, cursor: "pointer", transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: catColor, fontFamily: SANS }}>{item.category}</span>
-        <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{item.source}</span>
-        <span style={{ fontSize: 11, color: DIM, fontFamily: SANS, marginLeft: "auto" }}>{formatTimeAgo(item.date)}</span>
+      <div style={{ display: "flex", gap: 14 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 11, fontWeight: 600, color: catColor, fontFamily: SANS }}>{item.category}</span>
+            <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{item.source}</span>
+            <span style={{ fontSize: 11, color: DIM, fontFamily: SANS, marginLeft: "auto" }}>{formatTimeAgo(item.date)}</span>
       </div>
       <h3 style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 700, color: h ? "#007A3D" : TEXT, fontFamily: SERIF, lineHeight: 1.35, letterSpacing: "-0.01em", transition: "color 0.15s" }}>{cleanTitle}</h3>
       {item.summary && <p style={{ margin: "0 0 6px", fontSize: 14, color: SUB, fontFamily: SANS, lineHeight: 1.6 }}>{item.summary}</p>}
@@ -683,6 +687,12 @@ var NewsCard = function(props) {
         <button onClick={handleSh} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, marginLeft: "auto", opacity: 0.3 }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
         </button>
+      </div>
+        </div>
+        {hasImg && (
+          <img src={item.image} alt="" onError={function() { setImgErr(true); }}
+            style={{ width: 72, height: 72, borderRadius: 10, objectFit: "cover", flexShrink: 0, background: "#f0f0f0" }} loading="lazy" />
+        )}
       </div>
     </article>
     {/* READING MODE */}
@@ -701,7 +711,7 @@ var NewsCard = function(props) {
             <h2 style={{ margin: "0 0 14px", fontSize: 22, fontWeight: 800, color: TEXT, fontFamily: SERIF, lineHeight: 1.3, letterSpacing: "-0.02em" }}>{cleanTitle}</h2>
             {item.summary && <p style={{ margin: "0 0 16px", fontSize: 16, color: SUB, fontFamily: SERIF, lineHeight: 1.75 }}>{item.summary}</p>}
             <div style={{ background: BG_ALT, borderRadius: 10, padding: "12px 16px", marginBottom: 20, borderLeft: "3px solid " + GREEN }}>
-              <p style={{ margin: 0, fontSize: 13, color: SUB, fontFamily: SANS, lineHeight: 1.6 }}>📰 Leia a matéria completa no site da <strong>{item.source}</strong></p>
+              <p style={{ margin: 0, fontSize: 13, color: SUB, fontFamily: SANS, lineHeight: 1.6 }}>Matéria publicada pela <strong>{item.source}</strong>. Toque no botão abaixo para ler o conteúdo completo.</p>
             </div>
             {hasUrl && (<a href={item.url} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 20px", background: GREEN, color: "#fff", borderRadius: 12, fontSize: 14, fontWeight: 700, fontFamily: SANS, textDecoration: "none", marginBottom: 16 }}>Ler matéria completa<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></a>)}
             <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
@@ -879,14 +889,14 @@ export default function JoaoFonsecaNews() {
         {/* NEXT DUEL */}
         <NextDuelCard match={dm} player={dp} isLive={isLive} />
 
-        {/* QUICK STATS */}
-        <section style={{ padding: "18px 0", borderBottom: "1px solid " + BORDER, display: "flex", justifyContent: "space-between", flexWrap: "wrap" }}>
-          {ds && [["Temporada", ds.wins + "V · " + ds.losses + "D"],["Títulos", String(ds.titles)],["Melhor ranking","#24"]].map(function(s) { return (<div key={s[0]}><span style={{ fontSize: 10, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 2 }}>{s[0]}</span><span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS }}>{s[1]}</span></div>); })}
-        </section>
-
         {/* QUICK NAV */}
-        <section style={{ padding: "16px 0", borderBottom: "1px solid " + BORDER, display: "flex", gap: 8 }}>
-          {[["Biografia","👤",function(){setShowBio(true);}],["Ranking","📈",function(){setShowRanking(true);}],["Calendário","🗓️",function(){setShowCalendar(true);}]].map(function(item) { return (<button key={item[0]} onClick={item[2]} style={{ flex: 1, padding: "12px 8px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 16, display: "block", marginBottom: 4 }}>{item[1]}</span><span style={{ fontSize: 12, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{item[0]}</span></button>); })}
+        <section style={{ padding: "14px 0", borderBottom: "1px solid " + BORDER }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginBottom: 6 }}>
+            {[["Biografia","👤",function(){setShowBio(true);}],["Ranking","📈",function(){setShowRanking(true);}],["Calendário","🗓️",function(){setShowCalendar(true);}]].map(function(item) { return (<button key={item[0]} onClick={item[2]} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 15, display: "block", marginBottom: 3 }}>{item[1]}</span><span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{item[0]}</span></button>); })}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+            {[["Conquistas","🏆",function(){setShowTitles(true);}],["Next Gen","⚡",function(){setShowNextGen(true);}],["Timeline","📅",function(){setShowTimeline(true);}]].map(function(item) { return (<button key={item[0]} onClick={item[2]} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 15, display: "block", marginBottom: 3 }}>{item[1]}</span><span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{item[0]}</span></button>); })}
+          </div>
         </section>
 
         {/* MORE MENU */}
@@ -896,14 +906,11 @@ export default function JoaoFonsecaNews() {
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5" style={{ transition: "transform 0.3s", transform: showMenu ? "rotate(180deg)" : "rotate(0)" }}><polyline points="6 9 12 15 18 9" /></svg>
           </button>
           {showMenu && (
-            <div style={{ paddingBottom: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, animation: "fadeIn 0.2s ease" }}>
+            <div style={{ paddingBottom: 12, display: "flex", gap: 8, animation: "fadeIn 0.2s ease" }}>
               {[
-                ["Conquistas","🏆",function(){setShowTitles(true);setShowMenu(false);}],
-                ["Timeline","📅",function(){setShowTimeline(true);setShowMenu(false);}],
-                ["Next Gen","⚡",function(){setShowNextGen(true);setShowMenu(false);}],
                 ["Vídeos","🎬",function(){setShowVideos(true);setShowMenu(false);}],
                 ["Compartilhar","🔗",function(){setShowShare(true);setShowMenu(false);}],
-              ].map(function(item) { return (<button key={item[0]} onClick={item[2]} style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer" }}><span style={{ fontSize: 15 }}>{item[1]}</span><span style={{ fontSize: 12, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{item[0]}</span></button>); })}
+              ].map(function(item) { return (<button key={item[0]} onClick={item[2]} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 12px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer" }}><span style={{ fontSize: 15 }}>{item[1]}</span><span style={{ fontSize: 12, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{item[0]}</span></button>); })}
             </div>
           )}
         </section>
@@ -929,6 +936,10 @@ export default function JoaoFonsecaNews() {
           <div onClick={function() { setShowTitles(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 20, cursor: "pointer" }}>
             {[["🏆","2 ATP"],["🎯","3 Challengers"],["🇧🇷","Nº1 Brasil"],["⭐","NextGen"]].map(function(pair, i) { return (<span key={i} style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{pair[0]} {pair[1]}</span>); })}
             <span style={{ fontSize: 11, color: GREEN, fontFamily: SANS, fontWeight: 600 }}>Ver todos →</span>
+          </div>
+
+          <div style={{ textAlign: "center", marginBottom: 16 }}>
+            <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: GREEN, fontFamily: SANS, fontWeight: 600, textDecoration: "none" }}>📸 Siga o João: @joaoffonseca</a>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20 }}>
