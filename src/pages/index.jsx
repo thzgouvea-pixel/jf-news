@@ -899,22 +899,6 @@ export default function JoaoFonsecaNews() {
           </div>
         </section>
 
-        {/* MORE MENU */}
-        <section style={{ borderBottom: "1px solid " + BORDER }}>
-          <button onClick={function() { setShowMenu(!showMenu); }} style={{ width: "100%", padding: "12px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Mais</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5" style={{ transition: "transform 0.3s", transform: showMenu ? "rotate(180deg)" : "rotate(0)" }}><polyline points="6 9 12 15 18 9" /></svg>
-          </button>
-          {showMenu && (
-            <div style={{ paddingBottom: 12, display: "flex", gap: 8, animation: "fadeIn 0.2s ease" }}>
-              {[
-                ["Vídeos","🎬",function(){setShowVideos(true);setShowMenu(false);}],
-                ["Compartilhar","🔗",function(){setShowShare(true);setShowMenu(false);}],
-              ].map(function(item) { return (<button key={item[0]} onClick={item[2]} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "10px 12px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer" }}><span style={{ fontSize: 15 }}>{item[1]}</span><span style={{ fontSize: 12, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{item[0]}</span></button>); })}
-            </div>
-          )}
-        </section>
-
         {/* NEWS FEED */}
         <section style={{ paddingTop: 4 }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "20px 0 12px" }}>Notícias</h2>
@@ -932,47 +916,40 @@ export default function JoaoFonsecaNews() {
         </section>
 
         {/* FOOTER */}
-        <footer style={{ padding: "32px 0", borderTop: "1px solid " + BORDER, marginTop: 8 }}>
-          <div onClick={function() { setShowTitles(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 20, cursor: "pointer" }}>
-            {[["🏆","2 ATP"],["🎯","3 Challengers"],["🇧🇷","Nº1 Brasil"],["⭐","NextGen"]].map(function(pair, i) { return (<span key={i} style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{pair[0]} {pair[1]}</span>); })}
+        <footer style={{ padding: "28px 0", borderTop: "1px solid " + BORDER, marginTop: 8 }}>
+          {/* Conquistas resumo */}
+          <div onClick={function() { setShowTitles(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 20, cursor: "pointer", flexWrap: "wrap" }}>
+            {[["🏆","2 ATP"],["🎯","3 Challengers"],["🇧🇷","Nº1 Brasil"]].map(function(pair, i) { return (<span key={i} style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{pair[0]} {pair[1]}</span>); })}
             <span style={{ fontSize: 11, color: GREEN, fontFamily: SANS, fontWeight: 600 }}>Ver todos →</span>
           </div>
 
-          <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: GREEN, fontFamily: SANS, fontWeight: 600, textDecoration: "none" }}>📸 Siga o João: @joaoffonseca</a>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20 }}>
+          {/* Social + ações */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 }}>
             <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill={SUB} stroke="none"/></svg>
             </a>
             <a href="https://x.com/JFonsecaNews" target="_blank" rel="noopener noreferrer" style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill={SUB}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
             </a>
-            <button onClick={function() { setShowShare(true); }} style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", background: "transparent" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            </button>
             <a href="mailto:thzgouvea@gmail.com?subject=Fonseca News" style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
             </a>
             <PixDonation />
           </div>
 
-          {/* Site feedback */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 16 }}>
-            <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{siteFeedback ? (siteFeedback === "up" ? "💚 Obrigado!" : "Vamos melhorar!") : "Gostando do site?"}</span>
-            {!siteFeedback && (<div style={{ display: "flex", gap: 6 }}>
-              <button onClick={function() { handleSiteFeedback("up"); }} style={{ background: "none", border: "1px solid " + GREEN + "30", borderRadius: 8, width: 30, height: 30, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></button>
-              <button onClick={function() { handleSiteFeedback("down"); }} style={{ background: "none", border: "1px solid " + RED + "30", borderRadius: 8, width: 30, height: 30, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg></button>
+          {/* Feedback + Visitantes */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 16 }}>
+            <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{siteFeedback ? (siteFeedback === "up" ? "💚 Obrigado!" : "Vamos melhorar!") : "Gostando do site?"}</span>
+            {!siteFeedback && (<div style={{ display: "flex", gap: 4 }}>
+              <button onClick={function() { handleSiteFeedback("up"); }} style={{ background: "none", border: "1px solid " + GREEN + "25", borderRadius: 6, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></button>
+              <button onClick={function() { handleSiteFeedback("down"); }} style={{ background: "none", border: "1px solid " + RED + "25", borderRadius: 6, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg></button>
             </div>)}
+            <span style={{ color: "#e0e0e0" }}>·</span>
+            <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}><span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}>...</span> visitantes</span>
           </div>
 
-          <p style={{ margin: "0 0 8px", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>📱 Adicione à tela inicial: Safari (↑) · Chrome (⋮)</p>
-          <div style={{ textAlign: "center", marginBottom: 12 }}><span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}><span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}>...</span> visitantes únicos</span></div>
-          <div style={{ borderTop: "1px solid " + BORDER, paddingTop: 16 }}>
-            <p style={{ fontSize: 10, color: DIM, fontFamily: SANS, lineHeight: 1.6, maxWidth: 400, margin: "0 auto", textAlign: "center" }}>Site independente de fãs · Sem vínculo com João Fonseca, sua equipe ou a ATP · Notícias de fontes públicas</p>
-            <p style={{ fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center", marginTop: 6 }}>© 2026 Fonseca News · fonsecanews.com.br</p>
-          </div>
+          {/* Disclaimer */}
+          <p style={{ fontSize: 9, color: DIM, fontFamily: SANS, lineHeight: 1.6, maxWidth: 340, margin: "0 auto", textAlign: "center" }}>Site independente de fãs · Sem vínculo com João Fonseca ou ATP · © 2026 Fonseca News</p>
         </footer>
       </main>
 
