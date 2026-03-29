@@ -842,10 +842,7 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, n
       <CompactGame key="compact-game" />
       <CompactRaquetes key="compact-raquetes" />
     </DualBanner>,
-    <DualBanner key="dual-video-rival">
-      <CompactVideo key="compact-video" />
-      <CompactRival key="compact-rival" />
-    </DualBanner>,
+    <VideoBanner key="video-banner" onOpen={onOpenVideos} />,
   ];
   // 4 news + 1 banner pattern
   var insertAfter = [4, 8, 12, 16];
