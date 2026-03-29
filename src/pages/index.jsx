@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 
 const ACCENT = "#00A859";
 const ACCENT_YELLOW = "#FFCB05";
-const ACCENT_LIGHT = "#E8F8F0";
+const ACCENT_LIGHT = "#EBF7F1";
 const BG = "#FAFAFA";
 const BG_WHITE = "#FFFFFF";
 const TEXT_PRIMARY = "#1A1A1A";
@@ -56,9 +56,9 @@ var detectDevice = function() {
 };
 
 var catCfg = {
-  "Torneio": { color: "#E63946", bg: "#FEF0F0" }, "Treino": { color: "#2A9D8F", bg: "#EDF8F6" },
+  "Torneio": { color: "#D4343F", bg: "#FEF2F2" }, "Treino": { color: "#2A9D8F", bg: "#EDF8F6" },
   "Declaração": { color: "#E9A820", bg: "#FDF6E3" }, "Resultado": { color: "#0066FF", bg: "#E8F0FE" },
-  "Ranking": { color: "#7C3AED", bg: "#F3EEFF" }, "Notícia": { color: "#5A5A5A", bg: "#F3F3F3" },
+  "Ranking": { color: "#6D35D0", bg: "#F5F0FF" }, "Notícia": { color: "#5A5A5A", bg: "#F3F3F3" },
 };
 
 // ===== COUNTDOWN HOOK =====
@@ -114,7 +114,7 @@ var LastMatchBar = function(props) {
   return (
     <div style={{ padding: "12px 24px", background: w ? "#F7FDFA" : "#FFFAFA", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
       <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>Última partida</span>
-      <span style={{ fontSize: 10, fontWeight: 700, color: w ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif", background: w ? "#EAFAF3" : "#FEF0F0", padding: "1px 6px", borderRadius: 3 }}>{w ? "V" : "D"}</span>
+      <span style={{ fontSize: 10, fontWeight: 700, color: w ? GREEN : RED, fontFamily: "'Inter', -apple-system, sans-serif", background: w ? "#EAFAF3" : "#FEF0F0", padding: "2px 8px", borderRadius: 999 }}>{w ? "V" : "D"}</span>
       <span style={{ fontSize: 12.5, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif" }}>Fonseca <span style={{ color: w ? GREEN : RED }}>{match.score}</span> {match.opponent}</span>
       <span style={{ fontSize: 10.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{match.tournament}{match.round ? (" · " + match.round) : ""}</span>
     </div>
@@ -509,7 +509,7 @@ var RaquetesBanner = function() {
       <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 50%, #1a1e0a 100%)", padding: "14px 24px", display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid " + BORDER, cursor: "pointer" }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#1a1a0a", fontFamily: "'Inter', sans-serif", background: YELLOW, padding: "2px 6px", borderRadius: 3 }}>Novo</span>
+            <span style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#1a1a0a", fontFamily: "'Inter', sans-serif", background: YELLOW, padding: "2px 8px", borderRadius: 999 }}>Novo</span>
             <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: "'Inter', sans-serif" }}>Comunidade Fonseca News</span>
           </div>
           <p style={{ margin: 0, fontSize: 13.5, fontWeight: 700, color: "#fff", fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.3 }}>Tem uma raquete parada? Venda pra quem vai usar!</p>
@@ -665,11 +665,11 @@ var ATPCalendar = function() {
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 13.5, fontWeight: 700, color: ev.done ? TEXT_DIM : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", textDecoration: ev.done ? "none" : "none" }}>{ev.name}</span>
                 {isNext && (
-                  <span style={{ fontSize: 8, fontWeight: 700, color: GREEN, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.1em", background: GREEN + "15", padding: "2px 6px", borderRadius: 4 }}>Próximo</span>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: GREEN, fontFamily: "'Inter', sans-serif", textTransform: "uppercase", letterSpacing: "0.1em", background: GREEN + "15", padding: "2px 8px", borderRadius: 999 }}>Próximo</span>
                 )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 9, fontWeight: 700, color: catColor, fontFamily: "'Inter', sans-serif", background: catColor + "12", padding: "1px 6px", borderRadius: 4 }}>{ev.cat}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: catColor, fontFamily: "'Inter', sans-serif", background: catColor + "12", padding: "2px 8px", borderRadius: 999 }}>{ev.cat}</span>
                 <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>{surfaceEmojis[ev.surface] || ""} {ev.surface}</span>
                 <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>· {ev.city}</span>
               </div>
@@ -679,7 +679,7 @@ var ATPCalendar = function() {
             {/* Result or status */}
             <div style={{ flexShrink: 0, textAlign: "right", paddingTop: 2 }}>
               {ev.done ? (
-                <span style={{ fontSize: 10, fontWeight: 700, color: ev.result && ev.result.includes("🏆") ? GREEN : TEXT_DIM, fontFamily: "'Inter', sans-serif", background: ev.result && ev.result.includes("🏆") ? GREEN + "12" : "#F0F0F0", padding: "2px 8px", borderRadius: 4 }}>{ev.result || "—"}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, color: ev.result && ev.result.includes("🏆") ? GREEN : TEXT_DIM, fontFamily: "'Inter', sans-serif", background: ev.result && ev.result.includes("🏆") ? GREEN + "12" : "#F0F0F0", padding: "2px 10px", borderRadius: 999 }}>{ev.result || "—"}</span>
               ) : isNext ? (
                 <span style={{ width: 8, height: 8, borderRadius: "50%", background: GREEN, display: "inline-block", animation: "pulse 1.5s ease-in-out infinite" }} />
               ) : (
@@ -959,7 +959,7 @@ var NextDuelCard = function(props) {
       <div style={{ textAlign: "center", padding: "18px 20px 8px", position: "relative" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: YELLOW, fontFamily: "'Inter', sans-serif" }}>Próximo Duelo</span>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: sc + "20", borderRadius: 14, padding: "2px 10px", border: "1px solid " + sc + "30" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: sc + "20", borderRadius: 999, padding: "2px 10px", border: "1px solid " + sc + "30" }}>
             <span style={{ fontSize: 11 }}>{se}</span>
             <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: "'Inter', sans-serif" }}>{match.surface}</span>
           </div>
@@ -1045,7 +1045,7 @@ var NextDuelCard = function(props) {
         <div style={{ padding: "0 20px 14px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
           <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif" }}>📺 Transmissão:</span>
           {match.channels.map(function(ch, i) {
-            return <span key={i} style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", fontFamily: "'Inter', sans-serif", background: "rgba(255,255,255,0.08)", padding: "3px 8px", borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)" }}>{ch}</span>;
+            return <span key={i} style={{ fontSize: 10, color: "rgba(255,255,255,0.6)", fontFamily: "'Inter', sans-serif", background: "rgba(255,255,255,0.08)", padding: "3px 10px", borderRadius: 999, border: "1px solid rgba(255,255,255,0.1)" }}>{ch}</span>;
           })}
         </div>
       )}
@@ -1151,18 +1151,18 @@ var NewsCard = function(props) {
   return (
     <>
     <div onClick={function() { setReading(true); }} onMouseEnter={function() { setH(true); }} onMouseLeave={function() { setH(false); }}
-      style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "20px 24px" : "20px 24px 20px 20px", borderBottom: "1px solid " + BORDER, borderLeft: hasImg ? "none" : ("3px solid " + cat.color), transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0, cursor: "pointer", alignItems: "flex-start" }}>
+      style={{ display: "flex", gap: hasImg ? 14 : 0, textDecoration: "none", background: h ? "#F8F9FA" : BG_WHITE, padding: hasImg ? "22px 24px" : "22px 24px 22px 20px", borderBottom: "1px solid " + BORDER, borderLeft: hasImg ? "none" : ("3px solid " + cat.color), transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0, cursor: "pointer", alignItems: "flex-start" }}>
       {hasImg && (
         <img src={item.image} alt="" onError={function() { setImgErr(true); }}
           style={{ width: 56, height: 56, borderRadius: 10, objectFit: "cover", flexShrink: 0, marginTop: 2, background: "#f0f0f0" }} loading="lazy" />
       )}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: cat.color, fontFamily: "'Inter', -apple-system, sans-serif", background: cat.bg, padding: "3px 8px", borderRadius: 4 }}>{item.category}</span>
+          <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: cat.color, fontFamily: "'Inter', -apple-system, sans-serif", background: cat.bg, padding: "3px 10px", borderRadius: 999 }}>{item.category}</span>
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif" }}>{item.source}</span>
           <span style={{ fontSize: 12, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", marginLeft: "auto", whiteSpace: "nowrap" }}>{formatTimeAgo(item.date)}</span>
         </div>
-        <h3 style={{ margin: "0 0 5px", fontSize: 16, fontWeight: 700, color: h ? GREEN : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.45, transition: "color 0.15s" }}>{cleanTitle}</h3>
+        <h3 style={{ margin: "0 0 6px", fontSize: 17, fontWeight: 700, color: h ? "#007A3D" : TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.4, transition: "color 0.15s", letterSpacing: "-0.01em" }}>{cleanTitle}</h3>
         {item.summary && <p style={{ margin: "0 0 4px", fontSize: 13, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", lineHeight: 1.5 }}>{item.summary}</p>}
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 10 }}>
           <button onClick={function(e) { handleRx("l", e); }} style={{ background: "none", border: "none", cursor: voted ? "default" : "pointer", display: "flex", alignItems: "center", gap: 4, padding: 0, opacity: voted && voted !== "l" ? 0.2 : (voted === "l" ? 1 : 0.35), transition: "opacity 0.2s" }}>
@@ -1195,7 +1195,7 @@ var NewsCard = function(props) {
               <img src={item.image} alt="" style={{ width: "100%", height: 220, objectFit: "cover", display: "block" }} />
               <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 80, background: "linear-gradient(transparent, rgba(0,0,0,0.6))" }} />
               <div style={{ position: "absolute", bottom: 10, left: 14 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#fff", fontFamily: "'Inter', sans-serif", background: cat.color, padding: "3px 8px", borderRadius: 4 }}>{item.category}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#fff", fontFamily: "'Inter', sans-serif", background: cat.color, padding: "3px 10px", borderRadius: 999 }}>{item.category}</span>
               </div>
               <button onClick={function() { setReading(false); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(0,0,0,0.4)", border: "none", width: 30, height: 30, borderRadius: "50%", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
@@ -1206,7 +1206,7 @@ var NewsCard = function(props) {
               </div>
               <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: "'Inter', sans-serif" }}>FONSECA NEWS</span>
               <div style={{ position: "absolute", bottom: 10, left: 14 }}>
-                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#fff", fontFamily: "'Inter', sans-serif", background: cat.color, padding: "3px 8px", borderRadius: 4 }}>{item.category}</span>
+                <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#fff", fontFamily: "'Inter', sans-serif", background: cat.color, padding: "3px 10px", borderRadius: 999 }}>{item.category}</span>
               </div>
               <button onClick={function() { setReading(false); }} style={{ position: "absolute", top: 10, right: 10, background: "rgba(255,255,255,0.1)", border: "none", width: 30, height: 30, borderRadius: "50%", color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
             </div>
@@ -1221,7 +1221,7 @@ var NewsCard = function(props) {
 
           {/* Content */}
           <div style={{ padding: "12px 24px 24px" }}>
-            <h2 style={{ margin: "0 0 16px", fontSize: 22, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.35 }}>{cleanTitle}</h2>
+            <h2 style={{ margin: "0 0 16px", fontSize: 22, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.3, letterSpacing: "-0.02em" }}>{cleanTitle}</h2>
 
             {item.summary ? (
               <p style={{ margin: "0 0 16px", fontSize: 15.5, color: TEXT_SECONDARY, fontFamily: "'Source Serif 4', Georgia, serif", lineHeight: 1.75 }}>{item.summary}</p>
@@ -1468,15 +1468,12 @@ export default function JoaoFonsecaNews() {
       }</style>
 
       {/* BRAZILIAN STRIPE */}
-      <div style={{ height: 3, background: "linear-gradient(90deg, " + GREEN + " 0%, " + GREEN + " 50%, " + YELLOW + " 50%, " + YELLOW + " 100%)" }} />
+      <div style={{ height: 2, background: "linear-gradient(90deg, " + GREEN + " 0%, " + GREEN + " 50%, " + YELLOW + " 50%, " + YELLOW + " 100%)" }} />
 
       {/* HEADER */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.95)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
         <div style={{ height: 2, background: "linear-gradient(90deg, " + GREEN + " 0%, " + GREEN + " 50%, " + YELLOW + " 50%, " + YELLOW + " 100%)" }} />
-        <div style={{ padding: "4px 16px", background: "#F8F9FA", borderBottom: "1px solid " + BORDER, textAlign: "center" }}>
-          <span style={{ fontSize: 9.5, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500, letterSpacing: "0.02em" }}>Site independente de fãs · Não oficial</span>
-        </div>
-        <div style={{ maxWidth: 680, margin: "0 auto", padding: "22px 16px 20px" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto", padding: "16px 16px 14px" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
               {/* GREEN/YELLOW LOGO */}
@@ -1489,7 +1486,7 @@ export default function JoaoFonsecaNews() {
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 22, fontWeight: 800, color: TEXT_PRIMARY, fontFamily: "'Source Serif 4', Georgia, serif", letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>Fonseca News</span>
                   {dp && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 3, background: ACCENT_LIGHT, borderRadius: 6, padding: "2px 7px", border: "1px solid #C8E6D8" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 3, background: ACCENT_LIGHT, borderRadius: 999, padding: "3px 10px", border: "1px solid #C8E6D8" }}>
                       <span style={{ fontSize: 11.5, fontWeight: 800, color: GREEN, fontFamily: "'Inter', -apple-system, sans-serif" }}>{"#" + dp.ranking}</span>
                       <span style={{ fontSize: 9, color: TEXT_DIM, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 600 }}>ATP</span>
                       {(function() {
@@ -1550,6 +1547,27 @@ export default function JoaoFonsecaNews() {
       {/* NEXT DUEL CARD */}
       <NextDuelCard match={dm} player={dp} isLive={isLive} />
 
+      {/* QUICK NAV */}
+      <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE, padding: "12px 16px", borderBottom: "1px solid " + BORDER }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+          <button onClick={function() { setShowBio(true); }} style={{ border: "1px solid " + BORDER, background: "#F8F9FA", borderRadius: 14, padding: "12px 10px", textAlign: "left", cursor: "pointer" }}>
+            <span style={{ fontSize: 16, display: "block", marginBottom: 6 }}>👤</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Biografia</span>
+            <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Conheça o João</span>
+          </button>
+          <button onClick={function() { setShowRanking(true); }} style={{ border: "1px solid " + BORDER, background: "#F8F9FA", borderRadius: 14, padding: "12px 10px", textAlign: "left", cursor: "pointer" }}>
+            <span style={{ fontSize: 16, display: "block", marginBottom: 6 }}>📈</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Ranking</span>
+            <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Evolução e fase</span>
+          </button>
+          <button onClick={function() { setShowCalendar(true); }} style={{ border: "1px solid " + BORDER, background: "#F8F9FA", borderRadius: 14, padding: "12px 10px", textAlign: "left", cursor: "pointer" }}>
+            <span style={{ fontSize: 16, display: "block", marginBottom: 6 }}>🗓️</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Calendário</span>
+            <span style={{ fontSize: 10, color: TEXT_DIM, fontFamily: "'Inter', sans-serif" }}>Próximos torneios</span>
+          </button>
+        </div>
+      </div>
+
       {/* EXPANDABLE MENU */}
       <div style={{ maxWidth: 680, margin: "0 auto", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, background: BG_WHITE }}>
         <button onClick={function() { setShowMenu(!showMenu); }} style={{ width: "100%", padding: "12px 24px", background: showMenu ? "#F8F9FA" : BG_WHITE, border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "background 0.2s" }}>
@@ -1562,9 +1580,9 @@ export default function JoaoFonsecaNews() {
 
         {showMenu && (
           <div style={{ padding: "8px 16px 12px", borderBottom: "1px solid " + BORDER, animation: "fadeIn 0.25s ease" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
 
-              <button onClick={function() { setShowBio(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s" }}>
+              <button onClick={function() { setShowBio(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 14, cursor: "pointer", transition: "background 0.15s" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>👤</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Biografia</span>
@@ -1572,7 +1590,7 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
-              <button onClick={function() { setShowTitles(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+              <button onClick={function() { setShowTitles(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 14, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🏆</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Conquistas</span>
@@ -1580,7 +1598,7 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
-              <button onClick={function() { setShowRanking(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+              <button onClick={function() { setShowRanking(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 14, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>📈</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Evolução Ranking</span>
@@ -1588,7 +1606,7 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
-              <button onClick={function() { setShowTimeline(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+              <button onClick={function() { setShowTimeline(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 14, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>📅</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Timeline</span>
@@ -1596,7 +1614,7 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
-              <button onClick={function() { setShowNextGen(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+              <button onClick={function() { setShowNextGen(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 14, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>⚡</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Next Gen</span>
@@ -1604,7 +1622,7 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
-              <button onClick={function() { setShowCalendar(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+              <button onClick={function() { setShowCalendar(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 14, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🗓️</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Calendário</span>
@@ -1612,7 +1630,7 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
-              <button onClick={function() { setShowVideos(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+              <button onClick={function() { setShowVideos(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 14, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🎬</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Vídeos</span>
@@ -1620,7 +1638,7 @@ export default function JoaoFonsecaNews() {
                 </div>
               </button>
 
-              <button onClick={function() { setShowShare(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
+              <button onClick={function() { setShowShare(true); setShowMenu(false); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#F8F9FA", border: "1px solid " + BORDER, borderRadius: 14, cursor: "pointer", transition: "background 0.15s", width: "100%" }}>
                 <span style={{ fontSize: 18, width: 28, textAlign: "center" }}>🔗</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 12.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Compartilhar</span>
@@ -2005,21 +2023,21 @@ export default function JoaoFonsecaNews() {
             </div>
             <p style={{ margin: "0 0 16px", fontSize: 12.5, color: TEXT_SECONDARY, fontFamily: "'Inter', sans-serif" }}>Indique o Fonseca News para outros fãs do João!</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <a href={"https://wa.me/?text=" + encodeURIComponent("🎾 Fonseca News — Acompanhe o João Fonseca! fonsecanews.com.br")} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#E8F8E8", borderRadius: 12, textDecoration: "none", border: "1px solid #C8E6C8", transition: "background 0.15s" }}>
+              <a href={"https://wa.me/?text=" + encodeURIComponent("🎾 Fonseca News — Acompanhe o João Fonseca! fonsecanews.com.br")} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#E8F8E8", borderRadius: 16, textDecoration: "none", border: "1px solid #C8E6C8", transition: "background 0.15s" }}>
                 <span style={{ fontSize: 22 }}>💬</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 13.5, fontWeight: 600, color: "#1A7A1A", fontFamily: "'Inter', sans-serif", display: "block" }}>WhatsApp</span>
                   <span style={{ fontSize: 10.5, color: "#5A8A5A", fontFamily: "'Inter', sans-serif" }}>Enviar para contato ou grupo</span>
                 </div>
               </a>
-              <a href={"mailto:?subject=" + encodeURIComponent("Fonseca News — João Fonseca") + "&body=" + encodeURIComponent("Olha esse site sobre o João Fonseca! 🎾🇧🇷\n\nfonsecanews.com.br")} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#F0F4FF", borderRadius: 12, textDecoration: "none", border: "1px solid #D0DFFF", transition: "background 0.15s" }}>
+              <a href={"mailto:?subject=" + encodeURIComponent("Fonseca News — João Fonseca") + "&body=" + encodeURIComponent("Olha esse site sobre o João Fonseca! 🎾🇧🇷\n\nfonsecanews.com.br")} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#F0F4FF", borderRadius: 16, textDecoration: "none", border: "1px solid #D0DFFF", transition: "background 0.15s" }}>
                 <span style={{ fontSize: 22 }}>✉️</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 13.5, fontWeight: 600, color: "#2A5AA0", fontFamily: "'Inter', sans-serif", display: "block" }}>Email</span>
                   <span style={{ fontSize: 10.5, color: "#6A8ABB", fontFamily: "'Inter', sans-serif" }}>Compartilhar por email</span>
                 </div>
               </a>
-              <button onClick={function() { navigator.clipboard.writeText("fonsecanews.com.br").then(function() { setShowShare(false); }); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#F8F9FA", borderRadius: 12, border: "1px solid " + BORDER, cursor: "pointer", width: "100%", transition: "background 0.15s" }}>
+              <button onClick={function() { navigator.clipboard.writeText("fonsecanews.com.br").then(function() { setShowShare(false); }); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 16px", background: "#F8F9FA", borderRadius: 16, border: "1px solid " + BORDER, cursor: "pointer", width: "100%", transition: "background 0.15s" }}>
                 <span style={{ fontSize: 22 }}>📋</span>
                 <div style={{ textAlign: "left" }}>
                   <span style={{ fontSize: 13.5, fontWeight: 600, color: TEXT_PRIMARY, fontFamily: "'Inter', sans-serif", display: "block" }}>Copiar link</span>
@@ -2032,12 +2050,12 @@ export default function JoaoFonsecaNews() {
       )}
 
       {/* Spacer before news */}
-      <div style={{ maxWidth: 680, margin: "0 auto", height: 6, background: "#F5F5F5", borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }} />
+      <div style={{ maxWidth: 680, margin: "0 auto", height: 14, background: BG, borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER }} />
 
       {/* NEWS FEED */}
       <main style={{ maxWidth: 680, margin: "0 auto", background: BG_WHITE, borderLeft: "1px solid " + BORDER, borderRight: "1px solid " + BORDER, minHeight: "70vh" }}>
         {/* Section label */}
-        <div style={{ padding: "20px 24px 12px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ padding: "24px 24px 14px", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ height: 1, flex: 1, background: BORDER }} />
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: TEXT_DIM, fontFamily: "'Inter', sans-serif", whiteSpace: "nowrap" }}>Últimas Notícias</span>
           <div style={{ height: 1, flex: 1, background: BORDER }} />
@@ -2055,9 +2073,9 @@ export default function JoaoFonsecaNews() {
           )}
           </>
         )}
-        <div style={{ borderTop: "1px solid " + BORDER, padding: "28px 24px 36px" }}>
+        <div style={{ borderTop: "1px solid " + BORDER, padding: "32px 24px 40px" }}>
           {/* Conquistas bar */}
-          <div onClick={function() { setShowTitles(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, flexWrap: "wrap", marginBottom: 24, cursor: "pointer", padding: "12px 16px", background: "#F8F9FA", borderRadius: 12, border: "1px solid " + BORDER }}>
+          <div onClick={function() { setShowTitles(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 28, cursor: "pointer", padding: "14px 16px", background: "#F8F9FA", borderRadius: 16, border: "1px solid " + BORDER }}>
             {[["🏆","2 títulos ATP"],["🎯","3 Challengers"],["🇧🇷","Nº1 do Brasil"],["⭐","NextGen Champion"]].map(function(pair, i) { return (
               <span key={i} style={{ fontSize: 11, color: TEXT_SECONDARY, fontFamily: "'Inter', -apple-system, sans-serif", fontWeight: 500 }}>{pair[0]} {pair[1]}</span>
             ); })}
@@ -2065,7 +2083,7 @@ export default function JoaoFonsecaNews() {
           </div>
 
           {/* Social links + actions */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 24, flexWrap: "wrap" }}>
             <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ width: 36, height: 36, borderRadius: 10, background: "#F8F9FA", border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }} title="Instagram do João">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={TEXT_SECONDARY} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill={TEXT_SECONDARY} stroke="none"/></svg>
             </a>
