@@ -194,8 +194,7 @@ var DailyPoll = function() {
     fetch("/api/poll?vote=" + choice, { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) { if (d && typeof d.a === "number" && d.total > 0) { setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total }); } }).catch(function() { var sim = choice === "a" ? { a: 62, b: 38 } : { a: 45, b: 55 }; setResults(sim); });
   };
   return (
-    <div style={{ padding: "20px 0", background: BG_ALT, borderRadius: 12, margin: "4px 0" }}>
-      <div style={{ padding: "0 20px" }}>
+    <div style={{ padding: "18px 20px", background: "linear-gradient(135deg, #F5FAF0 0%, #F0F7E8 100%)", borderRadius: 16, margin: "4px 0", border: "1px solid " + GREEN + "15" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
           <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Enquete do dia</span>
         </div>
@@ -218,7 +217,6 @@ var DailyPoll = function() {
             <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>Nova enquete amanhã</p>
           </div>
         )}
-      </div>
     </div>
   );
 };
@@ -272,14 +270,17 @@ var CareerTimeline = function() {
 var GameBanner = function() {
   return (
     <a href="/game" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ padding: "18px 20px", background: BG_ALT, borderRadius: 12, margin: "4px 0", borderLeft: "3px solid #6D35D0" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #0d1130 40%, #1a0a2e 100%)", borderRadius: 16, padding: "20px 24px", margin: "4px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#6D35D0", fontFamily: SANS }}>Novo jogo</span>
-            <p style={{ margin: "4px 0 2px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Tennis Career 26</p>
-            <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>Crie sua carreira no tênis profissional</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <span style={{ fontSize: 13 }}>🎮</span>
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#ffd700", fontFamily: SANS }}>Novo jogo</span>
+            </div>
+            <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Tennis Career 26</p>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>Crie sua carreira no tênis profissional</span>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#6D35D0", fontFamily: SANS }}>Jogar →</span>
+          <div style={{ flexShrink: 0, marginLeft: 16, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 20px", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: SANS }}>Jogar</div>
         </div>
       </div>
     </a>
@@ -290,15 +291,15 @@ var GameBanner = function() {
 var VideoBanner = function(props) {
   return (
     <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ padding: "18px 20px", background: BG_ALT, borderRadius: 12, margin: "4px 0", borderLeft: "3px solid #c0392b" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#c0392b", fontFamily: SANS }}>Vídeos em alta</span>
-            <p style={{ margin: "4px 0 2px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Melhores momentos do João</p>
-            <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>Highlights, entrevistas e jogadas</span>
-          </div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#c0392b", fontFamily: SANS }}>Assistir →</span>
+      <div style={{ borderRadius: 16, overflow: "hidden", background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", padding: "24px 20px", margin: "4px 0", textAlign: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginBottom: 12 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#FF4444", fontFamily: SANS }}>🔥 Vídeos em alta</span>
         </div>
+        <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", boxShadow: "0 4px 16px rgba(255,0,0,0.25)" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Melhores momentos do João</p>
+        <p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>Highlights, entrevistas e jogadas</p>
       </div>
     </a>
   );
@@ -308,14 +309,17 @@ var VideoBanner = function(props) {
 var TennisTVBanner = function() {
   return (
     <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ padding: "18px 20px", background: BG_ALT, borderRadius: 12, margin: "4px 0", borderLeft: "3px solid #2563EB" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a2540 0%, #0d3b66 100%)", borderRadius: 16, padding: "18px 24px", margin: "4px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#2563EB", fontFamily: SANS }}>Ao vivo</span>
-            <p style={{ margin: "4px 0 2px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Assista no TennisTV</p>
-            <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>Streaming oficial do ATP Tour</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <span style={{ fontSize: 13 }}>📺</span>
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#4FC3F7", fontFamily: SANS }}>Ao vivo</span>
+            </div>
+            <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Assista no TennisTV</p>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>Streaming oficial do ATP Tour</span>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#2563EB", fontFamily: SANS }}>Assistir →</span>
+          <div style={{ flexShrink: 0, marginLeft: 16, background: "#4FC3F7", padding: "8px 16px", borderRadius: 10, color: "#0a2540", fontSize: 12, fontWeight: 700, fontFamily: SANS }}>Assistir</div>
         </div>
       </div>
     </a>
@@ -326,14 +330,17 @@ var TennisTVBanner = function() {
 var RaquetesBanner = function() {
   return (
     <a href="/raquetes" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ padding: "18px 20px", background: BG_ALT, borderRadius: 12, margin: "4px 0", borderLeft: "3px solid " + YELLOW }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 50%, #1a1e0a 100%)", borderRadius: 16, padding: "18px 24px", margin: "4px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: "#b8860b", fontFamily: SANS }}>Comunidade</span>
-            <p style={{ margin: "4px 0 2px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Venda sua raquete usada</p>
-            <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>Anuncie grátis no Telegram</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <span style={{ fontSize: 8, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#1a1a0a", fontFamily: SANS, background: YELLOW, padding: "2px 6px", borderRadius: 999 }}>Novo</span>
+              <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>Comunidade</span>
+            </div>
+            <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Venda sua raquete usada</p>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>Anuncie grátis no Telegram</span>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#b8860b", fontFamily: SANS }}>Anunciar →</span>
+          <div style={{ flexShrink: 0, marginLeft: 16, background: YELLOW, padding: "8px 16px", borderRadius: 10, color: "#1a1a0a", fontSize: 12, fontWeight: 700, fontFamily: SANS }}>Anunciar</div>
         </div>
       </div>
     </a>
@@ -364,27 +371,31 @@ var MatchPrediction = function(props) {
   var _streak = useState(function() { try { return parseInt(localStorage.getItem("fn_pred_streak") || "0", 10); } catch(e) { return 0; } });
   var streak = _streak[0];
   return (
-    <div style={{ padding: "20px 0", background: BG_ALT, borderRadius: 12, margin: "4px 0" }}>
-      <div style={{ padding: "0 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-          <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Palpite do jogo</span>
-          {streak > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, fontFamily: SANS }}>🔥 {streak} acerto{streak > 1 ? "s" : ""}</span>}
+    <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #12203a 100%)", borderRadius: 16, padding: "18px 20px", margin: "4px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 13 }}>🔮</span>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#B388FF", fontFamily: SANS }}>Palpite</span>
         </div>
-        {!prediction ? (
-          <>
-            <p style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Qual será o placar?</p>
-            <p style={{ margin: "0 0 14px", fontSize: 12, color: SUB, fontFamily: SANS }}>Fonseca vs {oppName}{match.round ? (" · " + match.round) : ""}</p>
-            <div style={{ display: "grid", gridTemplateColumns: isGrandSlam ? "repeat(3, 1fr)" : "repeat(4, 1fr)", gap: 8 }}>
-              {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.sets} onClick={function() { handlePredict(opt); }} style={{ padding: "10px 4px", background: BG, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.sets.replace("-", "x")}</span><span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
-            </div>
-          </>
-        ) : (
-          <div style={{ textAlign: "center", padding: "4px 0" }}>
-            <span style={{ fontSize: 14, fontWeight: 600, color: prediction.winner === "joao" ? GREEN : RED, fontFamily: SANS }}>Seu palpite: {prediction.label}</span>
-            <p style={{ fontSize: 11, color: DIM, fontFamily: SANS, marginTop: 4 }}>Resultado após o jogo</p>
-          </div>
-        )}
+        {streak > 0 && <span style={{ fontSize: 10, fontWeight: 600, color: YELLOW, fontFamily: SANS }}>🔥 {streak} acerto{streak > 1 ? "s" : ""}</span>}
       </div>
+      {!prediction ? (
+        <>
+          <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Qual será o placar?</p>
+          <p style={{ margin: "0 0 14px", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>Fonseca vs {oppName}{match.round ? (" · " + match.round) : ""}</p>
+          <div style={{ display: "grid", gridTemplateColumns: isGrandSlam ? "repeat(3, 1fr)" : "repeat(4, 1fr)", gap: 8 }}>
+            {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.sets} onClick={function() { handlePredict(opt); }} style={{ padding: "10px 4px", background: isJ ? "rgba(0,168,89,0.1)" : "rgba(192,57,43,0.1)", border: "1px solid " + (isJ ? "rgba(0,168,89,0.25)" : "rgba(192,57,43,0.25)"), borderRadius: 10, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.sets.replace("-", "x")}</span><span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
+          </div>
+        </>
+      ) : (
+        <div style={{ textAlign: "center", padding: "4px 0" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: prediction.winner === "joao" ? "rgba(0,168,89,0.12)" : "rgba(192,57,43,0.12)", borderRadius: 12, padding: "8px 16px", border: "1px solid " + (prediction.winner === "joao" ? "rgba(0,168,89,0.25)" : "rgba(192,57,43,0.25)") }}>
+            <span style={{ fontSize: 14 }}>{prediction.winner === "joao" ? "🇧🇷" : "🎾"}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: prediction.winner === "joao" ? GREEN : RED, fontFamily: SANS }}>Palpite: {prediction.label}</span>
+          </div>
+          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: SANS, marginTop: 6 }}>Resultado após o jogo</p>
+        </div>
+      )}
     </div>
   );
 };
@@ -444,14 +455,17 @@ var QuizGame = function() {
 
   if (!started) {
     return (
-      <div style={{ padding: "18px 20px", background: BG_ALT, borderRadius: 12, margin: "4px 0", borderLeft: "3px solid " + GREEN, cursor: "pointer" }} onClick={function() { setStarted(true); }}>
+      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 16, padding: "20px 24px", margin: "4px 0", cursor: "pointer", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
-            <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: GREEN, fontFamily: SANS }}>Quiz interativo</span>
-            <p style={{ margin: "4px 0 2px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Quanto você conhece o João?</p>
-            <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>10 perguntas · {totalPoints} pontos</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <span style={{ fontSize: 13 }}>🎾</span>
+              <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: YELLOW, fontFamily: SANS }}>Quiz interativo</span>
+            </div>
+            <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Quanto você conhece o João?</p>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>10 perguntas · {totalPoints} pontos</span>
           </div>
-          <span style={{ fontSize: 13, fontWeight: 600, color: GREEN, fontFamily: SANS }}>Jogar →</span>
+          <div style={{ flexShrink: 0, marginLeft: 16, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 20px", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: SANS }}>Jogar</div>
         </div>
       </div>
     );
@@ -459,33 +473,33 @@ var QuizGame = function() {
   if (done) {
     var result = getResultMsg();
     return (
-      <div style={{ padding: "24px 20px", background: BG_ALT, borderRadius: 12, margin: "4px 0", textAlign: "center" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 16, padding: "28px 24px", margin: "4px 0", textAlign: "center" }}>
         <span style={{ fontSize: 40 }}>{result.emoji}</span>
-        <h3 style={{ margin: "8px 0 4px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>{score}/{totalPoints} pontos</h3>
-        <p style={{ margin: "0 0 16px", fontSize: 13, color: SUB, fontFamily: SANS }}>{result.msg}</p>
+        <h3 style={{ margin: "8px 0 4px", fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: SERIF }}>{score}/{totalPoints} pontos</h3>
+        <p style={{ margin: "0 0 16px", fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{result.msg}</p>
         <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
           <button onClick={handleRestart} style={{ padding: "10px 18px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Jogar de novo</button>
-          <button onClick={function() { setStarted(false); setDone(false); setCurrentQ(0); setScore(0); }} style={{ padding: "10px 18px", background: "transparent", color: SUB, border: "1px solid " + BORDER, borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: SANS }}>Fechar</button>
+          <button onClick={function() { setStarted(false); setDone(false); setCurrentQ(0); setScore(0); }} style={{ padding: "10px 18px", background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: SANS }}>Fechar</button>
         </div>
       </div>
     );
   }
   var q = questions[currentQ];
   return (
-    <div style={{ padding: "20px", background: BG_ALT, borderRadius: 12, margin: "4px 0" }}>
+    <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 16, padding: "20px", margin: "4px 0" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: DIM, fontFamily: SANS }}>Pergunta {currentQ + 1}/{maxQ}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: YELLOW, fontFamily: SANS }}>Pergunta {currentQ + 1}/{maxQ}</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS }}>{score} pts</span>
       </div>
-      <div style={{ height: 3, background: "#e8e8e8", borderRadius: 2, marginBottom: 14 }}><div style={{ height: 3, background: GREEN, borderRadius: 2, width: ((currentQ + 1) / maxQ * 100) + "%", transition: "width 0.3s" }} /></div>
-      <p style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: TEXT, fontFamily: SERIF, lineHeight: 1.4 }}>{q.q}</p>
-      <span style={{ fontSize: 11, color: GREEN, fontFamily: SANS, fontWeight: 600 }}>{q.points} pontos</span>
+      <div style={{ height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 2, marginBottom: 14 }}><div style={{ height: 3, background: "linear-gradient(90deg, " + GREEN + ", " + YELLOW + ")", borderRadius: 2, width: ((currentQ + 1) / maxQ * 100) + "%", transition: "width 0.3s" }} /></div>
+      <p style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.4 }}>{q.q}</p>
+      <span style={{ fontSize: 11, color: YELLOW, fontFamily: SANS, fontWeight: 600 }}>{q.points} pontos</span>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
-        {q.opts.map(function(opt, idx) { var isCorrect = idx === q.answer; var isSelected = idx === selected; var bg = BG; var borderColor = BORDER; var textColor = TEXT;
-          if (revealed) { if (isCorrect) { bg = GREEN + "08"; borderColor = GREEN + "30"; textColor = GREEN; } else if (isSelected && !isCorrect) { bg = RED + "08"; borderColor = RED + "30"; textColor = RED; } else { bg = "#fafafa"; textColor = DIM; } }
-          return (<button key={idx} onClick={function() { handleAnswer(idx); }} disabled={revealed} style={{ padding: "12px 14px", background: bg, border: "1px solid " + borderColor, borderRadius: 10, cursor: revealed ? "default" : "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10 }}><span style={{ width: 24, height: 24, borderRadius: "50%", background: revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : "#f0f0f0"), border: "1px solid " + (revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : BORDER)), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: revealed && (isCorrect || isSelected) ? "#fff" : DIM, fontFamily: SANS, flexShrink: 0 }}>{revealed && isCorrect ? "✓" : (revealed && isSelected && !isCorrect ? "✗" : String.fromCharCode(65 + idx))}</span><span style={{ fontSize: 14, fontWeight: 600, color: textColor, fontFamily: SANS }}>{opt}</span></button>); })}
+        {q.opts.map(function(opt, idx) { var isCorrect = idx === q.answer; var isSelected = idx === selected; var bg = "rgba(255,255,255,0.05)"; var borderColor = "rgba(255,255,255,0.1)"; var textColor = "rgba(255,255,255,0.8)";
+          if (revealed) { if (isCorrect) { bg = GREEN + "20"; borderColor = GREEN + "40"; textColor = GREEN; } else if (isSelected && !isCorrect) { bg = RED + "20"; borderColor = RED + "40"; textColor = RED; } else { bg = "rgba(255,255,255,0.02)"; textColor = "rgba(255,255,255,0.3)"; } }
+          return (<button key={idx} onClick={function() { handleAnswer(idx); }} disabled={revealed} style={{ padding: "12px 14px", background: bg, border: "1px solid " + borderColor, borderRadius: 10, cursor: revealed ? "default" : "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10 }}><span style={{ width: 24, height: 24, borderRadius: "50%", background: revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : "rgba(255,255,255,0.06)"), border: "1px solid " + (revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : "rgba(255,255,255,0.12)")), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: revealed && (isCorrect || isSelected) ? "#fff" : "rgba(255,255,255,0.4)", fontFamily: SANS, flexShrink: 0 }}>{revealed && isCorrect ? "✓" : (revealed && isSelected && !isCorrect ? "✗" : String.fromCharCode(65 + idx))}</span><span style={{ fontSize: 14, fontWeight: 600, color: textColor, fontFamily: SANS }}>{opt}</span></button>); })}
       </div>
-      {revealed && (<div style={{ marginTop: 12 }}><div style={{ padding: "10px 14px", background: YELLOW + "0A", borderRadius: 10, border: "1px solid " + YELLOW + "20", marginBottom: 10 }}><p style={{ margin: 0, fontSize: 12, color: "#8B6914", fontFamily: SANS }}>💡 {q.fun}</p></div><button onClick={handleNext} style={{ width: "100%", padding: "12px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>{currentQ < maxQ - 1 ? "Próxima pergunta →" : "Ver resultado 🏆"}</button></div>)}
+      {revealed && (<div style={{ marginTop: 12 }}><div style={{ padding: "10px 14px", background: "rgba(255,203,5,0.08)", borderRadius: 10, border: "1px solid rgba(255,203,5,0.15)", marginBottom: 10 }}><p style={{ margin: 0, fontSize: 12, color: YELLOW, fontFamily: SANS }}>💡 {q.fun}</p></div><button onClick={handleNext} style={{ width: "100%", padding: "12px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>{currentQ < maxQ - 1 ? "Próxima pergunta →" : "Ver resultado 🏆"}</button></div>)}
     </div>
   );
 };
@@ -495,12 +509,15 @@ var RIVAL_DATA = { name: "Learner Tien", country: "🇺🇸", ranking: 21, h2h: 
 var RivalBanner = function() {
   var r = RIVAL_DATA;
   return (
-    <div style={{ padding: "18px 20px", background: BG_ALT, borderRadius: 12, margin: "4px 0", borderLeft: "3px solid " + RED }}>
-      <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: RED, fontFamily: SANS }}>Rivalidade</span>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginTop: 10 }}>
-        <div style={{ textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Fonseca</span><br/><span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>🇧🇷 #39</span></div>
-        <div style={{ textAlign: "center" }}><div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 20, fontWeight: 800, color: GREEN, fontFamily: SANS }}>{r.h2h.joao}</span><span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>VS</span><span style={{ fontSize: 20, fontWeight: 800, color: RED, fontFamily: SANS }}>{r.h2h.tien}</span></div></div>
-        <div style={{ textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>{r.name}</span><br/><span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{r.country} #{r.ranking}</span></div>
+    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderRadius: 16, padding: "18px 24px", margin: "4px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+        <span style={{ fontSize: 13 }}>⚔️</span>
+        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: RED, fontFamily: SANS }}>Rivalidade</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24 }}>
+        <div style={{ textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Fonseca</span><br/><span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS }}>🇧🇷 #39</span></div>
+        <div style={{ textAlign: "center" }}><div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 22, fontWeight: 800, color: GREEN, fontFamily: SANS }}>{r.h2h.joao}</span><span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>VS</span><span style={{ fontSize: 22, fontWeight: 800, color: RED, fontFamily: SANS }}>{r.h2h.tien}</span></div></div>
+        <div style={{ textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>{r.name}</span><br/><span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS }}>{r.country} #{r.ranking}</span></div>
       </div>
     </div>
   );
