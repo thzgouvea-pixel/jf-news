@@ -864,8 +864,6 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, n
     if (bannerIdx < banners.length && insertAfter.indexOf(i + 1) !== -1) { elements.push(banners[bannerIdx]); bannerIdx++; }
   });
   while (bannerIdx < banners.length) { elements.push(banners[bannerIdx]); bannerIdx++; }
-  });
-  while (bannerIdx < banners.length) { elements.push(banners[bannerIdx]); bannerIdx++; }
   return elements;
 };
 
