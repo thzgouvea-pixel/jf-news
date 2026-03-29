@@ -59,6 +59,103 @@ var catColors = {
 };
 
 // ===== COUNTDOWN HOOK =====
+// ===== SHARE CARD GENERATOR =====
+var generateShareCard = function(opts) {
+  // opts: { type: "prediction"|"quiz", title, subtitle, value, emoji, matchInfo }
+  var canvas = document.createElement("canvas");
+  canvas.width = 1080; canvas.height = 1920; // Instagram Stories size
+  var ctx = canvas.getContext("2d");
+
+  // Background gradient
+  var bg = ctx.createLinearGradient(0, 0, 1080, 1920);
+  bg.addColorStop(0, "#0D1726"); bg.addColorStop(0.5, "#132440"); bg.addColorStop(1, "#0a1628");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, 1080, 1920);
+
+  // Subtle glow
+  ctx.save();
+  var glow = ctx.createRadialGradient(800, 400, 0, 800, 400, 500);
+  glow.addColorStop(0, "rgba(0,168,89,0.08)"); glow.addColorStop(1, "transparent");
+  ctx.fillStyle = glow; ctx.fillRect(0, 0, 1080, 1920);
+  var glow2 = ctx.createRadialGradient(200, 1400, 0, 200, 1400, 500);
+  glow2.addColorStop(0, "rgba(255,203,5,0.06)"); glow2.addColorStop(1, "transparent");
+  ctx.fillStyle = glow2; ctx.fillRect(0, 0, 1080, 1920);
+  ctx.restore();
+
+  // FN Logo
+  ctx.font = "800 120px Georgia, serif";
+  ctx.fillStyle = "#00A859"; ctx.fillText("F", 420, 500);
+  ctx.fillStyle = "#FFCB05"; ctx.fillText("N", 520, 500);
+
+  // "Fonseca News" below logo
+  ctx.font = "600 36px Inter, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.textAlign = "center";
+  ctx.fillText("FONSECA NEWS", 540, 570);
+
+  // Emoji
+  ctx.font = "120px sans-serif";
+  ctx.fillText(opts.emoji || "🎾", 540, 780);
+
+  // Title
+  ctx.font = "800 64px Georgia, serif";
+  ctx.fillStyle = "#fff";
+  ctx.fillText(opts.title || "", 540, 920);
+
+  // Value (big number / score)
+  ctx.font = "800 140px Inter, sans-serif";
+  ctx.fillStyle = "#00A859";
+  ctx.fillText(opts.value || "", 540, 1120);
+
+  // Subtitle
+  ctx.font = "600 40px Inter, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.fillText(opts.subtitle || "", 540, 1210);
+
+  // Match info
+  if (opts.matchInfo) {
+    ctx.font = "600 32px Inter, sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.3)";
+    ctx.fillText(opts.matchInfo, 540, 1300);
+  }
+
+  // Bottom CTA
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  ctx.beginPath();
+  ctx.roundRect(240, 1640, 600, 80, 20);
+  ctx.fill();
+  ctx.font = "700 30px Inter, sans-serif";
+  ctx.fillStyle = "rgba(255,255,255,0.5)";
+  ctx.fillText("fonsecanews.com.br", 540, 1692);
+
+  // Top bar
+  ctx.fillStyle = "#00A859";
+  ctx.fillRect(0, 0, 540, 6);
+  ctx.fillStyle = "#FFCB05";
+  ctx.fillRect(540, 0, 540, 6);
+
+  return canvas;
+};
+
+var shareCard = function(canvas, text) {
+  canvas.toBlob(function(blob) {
+    if (navigator.share && navigator.canShare) {
+      var file = new File([blob], "fonseca-news.png", { type: "image/png" });
+      var shareData = { text: text, files: [file] };
+      if (navigator.canShare(shareData)) {
+        navigator.share(shareData);
+        return;
+      }
+    }
+    // Fallback: download
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = "fonseca-news.png";
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, "image/png");
+};
+
 function useCountdown(targetDate) {
   var _s = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
   var countdown = _s[0]; var setCountdown = _s[1];
@@ -395,6 +492,10 @@ var MatchPrediction = function(props) {
             <span style={{ fontSize: 13, fontWeight: 700, color: prediction.winner === "joao" ? GREEN : RED, fontFamily: SANS }}>Palpite: {prediction.label}</span>
           </div>
           <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: SANS, marginTop: 6 }}>Resultado após o jogo</p>
+          <button onClick={function() {
+            var c = generateShareCard({ type: "prediction", emoji: prediction.winner === "joao" ? "🇧🇷" : "🎾", title: "Meu palpite", value: prediction.label, subtitle: "Fonseca vs " + oppName, matchInfo: match.tournament_name || "" });
+            shareCard(c, "🔮 Meu palpite no Fonseca News: " + prediction.label + " — fonsecanews.com.br");
+          }} style={{ marginTop: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 14px", color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: SANS }}>Compartilhar palpite</button>
         </div>
       )}
     </div>
@@ -474,7 +575,11 @@ var QuizGame = function() {
         <span style={{ fontSize: 40 }}>{result.emoji}</span>
         <h3 style={{ margin: "8px 0 4px", fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: SERIF }}>{score}/{totalPoints} pontos</h3>
         <p style={{ margin: "0 0 16px", fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{result.msg}</p>
-        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+          <button onClick={function() {
+            var c = generateShareCard({ type: "quiz", emoji: result.emoji, title: "Quiz do João", value: score + "/" + totalPoints, subtitle: result.msg, matchInfo: "fonsecanews.com.br" });
+            shareCard(c, "🎾 Fiz " + score + "/" + totalPoints + " no Quiz do Fonseca News! " + result.emoji + " — fonsecanews.com.br");
+          }} style={{ padding: "10px 18px", background: YELLOW, color: "#1a1a0a", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Compartilhar</button>
           <button onClick={handleRestart} style={{ padding: "10px 18px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Jogar de novo</button>
           <button onClick={function() { setStarted(false); setDone(false); setCurrentQ(0); setScore(0); }} style={{ padding: "10px 18px", background: "rgba(255,255,255,0.08)", color: "#fff", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: SANS }}>Fechar</button>
         </div>
@@ -1019,25 +1124,33 @@ export default function JoaoFonsecaNews() {
 
         {/* MORE MENU */}
         <section style={{ borderBottom: "1px solid " + BORDER }}>
-          <button onClick={function() { setShowMenu(!showMenu); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Mais</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5" style={{ transition: "transform 0.3s", transform: showMenu ? "rotate(180deg)" : "rotate(0)" }}><polyline points="6 9 12 15 18 9" /></svg>
-          </button>
+          {!showMenu && (
+            <button onClick={function() { setShowMenu(true); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Mais</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+            </button>
+          )}
           {showMenu && (
-            <div style={{ paddingBottom: 10, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, animation: "fadeIn 0.2s ease" }}>
-              <button onClick={function(){setShowTitles(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
-                <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Conquistas</span>
+            <>
+              <div style={{ padding: "10px 0 0", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, animation: "fadeIn 0.2s ease" }}>
+                <button onClick={function(){setShowTitles(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Conquistas</span>
+                </button>
+                <button onClick={function(){setShowNextGen(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M6 3v12"/><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M15 6a9 9 0 0 1-9 9"/></svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Next Gen</span>
+                </button>
+                <button onClick={function(){setShowTimeline(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
+                </button>
+              </div>
+              <button onClick={function() { setShowMenu(false); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Menos</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="18 15 12 9 6 15" /></svg>
               </button>
-              <button onClick={function(){setShowNextGen(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M6 3v12"/><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path d="M15 6a9 9 0 0 1-9 9"/></svg>
-                <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Next Gen</span>
-              </button>
-              <button onClick={function(){setShowTimeline(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
-              </button>
-            </div>
+            </>
           )}
         </section>
 
