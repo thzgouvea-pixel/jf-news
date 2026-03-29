@@ -540,9 +540,9 @@ var NextDuelCard = function(props) {
       </div>
 
       {/* Players - centered */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 32, marginBottom: 24 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center", marginBottom: 24 }}>
         {/* João */}
-        <div style={{ textAlign: "center", flex: 1 }}>
+        <div style={{ textAlign: "center" }}>
           <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2px solid " + GREEN + "35", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <img src={joaoImg} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:16px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
           </div>
@@ -558,7 +558,7 @@ var NextDuelCard = function(props) {
         </div>
 
         {/* Opponent */}
-        <div style={{ textAlign: "center", flex: 1 }}>
+        <div style={{ textAlign: "center" }}>
           <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; }} /> : <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>?</span>}
           </div>
@@ -838,22 +838,21 @@ export default function JoaoFonsecaNews() {
 
       {/* HEADER */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
-            <div style={{ width: 1, height: 22, background: BORDER }} />
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: TEXT, letterSpacing: "-0.02em" }}>Fonseca News</span>
-                {dp && <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, fontFamily: SANS, background: GREEN + "08", padding: "2px 8px", borderRadius: 999 }}>#{dp.ranking} ATP</span>}
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, letterSpacing: "-0.04em", flexShrink: 0 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 700, color: TEXT, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>Fonseca News</span>
+                {dp && <span style={{ fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: SANS, background: GREEN + "08", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0 }}>#{dp.ranking}</span>}
               </div>
-              <p style={{ margin: "1px 0 0", fontSize: 10, color: DIM, fontFamily: SANS }}>{lastUpdate ? formatTimeAgo(lastUpdate) : ""}{dn.length > 0 ? " · " + dn.length + " notícias" : ""}</p>
+              <p style={{ margin: "1px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>{lastUpdate ? formatTimeAgo(lastUpdate) : ""}{dn.length > 0 ? " · " + dn.length + " notícias" : ""}</p>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <a href="/raquetes" style={{ fontSize: 11, fontWeight: 600, color: "#b8860b", fontFamily: SANS, textDecoration: "none", padding: "6px 10px", borderRadius: 8, background: YELLOW + "0A", border: "1px solid " + YELLOW + "20" }}>Venda sua raquete</a>
-            <button onClick={handleRefresh} disabled={loading} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <a href="/raquetes" style={{ fontSize: 10, fontWeight: 600, color: "#b8860b", fontFamily: SANS, textDecoration: "none", padding: "5px 8px", borderRadius: 8, background: YELLOW + "0A", border: "1px solid " + YELLOW + "20", whiteSpace: "nowrap" }}>Venda sua raquete</a>
+            <button onClick={handleRefresh} disabled={loading} style={{ width: 30, height: 30, borderRadius: 8, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
             </button>
           </div>
         </div>
