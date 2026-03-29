@@ -90,7 +90,7 @@ var SeasonBar = function(props) {
   if (!season) return null;
   var pct = season.wins + season.losses > 0 ? Math.round((season.wins / (season.wins + season.losses)) * 100) : 0;
   return (
-    <div style={{ padding: "16px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
+    <div style={{ padding: "12px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
       <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Temporada {season.year}</span>
       <span style={{ fontSize: 13, fontWeight: 700, color: GREEN, fontFamily: SANS }}>{season.wins}V</span>
       <span style={{ color: DIM }}>·</span>
@@ -107,7 +107,7 @@ var LastMatchBar = function(props) {
   if (!match) return null;
   var w = match.result === "V";
   return (
-    <div style={{ padding: "16px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+    <div style={{ padding: "12px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
       <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Última partida</span>
       <span style={{ fontSize: 11, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS, background: w ? GREEN + "0A" : RED + "0A", padding: "2px 8px", borderRadius: 999 }}>{w ? "V" : "D"}</span>
       <span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Fonseca <span style={{ color: w ? GREEN : RED }}>{match.score}</span> {match.opponent}</span>
@@ -194,7 +194,7 @@ var DailyPoll = function() {
     fetch("/api/poll?vote=" + choice, { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) { if (d && typeof d.a === "number" && d.total > 0) { setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total }); } }).catch(function() { var sim = choice === "a" ? { a: 62, b: 38 } : { a: 45, b: 55 }; setResults(sim); });
   };
   return (
-    <div style={{ padding: "18px 20px", background: "linear-gradient(135deg, #0a1a10 0%, #0d2818 100%)", borderRadius: 16, margin: "4px 0" }}>
+    <div style={{ padding: "18px 20px", background: "linear-gradient(135deg, #0a1a10 0%, #0d2818 100%)", borderRadius: 14, margin: "4px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
           <span style={{ fontSize: 13 }}>📊</span>
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: GREEN, fontFamily: SANS }}>Enquete do dia</span>
@@ -271,7 +271,7 @@ var CareerTimeline = function() {
 var GameBanner = function() {
   return (
     <a href="/game" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #0d1130 40%, #1a0a2e 100%)", borderRadius: 16, padding: "20px 24px", margin: "4px 0" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #0d1130 40%, #1a0a2e 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -292,7 +292,7 @@ var GameBanner = function() {
 var VideoBanner = function(props) {
   return (
     <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ borderRadius: 16, overflow: "hidden", background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", padding: "24px 20px", margin: "4px 0", textAlign: "center" }}>
+      <div style={{ borderRadius: 14, overflow: "hidden", background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", padding: "24px 20px", margin: "4px 0", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginBottom: 12 }}>
           <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#FF4444", fontFamily: SANS }}>🔥 Vídeos em alta</span>
         </div>
@@ -310,7 +310,7 @@ var VideoBanner = function(props) {
 var TennisTVBanner = function() {
   return (
     <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ background: "linear-gradient(135deg, #0a2540 0%, #0d3b66 100%)", borderRadius: 16, padding: "18px 24px", margin: "4px 0" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a2540 0%, #0d3b66 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -331,7 +331,7 @@ var TennisTVBanner = function() {
 var RaquetesBanner = function() {
   return (
     <a href="/raquetes" style={{ textDecoration: "none", display: "block" }}>
-      <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 50%, #1a1e0a 100%)", borderRadius: 16, padding: "18px 24px", margin: "4px 0" }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 50%, #1a1e0a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -372,7 +372,7 @@ var MatchPrediction = function(props) {
   var _streak = useState(function() { try { return parseInt(localStorage.getItem("fn_pred_streak") || "0", 10); } catch(e) { return 0; } });
   var streak = _streak[0];
   return (
-    <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #12203a 100%)", borderRadius: 16, padding: "18px 20px", margin: "4px 0" }}>
+    <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #12203a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 13 }}>🔮</span>
@@ -456,7 +456,7 @@ var QuizGame = function() {
 
   if (!started) {
     return (
-      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 16, padding: "20px 24px", margin: "4px 0", cursor: "pointer", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
+      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0", cursor: "pointer", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
@@ -474,7 +474,7 @@ var QuizGame = function() {
   if (done) {
     var result = getResultMsg();
     return (
-      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 16, padding: "28px 24px", margin: "4px 0", textAlign: "center" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0", textAlign: "center" }}>
         <span style={{ fontSize: 40 }}>{result.emoji}</span>
         <h3 style={{ margin: "8px 0 4px", fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: SERIF }}>{score}/{totalPoints} pontos</h3>
         <p style={{ margin: "0 0 16px", fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{result.msg}</p>
@@ -487,7 +487,7 @@ var QuizGame = function() {
   }
   var q = questions[currentQ];
   return (
-    <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 16, padding: "20px", margin: "4px 0" }}>
+    <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <span style={{ fontSize: 11, fontWeight: 600, color: YELLOW, fontFamily: SANS }}>Pergunta {currentQ + 1}/{maxQ}</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS }}>{score} pts</span>
@@ -510,7 +510,7 @@ var RIVAL_DATA = { name: "Learner Tien", country: "🇺🇸", ranking: 21, h2h: 
 var RivalBanner = function() {
   var r = RIVAL_DATA;
   return (
-    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderRadius: 16, padding: "18px 24px", margin: "4px 0" }}>
+    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 40%, #1a0f1e 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
         <span style={{ fontSize: 13 }}>⚔️</span>
         <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: RED, fontFamily: SANS }}>Rivalidade</span>
@@ -732,7 +732,7 @@ var NewsCard = function(props) {
 // ===== DUAL BANNER WRAPPER =====
 var DualBanner = function(props) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, margin: "4px 0" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "4px 0" }}>
       {props.children}
     </div>
   );
@@ -741,7 +741,7 @@ var DualBanner = function(props) {
 // ===== COMPACT BANNER CARDS (for dual layout) =====
 var CompactQuiz = function(props) {
   return (
-    <div onClick={props.onStart} style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 14, padding: "16px 14px", cursor: "pointer", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+    <div onClick={props.onStart} style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 14, padding: "14px 12px", cursor: "pointer", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
           <span style={{ fontSize: 12 }}>🎾</span>
@@ -756,7 +756,7 @@ var CompactQuiz = function(props) {
 
 var CompactPoll = function(props) {
   return (
-    <div style={{ background: "linear-gradient(135deg, #0a1a10 0%, #0d2818 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+    <div style={{ background: "linear-gradient(135deg, #0a1a10 0%, #0d2818 100%)", borderRadius: 14, padding: "14px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
           <span style={{ fontSize: 12 }}>📊</span>
@@ -775,7 +775,7 @@ var CompactPoll = function(props) {
 var CompactGame = function() {
   return (
     <a href="/game" style={{ textDecoration: "none", display: "block", height: "100%" }}>
-      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", borderRadius: 14, padding: "14px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
             <span style={{ fontSize: 12 }}>🎮</span>
@@ -792,7 +792,7 @@ var CompactGame = function() {
 var CompactRaquetes = function() {
   return (
     <a href="/raquetes" style={{ textDecoration: "none", display: "block", height: "100%" }}>
-      <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 100%)", borderRadius: 14, padding: "14px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
             <span style={{ fontSize: 8, fontWeight: 700, color: "#1a1a0a", fontFamily: SANS, background: YELLOW, padding: "1px 5px", borderRadius: 999 }}>Novo</span>
@@ -808,7 +808,7 @@ var CompactRaquetes = function() {
 var CompactVideo = function() {
   return (
     <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block", height: "100%" }}>
-      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", borderRadius: 14, padding: "14px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
         <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
         </div>
@@ -822,7 +822,7 @@ var CompactVideo = function() {
 var CompactRival = function() {
   var r = RIVAL_DATA;
   return (
-    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", textAlign: "center" }}>
+    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 100%)", borderRadius: 14, padding: "14px 12px", height: "100%", textAlign: "center" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginBottom: 8 }}>
         <span style={{ fontSize: 10 }}>⚔️</span>
         <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: RED, fontFamily: SANS }}>Rivalidade</span>
