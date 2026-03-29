@@ -1102,17 +1102,80 @@ export default function JoaoFonsecaNews() {
       {/* INSTALL POPUP */}
       {showInstallPopup && !popupDismissed && (function() {
         var device = detectDevice();
-        return (<div onClick={dismissPopup} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: device === "ios" ? "flex-end" : "center", justifyContent: "center", padding: device === "ios" ? 0 : 16, animation: "fadeInO 0.3s ease" }}><div onClick={function(e){e.stopPropagation();}} style={{ background: "#fff", borderRadius: device === "ios" ? "20px 20px 0 0" : 20, padding: "24px 20px", maxWidth: 400, width: "100%", maxHeight: "90vh", overflowY: "auto", animation: "slideU 0.4s ease" }}>
-          <button onClick={dismissPopup} style={{ position: "absolute", top: 14, right: 16, background: "#f0f0f0", border: "none", color: DIM, fontSize: 16, cursor: "pointer", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-          <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <div style={{ fontSize: 24, fontWeight: 800, fontFamily: SERIF, marginBottom: 6 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></div>
-            <h2 style={{ margin: "0 0 4px", fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>Instale o Fonseca News</h2>
-            <p style={{ margin: 0, fontSize: 13, color: SUB, fontFamily: SANS }}>Acompanhe cada ponto do João</p>
+        return (<div onClick={dismissPopup} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: device === "ios" ? "flex-end" : "center", justifyContent: "center", padding: device === "ios" ? 0 : 16, animation: "fadeInO 0.3s ease" }}><div onClick={function(e){e.stopPropagation();}} style={{ background: "#fff", borderRadius: device === "ios" ? "24px 24px 0 0" : 24, padding: "28px 24px", maxWidth: 380, width: "100%", maxHeight: "90vh", overflowY: "auto", animation: "slideU 0.4s ease", position: "relative" }}>
+          <button onClick={dismissPopup} style={{ position: "absolute", top: 14, right: 16, background: "#f0f0f0", border: "none", color: DIM, fontSize: 14, cursor: "pointer", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+
+          {/* Hero */}
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }}>
+              <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
+            </div>
+            <h2 style={{ margin: "0 0 6px", fontSize: 19, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>Tenha o FN na sua tela</h2>
+            <p style={{ margin: 0, fontSize: 13, color: SUB, fontFamily: SANS, lineHeight: 1.5 }}>Acesse as notícias do João com um toque, direto do seu celular</p>
           </div>
-          {deferredPrompt && (<button onClick={function(){handleInstall();dismissPopup();}} style={{ width: "100%", background: GREEN, color: "#fff", border: "none", borderRadius: 12, padding: "14px 0", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: SANS, marginBottom: 12 }}>📲 Instalar agora</button>)}
-          {device === "ios" && (<div style={{ fontSize: 13, color: SUB, fontFamily: SANS, lineHeight: 1.6 }}><p style={{ marginBottom: 8 }}><strong>1.</strong> Toque no botão Compartilhar (↑) no Safari</p><p style={{ marginBottom: 8 }}><strong>2.</strong> Selecione "Adicionar à Tela de Início"</p><p><strong>3.</strong> Toque em "Adicionar"</p></div>)}
-          {device === "android" && !deferredPrompt && (<div style={{ fontSize: 13, color: SUB, fontFamily: SANS, lineHeight: 1.6 }}><p style={{ marginBottom: 8 }}><strong>1.</strong> Toque nos 3 pontinhos (⋮) no Chrome</p><p style={{ marginBottom: 8 }}><strong>2.</strong> Selecione "Adicionar à tela inicial"</p><p><strong>3.</strong> Confirme tocando em "Instalar"</p></div>)}
-          <button onClick={dismissPopup} style={{ width: "100%", background: "none", color: DIM, border: "none", padding: "10px 0", fontSize: 13, cursor: "pointer", fontFamily: SANS, marginTop: 8 }}>Agora não</button>
+
+          {/* Benefits */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: BG_ALT, borderRadius: 10 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span style={{ fontSize: 13, color: TEXT, fontFamily: SANS }}>Acesso instantâneo, sem abrir navegador</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: BG_ALT, borderRadius: 10 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span style={{ fontSize: 13, color: TEXT, fontFamily: SANS }}>Countdown e notícias sempre atualizados</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: BG_ALT, borderRadius: 10 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+              <span style={{ fontSize: 13, color: TEXT, fontFamily: SANS }}>Tela cheia, como um app de verdade</span>
+            </div>
+          </div>
+
+          {/* Install button (Android/Chrome) */}
+          {deferredPrompt && (<button onClick={function(){handleInstall();dismissPopup();}} style={{ width: "100%", background: GREEN, color: "#fff", border: "none", borderRadius: 12, padding: "14px 0", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: SANS, marginBottom: 12 }}>Adicionar à tela inicial</button>)}
+
+          {/* iOS Steps */}
+          {device === "ios" && (
+            <div style={{ marginBottom: 8 }}>
+              <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>É rápido — 3 toques:</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>1</div>
+                  <span style={{ fontSize: 13, color: TEXT, fontFamily: SANS }}>Toque em <strong>Compartilhar</strong> (↑) na barra do Safari</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>2</div>
+                  <span style={{ fontSize: 13, color: TEXT, fontFamily: SANS }}>Role e toque em <strong>"Adicionar à Tela de Início"</strong></span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>3</div>
+                  <span style={{ fontSize: 13, color: TEXT, fontFamily: SANS }}>Toque em <strong>"Adicionar"</strong> — pronto!</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Android Steps */}
+          {device === "android" && !deferredPrompt && (
+            <div style={{ marginBottom: 8 }}>
+              <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>É rápido — 3 toques:</p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>1</div>
+                  <span style={{ fontSize: 13, color: TEXT, fontFamily: SANS }}>Toque nos <strong>3 pontinhos</strong> (⋮) do Chrome</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>2</div>
+                  <span style={{ fontSize: 13, color: TEXT, fontFamily: SANS }}>Toque em <strong>"Adicionar à tela inicial"</strong></span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>3</div>
+                  <span style={{ fontSize: 13, color: TEXT, fontFamily: SANS }}>Confirme em <strong>"Instalar"</strong> — pronto!</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button onClick={dismissPopup} style={{ width: "100%", background: "none", color: DIM, border: "none", padding: "10px 0 2px", fontSize: 13, cursor: "pointer", fontFamily: SANS }}>Agora não</button>
         </div></div>);
       })()}
     </div>
