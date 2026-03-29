@@ -383,9 +383,9 @@ var MatchPrediction = function(props) {
       {!prediction ? (
         <>
           <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Qual será o placar?</p>
-          <p style={{ margin: "0 0 14px", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>Fonseca vs {oppName}{match.round ? (" · " + match.round) : ""}</p>
+          <p style={{ margin: "0 0 10px", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>Fonseca vs {oppName}{match.round ? (" · " + match.round) : ""}</p>
           <div style={{ display: "grid", gridTemplateColumns: isGrandSlam ? "repeat(3, 1fr)" : "repeat(4, 1fr)", gap: 8 }}>
-            {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.sets} onClick={function() { handlePredict(opt); }} style={{ padding: "10px 4px", background: isJ ? "rgba(0,168,89,0.1)" : "rgba(192,57,43,0.1)", border: "1px solid " + (isJ ? "rgba(0,168,89,0.25)" : "rgba(192,57,43,0.25)"), borderRadius: 10, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.sets.replace("-", "x")}</span><span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
+            {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.sets} onClick={function() { handlePredict(opt); }} style={{ padding: "7px 4px", background: isJ ? "rgba(0,168,89,0.1)" : "rgba(192,57,43,0.1)", border: "1px solid " + (isJ ? "rgba(0,168,89,0.25)" : "rgba(192,57,43,0.25)"), borderRadius: 8, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 13, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.sets.replace("-", "x")}</span><span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
           </div>
         </>
       ) : (
@@ -457,17 +457,13 @@ var QuizGame = function() {
   if (!started) {
     return (
       <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0", cursor: "pointer", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <span style={{ fontSize: 13 }}>🎾</span>
-              <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: YELLOW, fontFamily: SANS }}>Quiz interativo</span>
-            </div>
-            <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Quanto você conhece o João?</p>
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>10 perguntas · {totalPoints} pontos</span>
-          </div>
-          <div style={{ flexShrink: 0, marginLeft: 16, background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "8px 20px", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: SANS }}>Jogar</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <span style={{ fontSize: 13 }}>🎾</span>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: YELLOW, fontFamily: SANS }}>Quiz interativo</span>
         </div>
+        <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Quanto você conhece o João?</p>
+        <p style={{ margin: "0 0 12px", fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>10 perguntas · {totalPoints} pontos</p>
+        <div style={{ background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "9px 20px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: SANS, textAlign: "center" }}>Jogar</div>
       </div>
     );
   }
