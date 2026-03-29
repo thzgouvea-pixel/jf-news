@@ -729,23 +729,141 @@ var NewsCard = function(props) {
 };
 
 // ===== BUILD FEED =====
-var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, nextMatch) {
+// ===== DUAL BANNER WRAPPER =====
+var DualBanner = function(props) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, margin: "4px 0" }}>
+      {props.children}
+    </div>
+  );
+};
+
+// ===== COMPACT BANNER CARDS (for dual layout) =====
+var CompactQuiz = function(props) {
+  return (
+    <div onClick={props.onStart} style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 14, padding: "16px 14px", cursor: "pointer", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+          <span style={{ fontSize: 12 }}>🎾</span>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: YELLOW, fontFamily: SANS }}>Quiz</span>
+        </div>
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.3 }}>Quanto você conhece o João?</p>
+      </div>
+      <div style={{ marginTop: 10, background: GREEN, padding: "6px 12px", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: SANS, textAlign: "center" }}>Jogar</div>
+    </div>
+  );
+};
+
+var CompactPoll = function(props) {
+  return (
+    <div style={{ background: "linear-gradient(135deg, #0a1a10 0%, #0d2818 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+          <span style={{ fontSize: 12 }}>📊</span>
+          <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: GREEN, fontFamily: SANS }}>Enquete</span>
+        </div>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.3 }}>{props.question}</p>
+      </div>
+      <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
+        <button onClick={props.onVoteA} style={{ flex: 1, padding: "6px", background: "rgba(0,168,89,0.12)", border: "1px solid rgba(0,168,89,0.25)", borderRadius: 6, fontSize: 10, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: SANS }}>{props.optA}</button>
+        <button onClick={props.onVoteB} style={{ flex: 1, padding: "6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: SANS }}>{props.optB}</button>
+      </div>
+    </div>
+  );
+};
+
+var CompactGame = function() {
+  return (
+    <a href="/game" style={{ textDecoration: "none", display: "block", height: "100%" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+            <span style={{ fontSize: 12 }}>🎮</span>
+            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#ffd700", fontFamily: SANS }}>Jogo</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.3 }}>Tennis Career 26</p>
+        </div>
+        <div style={{ marginTop: 10, background: GREEN, padding: "6px 12px", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: SANS, textAlign: "center" }}>Jogar</div>
+      </div>
+    </a>
+  );
+};
+
+var CompactRaquetes = function() {
+  return (
+    <a href="/raquetes" style={{ textDecoration: "none", display: "block", height: "100%" }}>
+      <div style={{ background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
+            <span style={{ fontSize: 8, fontWeight: 700, color: "#1a1a0a", fontFamily: SANS, background: YELLOW, padding: "1px 5px", borderRadius: 999 }}>Novo</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.3 }}>Venda sua raquete</p>
+        </div>
+        <div style={{ marginTop: 10, background: YELLOW, padding: "6px 12px", borderRadius: 8, color: "#1a1a0a", fontSize: 11, fontWeight: 700, fontFamily: SANS, textAlign: "center" }}>Anunciar</div>
+      </div>
+    </a>
+  );
+};
+
+var CompactVideo = function() {
+  return (
+    <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none", display: "block", height: "100%" }}>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", textAlign: "center" }}>
+        <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,0,0,0.85)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+        <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Highlights</p>
+        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>Vídeos do João</span>
+      </div>
+    </a>
+  );
+};
+
+var CompactRival = function() {
+  var r = RIVAL_DATA;
+  return (
+    <div style={{ background: "linear-gradient(135deg, #1a0a0a 0%, #2d1111 100%)", borderRadius: 14, padding: "16px 14px", height: "100%", textAlign: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginBottom: 8 }}>
+        <span style={{ fontSize: 10 }}>⚔️</span>
+        <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: RED, fontFamily: SANS }}>Rivalidade</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+        <div><span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: SANS }}>🇧🇷</span><br/><span style={{ fontSize: 18, fontWeight: 800, color: GREEN, fontFamily: SANS }}>{r.h2h.joao}</span></div>
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>VS</span>
+        <div><span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: SANS }}>{r.country}</span><br/><span style={{ fontSize: 18, fontWeight: 800, color: RED, fontFamily: SANS }}>{r.h2h.tien}</span></div>
+      </div>
+      <p style={{ margin: "6px 0 0", fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>Fonseca vs {r.name}</p>
+    </div>
+  );
+};
+
+var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, nextMatch, pollData) {
   var elements = [];
   var banners = [
     <MatchPrediction key="prediction-bar" match={nextMatch} />,
-    <LastMatchBar key="last-match-bar" match={lastMatch} />,
     <QuizGame key="quiz-bar" />,
-    <SeasonBar key="season-bar" season={season} />,
-    <DailyPoll key="poll-bar" />,
-    <GameBanner key="game-banner" />,
-    <RaquetesBanner key="raquetes-banner" />,
-    <VideoBanner key="video-banner" onOpen={onOpenVideos} />,
+    <DualBanner key="dual-game-raquetes">
+      <CompactGame key="compact-game" />
+      <CompactRaquetes key="compact-raquetes" />
+    </DualBanner>,
+    <DualBanner key="dual-video-rival">
+      <CompactVideo key="compact-video" />
+      <CompactRival key="compact-rival" />
+    </DualBanner>,
   ];
-  var insertAfter = [2, 4, 6, 8, 10, 12, 14, 16];
+  // 4 news + 1 banner pattern
+  var insertAfter = [4, 8, 12, 16];
   var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
+    // Thin inline separators
+    if (i + 1 === 2 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
+    if (i + 1 === 6 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
+    if (i + 1 === 10) elements.push(<DailyPoll key="daily-poll" />);
+    // Main banners
     if (bannerIdx < banners.length && insertAfter.indexOf(i + 1) !== -1) { elements.push(banners[bannerIdx]); bannerIdx++; }
+  });
+  while (bannerIdx < banners.length) { elements.push(banners[bannerIdx]); bannerIdx++; }
   });
   while (bannerIdx < banners.length) { elements.push(banners[bannerIdx]); bannerIdx++; }
   return elements;
