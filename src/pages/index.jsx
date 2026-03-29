@@ -996,7 +996,7 @@ export default function JoaoFonsecaNews() {
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px" }}>
         {/* NEXT DUEL */}
-        <h2 style={{ fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.01em", padding: "14px 0 6px" }}>Próximo duelo</h2>
+        <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "20px 0 12px" }}>Próximo duelo</h2>
         <NextDuelCard match={dm} player={dp} isLive={isLive} />
 
         {/* QUICK NAV */}
