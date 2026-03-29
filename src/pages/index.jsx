@@ -516,32 +516,79 @@ var NextDuelCard = function(props) {
   var oppName = match.opponent_name || "A definir";
   var oppRanking = match.opponent_ranking;
   var oppCountry = match.opponent_country || "";
+  var sc = surfaceColorMap[match.surface] || "#999";
   return (
-    <section style={{ padding: "28px 0 24px", borderBottom: "1px solid " + BORDER }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo jogo</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: SUB, fontFamily: SANS }}>· {match.surface} · {match.city}</span>
-      </div>
-      <h2 style={{ fontFamily: SERIF, fontSize: 26, fontWeight: 800, color: TEXT, lineHeight: 1.1, letterSpacing: "-0.03em", marginBottom: 4 }}>{match.tournament_category || "Próxima Partida"}</h2>
-      {match.tournament_name && match.tournament_category && <p style={{ fontSize: 14, color: SUB, fontFamily: SANS, marginBottom: 24 }}>{match.tournament_name} · {formatMatchDate(match.date)}</p>}
-      <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#f0f0f0", border: "2px solid " + GREEN + "25", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <img src={joaoImg} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:14px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
-          </div>
-          <div><span style={{ fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF, display: "block" }}>J. Fonseca</span><span style={{ fontSize: 12, color: DIM, fontFamily: SANS }}>🇧🇷 {player ? "#" + player.ranking : ""}</span></div>
-        </div>
-        <span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>vs</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#f5f5f5", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; }} /> : <span style={{ fontSize: 12, color: DIM }}>?</span>}
-          </div>
-          <div><span style={{ fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF, display: "block" }}>{oppName}</span>{oppCountry && <span style={{ fontSize: 12, color: DIM, fontFamily: SANS }}>{oppCountry}{oppRanking ? " #" + oppRanking : ""}</span>}</div>
+    <section style={{ margin: "16px -20px 0", padding: "24px 24px 20px", background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
+      {/* Subtle glow */}
+      <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "15 0%, transparent 70%)", pointerEvents: "none" }} />
+
+      {/* Header line */}
+      <div style={{ textAlign: "center", marginBottom: 16 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próximo jogo</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>·</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: SANS }}>{match.surface}</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>·</span>
+          <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{match.city}</span>
         </div>
       </div>
-      {!countdown.expired && (<div style={{ marginBottom: 20 }}><div style={{ display: "flex", gap: 16 }}>{[[countdown.days,"dias"],[countdown.hours,"hrs"],[countdown.minutes,"min"],[countdown.seconds,"seg"]].map(function(p,i) { return (<div key={i} style={{ textAlign: "center" }}><span style={{ fontSize: 22, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", lineHeight: 1 }}>{String(p[0]).padStart(2, "0")}</span><span style={{ fontSize: 10, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>{p[1]}</span></div>); })}</div></div>)}
-      <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ fontSize: 13, fontWeight: 600, color: GREEN, fontFamily: SANS, textDecoration: "none" }}>Assistir ao vivo →</a>
-      {!isLive && <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontStyle: "italic", fontFamily: SANS }}>Dados de exemplo</p>}
+
+      {/* Tournament name */}
+      <div style={{ textAlign: "center", marginBottom: 20 }}>
+        <h2 style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.1, letterSpacing: "-0.03em", margin: "0 0 4px" }}>{match.tournament_category || "Próxima Partida"}</h2>
+        {match.tournament_name && match.tournament_category && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: SANS, margin: 0 }}>{match.tournament_name} · {formatMatchDate(match.date)}</p>}
+      </div>
+
+      {/* Players - centered */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginBottom: 20 }}>
+        {/* João */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 6px", background: "#1a2a3a", border: "2px solid " + GREEN + "35", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <img src={joaoImg} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:16px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
+          </div>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>J. Fonseca</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
+        </div>
+
+        {/* VS */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>VS</span>
+          </div>
+        </div>
+
+        {/* Opponent */}
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", margin: "0 auto 6px", background: "#1a2a3a", border: "2px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; }} /> : <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>?</span>}
+          </div>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{oppName}</span>
+          {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS }}>{oppCountry}{oppRanking ? " #" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>chave pendente</span>}
+        </div>
+      </div>
+
+      {/* Countdown - centered */}
+      {!countdown.expired && (
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <div style={{ display: "inline-flex", gap: 14 }}>
+            {[[countdown.days,"dias"],[countdown.hours,"hrs"],[countdown.minutes,"min"],[countdown.seconds,"seg"]].map(function(p,i) {
+              return (
+                <div key={i} style={{ textAlign: "center", minWidth: 36 }}>
+                  <span style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block", lineHeight: 1 }}>{String(p[0]).padStart(2, "0")}</span>
+                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>{p[1]}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* CTA - centered */}
+      <div style={{ textAlign: "center" }}>
+        <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, textDecoration: "none", padding: "6px 14px", borderRadius: 8, background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.15)" }}>Assistir ao vivo →</a>
+      </div>
+
+      {!isLive && <p style={{ margin: "10px 0 0", fontSize: 9, color: "rgba(255,255,255,0.15)", fontStyle: "italic", fontFamily: SANS, textAlign: "center" }}>Dados de exemplo</p>}
     </section>
   );
 };
