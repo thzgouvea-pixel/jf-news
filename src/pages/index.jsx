@@ -1132,7 +1132,7 @@ export default function JoaoFonsecaNews() {
           )}
           {showMenu && (
             <>
-              <div style={{ padding: "10px 0 0", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, animation: "fadeIn 0.2s ease" }}>
+              <div style={{ padding: "10px 0 0", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, animation: "fadeIn 0.2s ease" }}>
                 <button onClick={function(){setShowTitles(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Conquistas</span>
@@ -1145,6 +1145,10 @@ export default function JoaoFonsecaNews() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
                 </button>
+                <a href="/regras" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Regras</span>
+                </a>
               </div>
               <button onClick={function() { setShowMenu(false); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Menos</span>
@@ -1204,6 +1208,10 @@ export default function JoaoFonsecaNews() {
           </div>
 
           {/* Disclaimer */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 12 }}>
+            <a href="/regras" style={{ fontSize: 11, color: GREEN, fontFamily: SANS, fontWeight: 600, textDecoration: "none" }}>Regras do tênis</a>
+            <a href="/raquetes" style={{ fontSize: 11, color: GREEN, fontFamily: SANS, fontWeight: 600, textDecoration: "none" }}>Venda sua raquete</a>
+          </div>
           <p style={{ fontSize: 9, color: DIM, fontFamily: SANS, lineHeight: 1.6, maxWidth: 340, margin: "0 auto", textAlign: "center" }}>Site independente de fãs · Sem vínculo com João Fonseca ou ATP · © 2026 Fonseca News</p>
         </footer>
       </main>
