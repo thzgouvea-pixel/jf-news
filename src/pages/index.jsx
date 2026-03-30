@@ -987,13 +987,9 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, n
   var banners = [
     <MatchPrediction key="prediction-bar" match={nextMatch} />,
     <QuizGame key="quiz-bar" />,
-    <DualBanner key="dual-game-raquetes">
-      <CompactGame key="compact-game" />
-      <CompactRaquetes key="compact-raquetes" />
-    </DualBanner>,
   ];
   // 4 news + 1 banner pattern
-  var insertAfter = [4, 8, 12];
+  var insertAfter = [4, 8];
   var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
@@ -1039,6 +1035,7 @@ export default function JoaoFonsecaNews() {
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
   var _showFeedback = useState(false); var showFeedback = _showFeedback[0]; var setShowFeedback = _showFeedback[1];
+  var _showInstallGuide = useState(false); var showInstallGuide = _showInstallGuide[0]; var setShowInstallGuide = _showInstallGuide[1];
   var _fbName = useState(""); var fbName = _fbName[0]; var setFbName = _fbName[1];
   var _fbMsg = useState(""); var fbMsg = _fbMsg[0]; var setFbMsg = _fbMsg[1];
   var _fbRating = useState(null); var fbRating = _fbRating[0]; var setFbRating = _fbRating[1];
@@ -1273,6 +1270,33 @@ export default function JoaoFonsecaNews() {
         <section style={{ padding: "20px 0", borderTop: "1px solid " + BORDER }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Explore também</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <a href="/raquetes" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: YELLOW + "10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              </div>
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Venda sua raquete</span>
+                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Anuncie grátis na comunidade do Telegram</span>
+              </div>
+            </a>
+            <a href="/game" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#7C3AED10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/></svg>
+              </div>
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Tennis Career 26</span>
+                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Simulador de carreira profissional</span>
+              </div>
+            </a>
+            <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: RED + "10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+              <div>
+                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Momentos do João</span>
+                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Highlights e jogadas no YouTube</span>
+              </div>
+            </a>
             <a href="/regras" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: GREEN + "10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
@@ -1282,16 +1306,15 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Guia completo de regras pra acompanhar o João</span>
               </div>
             </a>
-            <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: RED + "10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <div onClick={function(){setShowInstallGuide(true);}} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, border: "1px solid " + BORDER, cursor: "pointer" }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#0D172610", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0D1726" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
               </div>
               <div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Melhores momentos</span>
-                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Highlights e jogadas no YouTube</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Transforme o FN em app</span>
+                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Adicione à tela inicial — sem baixar nada</span>
               </div>
-            </a>
-            <InstallBanner />
+            </div>
           </div>
         </section>
 
@@ -1335,6 +1358,38 @@ export default function JoaoFonsecaNews() {
       {showShare && (<Modal title="Compartilhar" onClose={function(){setShowShare(false);}} maxWidth={340}><p style={{margin:"0 0 14px",fontSize:13,color:SUB,fontFamily:SANS,textAlign:"center"}}>Indique o Fonseca News!</p><div style={{display:"flex",flexDirection:"column",gap:8}}><a href={"https://wa.me/?text="+encodeURIComponent("🎾 Fonseca News — Acompanhe o João Fonseca! fonsecanews.com.br")} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:BG_ALT,borderRadius:12,textDecoration:"none",border:"1px solid "+BORDER}}><span style={{fontSize:18}}>💬</span><span style={{fontSize:13,fontWeight:600,color:TEXT,fontFamily:SANS}}>WhatsApp</span></a><a href={"mailto:?subject="+encodeURIComponent("Fonseca News")+"&body="+encodeURIComponent("fonsecanews.com.br")} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:BG_ALT,borderRadius:12,textDecoration:"none",border:"1px solid "+BORDER}}><span style={{fontSize:18}}>✉️</span><span style={{fontSize:13,fontWeight:600,color:TEXT,fontFamily:SANS}}>Email</span></a><button onClick={function(){navigator.clipboard.writeText("fonsecanews.com.br").then(function(){setShowShare(false);});}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:BG_ALT,borderRadius:12,border:"1px solid "+BORDER,cursor:"pointer",width:"100%"}}><span style={{fontSize:18}}>📋</span><span style={{fontSize:13,fontWeight:600,color:TEXT,fontFamily:SANS}}>Copiar link</span></button></div></Modal>)}
 
       {/* INSTALL POPUP */}
+      {/* INSTALL GUIDE MODAL */}
+      {showInstallGuide && (
+        <Modal title="Instale o Fonseca News" subtitle="3 passos simples" onClose={function(){setShowInstallGuide(false);}} maxWidth={400}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>1</div>
+              <div>
+                <p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS }}>Abra o menu do navegador</p>
+                <p style={{ margin: 0, fontSize: 12, color: SUB, fontFamily: SANS, lineHeight: 1.5 }}>No <strong>Safari</strong> (iPhone): toque no ícone de compartilhar (↑)<br/>No <strong>Chrome</strong> (Android): toque nos três pontos (⋮)</p>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>2</div>
+              <div>
+                <p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS }}>Adicionar à Tela de Início</p>
+                <p style={{ margin: 0, fontSize: 12, color: SUB, fontFamily: SANS, lineHeight: 1.5 }}>Role as opções até encontrar "Adicionar à Tela de Início" e toque nela</p>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>3</div>
+              <div>
+                <p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS }}>Confirme</p>
+                <p style={{ margin: 0, fontSize: 12, color: SUB, fontFamily: SANS, lineHeight: 1.5 }}>Toque em "Adicionar" — pronto! O FN vai aparecer na sua tela como um app</p>
+              </div>
+            </div>
+          </div>
+          <div style={{ marginTop: 20, padding: "12px 16px", background: BG_ALT, borderRadius: 10, border: "1px solid " + BORDER }}>
+            <p style={{ margin: 0, fontSize: 11, color: SUB, fontFamily: SANS, lineHeight: 1.5, textAlign: "center" }}>Sem download, sem espaço ocupado, sem loja de apps. Funciona como app de verdade, direto do navegador.</p>
+          </div>
+        </Modal>
+      )}
+
       {/* FEEDBACK MODAL */}
       {showFeedback && (
         <Modal title="Feedback" subtitle="Sua opinião é importante pra gente" onClose={function(){setShowFeedback(false);}} maxWidth={420}>
