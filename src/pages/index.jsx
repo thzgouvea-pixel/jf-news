@@ -1241,7 +1241,7 @@ export default function JoaoFonsecaNews() {
         <NextDuelCard match={dm} player={dp} isLive={isLive} />
 
         {/* QUICK NAV */}
-        <section style={{ padding: "14px 0", borderBottom: "1px solid " + BORDER }}>
+        <section style={{ padding: "14px 0" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
             <button onClick={function(){setShowBio(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1261,8 +1261,8 @@ export default function JoaoFonsecaNews() {
         {/* MORE MENU */}
         <section style={{ borderBottom: "1px solid " + BORDER }}>
           {!showMenu && (
-            <button onClick={function() { setShowMenu(true); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Mais</span>
+            <button onClick={function() { setShowMenu(true); }} style={{ width: "100%", padding: "6px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>Mais</span>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
             </button>
           )}
@@ -1297,7 +1297,7 @@ export default function JoaoFonsecaNews() {
                 </button>
               </div>
               <button onClick={function() { setShowMenu(false); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Menos</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>Menos</span>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="18 15 12 9 6 15" /></svg>
               </button>
             </>
@@ -1306,7 +1306,7 @@ export default function JoaoFonsecaNews() {
 
         {/* NEWS FEED */}
         <section style={{ paddingTop: 4 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "20px 0 12px" }}>Notícias</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 8px" }}>Notícias</h2>
           {loading && news.length === 0 && <Skeleton />}
           {dn.length > 0 && !(loading && news.length === 0) && (
             <>
