@@ -1282,6 +1282,20 @@ export default function JoaoFonsecaNews() {
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
                 </button>
               </div>
+              <div style={{ padding: "6px 0 0", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
+                <a href="/regras" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Regras</span>
+                </a>
+                <button onClick={function(){setShowFeedback(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Feedback</span>
+                </button>
+                <button onClick={function(){var m=document.querySelector('[data-pix-btn]');if(m)m.click();setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Apoiar</span>
+                </button>
+              </div>
               <button onClick={function() { setShowMenu(false); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Menos</span>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="18 15 12 9 6 15" /></svg>
@@ -1308,20 +1322,20 @@ export default function JoaoFonsecaNews() {
 
         {/* DISCOVER SECTION — subtle links */}
         <section style={{ padding: "20px 0", borderTop: "1px solid " + BORDER }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Descubra mais</p>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Descubra mais</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <a href="/regras" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
               <span style={{ fontSize: 18 }}>📖</span>
               <div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Novo no tênis?</span>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Guia completo de regras pra acompanhar o João</span>
+                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Guia completo de regras pra acompanhar o João</span>
               </div>
             </a>
             <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
               <span style={{ fontSize: 18 }}>🎬</span>
               <div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Melhores momentos</span>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Highlights e jogadas no YouTube</span>
+                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Highlights e jogadas no YouTube</span>
               </div>
             </a>
           </div>
@@ -1332,7 +1346,7 @@ export default function JoaoFonsecaNews() {
 
         {/* FOOTER */}
         <footer style={{ padding: "28px 0", borderTop: "1px solid " + BORDER, marginTop: 8 }}>
-          {/* Social + ações */}
+          {/* Social */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 }}>
             <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill={SUB} stroke="none"/></svg>
@@ -1343,24 +1357,13 @@ export default function JoaoFonsecaNews() {
             <a href="mailto:thzgouvea@gmail.com?subject=Fonseca News" style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
             </a>
-            <PixDonation />
           </div>
 
-          {/* Feedback + Visitantes */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 16 }}>
-            <button onClick={function() { setShowFeedback(true); }} style={{ background: "none", border: "1px solid " + GREEN + "25", borderRadius: 8, padding: "6px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, fontFamily: SANS }}>Deixe seu feedback</span>
-            </button>
-            <span style={{ color: "#e0e0e0" }}>·</span>
+          {/* Visitantes */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
             <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}><span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}>...</span> visitantes</span>
           </div>
 
-          {/* Links + Install hint */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 8 }}>
-            <a href="/regras" style={{ fontSize: 11, color: GREEN, fontFamily: SANS, fontWeight: 600, textDecoration: "none" }}>Regras do tênis</a>
-            <a href="/raquetes" style={{ fontSize: 11, color: GREEN, fontFamily: SANS, fontWeight: 600, textDecoration: "none" }}>Venda sua raquete</a>
-          </div>
           <p style={{ margin: "0 0 12px", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>📱 Adicione à tela inicial e use como app</p>
           <p style={{ fontSize: 9, color: DIM, fontFamily: SANS, lineHeight: 1.6, maxWidth: 340, margin: "0 auto", textAlign: "center" }}>Site independente de fãs · Sem vínculo com João Fonseca ou ATP · © 2026 Fonseca News</p>
         </footer>
