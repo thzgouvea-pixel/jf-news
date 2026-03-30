@@ -1,5 +1,5 @@
-// ===== FONSECA NEWS - TWITTER BOT v5 =====
-// More organic voice, promotes new features, larger tweet pool
+// ===== FONSECA NEWS - TWITTER BOT v6 =====
+// Algorithm-optimized: link in reply, max 1-2 hashtags, conversational voice
 // Uses X API v2 tweets endpoint
 
 import crypto from "crypto";
@@ -15,7 +15,7 @@ function percentEncode(str) {
     .replace(/\)/g, '%29');
 }
 
-async function postTweet(text) {
+async function postTweet(text, replyTo) {
   var ck = process.env.TWITTER_CONSUMER_KEY;
   var cs = process.env.TWITTER_CONSUMER_SECRET;
   var at = process.env.TWITTER_ACCESS_TOKEN;
@@ -49,14 +49,17 @@ async function postTweet(text) {
   });
   var authHeader = "OAuth " + headerParts.join(", ");
 
+  var body = { text: text };
+  if (replyTo) body.reply = { in_reply_to_tweet_id: replyTo };
+
   var res = await fetch(url, {
     method: "POST",
     headers: {
       "Authorization": authHeader,
       "Content-Type": "application/json",
-      "User-Agent": "FonsecaNewsBot/2.0"
+      "User-Agent": "FonsecaNewsBot/3.0"
     },
-    body: JSON.stringify({ text: text })
+    body: JSON.stringify(body)
   });
 
   var raw = await res.text();
@@ -67,6 +70,21 @@ async function postTweet(text) {
   }
 
   return JSON.parse(raw);
+}
+
+// ===== REPLY WITH LINK =====
+// Algorithm penalizes links in main tweet by 30-50%
+// Post link as reply to own tweet instead
+async function postWithLinkReply(mainText, linkText) {
+  var result = await postTweet(mainText);
+  if (result.data && result.data.id && linkText) {
+    try {
+      await postTweet(linkText, result.data.id);
+    } catch (e) {
+      console.log("[tweet] Reply failed:", e.message);
+    }
+  }
+  return result;
 }
 
 // ===== SMART TWEET FORMATTING =====
@@ -85,40 +103,42 @@ function cleanTitle(title, source) {
   return cleaned.trim();
 }
 
-// Multiple format templates per category for variety
+// Multiple conversational templates per category
+// NO links in main tweet, max 1-2 hashtags
 var NEWS_TEMPLATES = {
   "Resultado": {
     win: [
-      "VAMOS! {title} \u{1F1E7}\u{1F1F7}\u{1F3BE}\n\n{score}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
-      "JOGOU DEMAIS! {title} \u{1F525}\n\n{score}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #Tennis",
-      "Mais uma do Jo\u00e3o! \u{1F1E7}\u{1F1F7}\n\n{title}\n\n{score}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
+      "VAMOS! 🇧🇷🎾\n\n{title}\n\n{score}\n\n#JoãoFonseca",
+      "Jogou demais! {title} 🔥\n\n{score}\n\n#JoãoFonseca #Tennis",
+      "Mais uma vitória do João! 🇧🇷\n\n{title}\n\n{score}",
+      "O cara não para! {title}\n\nVamos, João! 🔥\n\n#JoãoFonseca",
     ],
     loss: [
-      "N\u00e3o foi dessa vez, mas o Jo\u00e3o segue evoluindo \u{1F4AA}\n\n{title}\n\n{score}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
-      "Derrota faz parte do processo. Pr\u00f3ximo torneio vem a\u00ed \u{1F3BE}\n\n{title}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca",
-      "Dia dif\u00edcil, mas a temporada \u00e9 longa. Bora, Jo\u00e3o! \u{1F1E7}\u{1F1F7}\n\n{title}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
+      "Não foi dessa vez, mas o João segue evoluindo 💪\n\n{title}\n\n#JoãoFonseca",
+      "Derrota faz parte. A temporada é longa e o João vai voltar mais forte 🇧🇷\n\n{title}",
+      "Dia difícil, mas quem acompanha sabe o quanto ele evolui a cada torneio\n\n{title}\n\n#JoãoFonseca",
     ],
     neutral: [
-      "\u{1F3BE} {title}\n\nSaiba mais:\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
+      "{title} 🎾\n\n#JoãoFonseca",
     ]
   },
   "Ranking": [
-    "\u{1F4CA} Atualiza\u00e7\u00e3o no ranking!\n\n{title}\n\n\u{1F1E7}\u{1F1F7} Jo\u00e3o Fonseca: #{ranking} ATP\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP #Ranking",
-    "Ranking atualizado \u{1F4C8}\n\n{title}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
+    "Ranking atualizado! 📈\n\n{title}\n\nJoão Fonseca: #{ranking} ATP 🇧🇷\n\n#JoãoFonseca",
+    "Subiu! {title}\n\n🇧🇷 #{ranking} no mundo\n\n#JoãoFonseca #ATP",
   ],
-  "Declara\u00e7\u00e3o": [
-    "\u{1F5E3}\uFE0F {title}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #Tennis",
-    "\"{title}\"\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
-    "Olha o que falaram do Jo\u00e3o \u{1F440}\n\n{title}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca",
+  "Declaração": [
+    "Olha o que falaram do João 👀\n\n{title}\n\n#JoãoFonseca",
+    "\"{title}\"\n\n#JoãoFonseca #Tennis",
+    "{title}\n\nConcordam? 🤔\n\n#JoãoFonseca",
   ],
   "Torneio": [
-    "\u{1F3BE} {title}\n\nAcompanhe ao vivo:\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
-    "{title}\n\nCountdown e palpite no site \u{1F525}\nfonsecanews.com.br\n#Jo\u00e3oFonseca #Tennis",
+    "{title} 🎾\n\nBora acompanhar!\n\n#JoãoFonseca",
+    "{title}\n\nQuem tá ansioso? 🔥\n\n#JoãoFonseca #ATP",
   ],
   "default": [
-    "\u{1F4F0} {title}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #Tennis",
-    "{title}\n\nLeia mais:\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
-    "\u{1F1E7}\u{1F1F7} {title}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca",
+    "{title}\n\n#JoãoFonseca",
+    "{title} 🇧🇷\n\n#JoãoFonseca #Tennis",
+    "{title}\n\nO que vocês acham? 👇\n\n#JoãoFonseca",
   ]
 };
 
@@ -130,11 +150,11 @@ function formatTweet(newsItem, lastMatch, player) {
 
   if (lastMatch && lastMatch.score) {
     score = lastMatch.score;
-    if (lastMatch.tournament) score += " \u00B7 " + lastMatch.tournament;
+    if (lastMatch.tournament) score += " · " + lastMatch.tournament;
   }
 
   if (category === "Resultado") {
-    var isWin = /vence|vit\u00f3ria|elimina|avan\u00e7a|classificad/i.test(title);
+    var isWin = /vence|vitória|elimina|avança|classificad/i.test(title);
     var isLoss = /perde|derrota|eliminad|cai|queda/i.test(title);
     if (isWin) templates = NEWS_TEMPLATES["Resultado"].win;
     else if (isLoss) templates = NEWS_TEMPLATES["Resultado"].loss;
@@ -147,71 +167,79 @@ function formatTweet(newsItem, lastMatch, player) {
   var tweet = template
     .replace(/\{title\}/g, title)
     .replace(/\{score\}/g, score)
-    .replace(/\{ranking\}/g, player ? player.ranking : "??");
+    .replace(/\{ranking\}/g, player ? player.ranking : "59");
 
   // Clean empty lines from missing score
   tweet = tweet.replace(/\n\n\n/g, "\n\n").replace(/\n\n$/g, "");
 
   if (tweet.length > 280) {
-    var suffix = "\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca";
-    var maxTitle = 280 - suffix.length - 10;
+    var suffix = "\n\n#JoãoFonseca";
+    var maxTitle = 280 - suffix.length - 5;
     tweet = title.substring(0, maxTitle) + "..." + suffix;
   }
 
   return tweet;
 }
 
-// ===== PROMOTIONAL TWEETS — 24 tweets, voice of a passionate fan =====
+// Link reply text (short, just the source + site link)
+function formatLinkReply(newsItem) {
+  var parts = [];
+  if (newsItem.source) parts.push("📰 " + newsItem.source);
+  parts.push("🔗 fonsecanews.com.br");
+  return parts.join("\n");
+}
+
+// ===== PROMOTIONAL TWEETS — conversational, no links in main =====
 var PROMO_TWEETS = [
-  // === Site features ===
-  "Voc\u00ea j\u00e1 deu seu palpite pro pr\u00f3ximo jogo do Jo\u00e3o? \u{1F52E}\n\nEscolhe o placar e depois compartilha pra ver se acertou!\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP #Tennis",
+  // === Features — conversational, questions, opinions ===
+  { main: "Você já deu seu palpite pro próximo jogo do João? 🔮\n\nEscolhe o placar e compartilha pra ver se acertou\n\n#JoãoFonseca #Tennis", link: "🔗 fonsecanews.com.br" },
 
-  "Fiz 95 pontos no Quiz do Fonseca News e achei que manjava de t\u00eanis \u{1F602}\n\nTenta a\u00ed superar:\nfonsecanews.com.br\n#Jo\u00e3oFonseca #Quiz #Tennis",
+  { main: "Fiz 95 pontos no Quiz do Fonseca News e achei que manjava de tênis 😂\n\nAlguém consegue mais?\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
 
-  "Monte Carlo come\u00e7a em poucos dias e o countdown t\u00e1 correndo no site \u{23F3}\u{1F525}\n\nPalpite + not\u00edcias + quiz:\nfonsecanews.com.br\n#Jo\u00e3oFonseca #MonteCarlo #ATP",
+  { main: "Monte Carlo começa em poucos dias e o countdown tá correndo ⏳🔥\n\nQuem mais tá ansioso?\n\n#JoãoFonseca #MonteCarlo", link: "Palpite + notícias + quiz:\n🔗 fonsecanews.com.br" },
 
-  "Novo no t\u00eanis? A gente fez um guia completo com todas as regras pra voc\u00ea acompanhar o Jo\u00e3o sem se perder \u{1F3BE}\n\nfonsecanews.com.br/regras\n#Tennis #Regras #Jo\u00e3oFonseca",
+  { main: "Novo no tênis e quer entender o que tá acontecendo em cada ponto? A gente fez um guia completo 🎾\n\n#Tennis #JoãoFonseca", link: "🔗 fonsecanews.com.br/regras" },
 
-  "Tem raquete parada em casa? Anuncia gr\u00e1tis na comunidade do FN no Telegram \u{1F3F7}\uFE0F\n\nfonsecanews.com.br/raquetes\n#Tennis #Raquete #T\u00eanis",
+  { main: "Tem raquete parada em casa? Anuncia grátis na comunidade do FN no Telegram 🏷️\n\n#Tennis #Raquete", link: "🔗 fonsecanews.com.br/raquetes" },
 
-  "A enquete de hoje t\u00e1 pol\u00eamica \u{1F525}\n\nVota l\u00e1 e v\u00ea o que a comunidade acha:\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP #Tennis",
+  { main: "A enquete de hoje tá polêmica 🔥\n\nVota lá e vê o que a comunidade acha\n\n#JoãoFonseca #Tennis", link: "🔗 fonsecanews.com.br" },
 
-  "O Fonseca News \u00e9 o \u00fanico site brasileiro 100% dedicado ao Jo\u00e3o Fonseca \u{1F1E7}\u{1F1F7}\n\nNot\u00edcias, ranking, quiz, palpite, enquete... tudo num lugar s\u00f3\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP",
+  { main: "O Fonseca News é o único site brasileiro 100% dedicado ao João Fonseca 🇧🇷\n\nNotícias, ranking, quiz, palpite, enquete... tudo num lugar só\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
 
-  "Esse quiz do Fonseca News \u00e9 viciante, n\u00e3o vou mentir \u{1F3BE}\n\n10 perguntas com fun facts que voc\u00ea n\u00e3o sabia\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #Quiz #Tennis",
+  { main: "Esse quiz é viciante, não vou mentir 🎾\n\n10 perguntas com fun facts que você não sabia sobre o João\n\n#JoãoFonseca #Quiz", link: "🔗 fonsecanews.com.br" },
 
-  // === Opinions & engagement ===
-  "O forehand do Jo\u00e3o Fonseca \u00e9 o mais bonito do circuito atualmente. Mudo de opini\u00e3o? N\u00e3o. \u{1F1E7}\u{1F1F7}\u{1F3BE}\n\n#Jo\u00e3oFonseca #ATP #Tennis #Forehand",
+  // === Opinions & engagement — NO links, pure engagement ===
+  { main: "O forehand do João Fonseca é o mais bonito do circuito atualmente\n\nMudo de opinião? Não 🇧🇷🎾\n\n#JoãoFonseca #ATP" },
 
-  "Se o Jo\u00e3o fosse espanhol, j\u00e1 estaria na capa de todo jornal esportivo do mundo. O Brasil precisa valorizar mais \u{1F1E7}\u{1F1F7}\n\n#Jo\u00e3oFonseca #T\u00eanisBrasileiro #ATP",
+  { main: "Se o João fosse espanhol, já estaria na capa de todo jornal esportivo do mundo\n\nO Brasil precisa valorizar mais 🇧🇷\n\n#JoãoFonseca" },
 
-  "Quem assistiu Jo\u00e3o vs Rublev no Australian Open sabe: aquele jogo mudou tudo. O mundo conheceu o Fonseca ali \u{1F525}\n\n#Jo\u00e3oFonseca #AusOpen #ATP",
+  { main: "Quem assistiu João vs Rublev no Australian Open sabe: aquele jogo mudou tudo\n\nO mundo conheceu o Fonseca ali 🔥\n\n#JoãoFonseca #AusOpen" },
 
-  "O t\u00eanis brasileiro n\u00e3o tinha um fen\u00f4meno assim desde o Guga. E o Jo\u00e3o tem s\u00f3 19 anos. Imagina com 25 \u{1F92F}\n\n#Jo\u00e3oFonseca #Guga #T\u00eanisBrasileiro #ATP",
+  { main: "O tênis brasileiro não tinha um fenômeno assim desde o Guga\n\nE o João tem só 19 anos. Imagina com 25 🤯\n\n#JoãoFonseca #Guga" },
 
-  "Hot take: Jo\u00e3o Fonseca vai ganhar Roland Garros antes dos 22 anos. Anotem \u{1F4DD}\n\n#Jo\u00e3oFonseca #RolandGarros #ATP #GrandSlam",
+  { main: "Hot take: João Fonseca vai ganhar Roland Garros antes dos 22 anos\n\nAnotem 📝\n\n#JoãoFonseca #RolandGarros" },
 
-  "O Jo\u00e3o tem 19 anos e j\u00e1 venceu um top 10 em Grand Slam. Com 19 anos eu mal sabia sacar \u{1F602}\n\n#Jo\u00e3oFonseca #ATP #Tennis",
+  { main: "O João tem 19 anos e já venceu um top 10 em Grand Slam\n\nCom 19 anos eu mal sabia sacar 😂\n\n#JoãoFonseca" },
 
-  "Discuss\u00e3o s\u00e9ria: Alcaraz, Sinner ou Fonseca \u2014 quem vai dominar o t\u00eanis em 2030? \u{1F3C6}\n\n#Alcaraz #Sinner #Jo\u00e3oFonseca #ATP #NextGen",
+  { main: "Discussão séria: Alcaraz, Sinner ou Fonseca — quem vai dominar o tênis em 2030? 🏆\n\n#Alcaraz #Sinner #JoãoFonseca" },
 
-  "Saibro ou quadra dura? Acho que o Jo\u00e3o vai ser devastador no saibro. Monte Carlo vai provar \u{1F7E4}\n\n#Jo\u00e3oFonseca #MonteCarlo #ATP #ClayCourtSeason",
+  { main: "Saibro ou quadra dura? Acho que o João vai ser devastador no saibro\n\nMonte Carlo vai provar 🟤\n\n#JoãoFonseca #MonteCarlo" },
 
-  "O Brasil tem o melhor sub-20 do mundo e pouca gente sabe. Isso precisa mudar \u{1F1E7}\u{1F1F7}\u{1F3BE}\n\n#Jo\u00e3oFonseca #T\u00eanisBrasileiro #ATP #NextGen",
+  { main: "O Brasil tem o melhor sub-20 do mundo e pouca gente sabe\n\nIsso precisa mudar 🇧🇷🎾\n\n#JoãoFonseca" },
 
-  "Quem vai ser o maior rival do Jo\u00e3o na carreira? Tien? Mensik? Fils? Eu aposto no Tien \u{1F914}\n\n#Jo\u00e3oFonseca #LearnerTien #NextGen #ATP",
+  { main: "Quem vai ser o maior rival do João na carreira? Tien? Mensik? Fils?\n\nEu aposto no Tien 🤔\n\n#JoãoFonseca #NextGen" },
 
-  "Voc\u00eas preferem assistir t\u00eanis na TV ou no est\u00e1dio? No est\u00e1dio a velocidade da bola \u00e9 surreal \u{1F3DF}\uFE0F\n\n#Tennis #ATP #T\u00eanis",
+  { main: "Vocês preferem assistir tênis na TV ou no estádio?\n\nNo estádio a velocidade da bola é surreal 🏟️\n\n#Tennis #ATP" },
 
-  "Unpopular opinion: o NextGen Finals deveria valer pontos pro ranking. Mudaria tudo \u{1F914}\n\n#ATP #NextGenATP #Tennis",
+  { main: "Unpopular opinion: o NextGen Finals deveria valer pontos pro ranking\n\nMudaria tudo 🤔\n\n#ATP #NextGen" },
 
-  "Algu\u00e9m mais v\u00ea semelhan\u00e7as entre o jogo do Jo\u00e3o e o do Federer? O estilo \u00e9 parecido, mas com mais pot\u00eancia \u{1F440}\n\n#Jo\u00e3oFonseca #Federer #Tennis #ATP",
+  { main: "Alguém mais vê semelhanças entre o jogo do João e o do Federer?\n\nO estilo é parecido, mas com mais potência 👀\n\n#JoãoFonseca #Federer" },
 
-  "Acordei pensando em t\u00eanis. De novo. Culpa do Jo\u00e3o \u{1F602}\u{1F3BE}\n\n#Jo\u00e3oFonseca #Tennis #ATP",
+  { main: "Acordei pensando em tênis. De novo\n\nCulpa do João 😂🎾\n\n#JoãoFonseca" },
 
-  "Ser\u00e1 que a gente vai ver o Jo\u00e3o nas Olimp\u00edadas de 2028 em LA? Eu j\u00e1 estou contando os dias \u{1F1E7}\u{1F1F7}\u{1F3C5}\n\n#Jo\u00e3oFonseca #Olympics #LA2028 #Tennis",
+  { main: "Será que a gente vai ver o João nas Olimpíadas de 2028 em LA?\n\nEu já estou contando os dias 🇧🇷🏅\n\n#JoãoFonseca #Olympics #LA2028" },
 
-  "J\u00e1 votou na enquete de hoje? A comunidade t\u00e1 dividida \u{1F525}\n\nfonsecanews.com.br\n#Jo\u00e3oFonseca #ATP #Tennis",
+  { main: "Já votou na enquete de hoje? A comunidade tá dividida 🔥\n\n#JoãoFonseca #Tennis", link: "🔗 fonsecanews.com.br" },
 ];
 
 var lastPollDay = "";
@@ -219,13 +247,13 @@ var lastPromoDay = "";
 
 // ===== DAILY POLL TWEETS =====
 var DAILY_POLLS = [
-  "Jo\u00e3o vence o primeiro jogo em Monte Carlo?",
-  "Jo\u00e3o chega ao Top 30 at\u00e9 o fim de 2026?",
-  "Jo\u00e3o vai ganhar um Masters 1000 na carreira?",
-  "Quem ter\u00e1 o melhor 2026: Jo\u00e3o ou Tien?",
-  "Jo\u00e3o chega \u00e0s quartas em Roland Garros?",
-  "Jo\u00e3o pode ser Top 10 at\u00e9 2027?",
-  "Quem \u00e9 mais talentoso: Jo\u00e3o ou Alcaraz aos 19?",
+  "João vence o primeiro jogo em Monte Carlo?",
+  "João chega ao Top 30 até o fim de 2026?",
+  "João vai ganhar um Masters 1000 na carreira?",
+  "Quem terá o melhor 2026: João ou Tien?",
+  "João chega às quartas em Roland Garros?",
+  "João pode ser Top 10 até 2027?",
+  "Quem é mais talentoso: João ou Alcaraz aos 19?",
 ];
 
 function getTodayPollTweet() {
@@ -234,7 +262,8 @@ function getTodayPollTweet() {
   var dayIdx = Math.floor(Date.now() / 86400000) % DAILY_POLLS.length;
   var question = DAILY_POLLS[dayIdx];
   return {
-    text: "\u{1F4CA} ENQUETE DO DIA\n\n" + question + "\n\n\u{1F5F3}\uFE0F Vote agora:\nfonsecanews.com.br\n\n#Jo\u00e3oFonseca #Tennis #ATP",
+    main: "📊 ENQUETE DO DIA\n\n" + question + "\n\nVota lá 👇\n\n#JoãoFonseca #Tennis",
+    link: "🗳️ fonsecanews.com.br",
     day: today
   };
 }
@@ -243,22 +272,23 @@ function getTodayPromoTweet() {
   var today = new Date().toISOString().split("T")[0];
   if (lastPromoDay === today) return null;
   var dayIdx = Math.floor(Date.now() / 86400000) % PROMO_TWEETS.length;
-  return { text: PROMO_TWEETS[dayIdx], day: today };
+  return { tweet: PROMO_TWEETS[dayIdx], day: today };
 }
 
 // ===== MAIN HANDLER =====
 export default async function handler(req, res) {
-  // Check if within posting hours (6h-00h Bras\u00edlia = 9h-3h UTC)
   var nowUTC = new Date().getUTCHours();
   var brasilia = (nowUTC - 3 + 24) % 24;
   if (brasilia < 6) {
-    return res.status(200).json({ message: "Outside posting hours (6h-00h BRT). Current: " + brasilia + "h", posted: 0 });
+    return res.status(200).json({ message: "Fora do horário (6h-00h BRT). Atual: " + brasilia + "h", posted: 0 });
   }
 
-  // Quick auth test mode
   if (req.query.test === "1") {
     try {
-      var result = await postTweet("\u{1F3BE} Teste do Fonseca News Bot! fonsecanews.com.br #Jo\u00e3oFonseca");
+      var result = await postWithLinkReply(
+        "🎾 Teste do Fonseca News Bot!\n\n#JoãoFonseca",
+        "🔗 fonsecanews.com.br"
+      );
       return res.status(200).json({ success: true, result: result });
     } catch (e) {
       return res.status(200).json({ success: false, error: e.message });
@@ -278,10 +308,10 @@ export default async function handler(req, res) {
     var pollTweet = getTodayPollTweet();
     if (pollTweet) {
       try {
-        var pollResult = await postTweet(pollTweet.text);
+        var pollResult = await postWithLinkReply(pollTweet.main, pollTweet.link);
         lastPollDay = pollTweet.day;
-        posted.push({ title: "POLL", tweetId: pollResult.data ? pollResult.data.id : null, type: "poll" });
-        return res.status(200).json({ message: "Posted daily poll", posted: posted });
+        posted.push({ type: "poll", tweetId: pollResult.data ? pollResult.data.id : null });
+        return res.status(200).json({ message: "Poll posted", posted: posted });
       } catch (e) {
         console.log("[tweet] Poll error:", e.message);
         lastPollDay = pollTweet.day;
@@ -289,16 +319,19 @@ export default async function handler(req, res) {
     }
 
     // ===== 2. TRY PROMOTIONAL TWEET =====
-    var promoTweet = getTodayPromoTweet();
-    if (promoTweet) {
+    var promoData = getTodayPromoTweet();
+    if (promoData) {
       try {
-        var promoResult = await postTweet(promoTweet.text);
-        lastPromoDay = promoTweet.day;
-        posted.push({ title: "PROMO", tweetId: promoResult.data ? promoResult.data.id : null, type: "promo" });
-        return res.status(200).json({ message: "Posted promo tweet", posted: posted });
+        var promo = promoData.tweet;
+        var promoResult = promo.link
+          ? await postWithLinkReply(promo.main, promo.link)
+          : await postTweet(promo.main);
+        lastPromoDay = promoData.day;
+        posted.push({ type: "promo", tweetId: promoResult.data ? promoResult.data.id : null });
+        return res.status(200).json({ message: "Promo posted", posted: posted });
       } catch (e) {
         console.log("[tweet] Promo error:", e.message);
-        lastPromoDay = promoTweet.day;
+        lastPromoDay = promoData.day;
       }
     }
 
@@ -315,9 +348,16 @@ export default async function handler(req, res) {
     var item = newItems[0];
     try {
       var tweetText = formatTweet(item, newsData.lastMatch, newsData.player);
-      var tweetResult = await postTweet(tweetText);
+      var linkReply = formatLinkReply(item);
+      var tweetResult = await postWithLinkReply(tweetText, linkReply);
       postedTitles.add(item.title);
-      posted.push({ title: item.title, tweetId: tweetResult.data ? tweetResult.data.id : null, text: tweetText, type: "news" });
+      posted.push({
+        type: "news",
+        title: item.title,
+        tweetId: tweetResult.data ? tweetResult.data.id : null,
+        text: tweetText,
+        chars: tweetText.length
+      });
     } catch (e) {
       posted.push({ title: item.title, error: e.message });
     }
@@ -326,7 +366,10 @@ export default async function handler(req, res) {
       postedTitles = new Set(Array.from(postedTitles).slice(-50));
     }
 
-    res.status(200).json({ message: "Posted " + posted.filter(function(p) { return !p.error; }).length, posted: posted });
+    res.status(200).json({
+      message: "Posted " + posted.filter(function(p) { return !p.error; }).length,
+      posted: posted
+    });
 
   } catch (error) {
     console.error("[tweet] Error:", error);
