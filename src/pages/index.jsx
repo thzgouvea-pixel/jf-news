@@ -758,7 +758,7 @@ var Skeleton = function() { return (<div>{[...Array(4)].map(function(_, i) { ret
 
 // ===== NEWS CARD =====
 var NewsCard = function(props) {
-  var item = props.item; var index = props.index; var allLikes = props.allLikes || {};
+  var item = props.item; var index = props.index; var allLikes = props.allLikes || {}; var noBorder = props.noBorder;
   var _s = useState(false); var h = _s[0]; var setH = _s[1];
   var _i = useState(false); var imgErr = _i[0]; var setImgErr = _i[1];
   var hasImg = item.image && !imgErr;
@@ -777,7 +777,7 @@ var NewsCard = function(props) {
   return (
     <>
     <article onClick={function() { if (hasUrl) { window.open(item.url, "_blank", "noopener,noreferrer"); } }} onMouseEnter={function() { setH(true); }} onMouseLeave={function() { setH(false); }}
-      style={{ padding: "20px 0", borderBottom: "1px solid " + BORDER, cursor: "pointer", transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0 }}>
+      style={{ padding: "20px 0", borderBottom: noBorder ? "none" : "1px solid " + BORDER, cursor: "pointer", transition: "background 0.15s", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0 }}>
       <div style={{ display: "flex", gap: 14 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -990,9 +990,11 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, n
   ];
   // 4 news + 1 banner pattern
   var insertAfter = [4, 8];
+  var noBorderAfter = [4, 8, 10]; // positions before banners (Palpite, Quiz, Enquete)
   var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
-    elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
+    var hideBorder = noBorderAfter.indexOf(i + 1) !== -1;
+    elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} noBorder={hideBorder} />);
     // Thin inline separators
     if (i + 1 === 2 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
     if (i + 1 === 6 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
