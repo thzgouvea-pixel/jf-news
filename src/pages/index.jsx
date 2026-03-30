@@ -1242,12 +1242,6 @@ export default function JoaoFonsecaNews() {
 
         {/* FOOTER */}
         <footer style={{ padding: "28px 0", borderTop: "1px solid " + BORDER, marginTop: 8 }}>
-          {/* Conquistas resumo */}
-          <div onClick={function() { setShowTitles(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 20, cursor: "pointer", flexWrap: "wrap" }}>
-            {[["🏆","2 ATP"],["🎯","3 Challengers"],["🇧🇷","Nº1 Brasil"]].map(function(pair, i) { return (<span key={i} style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{pair[0]} {pair[1]}</span>); })}
-            <span style={{ fontSize: 11, color: GREEN, fontFamily: SANS, fontWeight: 600 }}>Ver todos →</span>
-          </div>
-
           {/* Social + ações */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 }}>
             <a href="https://www.instagram.com/joaoffonseca" target="_blank" rel="noopener noreferrer" style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
