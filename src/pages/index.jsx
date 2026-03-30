@@ -454,9 +454,10 @@ var MatchPrediction = function(props) {
   if (daysDiff > 7 && !isPast) return null;
   var oppName = match.opponent_name || "Adversário";
   var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
-  var matchKey = "fn_pred_" + (match.tournament_name || "match").replace(/[^a-zA-Z0-9]/g, "_") + "_" + match.date;
-  var _p = useState(function() { try { return JSON.parse(localStorage.getItem(matchKey)); } catch(e) { return null; } });
+  var matchKey = (match.tournament_name || "match").replace(/[^a-zA-Z0-9]/g, "_") + "_" + match.date;
+  var _p = useState(function() { try { return JSON.parse(localStorage.getItem("fn_pred_" + matchKey)); } catch(e) { return null; } });
   var prediction = _p[0]; var setPrediction = _p[1];
+  var _community = useState(null); var community = _community[0]; var setCommunity = _community[1];
   var options = [
     { label: "João 2x0", sets: "2-0", winner: "joao" },
     { label: "João 2x1", sets: "2-1", winner: "joao" },
@@ -465,9 +466,18 @@ var MatchPrediction = function(props) {
   ];
   var isGrandSlam = match.tournament_category && match.tournament_category.toLowerCase().includes("grand slam");
   if (isGrandSlam) { options = [{ label: "João 3x0", sets: "3-0", winner: "joao" },{ label: "João 3x1", sets: "3-1", winner: "joao" },{ label: "João 3x2", sets: "3-2", winner: "joao" },{ label: oppShort + " 3x2", sets: "2-3", winner: "opp" },{ label: oppShort + " 3x1", sets: "1-3", winner: "opp" },{ label: oppShort + " 3x0", sets: "0-3", winner: "opp" }]; }
-  var handlePredict = function(opt) { if (prediction) return; var pred = { sets: opt.sets, winner: opt.winner, label: opt.label, timestamp: Date.now() }; setPrediction(pred); try { localStorage.setItem(matchKey, JSON.stringify(pred)); } catch(e) {} };
+  var handlePredict = function(opt) {
+    if (prediction) return;
+    var pred = { sets: opt.sets, winner: opt.winner, label: opt.label, timestamp: Date.now() };
+    setPrediction(pred);
+    try { localStorage.setItem("fn_pred_" + matchKey, JSON.stringify(pred)); } catch(e) {}
+    fetch("/api/prediction", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ match: matchKey, prediction: pred }) })
+      .then(function(r) { return r.json(); })
+      .then(function(data) { if (data.community) setCommunity(data.community); })
+      .catch(function() {});
+  };
   var _streak = useState(function() { try { return parseInt(localStorage.getItem("fn_pred_streak") || "0", 10); } catch(e) { return 0; } });
-  var streak = _streak[0];
+  var streak = _streak[0]; var setStreak = _streak[1];
   return (
     <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #12203a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
@@ -492,6 +502,9 @@ var MatchPrediction = function(props) {
             <span style={{ fontSize: 13, fontWeight: 700, color: prediction.winner === "joao" ? GREEN : RED, fontFamily: SANS }}>Palpite: {prediction.label}</span>
           </div>
           <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: SANS, marginTop: 6 }}>Resultado após o jogo</p>
+          {community && community.total > 1 && (
+            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS, marginTop: 4 }}>📊 {community.total} palpites da comunidade</p>
+          )}
           <button onClick={function() {
             var c = generateShareCard({ type: "prediction", emoji: prediction.winner === "joao" ? "🇧🇷" : "🎾", title: "Meu palpite", value: prediction.label, subtitle: "Fonseca vs " + oppName, matchInfo: match.tournament_name || "" });
             shareCard(c, "🔮 Meu palpite no Fonseca News: " + prediction.label + " — fonsecanews.com.br");
@@ -1035,7 +1048,8 @@ export default function JoaoFonsecaNews() {
     var touchIcon = document.querySelector('link[rel="apple-touch-icon"]');
     if (!touchIcon) { touchIcon = document.createElement("link"); touchIcon.rel = "apple-touch-icon"; document.head.appendChild(touchIcon); }
     touchIcon.href = "data:image/svg+xml," + encodeURIComponent(touchIconSvg);
-    var ogTags = [["og:title", "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 39) + " ATP"],["og:description", "Notícias, resultados e análises sobre João Fonseca."],["og:type", "website"],["og:site_name", "Fonseca News"],["og:locale", "pt_BR"],["og:url", "https://fonsecanews.com.br"],["og:image", "https://www.atptour.com/-/media/alias/player-headshot/f0fv"],["twitter:card", "summary"],["twitter:site", "@JFonsecaNews"],["twitter:title", "Fonseca News"],["twitter:description", "Notícias e análises sobre João Fonseca"],["twitter:image", "https://www.atptour.com/-/media/alias/player-headshot/f0fv"]];
+    var ogImg = "https://fonsecanews.com.br/api/og?title=" + encodeURIComponent("Notícias, quiz e palpites sobre João Fonseca") + "&ranking=" + encodeURIComponent("#" + (dp ? dp.ranking : 39));
+    var ogTags = [["og:title", "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 39) + " ATP"],["og:description", "Notícias, ranking, quiz, palpites e enquetes sobre João Fonseca. Site independente de fãs."],["og:type", "website"],["og:site_name", "Fonseca News"],["og:locale", "pt_BR"],["og:url", "https://fonsecanews.com.br"],["og:image", ogImg],["og:image:width", "1200"],["og:image:height", "630"],["twitter:card", "summary_large_image"],["twitter:site", "@JFonsecaNews"],["twitter:title", "Fonseca News · João Fonseca"],["twitter:description", "Notícias, quiz e palpites sobre o tenista brasileiro #" + (dp ? dp.ranking : 39) + " ATP"],["twitter:image", ogImg]];
     ogTags.forEach(function(pair) { var prop = pair[0]; var content = pair[1]; var isOg = prop.startsWith("og:"); var selector = isOg ? ('meta[property="' + prop + '"]') : ('meta[name="' + prop + '"]'); var tag = document.querySelector(selector); if (!tag) { tag = document.createElement("meta"); if (isOg) tag.setAttribute("property", prop); else tag.name = prop; document.head.appendChild(tag); } tag.content = content; });
     var descMeta = document.querySelector('meta[name="description"]');
     if (!descMeta) { descMeta = document.createElement("meta"); descMeta.name = "description"; document.head.appendChild(descMeta); }
