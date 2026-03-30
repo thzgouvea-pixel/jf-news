@@ -1039,7 +1039,41 @@ export default function JoaoFonsecaNews() {
     ogTags.forEach(function(pair) { var prop = pair[0]; var content = pair[1]; var isOg = prop.startsWith("og:"); var selector = isOg ? ('meta[property="' + prop + '"]') : ('meta[name="' + prop + '"]'); var tag = document.querySelector(selector); if (!tag) { tag = document.createElement("meta"); if (isOg) tag.setAttribute("property", prop); else tag.name = prop; document.head.appendChild(tag); } tag.content = content; });
     var descMeta = document.querySelector('meta[name="description"]');
     if (!descMeta) { descMeta = document.createElement("meta"); descMeta.name = "description"; document.head.appendChild(descMeta); }
-    descMeta.content = "Fonseca News — Notícias, resultados, ranking e análises sobre João Fonseca, #" + (dp ? dp.ranking : 39) + " ATP.";
+    descMeta.content = "Fonseca News — Notícias, resultados, ranking, quiz e palpites sobre João Fonseca, tenista brasileiro #" + (dp ? dp.ranking : 39) + " ATP. Site independente de fãs com countdown, enquetes e calendário ATP 2026.";
+
+    // JSON-LD Structured Data
+    var jsonLdId = "fn-jsonld";
+    var existingLd = document.getElementById(jsonLdId);
+    if (!existingLd) {
+      var jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Fonseca News",
+        "url": "https://fonsecanews.com.br",
+        "description": "Site independente de fãs dedicado ao tenista brasileiro João Fonseca",
+        "inLanguage": "pt-BR",
+        "about": {
+          "@type": "Person",
+          "name": "João Fonseca",
+          "nationality": { "@type": "Country", "name": "Brasil" },
+          "birthDate": "2006-08-21",
+          "sport": "Tennis",
+          "jobTitle": "Tenista profissional",
+          "sameAs": ["https://www.instagram.com/joaoffonseca", "https://www.atptour.com/en/players/joao-fonseca/f0fv/overview"]
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Fonseca News",
+          "url": "https://fonsecanews.com.br",
+          "logo": { "@type": "ImageObject", "url": "https://fonsecanews.com.br/icon-192.png" }
+        }
+      };
+      var script = document.createElement("script");
+      script.id = jsonLdId;
+      script.type = "application/ld+json";
+      script.textContent = JSON.stringify(jsonLd);
+      document.head.appendChild(script);
+    }
     var GA_ID = process.env.NEXT_PUBLIC_GA_ID || "G-J5CD56E1VX";
     if (GA_ID && !document.querySelector('script[src*="googletagmanager"]')) { var gaScript = document.createElement("script"); gaScript.async = true; gaScript.src = "https://www.googletagmanager.com/gtag/js?id=" + GA_ID; document.head.appendChild(gaScript); var gaInit = document.createElement("script"); gaInit.textContent = "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','" + GA_ID + "');"; document.head.appendChild(gaInit); }
     var handler = function(e) { e.preventDefault(); setDeferredPrompt(e); setShowInstallBanner(true); };
