@@ -293,7 +293,7 @@ var DailyPoll = function() {
   return (
     <div style={{ padding: "18px 20px", background: "#f8f9fa", borderRadius: 10, margin: "4px 0", border: "1px solid " + BORDER }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-          <span style={{ fontSize: 13 }}>📊</span>
+          
           <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", fontFamily: SANS, background: GREEN, padding: "2px 6px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>Enquete</span>
         </div>
         <p style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: TEXT, fontFamily: SERIF, lineHeight: 1.4 }}>{poll.q}</p>
