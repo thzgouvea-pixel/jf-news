@@ -1,37 +1,62 @@
-// ===== API: Site Feedback (Vercel KV) =====
+// src/pages/api/feedback.js
+// Receives user feedback and stores in Vercel KV
+// Thomaz can check via /api/feedback?list=1
+
 import { kv } from "@vercel/kv";
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
+  // List all feedback (for Thomaz)
+  if (req.method === "GET" && req.query.list === "1") {
+    try {
+      var keys = await kv.keys("feedback:*");
+      var feedbacks = [];
+      for (var i = 0; i < Math.min(keys.length, 50); i++) {
+        var fb = await kv.get(keys[i]);
+        if (fb) feedbacks.push(fb);
+      }
+      feedbacks.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+      return res.status(200).json({ total: feedbacks.length, feedbacks: feedbacks });
+    } catch (e) {
+      return res.status(500).json({ error: e.message });
+    }
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
   try {
-    const key = "site:feedback";
+    var body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
+    var message = (body.message || "").trim();
+    var name = (body.name || "Anônimo").trim();
+    var rating = body.rating || null;
 
-    if (req.method === "GET") {
-      const data = await kv.get(key);
-      return res.status(200).json(data || { up: 0, down: 0 });
+    if (!message || message.length < 3) {
+      return res.status(400).json({ error: "Mensagem muito curta" });
     }
 
-    if (req.method === "POST") {
-      const { vote } = req.query;
-      if (!vote || (vote !== "up" && vote !== "down")) {
-        return res.status(400).json({ error: "vote must be 'up' or 'down'" });
-      }
-
-      const current = (await kv.get(key)) || { up: 0, down: 0 };
-      if (vote === "up") current.up += 1;
-      else current.down += 1;
-
-      await kv.set(key, current);
-      return res.status(200).json(current);
+    if (message.length > 2000) {
+      return res.status(400).json({ error: "Mensagem muito longa (max 2000)" });
     }
 
-    return res.status(405).json({ error: "Method not allowed" });
-  } catch (error) {
-    console.error("[feedback] Error:", error);
-    return res.status(500).json({ error: error.message });
+    var feedbackId = "feedback:" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
+    var feedbackData = {
+      id: feedbackId,
+      name: name.substring(0, 100),
+      message: message.substring(0, 2000),
+      rating: rating,
+      timestamp: Date.now(),
+      date: new Date().toISOString(),
+    };
+
+    await kv.set(feedbackId, feedbackData, { ex: 60 * 60 * 24 * 90 }); // 90 days
+
+    // Increment feedback counter
+    await kv.incr("feedback_count");
+
+    return res.status(200).json({ success: true, message: "Feedback enviado!" });
+  } catch (e) {
+    console.error("[feedback] Error:", e);
+    return res.status(500).json({ error: "Erro ao salvar feedback" });
   }
 }
