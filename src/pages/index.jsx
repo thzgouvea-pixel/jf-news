@@ -291,28 +291,28 @@ var DailyPoll = function() {
     fetch("/api/poll?vote=" + choice, { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) { if (d && typeof d.a === "number" && d.total > 0) { setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total }); } }).catch(function() { var sim = choice === "a" ? { a: 62, b: 38 } : { a: 45, b: 55 }; setResults(sim); });
   };
   return (
-    <div style={{ padding: "18px 20px", background: "#f8f9fa", borderRadius: 10, margin: "4px 0", border: "1px solid " + BORDER }}>
+    <div style={{ padding: "18px 20px", background: "linear-gradient(135deg, #0a1a10 0%, #0d2818 100%)", borderRadius: 14, margin: "4px 0" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
           <span style={{ fontSize: 13 }}>📊</span>
-          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: GREEN, fontFamily: SANS }}>Enquete do dia</span>
+          <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", fontFamily: SANS, background: GREEN, padding: "2px 6px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>Enquete</span>
         </div>
-        <p style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: TEXT, fontFamily: SERIF, lineHeight: 1.4 }}>{poll.q}</p>
+        <p style={{ margin: "0 0 12px", fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.4 }}>{poll.q}</p>
         {!vote ? (
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={function() { handleVote("a"); }} style={{ flex: 1, padding: "10px", background: "rgba(0,168,89,0.06)", border: "1px solid rgba(0,168,89,0.2)", borderRadius: 10, fontSize: 13, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: SANS }}>{poll.a}</button>
-            <button onClick={function() { handleVote("b"); }} style={{ flex: 1, padding: "10px", background: "#f0f0f0", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, fontSize: 13, fontWeight: 700, color: TEXT, cursor: "pointer", fontFamily: SANS }}>{poll.b}</button>
+            <button onClick={function() { handleVote("a"); }} style={{ flex: 1, padding: "10px", background: "rgba(0,168,89,0.12)", border: "1px solid rgba(0,168,89,0.25)", borderRadius: 10, fontSize: 13, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: SANS }}>{poll.a}</button>
+            <button onClick={function() { handleVote("b"); }} style={{ flex: 1, padding: "10px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, fontSize: 13, fontWeight: 700, color: TEXT, cursor: "pointer", fontFamily: SANS }}>{poll.b}</button>
           </div>
         ) : (
           <div>
             <div style={{ marginBottom: 8 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, fontWeight: 600, color: vote === "a" ? GREEN : SUB, fontFamily: SANS }}>{poll.a} {vote === "a" ? "✓" : ""}</span><span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>{results ? results.a : 50}%</span></div>
-              <div style={{ height: 4, background: "#e8e8e8", borderRadius: 2 }}><div style={{ height: 4, background: GREEN, borderRadius: 2, width: (results ? results.a : 50) + "%", transition: "width 0.8s ease" }} /></div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, fontWeight: 600, color: vote === "a" ? GREEN : "rgba(255,255,255,0.6)", fontFamily: SANS }}>{poll.a} {vote === "a" ? "✓" : ""}</span><span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{results ? results.a : 50}%</span></div>
+              <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2 }}><div style={{ height: 4, background: GREEN, borderRadius: 2, width: (results ? results.a : 50) + "%", transition: "width 0.8s ease" }} /></div>
             </div>
             <div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, fontWeight: 600, color: vote === "b" ? GREEN : SUB, fontFamily: SANS }}>{poll.b} {vote === "b" ? "✓" : ""}</span><span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>{results ? results.b : 50}%</span></div>
-              <div style={{ height: 4, background: "#e8e8e8", borderRadius: 2 }}><div style={{ height: 4, background: DIM, borderRadius: 2, width: (results ? results.b : 50) + "%", transition: "width 0.8s ease" }} /></div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}><span style={{ fontSize: 12, fontWeight: 600, color: vote === "b" ? GREEN : "rgba(255,255,255,0.6)", fontFamily: SANS }}>{poll.b} {vote === "b" ? "✓" : ""}</span><span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{results ? results.b : 50}%</span></div>
+              <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2 }}><div style={{ height: 4, background: "rgba(255,255,255,0.35)", borderRadius: 2, width: (results ? results.b : 50) + "%", transition: "width 0.8s ease" }} /></div>
             </div>
-            <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>Nova enquete amanhã</p>
+            <p style={{ margin: "8px 0 0", fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textAlign: "center" }}>Nova enquete amanhã</p>
           </div>
         )}
     </div>
@@ -327,7 +327,7 @@ var NextGenComparator = function() {
     { name: "J. Mensik", country: "🇨🇿", age: 19, ranking: 30, titles: 2, style: "Saque e voleio", forehand: 85, serve: 94, movement: 78, mental: 82, color: "#3B82F6" },
     { name: "A. Fils", country: "🇫🇷", age: 20, ranking: 28, titles: 2, style: "Completo", forehand: 88, serve: 86, movement: 90, mental: 84, color: "#8B5CF6" },
   ];
-  var StatBar = function(p) { return (<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}><span style={{ fontSize: 10, color: DIM, fontFamily: SANS, width: 55, textAlign: "right" }}>{p.label}</span><div style={{ flex: 1, height: 4, background: "#f0f0f0", borderRadius: 2 }}><div style={{ height: 4, background: p.color, borderRadius: 2, width: p.value + "%", transition: "width 0.5s" }} /></div><span style={{ fontSize: 10, fontWeight: 700, color: p.color, fontFamily: SANS, width: 24 }}>{p.value}</span></div>); };
+  var StatBar = function(p) { return (<div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}><span style={{ fontSize: 10, color: DIM, fontFamily: SANS, width: 55, textAlign: "right" }}>{p.label}</span><div style={{ flex: 1, height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2 }}><div style={{ height: 4, background: p.color, borderRadius: 2, width: p.value + "%", transition: "width 0.5s" }} /></div><span style={{ fontSize: 10, fontWeight: 700, color: p.color, fontFamily: SANS, width: 24 }}>{p.value}</span></div>); };
   return (
     <div style={{ padding: "16px 0" }}>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
@@ -358,7 +358,7 @@ var CareerTimeline = function() {
     <div style={{ padding: "16px 0", maxHeight: "65vh", overflowY: "auto" }}>
       <div style={{ position: "relative", paddingLeft: 24 }}>
         <div style={{ position: "absolute", left: 7, top: 8, bottom: 8, width: 1.5, background: "#e8e8e8", borderRadius: 1 }} />
-        {events.map(function(ev, i) { var isTitle = ev.emoji === "🏆"; return (<div key={i} style={{ position: "relative", marginBottom: i < events.length - 1 ? 14 : 0 }}><div style={{ position: "absolute", left: -20, top: 6, width: 10, height: 10, borderRadius: "50%", background: isTitle ? ev.color : "#fff", border: "2px solid " + ev.color, zIndex: 1 }} /><div style={{ paddingBottom: 4 }}><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}><span style={{ fontSize: 10, fontWeight: 600, color: ev.color, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>{ev.date}</span><span style={{ fontSize: 14 }}>{ev.emoji}</span></div><p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>{ev.title}</p><p style={{ margin: 0, fontSize: 12, color: SUB, fontFamily: SANS }}>{ev.desc}</p></div></div>); })}
+        {events.map(function(ev, i) { var isTitle = ev.emoji === "🏆"; return (<div key={i} style={{ position: "relative", marginBottom: i < events.length - 1 ? 14 : 0 }}><div style={{ position: "absolute", left: -20, top: 6, width: 10, height: 10, borderRadius: "50%", background: isTitle ? ev.color : "#fff", border: "2px solid " + ev.color, zIndex: 1 }} /><div style={{ paddingBottom: 4 }}><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 2 }}><span style={{ fontSize: 10, fontWeight: 600, color: ev.color, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>{ev.date}</span><span style={{ fontSize: 14 }}>{ev.emoji}</span></div><p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>{ev.title}</p><p style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{ev.desc}</p></div></div>); })}
       </div>
     </div>
   );
@@ -479,20 +479,20 @@ var MatchPrediction = function(props) {
   var _streak = useState(function() { try { return parseInt(localStorage.getItem("fn_pred_streak") || "0", 10); } catch(e) { return 0; } });
   var streak = _streak[0]; var setStreak = _streak[1];
   return (
-    <div style={{ background: "#f8f9fa", borderRadius: 10, padding: "18px 16px", margin: "4px 0", border: "1px solid " + BORDER }}>
+    <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #12203a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 13 }}>🔮</span>
-          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#7C3AED", fontFamily: SANS }}>Palpite</span>
+          
+          <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", fontFamily: SANS, background: "#7C3AED", padding: "2px 6px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>Palpite</span>
         </div>
-        {streak > 0 && <span style={{ fontSize: 10, fontWeight: 600, color: "#b8860b", fontFamily: SANS }}>🔥 {streak} acerto{streak > 1 ? "s" : ""}</span>}
+        {streak > 0 && <span style={{ fontSize: 8, fontWeight: 700, color: "#92400E", fontFamily: SANS, background: "#FDE68A", padding: "2px 6px", borderRadius: 999 }}>🔥 {streak} acerto{streak > 1 ? "s" : ""}</span>}
       </div>
       {!prediction ? (
         <>
-          <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Qual será o placar?</p>
-          <p style={{ margin: "0 0 10px", fontSize: 11, color: SUB, fontFamily: SANS }}>Fonseca vs {oppName}{match.round ? (" · " + match.round) : ""}</p>
+          <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Qual será o placar?</p>
+          <p style={{ margin: "0 0 10px", fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>Fonseca vs {oppName}{match.round ? (" · " + match.round) : ""}</p>
           <div style={{ display: "grid", gridTemplateColumns: isGrandSlam ? "repeat(3, 1fr)" : "repeat(4, 1fr)", gap: 8 }}>
-            {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.sets} onClick={function() { handlePredict(opt); }} style={{ padding: "7px 4px", background: isJ ? "rgba(0,168,89,0.08)" : "rgba(192,57,43,0.08)", border: "1px solid " + (isJ ? "rgba(0,168,89,0.2)" : "rgba(192,57,43,0.2)"), borderRadius: 8, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 13, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.sets.replace("-", "x")}</span><span style={{ fontSize: 9, color: DIM, fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
+            {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.sets} onClick={function() { handlePredict(opt); }} style={{ padding: "7px 4px", background: isJ ? "rgba(0,168,89,0.08)" : "rgba(192,57,43,0.08)", border: "1px solid " + (isJ ? "rgba(0,168,89,0.2)" : "rgba(192,57,43,0.2)"), borderRadius: 8, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 13, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.sets.replace("-", "x")}</span><span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
           </div>
         </>
       ) : (
@@ -501,14 +501,14 @@ var MatchPrediction = function(props) {
             <span style={{ fontSize: 14 }}>{prediction.winner === "joao" ? "🇧🇷" : "🎾"}</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: prediction.winner === "joao" ? GREEN : RED, fontFamily: SANS }}>Palpite: {prediction.label}</span>
           </div>
-          <p style={{ fontSize: 10, color: DIM, fontFamily: SANS, marginTop: 6 }}>Resultado após o jogo</p>
+          <p style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: SANS, marginTop: 6 }}>Resultado após o jogo</p>
           {community && community.total > 1 && (
-            <p style={{ fontSize: 10, color: DIM, fontFamily: SANS, marginTop: 4 }}>📊 {community.total} palpites da comunidade</p>
+            <p style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS, marginTop: 4 }}>📊 {community.total} palpites da comunidade</p>
           )}
           <button onClick={function() {
             var c = generateShareCard({ type: "prediction", emoji: prediction.winner === "joao" ? "🇧🇷" : "🎾", title: "Meu palpite", value: prediction.label, subtitle: "Fonseca vs " + oppName, matchInfo: match.tournament_name || "" });
             shareCard(c, "🔮 Meu palpite no Fonseca News: " + prediction.label + " — fonsecanews.com.br");
-          }} style={{ marginTop: 8, background: "#f0f0f0", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 14px", color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: SANS }}>Compartilhar palpite</button>
+          }} style={{ marginTop: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "6px 14px", color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: SANS }}>Compartilhar palpite</button>
         </div>
       )}
     </div>
@@ -570,24 +570,24 @@ var QuizGame = function() {
 
   if (!started) {
     return (
-      <div style={{ background: "#f8f9fa", borderRadius: 10, padding: "18px 16px", margin: "4px 0", cursor: "pointer", overflow: "hidden", border: "1px solid " + BORDER }} onClick={function() { setStarted(true); }}>
+      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0", cursor: "pointer", overflow: "hidden" }} onClick={function() { setStarted(true); }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-          <span style={{ fontSize: 13 }}>🎾</span>
-          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: "#b8860b", fontFamily: SANS }}>Quiz interativo</span>
+          
+          <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", fontFamily: SANS, background: "#b8860b", padding: "2px 6px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>Quiz</span>
         </div>
-        <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Quanto você conhece o João?</p>
-        <p style={{ margin: "0 0 12px", fontSize: 11, color: SUB, fontFamily: SANS }}>10 perguntas · {totalPoints} pontos</p>
-        <div style={{ background: GREEN, padding: "9px 20px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: SANS, textAlign: "center" }}>Jogar</div>
+        <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Quanto você conhece o João?</p>
+        <p style={{ margin: "0 0 12px", fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>10 perguntas · {totalPoints} pontos</p>
+        <div style={{ background: "linear-gradient(135deg, " + GREEN + ", #007A3D)", padding: "9px 20px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: SANS, textAlign: "center" }}>Jogar</div>
       </div>
     );
   }
   if (done) {
     var result = getResultMsg();
     return (
-      <div style={{ background: "#f8f9fa", borderRadius: 10, padding: "18px 16px", margin: "4px 0", textAlign: "center", border: "1px solid " + BORDER }}>
+      <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #1a2a4a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0", textAlign: "center" }}>
         <span style={{ fontSize: 40 }}>{result.emoji}</span>
-        <h3 style={{ margin: "8px 0 4px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>{score}/{totalPoints} pontos</h3>
-        <p style={{ margin: "0 0 16px", fontSize: 13, color: SUB, fontFamily: SANS }}>{result.msg}</p>
+        <h3 style={{ margin: "8px 0 4px", fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: SERIF }}>{score}/{totalPoints} pontos</h3>
+        <p style={{ margin: "0 0 16px", fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{result.msg}</p>
         <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={function() {
             var c = generateShareCard({ type: "quiz", emoji: result.emoji, title: "Quiz do João", value: score + "/" + totalPoints, subtitle: result.msg, matchInfo: "fonsecanews.com.br" });
@@ -601,20 +601,20 @@ var QuizGame = function() {
   }
   var q = questions[currentQ];
   return (
-    <div style={{ background: "#f8f9fa", borderRadius: 10, padding: "18px 16px", margin: "4px 0", border: "1px solid " + BORDER }}>
+    <div style={{ background: "linear-gradient(135deg, #0a1628 0%, #12203a 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: "#b8860b", fontFamily: SANS }}>Pergunta {currentQ + 1}/{maxQ}</span>
+        <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", fontFamily: SANS, background: "#b8860b", padding: "2px 6px", borderRadius: 999 }}>Pergunta {currentQ + 1}/{maxQ}</span>
         <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS }}>{score} pts</span>
       </div>
-      <div style={{ height: 3, background: "#e8e8e8", borderRadius: 2, marginBottom: 14 }}><div style={{ height: 3, background: GREEN, borderRadius: 2, width: ((currentQ + 1) / maxQ * 100) + "%", transition: "width 0.3s" }} /></div>
-      <p style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: TEXT, fontFamily: SERIF, lineHeight: 1.4 }}>{q.q}</p>
+      <div style={{ height: 3, background: "rgba(255,255,255,0.08)", borderRadius: 2, marginBottom: 14 }}><div style={{ height: 3, background: "linear-gradient(90deg, " + GREEN + ", " + YELLOW + ")", borderRadius: 2, width: ((currentQ + 1) / maxQ * 100) + "%", transition: "width 0.3s" }} /></div>
+      <p style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.4 }}>{q.q}</p>
       <span style={{ fontSize: 11, color: "#b8860b", fontFamily: SANS, fontWeight: 600 }}>{q.points} pontos</span>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
-        {q.opts.map(function(opt, idx) { var isCorrect = idx === q.answer; var isSelected = idx === selected; var bg = "rgba(255,255,255,0.05)"; var borderColor = "rgba(255,255,255,0.1)"; var textColor = TEXT;
-          if (revealed) { if (isCorrect) { bg = GREEN + "20"; borderColor = GREEN + "40"; textColor = GREEN; } else if (isSelected && !isCorrect) { bg = RED + "20"; borderColor = RED + "40"; textColor = RED; } else { bg = "#f5f5f5"; textColor = DIM; } }
-          return (<button key={idx} onClick={function() { handleAnswer(idx); }} disabled={revealed} style={{ padding: "12px 14px", background: bg, border: "1px solid " + borderColor, borderRadius: 10, cursor: revealed ? "default" : "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10 }}><span style={{ width: 24, height: 24, borderRadius: "50%", background: revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : "rgba(255,255,255,0.06)"), border: "1px solid " + (revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : BORDER)), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: revealed && (isCorrect || isSelected) ? "#fff" : "rgba(255,255,255,0.4)", fontFamily: SANS, flexShrink: 0 }}>{revealed && isCorrect ? "✓" : (revealed && isSelected && !isCorrect ? "✗" : String.fromCharCode(65 + idx))}</span><span style={{ fontSize: 14, fontWeight: 600, color: textColor, fontFamily: SANS }}>{opt}</span></button>); })}
+        {q.opts.map(function(opt, idx) { var isCorrect = idx === q.answer; var isSelected = idx === selected; var bg = "rgba(255,255,255,0.05)"; var borderColor = "rgba(255,255,255,0.1)"; var textColor = "rgba(255,255,255,0.8)";
+          if (revealed) { if (isCorrect) { bg = GREEN + "20"; borderColor = GREEN + "40"; textColor = GREEN; } else if (isSelected && !isCorrect) { bg = RED + "20"; borderColor = RED + "40"; textColor = RED; } else { bg = "rgba(255,255,255,0.02)"; textColor = "rgba(255,255,255,0.3)"; } }
+          return (<button key={idx} onClick={function() { handleAnswer(idx); }} disabled={revealed} style={{ padding: "12px 14px", background: bg, border: "1px solid " + borderColor, borderRadius: 10, cursor: revealed ? "default" : "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 10 }}><span style={{ width: 24, height: 24, borderRadius: "50%", background: revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : "rgba(255,255,255,0.06)"), border: "1px solid " + (revealed && isCorrect ? GREEN : (revealed && isSelected && !isCorrect ? RED : "rgba(255,255,255,0.12)")), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: revealed && (isCorrect || isSelected) ? "#fff" : "rgba(255,255,255,0.4)", fontFamily: SANS, flexShrink: 0 }}>{revealed && isCorrect ? "✓" : (revealed && isSelected && !isCorrect ? "✗" : String.fromCharCode(65 + idx))}</span><span style={{ fontSize: 14, fontWeight: 600, color: textColor, fontFamily: SANS }}>{opt}</span></button>); })}
       </div>
-      {revealed && (<div style={{ marginTop: 12 }}><div style={{ padding: "10px 14px", background: "#FFFBEB", borderRadius: 10, border: "1px solid #FDE68A", marginBottom: 10 }}><p style={{ margin: 0, fontSize: 12, color: "#92400E", fontFamily: SANS }}>💡 {q.fun}</p></div><button onClick={handleNext} style={{ width: "100%", padding: "12px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>{currentQ < maxQ - 1 ? "Próxima pergunta →" : "Ver resultado 🏆"}</button></div>)}
+      {revealed && (<div style={{ marginTop: 12 }}><div style={{ padding: "10px 14px", background: "rgba(255,203,5,0.08)", borderRadius: 10, border: "1px solid rgba(255,203,5,0.15)", marginBottom: 10 }}><p style={{ margin: 0, fontSize: 12, color: YELLOW, fontFamily: SANS }}>💡 {q.fun}</p></div><button onClick={handleNext} style={{ width: "100%", padding: "12px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>{currentQ < maxQ - 1 ? "Próxima pergunta →" : "Ver resultado 🏆"}</button></div>)}
     </div>
   );
 };
@@ -630,9 +630,9 @@ var RivalBanner = function() {
         <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: RED, fontFamily: SANS }}>Rivalidade</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 24 }}>
-        <div style={{ textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Fonseca</span><br/><span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>🇧🇷 #39</span></div>
+        <div style={{ textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Fonseca</span><br/><span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>🇧🇷 #39</span></div>
         <div style={{ textAlign: "center" }}><div style={{ display: "flex", alignItems: "center", gap: 8 }}><span style={{ fontSize: 22, fontWeight: 800, color: GREEN, fontFamily: SANS }}>{r.h2h.joao}</span><span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>VS</span><span style={{ fontSize: 22, fontWeight: 800, color: RED, fontFamily: SANS }}>{r.h2h.tien}</span></div></div>
-        <div style={{ textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>{r.name}</span><br/><span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{r.country} #{r.ranking}</span></div>
+        <div style={{ textAlign: "center" }}><span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>{r.name}</span><br/><span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{r.country} #{r.ranking}</span></div>
       </div>
     </div>
   );
@@ -677,7 +677,7 @@ var NextDuelCard = function(props) {
             <img src={joaoImg} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:16px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
           </div>
           <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>J. Fonseca</span>
-          <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
+          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
         </div>
 
         {/* VS */}
@@ -693,7 +693,7 @@ var NextDuelCard = function(props) {
             {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; }} /> : <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>?</span>}
           </div>
           <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{oppName}</span>
-          {oppCountry ? <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{oppCountry}{oppRanking ? " #" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>chave pendente</span>}
+          {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{oppCountry}{oppRanking ? " #" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>chave pendente</span>}
         </div>
       </div>
 
@@ -705,7 +705,7 @@ var NextDuelCard = function(props) {
               return (
                 <div key={i} style={{ textAlign: "center", minWidth: 36 }}>
                   <span style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block", lineHeight: 1 }}>{String(p[0]).padStart(2, "0")}</span>
-                  <span style={{ fontSize: 9, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>{p[1]}</span>
+                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>{p[1]}</span>
                 </div>
               );
             })}
@@ -734,7 +734,7 @@ var PixDonation = function() {
       <button onClick={function() { setShowModal(true); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: SANS }}>💚 Apoie via PIX</button>
       {showModal && (
         <div onClick={function() { setShowModal(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16, animation: "fadeInO 0.3s ease" }}>
-          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: 20, padding: 28, maxWidth: 360, width: "100%", textAlign: "center", position: "relative", animation: "slideU 0.3s ease" }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: 28, maxWidth: 360, width: "100%", textAlign: "center", position: "relative", animation: "slideU 0.3s ease" }}>
             <button onClick={function() { setShowModal(false); }} style={{ position: "absolute", top: 12, right: 16, background: "none", border: "none", color: DIM, fontSize: 18, cursor: "pointer" }}>✕</button>
             <div style={{ fontSize: 28, fontWeight: 800, fontFamily: SERIF, marginBottom: 8 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></div>
             <h3 style={{ margin: "0 0 6px", color: TEXT, fontSize: 18, fontFamily: SERIF }}>Apoie o Fonseca News</h3>
@@ -754,7 +754,7 @@ var PixDonation = function() {
 };
 
 // ===== SKELETON =====
-var Skeleton = function() { return (<div>{[...Array(4)].map(function(_, i) { return (<div key={i} style={{ padding: "22px 0", borderBottom: "1px solid " + BORDER, animation: "pulse 1.8s ease-in-out infinite", animationDelay: (i * .12) + "s" }}><div style={{ height: 12, width: 70, background: "#f0f0f0", borderRadius: 4, marginBottom: 10 }} /><div style={{ height: 16, width: "85%", background: "#f0f0f0", borderRadius: 4, marginBottom: 8 }} /><div style={{ height: 14, width: "60%", background: "#f5f5f5", borderRadius: 4 }} /></div>); })}</div>); };
+var Skeleton = function() { return (<div>{[...Array(4)].map(function(_, i) { return (<div key={i} style={{ padding: "22px 0", borderBottom: "1px solid " + BORDER, animation: "pulse 1.8s ease-in-out infinite", animationDelay: (i * .12) + "s" }}><div style={{ height: 12, width: 70, background: "rgba(255,255,255,0.06)", borderRadius: 4, marginBottom: 10 }} /><div style={{ height: 16, width: "85%", background: "rgba(255,255,255,0.06)", borderRadius: 4, marginBottom: 8 }} /><div style={{ height: 14, width: "60%", background: "#f5f5f5", borderRadius: 4 }} /></div>); })}</div>); };
 
 // ===== NEWS CARD =====
 var NewsCard = function(props) {
@@ -803,14 +803,14 @@ var NewsCard = function(props) {
         </div>
         {hasImg && (
           <img src={item.image} alt="" onError={function() { setImgErr(true); }}
-            style={{ width: 72, height: 72, borderRadius: 10, objectFit: "cover", flexShrink: 0, background: "#f0f0f0" }} loading="lazy" />
+            style={{ width: 72, height: 72, borderRadius: 10, objectFit: "cover", flexShrink: 0, background: "rgba(255,255,255,0.06)" }} loading="lazy" />
         )}
       </div>
     </article>
     {/* READING MODE */}
     {reading && (
       <div onClick={function() { setReading(false); }} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(6px)", display: "flex", alignItems: "flex-end", justifyContent: "center", animation: "fadeInO 0.25s ease" }}>
-        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", animation: "slideU 0.35s ease" }}>
+        <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "rgba(255,255,255,0.05)", borderRadius: "20px 20px 0 0", width: "100%", maxWidth: 560, maxHeight: "92vh", overflowY: "auto", animation: "slideU 0.35s ease" }}>
           <div style={{ textAlign: "center", padding: "10px 0 4px" }}><div style={{ width: 36, height: 4, borderRadius: 2, background: "#ddd", margin: "0 auto" }} /></div>
           <div style={{ padding: "8px 24px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -871,14 +871,14 @@ var CompactPoll = function(props) {
     <div style={{ background: "linear-gradient(135deg, #0a1a10 0%, #0d2818 100%)", borderRadius: 14, padding: "14px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-          <span style={{ fontSize: 12 }}>📊</span>
+          
           <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: GREEN, fontFamily: SANS }}>Enquete</span>
         </div>
         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.3 }}>{props.question}</p>
       </div>
       <div style={{ display: "flex", gap: 4, marginTop: 10 }}>
-        <button onClick={props.onVoteA} style={{ flex: 1, padding: "6px", background: "rgba(0,168,89,0.06)", border: "1px solid rgba(0,168,89,0.2)", borderRadius: 6, fontSize: 10, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: SANS }}>{props.optA}</button>
-        <button onClick={props.onVoteB} style={{ flex: 1, padding: "6px", background: "#f0f0f0", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: SANS }}>{props.optB}</button>
+        <button onClick={props.onVoteA} style={{ flex: 1, padding: "6px", background: "rgba(0,168,89,0.12)", border: "1px solid rgba(0,168,89,0.25)", borderRadius: 6, fontSize: 10, fontWeight: 700, color: GREEN, cursor: "pointer", fontFamily: SANS }}>{props.optA}</button>
+        <button onClick={props.onVoteB} style={{ flex: 1, padding: "6px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 6, fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.6)", cursor: "pointer", fontFamily: SANS }}>{props.optB}</button>
       </div>
     </div>
   );
@@ -887,13 +887,13 @@ var CompactPoll = function(props) {
 var CompactGame = function() {
   return (
     <a href="/game" style={{ textDecoration: "none", display: "block", height: "100%" }}>
-      <div style={{ background: "#f8f9fa", borderRadius: 10, padding: "14px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", border: "1px solid " + BORDER }}>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", borderRadius: 14, padding: "14px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-            <span style={{ fontSize: 12 }}>🎮</span>
-            <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: "#7C3AED", fontFamily: SANS }}>Jogo</span>
+            
+            <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", fontFamily: SANS, background: "#7C3AED", padding: "2px 6px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>Jogo</span>
           </div>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF, lineHeight: 1.3 }}>Tennis Career 26</p>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.3 }}>Tennis Career 26</p>
         </div>
         <div style={{ marginTop: 10, background: GREEN, padding: "6px 12px", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, fontFamily: SANS, textAlign: "center" }}>Jogar</div>
       </div>
@@ -904,12 +904,12 @@ var CompactGame = function() {
 var CompactRaquetes = function() {
   return (
     <a href="/raquetes" style={{ textDecoration: "none", display: "block", height: "100%" }}>
-      <div style={{ background: "#f8f9fa", borderRadius: 10, padding: "14px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", border: "1px solid " + BORDER }}>
+      <div style={{ background: "linear-gradient(135deg, #0a0a18 0%, #1a0a2e 100%)", borderRadius: 14, padding: "14px 12px", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-            <span style={{ fontSize: 8, fontWeight: 700, color: "#1a1a0a", fontFamily: SANS, background: YELLOW, padding: "1px 5px", borderRadius: 999 }}>Novo</span>
+            <span style={{ fontSize: 8, fontWeight: 700, color: "#1a1a0a", fontFamily: SANS, background: YELLOW, padding: "2px 6px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>Novo</span>
           </div>
-          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF, lineHeight: 1.3 }}>Venda sua raquete</p>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, lineHeight: 1.3 }}>Venda sua raquete</p>
         </div>
         <div style={{ marginTop: 10, background: YELLOW, padding: "6px 12px", borderRadius: 8, color: "#1a1a0a", fontSize: 11, fontWeight: 700, fontFamily: SANS, textAlign: "center" }}>Anunciar</div>
       </div>
@@ -961,55 +961,55 @@ var InstallBanner = function() {
   var handleDismiss = function() { setDismissed(true); try { localStorage.setItem("fn_install_banner", "1"); } catch(e) {} };
 
   return (
-    <div style={{ background: "#f8f9fa", borderRadius: 10, padding: "18px 16px", margin: "4px 0", position: "relative", border: "1px solid " + BORDER }}>
-      <button onClick={handleDismiss} style={{ position: "absolute", top: 10, right: 12, background: "#f0f0f0", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 12, cursor: "pointer", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+    <div style={{ background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 14, padding: "20px", margin: "4px 0", position: "relative" }}>
+      <button onClick={handleDismiss} style={{ position: "absolute", top: 10, right: 12, background: "rgba(255,255,255,0.06)", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 12, cursor: "pointer", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
 
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 48, height: 48, borderRadius: 14, background: "#f0f0f0", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <span style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 800 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ margin: "0 0 3px", fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Tenha o FN no seu celular</p>
-          <p style={{ margin: 0, fontSize: 11, color: SUB, fontFamily: SANS, lineHeight: 1.4 }}>Acesse com um toque, sem baixar nada. Como um app de verdade.</p>
+          <p style={{ margin: "0 0 3px", fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Tenha o FN no seu celular</p>
+          <p style={{ margin: 0, fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, lineHeight: 1.4 }}>Acesse com um toque, sem baixar nada. Como um app de verdade.</p>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#fff", borderRadius: 8, border: "1px solid " + BORDER }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid " + BORDER }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Acesso instantâneo</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Acesso instantâneo</span>
         </div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#fff", borderRadius: 8, border: "1px solid " + BORDER }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid " + BORDER }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Sempre atualizado</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Sempre atualizado</span>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#fff", borderRadius: 8, border: "1px solid " + BORDER }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid " + BORDER }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-          <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Tela cheia</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Tela cheia</span>
         </div>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#fff", borderRadius: 8, border: "1px solid " + BORDER }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "rgba(255,255,255,0.05)", borderRadius: 8, border: "1px solid " + BORDER }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Zero espaço</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Zero espaço</span>
         </div>
       </div>
 
-      <div style={{ marginTop: 14, padding: "10px 14px", background: "#fff", borderRadius: 10, border: "1px solid " + BORDER }}>
-        <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Como instalar — 3 toques:</p>
+      <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(255,255,255,0.05)", borderRadius: 10, border: "1px solid " + BORDER }}>
+        <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Como instalar — 3 toques:</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 18, height: 18, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>1</div>
-            <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Safari: toque em <strong style={{ color: TEXT }}>Compartilhar</strong> (↑) · Chrome: toque em <strong style={{ color: TEXT }}>⋮</strong></span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Safari: toque em <strong style={{ color: "rgba(255,255,255,0.7)" }}>Compartilhar</strong> (↑) · Chrome: toque em <strong style={{ color: "rgba(255,255,255,0.7)" }}>⋮</strong></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 18, height: 18, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>2</div>
-            <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}><strong style={{ color: TEXT }}>Adicionar à Tela de Início</strong></span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}><strong style={{ color: "rgba(255,255,255,0.7)" }}>Adicionar à Tela de Início</strong></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 18, height: 18, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>3</div>
-            <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Toque em <strong style={{ color: TEXT }}>Adicionar</strong> — pronto!</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Toque em <strong style={{ color: "rgba(255,255,255,0.7)" }}>Adicionar</strong> — pronto!</span>
           </div>
         </div>
       </div>
@@ -1187,19 +1187,19 @@ export default function JoaoFonsecaNews() {
   // Modal helper
   var Modal = function(p) { return (
     <div onClick={p.onClose} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInO 0.3s ease", overflowY: "auto" }}>
-      <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: 20, padding: "24px 20px", maxWidth: p.maxWidth || 440, width: "100%", maxHeight: "88vh", overflowY: "auto", animation: "slideU 0.4s ease" }}>
+      <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "rgba(255,255,255,0.05)", borderRadius: 20, padding: "24px 20px", maxWidth: p.maxWidth || 440, width: "100%", maxHeight: "88vh", overflowY: "auto", animation: "slideU 0.4s ease" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>{p.title}</h2>
           <button onClick={p.onClose} style={{ background: "none", border: "none", color: DIM, fontSize: 18, cursor: "pointer" }}>✕</button>
         </div>
-        {p.subtitle && <p style={{ margin: "-10px 0 12px", fontSize: 13, color: SUB, fontFamily: SANS }}>{p.subtitle}</p>}
+        {p.subtitle && <p style={{ margin: "-10px 0 12px", fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{p.subtitle}</p>}
         {p.children}
       </div>
     </div>
   ); };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#fff" }}>
+    <div style={{ minHeight: "100vh", background: "rgba(255,255,255,0.05)" }}>
       <style>{
         "@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');" +
         "*{box-sizing:border-box;margin:0;padding:0}" +
@@ -1262,7 +1262,7 @@ export default function JoaoFonsecaNews() {
         <section style={{ borderBottom: "1px solid " + BORDER }}>
           {!showMenu && (
             <button onClick={function() { setShowMenu(true); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Mais</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Mais</span>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
             </button>
           )}
@@ -1283,7 +1283,7 @@ export default function JoaoFonsecaNews() {
                 </button>
               </div>
               <button onClick={function() { setShowMenu(false); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Menos</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Menos</span>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="18 15 12 9 6 15" /></svg>
               </button>
             </>
@@ -1308,20 +1308,20 @@ export default function JoaoFonsecaNews() {
 
         {/* DISCOVER SECTION — subtle links */}
         <section style={{ padding: "20px 0", borderTop: "1px solid " + BORDER }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Descubra mais</p>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Descubra mais</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <a href="/regras" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
               <span style={{ fontSize: 18 }}>📖</span>
               <div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Novo no tênis?</span>
-                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Guia completo de regras pra acompanhar o João</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Guia completo de regras pra acompanhar o João</span>
               </div>
             </a>
             <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
               <span style={{ fontSize: 18 }}>🎬</span>
               <div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Melhores momentos</span>
-                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Highlights e jogadas no YouTube</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Highlights e jogadas no YouTube</span>
               </div>
             </a>
           </div>
@@ -1387,7 +1387,7 @@ export default function JoaoFonsecaNews() {
           {!fbSent ? (
             <div>
               {/* Rating */}
-              <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Como avalia o site?</p>
+              <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Como avalia o site?</p>
               <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
                 {[["😍","Incrível"],["😊","Bom"],["😐","Ok"],["😕","Pode melhorar"],["😤","Ruim"]].map(function(r) {
                   var isActive = fbRating === r[1];
@@ -1403,13 +1403,13 @@ export default function JoaoFonsecaNews() {
               {/* Name */}
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Seu nome (opcional)</label>
-                <input type="text" value={fbName} onChange={function(e) { setFbName(e.target.value); }} placeholder="Como quer ser chamado?" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid " + BORDER, borderRadius: 8, fontSize: 13, fontFamily: SANS, color: TEXT, background: "#fff", outline: "none", boxSizing: "border-box" }} onFocus={function(e){e.target.style.borderColor=GREEN;}} onBlur={function(e){e.target.style.borderColor=BORDER;}} />
+                <input type="text" value={fbName} onChange={function(e) { setFbName(e.target.value); }} placeholder="Como quer ser chamado?" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid " + BORDER, borderRadius: 8, fontSize: 13, fontFamily: SANS, color: TEXT, background: "rgba(255,255,255,0.05)", outline: "none", boxSizing: "border-box" }} onFocus={function(e){e.target.style.borderColor=GREEN;}} onBlur={function(e){e.target.style.borderColor=BORDER;}} />
               </div>
 
               {/* Message */}
               <div style={{ marginBottom: 16 }}>
                 <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Sua mensagem *</label>
-                <textarea value={fbMsg} onChange={function(e) { setFbMsg(e.target.value); }} placeholder="Fale o que quiser: elogios, críticas, sugestões, xingamentos... tudo é bem-vindo!" rows="4" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid " + BORDER, borderRadius: 8, fontSize: 13, fontFamily: SANS, color: TEXT, background: "#fff", outline: "none", resize: "vertical", boxSizing: "border-box" }} onFocus={function(e){e.target.style.borderColor=GREEN;}} onBlur={function(e){e.target.style.borderColor=BORDER;}} />
+                <textarea value={fbMsg} onChange={function(e) { setFbMsg(e.target.value); }} placeholder="Fale o que quiser: elogios, críticas, sugestões, xingamentos... tudo é bem-vindo!" rows="4" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid " + BORDER, borderRadius: 8, fontSize: 13, fontFamily: SANS, color: TEXT, background: "rgba(255,255,255,0.05)", outline: "none", resize: "vertical", boxSizing: "border-box" }} onFocus={function(e){e.target.style.borderColor=GREEN;}} onBlur={function(e){e.target.style.borderColor=BORDER;}} />
               </div>
 
               {/* Submit */}
@@ -1429,7 +1429,7 @@ export default function JoaoFonsecaNews() {
             <div style={{ textAlign: "center", padding: "16px 0" }}>
               <span style={{ fontSize: 48, display: "block", marginBottom: 12 }}>💚</span>
               <h3 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>Obrigado!</h3>
-              <p style={{ margin: "0 0 16px", fontSize: 13, color: SUB, fontFamily: SANS }}>Seu feedback foi enviado. Cada mensagem é lida pessoalmente.</p>
+              <p style={{ margin: "0 0 16px", fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Seu feedback foi enviado. Cada mensagem é lida pessoalmente.</p>
               <button onClick={function() { setShowFeedback(false); setFbSent(false); setFbMsg(""); setFbName(""); setFbRating(null); }} style={{ padding: "10px 20px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Fechar</button>
             </div>
           )}
@@ -1438,8 +1438,8 @@ export default function JoaoFonsecaNews() {
 
       {showInstallPopup && !popupDismissed && (function() {
         var device = detectDevice();
-        return (<div onClick={dismissPopup} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: device === "ios" ? "flex-end" : "center", justifyContent: "center", padding: device === "ios" ? 0 : 16, animation: "fadeInO 0.3s ease" }}><div onClick={function(e){e.stopPropagation();}} style={{ background: "#fff", borderRadius: device === "ios" ? "24px 24px 0 0" : 24, padding: "28px 24px", maxWidth: 380, width: "100%", maxHeight: "90vh", overflowY: "auto", animation: "slideU 0.4s ease", position: "relative" }}>
-          <button onClick={dismissPopup} style={{ position: "absolute", top: 14, right: 16, background: "#f0f0f0", border: "none", color: DIM, fontSize: 14, cursor: "pointer", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        return (<div onClick={dismissPopup} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: device === "ios" ? "flex-end" : "center", justifyContent: "center", padding: device === "ios" ? 0 : 16, animation: "fadeInO 0.3s ease" }}><div onClick={function(e){e.stopPropagation();}} style={{ background: "rgba(255,255,255,0.05)", borderRadius: device === "ios" ? "24px 24px 0 0" : 24, padding: "28px 24px", maxWidth: 380, width: "100%", maxHeight: "90vh", overflowY: "auto", animation: "slideU 0.4s ease", position: "relative" }}>
+          <button onClick={dismissPopup} style={{ position: "absolute", top: 14, right: 16, background: "rgba(255,255,255,0.06)", border: "none", color: DIM, fontSize: 14, cursor: "pointer", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
 
           {/* Hero */}
           <div style={{ textAlign: "center", marginBottom: 20 }}>
@@ -1472,7 +1472,7 @@ export default function JoaoFonsecaNews() {
           {/* iOS Steps */}
           {device === "ios" && (
             <div style={{ marginBottom: 8 }}>
-              <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>É rápido — 3 toques:</p>
+              <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>É rápido — 3 toques:</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>1</div>
@@ -1493,7 +1493,7 @@ export default function JoaoFonsecaNews() {
           {/* Android Steps */}
           {device === "android" && !deferredPrompt && (
             <div style={{ marginBottom: 8 }}>
-              <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>É rápido — 3 toques:</p>
+              <p style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>É rápido — 3 toques:</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <div style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>1</div>
