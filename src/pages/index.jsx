@@ -1067,7 +1067,7 @@ export default function JoaoFonsecaNews() {
     var touchIcon = document.querySelector('link[rel="apple-touch-icon"]');
     if (!touchIcon) { touchIcon = document.createElement("link"); touchIcon.rel = "apple-touch-icon"; document.head.appendChild(touchIcon); }
     touchIcon.href = "data:image/svg+xml," + encodeURIComponent(touchIconSvg);
-    var ogImg = "https://fonsecanews.com.br/api/og?title=" + encodeURIComponent("Notícias, quiz e palpites sobre João Fonseca") + "&ranking=" + encodeURIComponent("#" + (dp ? dp.ranking : 59));
+    var ogImg = "https://fonsecanews.com.br/og-image.PNG";
     var ogTags = [["og:title", "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 59) + " ATP"],["og:description", "Notícias, ranking, quiz, palpites e enquetes sobre João Fonseca. Site independente de fãs."],["og:type", "website"],["og:site_name", "Fonseca News"],["og:locale", "pt_BR"],["og:url", "https://fonsecanews.com.br"],["og:image", ogImg],["og:image:width", "1200"],["og:image:height", "630"],["twitter:card", "summary_large_image"],["twitter:site", "@JFonsecaNews"],["twitter:title", "Fonseca News · João Fonseca"],["twitter:description", "Notícias, quiz e palpites sobre o tenista brasileiro #" + (dp ? dp.ranking : 59) + " ATP"],["twitter:image", ogImg]];
     ogTags.forEach(function(pair) { var prop = pair[0]; var content = pair[1]; var isOg = prop.startsWith("og:"); var selector = isOg ? ('meta[property="' + prop + '"]') : ('meta[name="' + prop + '"]'); var tag = document.querySelector(selector); if (!tag) { tag = document.createElement("meta"); if (isOg) tag.setAttribute("property", prop); else tag.name = prop; document.head.appendChild(tag); } tag.content = content; });
     var descMeta = document.querySelector('meta[name="description"]');
