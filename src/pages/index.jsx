@@ -1110,7 +1110,7 @@ export default function JoaoFonsecaNews() {
     if (!link) { link = document.createElement("link"); link.rel = "manifest"; document.head.appendChild(link); }
     link.href = url;
     [["theme-color","#00A859"],["apple-mobile-web-app-capable","yes"],["apple-mobile-web-app-status-bar-style","default"],["apple-mobile-web-app-title","Fonseca News"]].forEach(function(pair) { var n = pair[0]; var c = pair[1]; var m = document.querySelector('meta[name="' + n + '"]'); if (!m) { m = document.createElement("meta"); m.name = n; document.head.appendChild(m); } m.content = c; });
-    document.title = "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 39) + " ATP";
+    document.title = "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 59) + " ATP";
     var faviconSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a1628"/><text x="3" y="24" font-family="Georgia,serif" font-weight="900" font-size="18" fill="#00A859">F</text><text x="17" y="24" font-family="Georgia,serif" font-weight="900" font-size="18" fill="#FFCB05">N</text></svg>';
     var favicon = document.querySelector('link[rel="icon"]');
     if (!favicon) { favicon = document.createElement("link"); favicon.rel = "icon"; document.head.appendChild(favicon); }
@@ -1119,12 +1119,12 @@ export default function JoaoFonsecaNews() {
     var touchIcon = document.querySelector('link[rel="apple-touch-icon"]');
     if (!touchIcon) { touchIcon = document.createElement("link"); touchIcon.rel = "apple-touch-icon"; document.head.appendChild(touchIcon); }
     touchIcon.href = "data:image/svg+xml," + encodeURIComponent(touchIconSvg);
-    var ogImg = "https://fonsecanews.com.br/api/og?title=" + encodeURIComponent("Notícias, quiz e palpites sobre João Fonseca") + "&ranking=" + encodeURIComponent("#" + (dp ? dp.ranking : 39));
-    var ogTags = [["og:title", "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 39) + " ATP"],["og:description", "Notícias, ranking, quiz, palpites e enquetes sobre João Fonseca. Site independente de fãs."],["og:type", "website"],["og:site_name", "Fonseca News"],["og:locale", "pt_BR"],["og:url", "https://fonsecanews.com.br"],["og:image", ogImg],["og:image:width", "1200"],["og:image:height", "630"],["twitter:card", "summary_large_image"],["twitter:site", "@JFonsecaNews"],["twitter:title", "Fonseca News · João Fonseca"],["twitter:description", "Notícias, quiz e palpites sobre o tenista brasileiro #" + (dp ? dp.ranking : 39) + " ATP"],["twitter:image", ogImg]];
+    var ogImg = "https://fonsecanews.com.br/api/og?title=" + encodeURIComponent("Notícias, quiz e palpites sobre João Fonseca") + "&ranking=" + encodeURIComponent("#" + (dp ? dp.ranking : 59));
+    var ogTags = [["og:title", "Fonseca News · João Fonseca #" + (dp ? dp.ranking : 59) + " ATP"],["og:description", "Notícias, ranking, quiz, palpites e enquetes sobre João Fonseca. Site independente de fãs."],["og:type", "website"],["og:site_name", "Fonseca News"],["og:locale", "pt_BR"],["og:url", "https://fonsecanews.com.br"],["og:image", ogImg],["og:image:width", "1200"],["og:image:height", "630"],["twitter:card", "summary_large_image"],["twitter:site", "@JFonsecaNews"],["twitter:title", "Fonseca News · João Fonseca"],["twitter:description", "Notícias, quiz e palpites sobre o tenista brasileiro #" + (dp ? dp.ranking : 59) + " ATP"],["twitter:image", ogImg]];
     ogTags.forEach(function(pair) { var prop = pair[0]; var content = pair[1]; var isOg = prop.startsWith("og:"); var selector = isOg ? ('meta[property="' + prop + '"]') : ('meta[name="' + prop + '"]'); var tag = document.querySelector(selector); if (!tag) { tag = document.createElement("meta"); if (isOg) tag.setAttribute("property", prop); else tag.name = prop; document.head.appendChild(tag); } tag.content = content; });
     var descMeta = document.querySelector('meta[name="description"]');
     if (!descMeta) { descMeta = document.createElement("meta"); descMeta.name = "description"; document.head.appendChild(descMeta); }
-    descMeta.content = "Fonseca News — Notícias, resultados, ranking, quiz e palpites sobre João Fonseca, tenista brasileiro #" + (dp ? dp.ranking : 39) + " ATP. Site independente de fãs com countdown, enquetes e calendário ATP 2026.";
+    descMeta.content = "Fonseca News — Notícias, resultados, ranking, quiz e palpites sobre João Fonseca, tenista brasileiro #" + (dp ? dp.ranking : 59) + " ATP. Site independente de fãs com countdown, enquetes e calendário ATP 2026.";
 
     // JSON-LD Structured Data
     var jsonLdId = "fn-jsonld";
@@ -1176,7 +1176,7 @@ export default function JoaoFonsecaNews() {
   var handleRefresh = async function() { await fetchNews(); };
 
   useEffect(function() { if (initDone.current) return; initDone.current = true; (async function() { if (!(await loadCache())) await fetchNews(); })(); }, []);
-  useEffect(function() { fetch("/api/stats").then(function(r) { return r.json(); }).then(function(d) { if (d.likes) setAllLikes(d.likes); if (d.visitors) { var el = document.getElementById("fn-visitors"); if (el) el.textContent = d.visitors; } }).catch(function() {}); var isNew = !localStorage.getItem("fn_visited"); if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} } }, []);
+  useEffect(function() { fetch("/api/stats").then(function(r) { return r.json(); }).then(function(d) { if (d.likes) setAllLikes(d.likes); if (d.visitors) { var el = document.getElementById("fn-visitors"); var wrap = document.getElementById("fn-visitors-wrap"); if (el) el.textContent = d.visitors; if (wrap) wrap.style.display = "inline"; } }).catch(function() {}); var isNew = !localStorage.getItem("fn_visited"); if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} } }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
   var dm = nextMatch || (news.length === 0 ? SAMPLE_NEXT_MATCH : null);
@@ -1223,11 +1223,10 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 700, color: TEXT, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}>Fonseca News</span>
                 {dp && <span style={{ fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: SANS, background: GREEN + "08", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0 }}>#{dp.ranking}</span>}
               </div>
-              <p style={{ margin: "2px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>Site de fãs{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}{dn.length > 0 ? " · " + dn.length + " notícias" : ""}</p>
+              <p style={{ margin: "2px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>Site de fãs{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}</p>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <a href="/raquetes" style={{ fontSize: 10, fontWeight: 600, color: "#b8860b", fontFamily: SANS, textDecoration: "none", padding: "5px 8px", borderRadius: 8, background: YELLOW + "0A", border: "1px solid " + YELLOW + "20", whiteSpace: "nowrap" }}>Venda sua raquete</a>
             <button onClick={handleRefresh} disabled={loading} style={{ width: 30, height: 30, borderRadius: 8, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
             </button>
@@ -1322,17 +1321,21 @@ export default function JoaoFonsecaNews() {
 
         {/* DISCOVER SECTION — subtle links */}
         <section style={{ padding: "20px 0", borderTop: "1px solid " + BORDER }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Descubra mais</p>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Explore também</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <a href="/regras" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
-              <span style={{ fontSize: 18 }}>📖</span>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: GREEN + "10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              </div>
               <div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Novo no tênis?</span>
                 <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Guia completo de regras pra acompanhar o João</span>
               </div>
             </a>
             <a href="https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights+2025" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
-              <span style={{ fontSize: 18 }}>🎬</span>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: RED + "10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
               <div>
                 <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Melhores momentos</span>
                 <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Highlights e jogadas no YouTube</span>
@@ -1361,7 +1364,7 @@ export default function JoaoFonsecaNews() {
 
           {/* Visitantes */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
-            <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}><span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}>...</span> visitantes</span>
+            <span id="fn-visitors-wrap" style={{ fontSize: 11, color: DIM, fontFamily: SANS, display: "none" }}><span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}></span> visitantes</span>
           </div>
 
           <p style={{ margin: "0 0 12px", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>📱 Adicione à tela inicial e use como app</p>
@@ -1374,7 +1377,7 @@ export default function JoaoFonsecaNews() {
 
       {showTitles && (<Modal title="🏆 Conquistas" subtitle="8 títulos na carreira" onClose={function(){setShowTitles(false);}} maxWidth={460}><div style={{marginBottom:16}}><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour</p>{[{t:"ATP 500 Basel",d:"Out 2025",det:"vs Davidovich Fokina · 6-3 6-4",note:"1º brasileiro a ganhar ATP 500"},{t:"ATP 250 Buenos Aires",d:"Fev 2025",det:"vs Cerúndolo · 6-4 7-6(1)",note:"Brasileiro mais jovem a ganhar ATP"}].map(function(t,i){return(<div key={i} style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>{t.det}</p>{t.note&&<p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>{t.note}</p>}</div>);})}</div><div style={{marginBottom:16}}><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:"#E8734A",fontFamily:SANS}}>Challengers</p>{[{t:"Phoenix",d:"Mar 2025"},{t:"Canberra",d:"Jan 2025"},{t:"Lexington",d:"Ago 2024",note:"1º título profissional"}].map(function(t,i){return(<div key={i} style={{padding:"8px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:13,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div>{t.note&&<p style={{margin:"2px 0 0",fontSize:11,color:"#E8734A",fontFamily:SANS,fontWeight:600}}>{t.note}</p>}</div>);})}</div><div><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:"#6D35D0",fontFamily:SANS}}>Outros</p>{[{t:"NextGen ATP Finals",d:"Dez 2024"},{t:"Duplas Rio Open",d:"Fev 2026"},{t:"US Open Juvenil",d:"2023"},{t:"Copa Davis Juvenil",d:"2023"}].map(function(t,i){return(<div key={i} style={{padding:"6px 0",borderBottom:i<3?"1px solid #f0f0f0":"none"}}><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:13,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div></div>);})}</div></Modal>)}
 
-      {showRanking && (<Modal title="📈 Evolução no Ranking" subtitle="Posição ATP ao longo do tempo" onClose={function(){setShowRanking(false);}} maxWidth={650}><RankingChart currentRanking={dp ? dp.ranking : 39} /></Modal>)}
+      {showRanking && (<Modal title="📈 Evolução no Ranking" subtitle="Posição ATP ao longo do tempo" onClose={function(){setShowRanking(false);}} maxWidth={650}><RankingChart currentRanking={dp ? dp.ranking : 59} /></Modal>)}
       {showTimeline && (<Modal title="📅 Timeline" subtitle="De Ipanema ao Top 40" onClose={function(){setShowTimeline(false);}} maxWidth={500}><CareerTimeline /></Modal>)}
       {showNextGen && (<Modal title="⚡ Next Gen" subtitle="Os 4 maiores talentos sub-21" onClose={function(){setShowNextGen(false);}} maxWidth={650}><NextGenComparator /></Modal>)}
       {showCalendar && (<Modal title="🗓️ Calendário ATP 2026" subtitle="Grand Slams, Masters e Finals" onClose={function(){setShowCalendar(false);}} maxWidth={520}><ATPCalendar /></Modal>)}
