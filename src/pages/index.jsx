@@ -1023,6 +1023,11 @@ export default function JoaoFonsecaNews() {
   var _visibleCount = useState(12); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
+  var _showFeedback = useState(false); var showFeedback = _showFeedback[0]; var setShowFeedback = _showFeedback[1];
+  var _fbName = useState(""); var fbName = _fbName[0]; var setFbName = _fbName[1];
+  var _fbMsg = useState(""); var fbMsg = _fbMsg[0]; var setFbMsg = _fbMsg[1];
+  var _fbRating = useState(null); var fbRating = _fbRating[0]; var setFbRating = _fbRating[1];
+  var _fbSent = useState(false); var fbSent = _fbSent[0]; var setFbSent = _fbSent[1];
 
   var handleSiteFeedback = function(vote) { if (siteFeedback) return; fetch("/api/feedback?vote=" + vote, { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) {}).catch(function() {}); setSiteFeedback(vote); try { localStorage.setItem("fn_site_fb", vote); } catch(e) {} };
   var initDone = useRef(false);
@@ -1259,11 +1264,10 @@ export default function JoaoFonsecaNews() {
 
           {/* Feedback + Visitantes */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 16 }}>
-            <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{siteFeedback ? (siteFeedback === "up" ? "💚 Obrigado!" : "Vamos melhorar!") : "Gostando do site?"}</span>
-            {!siteFeedback && (<div style={{ display: "flex", gap: 4 }}>
-              <button onClick={function() { handleSiteFeedback("up"); }} style={{ background: "none", border: "1px solid " + GREEN + "25", borderRadius: 6, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg></button>
-              <button onClick={function() { handleSiteFeedback("down"); }} style={{ background: "none", border: "1px solid " + RED + "25", borderRadius: 6, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="2"><path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/></svg></button>
-            </div>)}
+            <button onClick={function() { setShowFeedback(true); }} style={{ background: "none", border: "1px solid " + GREEN + "25", borderRadius: 8, padding: "6px 14px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span style={{ fontSize: 11, fontWeight: 600, color: GREEN, fontFamily: SANS }}>Deixe seu feedback</span>
+            </button>
             <span style={{ color: "#e0e0e0" }}>·</span>
             <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}><span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}>...</span> visitantes</span>
           </div>
@@ -1292,6 +1296,61 @@ export default function JoaoFonsecaNews() {
       {showShare && (<Modal title="Compartilhar" onClose={function(){setShowShare(false);}} maxWidth={340}><p style={{margin:"0 0 14px",fontSize:13,color:SUB,fontFamily:SANS,textAlign:"center"}}>Indique o Fonseca News!</p><div style={{display:"flex",flexDirection:"column",gap:8}}><a href={"https://wa.me/?text="+encodeURIComponent("🎾 Fonseca News — Acompanhe o João Fonseca! fonsecanews.com.br")} target="_blank" rel="noopener noreferrer" style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:BG_ALT,borderRadius:12,textDecoration:"none",border:"1px solid "+BORDER}}><span style={{fontSize:18}}>💬</span><span style={{fontSize:13,fontWeight:600,color:TEXT,fontFamily:SANS}}>WhatsApp</span></a><a href={"mailto:?subject="+encodeURIComponent("Fonseca News")+"&body="+encodeURIComponent("fonsecanews.com.br")} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:BG_ALT,borderRadius:12,textDecoration:"none",border:"1px solid "+BORDER}}><span style={{fontSize:18}}>✉️</span><span style={{fontSize:13,fontWeight:600,color:TEXT,fontFamily:SANS}}>Email</span></a><button onClick={function(){navigator.clipboard.writeText("fonsecanews.com.br").then(function(){setShowShare(false);});}} style={{display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:BG_ALT,borderRadius:12,border:"1px solid "+BORDER,cursor:"pointer",width:"100%"}}><span style={{fontSize:18}}>📋</span><span style={{fontSize:13,fontWeight:600,color:TEXT,fontFamily:SANS}}>Copiar link</span></button></div></Modal>)}
 
       {/* INSTALL POPUP */}
+      {/* FEEDBACK MODAL */}
+      {showFeedback && (
+        <Modal title="Feedback" subtitle="Sua opinião é importante pra gente" onClose={function(){setShowFeedback(false);}} maxWidth={420}>
+          {!fbSent ? (
+            <div>
+              {/* Rating */}
+              <p style={{ margin: "0 0 8px", fontSize: 12, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Como avalia o site?</p>
+              <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+                {[["😍","Incrível"],["😊","Bom"],["😐","Ok"],["😕","Pode melhorar"],["😤","Ruim"]].map(function(r) {
+                  var isActive = fbRating === r[1];
+                  return (
+                    <button key={r[1]} onClick={function() { setFbRating(r[1]); }} style={{ flex: 1, padding: "10px 4px", background: isActive ? GREEN + "10" : BG_ALT, border: "1.5px solid " + (isActive ? GREEN : BORDER), borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                      <span style={{ fontSize: 20, display: "block", marginBottom: 2 }}>{r[0]}</span>
+                      <span style={{ fontSize: 9, color: isActive ? GREEN : DIM, fontFamily: SANS, fontWeight: 600 }}>{r[1]}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Name */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Seu nome (opcional)</label>
+                <input type="text" value={fbName} onChange={function(e) { setFbName(e.target.value); }} placeholder="Como quer ser chamado?" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid " + BORDER, borderRadius: 8, fontSize: 13, fontFamily: SANS, color: TEXT, background: "#fff", outline: "none", boxSizing: "border-box" }} onFocus={function(e){e.target.style.borderColor=GREEN;}} onBlur={function(e){e.target.style.borderColor=BORDER;}} />
+              </div>
+
+              {/* Message */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>Sua mensagem *</label>
+                <textarea value={fbMsg} onChange={function(e) { setFbMsg(e.target.value); }} placeholder="Fale o que quiser: elogios, críticas, sugestões, xingamentos... tudo é bem-vindo!" rows="4" style={{ width: "100%", padding: "10px 12px", border: "1.5px solid " + BORDER, borderRadius: 8, fontSize: 13, fontFamily: SANS, color: TEXT, background: "#fff", outline: "none", resize: "vertical", boxSizing: "border-box" }} onFocus={function(e){e.target.style.borderColor=GREEN;}} onBlur={function(e){e.target.style.borderColor=BORDER;}} />
+              </div>
+
+              {/* Submit */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={function() {
+                  if (!fbMsg.trim() || fbMsg.trim().length < 3) return;
+                  fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: fbName || "Anônimo", message: fbMsg, rating: fbRating }) })
+                    .then(function(r) { return r.json(); })
+                    .then(function() { setFbSent(true); })
+                    .catch(function() { setFbSent(true); });
+                }} disabled={!fbMsg.trim() || fbMsg.trim().length < 3} style={{ flex: 1, padding: "12px", background: fbMsg.trim().length >= 3 ? GREEN : DIM, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: fbMsg.trim().length >= 3 ? "pointer" : "default", fontFamily: SANS, opacity: fbMsg.trim().length >= 3 ? 1 : 0.5 }}>Enviar feedback</button>
+              </div>
+
+              <p style={{ margin: "10px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>Seu feedback vai direto pro criador do site. Sem filtros.</p>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center", padding: "16px 0" }}>
+              <span style={{ fontSize: 48, display: "block", marginBottom: 12 }}>💚</span>
+              <h3 style={{ margin: "0 0 6px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>Obrigado!</h3>
+              <p style={{ margin: "0 0 16px", fontSize: 13, color: SUB, fontFamily: SANS }}>Seu feedback foi enviado. Cada mensagem é lida pessoalmente.</p>
+              <button onClick={function() { setShowFeedback(false); setFbSent(false); setFbMsg(""); setFbName(""); setFbRating(null); }} style={{ padding: "10px 20px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Fechar</button>
+            </div>
+          )}
+        </Modal>
+      )}
+
       {showInstallPopup && !popupDismissed && (function() {
         var device = detectDevice();
         return (<div onClick={dismissPopup} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: device === "ios" ? "flex-end" : "center", justifyContent: "center", padding: device === "ios" ? 0 : 16, animation: "fadeInO 0.3s ease" }}><div onClick={function(e){e.stopPropagation();}} style={{ background: "#fff", borderRadius: device === "ios" ? "24px 24px 0 0" : 24, padding: "28px 24px", maxWidth: 380, width: "100%", maxHeight: "90vh", overflowY: "auto", animation: "slideU 0.4s ease", position: "relative" }}>
