@@ -1043,11 +1043,10 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, n
       <CompactRaquetes key="compact-raquetes" />
     </DualBanner>,
     <VideoBanner key="video-banner" onOpen={onOpenVideos} />,
-    <InstallBanner key="install-banner" />,
     <RegrasBanner key="regras-banner" />,
   ];
   // 4 news + 1 banner pattern
-  var insertAfter = [4, 8, 12, 16, 20, 24];
+  var insertAfter = [4, 8, 12, 16, 20];
   var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
@@ -1308,6 +1307,9 @@ export default function JoaoFonsecaNews() {
             </>
           )}
         </section>
+
+        {/* INSTALL CTA — structural section */}
+        <InstallBanner />
 
         {/* FOOTER */}
         <footer style={{ padding: "28px 0", borderTop: "1px solid " + BORDER, marginTop: 8 }}>
