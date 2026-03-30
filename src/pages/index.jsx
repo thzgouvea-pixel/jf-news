@@ -962,10 +962,10 @@ var InstallBanner = function() {
 
   return (
     <div style={{ background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 14, padding: "20px", margin: "4px 0", position: "relative" }}>
-      <button onClick={handleDismiss} style={{ position: "absolute", top: 10, right: 12, background: "#f0f0f0", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 12, cursor: "pointer", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+      <button onClick={handleDismiss} style={{ position: "absolute", top: 10, right: 12, background: "rgba(255,255,255,0.1)", border: "none", color: "rgba(255,255,255,0.4)", fontSize: 12, cursor: "pointer", width: 22, height: 22, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
 
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 48, height: 48, borderRadius: 14, background: "#f0f0f0", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <div style={{ width: 48, height: 48, borderRadius: 14, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
           <span style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 800 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -977,39 +977,39 @@ var InstallBanner = function() {
       <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#fff", borderRadius: 8, border: "1px solid " + BORDER }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Acesso instantâneo</span>
+          <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Acesso instantâneo</span>
         </div>
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#fff", borderRadius: 8, border: "1px solid " + BORDER }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Sempre atualizado</span>
+          <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Sempre atualizado</span>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#fff", borderRadius: 8, border: "1px solid " + BORDER }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Tela cheia</span>
+          <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Tela cheia</span>
         </div>
         <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", background: "#fff", borderRadius: 8, border: "1px solid " + BORDER }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Zero espaço</span>
+          <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Zero espaço</span>
         </div>
       </div>
 
       <div style={{ marginTop: 14, padding: "10px 14px", background: "#fff", borderRadius: 10, border: "1px solid " + BORDER }}>
-        <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Como instalar — 3 toques:</p>
+        <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Como instalar — 3 toques:</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 18, height: 18, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>1</div>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Safari: toque em <strong style={{ color: TEXT }}>Compartilhar</strong> (↑) · Chrome: toque em <strong style={{ color: TEXT }}>⋮</strong></span>
+            <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Safari: toque em <strong style={{ color: TEXT }}>Compartilhar</strong> (↑) · Chrome: toque em <strong style={{ color: TEXT }}>⋮</strong></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 18, height: 18, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>2</div>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}><strong style={{ color: TEXT }}>Adicionar à Tela de Início</strong></span>
+            <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}><strong style={{ color: TEXT }}>Adicionar à Tela de Início</strong></span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 18, height: 18, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>3</div>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>Toque em <strong style={{ color: TEXT }}>Adicionar</strong> — pronto!</span>
+            <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Toque em <strong style={{ color: TEXT }}>Adicionar</strong> — pronto!</span>
           </div>
         </div>
       </div>
