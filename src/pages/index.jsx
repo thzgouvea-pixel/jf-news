@@ -936,6 +936,22 @@ var CompactRival = function() {
   );
 };
 
+var RegrasBanner = function() {
+  return (
+    <a href="/regras" style={{ textDecoration: "none", display: "block" }}>
+      <div style={{ background: "linear-gradient(135deg, #1a2a1a 0%, #0d2818 100%)", borderRadius: 14, padding: "18px 20px", margin: "4px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+          <span style={{ fontSize: 13 }}>📖</span>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: GREEN, fontFamily: SANS }}>Para iniciantes</span>
+        </div>
+        <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>Novo no mundo do tênis?</p>
+        <p style={{ margin: "0 0 12px", fontSize: 12, color: "rgba(255,255,255,0.45)", fontFamily: SANS, lineHeight: 1.5 }}>Preparamos um guia completo com as regras básicas pra você acompanhar cada ponto do João.</p>
+        <div style={{ display: "inline-block", background: GREEN, padding: "8px 16px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: SANS }}>Conferir regras →</div>
+      </div>
+    </a>
+  );
+};
+
 var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, nextMatch, pollData) {
   var elements = [];
   var banners = [
@@ -946,9 +962,10 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, n
       <CompactRaquetes key="compact-raquetes" />
     </DualBanner>,
     <VideoBanner key="video-banner" onOpen={onOpenVideos} />,
+    <RegrasBanner key="regras-banner" />,
   ];
   // 4 news + 1 banner pattern
-  var insertAfter = [4, 8, 12, 16];
+  var insertAfter = [4, 8, 12, 16, 20];
   var bannerIdx = 0;
   newsItems.forEach(function(item, i) {
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} />);
@@ -1132,7 +1149,7 @@ export default function JoaoFonsecaNews() {
           )}
           {showMenu && (
             <>
-              <div style={{ padding: "10px 0 0", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, animation: "fadeIn 0.2s ease" }}>
+              <div style={{ padding: "10px 0 0", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, animation: "fadeIn 0.2s ease" }}>
                 <button onClick={function(){setShowTitles(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Conquistas</span>
@@ -1145,10 +1162,6 @@ export default function JoaoFonsecaNews() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
                 </button>
-                <a href="/regras" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Regras</span>
-                </a>
               </div>
               <button onClick={function() { setShowMenu(false); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Menos</span>
