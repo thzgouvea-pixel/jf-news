@@ -56,7 +56,6 @@ var CURIOSIDADES = [
 ];
 
 var CITACOES = [
-  { text: "João é um talento incrível. Ele tem um saque muito poderoso dos dois lados.", author: "Jannik Sinner", context: "após Indian Wells 2026" },
   { text: "Estou muito feliz com o momento em que estou agora, mas claro que quero mais.", author: "João Fonseca", context: "ao New York Times" },
   { text: "Sou confiante e acho que posso fazer grandes coisas, mas também preciso manter os pés no chão.", author: "João Fonseca", context: "ao New York Times" },
 ];
@@ -201,14 +200,6 @@ export default function Biografia() {
                 </div>
               );
             })}
-          </div>
-        </section>
-
-        {/* CITAÇÃO 3 */}
-        <section style={{ padding: "0 0 28px" }}>
-          <div style={{ background: "#f8f8f8", borderRadius: 14, padding: "20px", borderLeft: "3px solid " + GREEN }}>
-            <p style={{ margin: "0 0 8px", fontSize: 15, fontStyle: "italic", color: TEXT, fontFamily: SERIF, lineHeight: 1.6 }}>"{CITACOES[2].text}"</p>
-            <p style={{ margin: 0, fontSize: 11, color: SUB, fontFamily: SANS }}><strong>{CITACOES[2].author}</strong> · {CITACOES[2].context}</p>
           </div>
         </section>
 
