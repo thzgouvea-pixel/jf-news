@@ -1191,17 +1191,17 @@ export default function JoaoFonsecaNews() {
         {/* QUICK NAV */}
         <section style={{ padding: "14px 0" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 }}>
-            <a href="/biografia" style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Biografia</span>
+            <a href="/biografia" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Biografia</span>
             </a>
-            <button onClick={function(){setShowRanking(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Ranking</span>
+            <button onClick={function(){setShowRanking(true);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Ranking</span>
             </button>
-            <button onClick={function(){setShowCalendar(true);}} style={{ padding: "14px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", textAlign: "center" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 6px" }}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span style={{ fontSize: 11, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Calendário</span>
+            <button onClick={function(){setShowCalendar(true);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Calendário</span>
             </button>
           </div>
         </section>
