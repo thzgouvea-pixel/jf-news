@@ -1350,6 +1350,13 @@ export default function JoaoFonsecaNews() {
         {/* RECENT FORM */}
         <RecentFormStrip form={recentForm} />
 
+        {/* PRIZE MONEY */}
+        <div style={{ padding: "14px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Prize money</span>
+          <span style={{ fontSize: 18, fontWeight: 800, color: GREEN, fontFamily: SANS }}>US$ 2.8M</span>
+          <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>na carreira</span>
+        </div>
+
         {/* QUICK NAV */}
         <section style={{ padding: "14px 0" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
@@ -1436,6 +1443,7 @@ export default function JoaoFonsecaNews() {
           {(function() {
             var partners = [
               { image: "/partner-banner-1.svg", url: "mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News", alt: "Fonseca News - Seja parceiro" },
+              { image: "/partner-banner-2.svg", url: "https://www.amazon.com.br/dp/8520468977", alt: "Meus Robôs - Ben-Hur Correia" },
             ];
             var _ci = useState(0);
             var currentIdx = _ci[0];
@@ -1450,8 +1458,19 @@ export default function JoaoFonsecaNews() {
             var p = partners[currentIdx];
             return (
               <div>
-                <a href={p.url} style={{ display: "block", borderRadius: 12, overflow: "hidden", border: "1px solid " + BORDER, transition: "opacity 0.4s ease" }}>
-                  <img src={p.image} alt={p.alt} style={{ width: "100%", height: "auto", display: "block" }} />
+                <a href={p.url} target={p.url.startsWith("mailto") ? undefined : "_blank"} rel={p.url.startsWith("mailto") ? undefined : "noopener noreferrer"} style={{ display: "block", borderRadius: 12, overflow: "hidden", border: "1px solid " + BORDER, textDecoration: "none", transition: "opacity 0.4s ease" }}>
+                  {p.image ? (
+                    <img src={p.image} alt={p.alt} style={{ width: "100%", height: "auto", display: "block" }} />
+                  ) : (
+                    <div style={{ padding: "22px 20px", background: BG_ALT, display: "flex", alignItems: "center", gap: 14 }}>
+                      <span style={{ fontSize: 28, flexShrink: 0 }}>{p.name.substring(0, 2)}</span>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF, display: "block" }}>{p.name.substring(2).trim()}</span>
+                        <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{p.desc}</span>
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: p.color || GREEN, fontFamily: SANS, flexShrink: 0 }}>Comprar →</span>
+                    </div>
+                  )}
                 </a>
                 {partners.length > 1 && (
                   <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10 }}>
