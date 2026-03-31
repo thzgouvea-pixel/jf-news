@@ -6,10 +6,11 @@
 import { kv } from "@vercel/kv";
 
 var FONSECA_TEAM_ID = 403869;
-var RAPIDAPI_HOST = "sofascore.p.rapidapi.com";
+var RAPIDAPI_HOST = "sofascore6.p.rapidapi.com";
 
 async function sofaFetch(path, apiKey) {
-  var res = await fetch("https://" + RAPIDAPI_HOST + path, {
+  var url = "https://" + RAPIDAPI_HOST + "/api/sofascore" + path;
+  var res = await fetch(url, {
     headers: {
       "x-rapidapi-host": RAPIDAPI_HOST,
       "x-rapidapi-key": apiKey
