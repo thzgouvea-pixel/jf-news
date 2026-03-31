@@ -8,6 +8,7 @@ function generateSitemap() {
     { url: SITE, changefreq: "hourly", priority: "1.0" },
     { url: SITE + "/raquetes", changefreq: "weekly", priority: "0.7" },
     { url: SITE + "/regras", changefreq: "monthly", priority: "0.8" },
+    { url: SITE + "/biografia", changefreq: "monthly", priority: "0.9" },
   ];
 
   var xml = '<?xml version="1.0" encoding="UTF-8"?>';
