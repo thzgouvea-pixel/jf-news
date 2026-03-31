@@ -840,6 +840,135 @@ var NewsCard = function(props) {
   );
 };
 
+// ===== MATCH STATS CARD =====
+var MatchStatsCard = function(props) {
+  var stats = props.stats;
+  if (!stats || !stats.fonseca) return null;
+  var f = stats.fonseca;
+  var o = stats.opponent;
+  var statRows = [
+    { label: "Aces", fVal: f.aces || f.service_aces || 0, oVal: o.aces || o.service_aces || 0, color: "#2563EB" },
+    { label: "Duplas faltas", fVal: f.double_faults || 0, oVal: o.double_faults || 0, color: "#c0392b", invert: true },
+    { label: "1º serviço %", fVal: f.first_serve_percentage || f["1st_serve"] || 0, oVal: o.first_serve_percentage || o["1st_serve"] || 0, color: GREEN, pct: true },
+    { label: "Winners", fVal: f.winners || 0, oVal: o.winners || 0, color: "#b8860b" },
+    { label: "Erros não-forçados", fVal: f.unforced_errors || 0, oVal: o.unforced_errors || 0, color: "#c0392b", invert: true },
+    { label: "Break points", fVal: f.break_points_converted || f.break_points_won || 0, oVal: o.break_points_converted || o.break_points_won || 0, color: "#6D35D0" },
+  ];
+  // Filter out rows where both values are 0
+  statRows = statRows.filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
+  if (statRows.length === 0) return null;
+  var isWin = stats.result === "V";
+  return (
+    <div style={{ padding: "20px 0", background: BG_ALT, borderRadius: 12, margin: "4px 0" }}>
+      <div style={{ padding: "0 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Stats do jogo</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "0A" : RED + "0A", padding: "2px 8px", borderRadius: 999 }}>{isWin ? "V" : "D"} {stats.score}</span>
+        </div>
+        <p style={{ margin: "0 0 14px", fontSize: 13, color: SUB, fontFamily: SANS }}>vs {stats.opponent_name} · {stats.tournament}</p>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10, padding: "0 4px" }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, fontFamily: SANS }}>Fonseca</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: SUB, fontFamily: SANS }}>{stats.opponent_name ? stats.opponent_name.split(" ").pop() : "Adv."}</span>
+        </div>
+        {statRows.map(function(row, i) {
+          var fMax = Math.max(row.fVal, row.oVal, 1);
+          var fPct = row.pct ? row.fVal : Math.round((row.fVal / fMax) * 100);
+          var oPct = row.pct ? row.oVal : Math.round((row.oVal / fMax) * 100);
+          var fBetter = row.invert ? row.fVal < row.oVal : row.fVal > row.oVal;
+          return (
+            <div key={i} style={{ marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: fBetter ? TEXT : DIM, fontFamily: SANS }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
+                <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{row.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: !fBetter ? TEXT : DIM, fontFamily: SANS }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+              </div>
+              <div style={{ display: "flex", gap: 4, height: 4 }}>
+                <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
+                  <div style={{ height: 4, background: fBetter ? GREEN : "#ddd", borderRadius: 2, width: Math.max(fPct, 8) + "%", transition: "width 0.5s" }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ height: 4, background: !fBetter ? RED : "#ddd", borderRadius: 2, width: Math.max(oPct, 8) + "%", transition: "width 0.5s" }} />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+// ===== H2H CARD =====
+var H2HCard = function(props) {
+  var h2h = props.h2h;
+  var nextMatch = props.nextMatch;
+  if (!h2h || !nextMatch || !nextMatch.opponent_name || nextMatch.opponent_name === "A definir") return null;
+  var oppName = nextMatch.opponent_name;
+  var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
+  return (
+    <div style={{ padding: "18px 20px", background: BG_ALT, borderRadius: 12, margin: "4px 0", borderLeft: "3px solid " + RED }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: RED, fontFamily: SANS }}>Confronto direto</span>
+        <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{nextMatch.tournament_name}</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 20, marginBottom: h2h.pastMatches && h2h.pastMatches.length > 0 ? 12 : 0 }}>
+        <div style={{ textAlign: "center" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Fonseca</span>
+          <br/><span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>🇧🇷</span>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 22, fontWeight: 800, color: GREEN, fontFamily: SANS }}>{h2h.homeWins || 0}</span>
+            <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>VS</span>
+            <span style={{ fontSize: 22, fontWeight: 800, color: RED, fontFamily: SANS }}>{h2h.awayWins || 0}</span>
+          </div>
+        </div>
+        <div style={{ textAlign: "center" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>{oppShort}</span>
+          <br/><span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{nextMatch.opponent_country || ""}</span>
+        </div>
+      </div>
+      {h2h.pastMatches && h2h.pastMatches.length > 0 && (
+        <div>
+          {h2h.pastMatches.slice(0, 3).map(function(pm, i) {
+            var fonsecaWon = (pm.homePlayer && pm.homePlayer.includes("Fonseca") && pm.winner === "home") || (pm.awayPlayer && pm.awayPlayer.includes("Fonseca") && pm.winner === "away");
+            return (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderTop: i === 0 ? "1px solid " + BORDER : "none" }}>
+                <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{pm.tournament} · {pm.round}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: fonsecaWon ? GREEN : RED, fontFamily: SANS }}>{pm.score}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ===== RECENT FORM STRIP =====
+var RecentFormStrip = function(props) {
+  var form = props.form;
+  if (!form || form.length === 0) return null;
+  return (
+    <div style={{ padding: "14px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+      <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Forma recente</span>
+      <div style={{ display: "flex", gap: 4 }}>
+        {form.map(function(m, i) {
+          var isWin = m.result === "V";
+          return (
+            <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 24, height: 24, borderRadius: 6, background: isWin ? GREEN + "12" : RED + "12", border: "1px solid " + (isWin ? GREEN + "25" : RED + "25"), display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS }}>{isWin ? "V" : "D"}</span>
+            </div>
+          );
+        })}
+      </div>
+      <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>
+        {form.filter(function(m) { return m.result === "V"; }).length}/{form.length}
+      </span>
+    </div>
+  );
+};
+
 // ===== BUILD FEED =====
 // ===== DUAL BANNER WRAPPER =====
 var DualBanner = function(props) {
@@ -982,7 +1111,7 @@ var RegrasBanner = function() {
   );
 };
 
-var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, nextMatch, pollData) {
+var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, nextMatch, pollData, matchStats, h2hData) {
   var elements = [];
   var banners = [
     <MatchPrediction key="prediction-bar" match={nextMatch} />,
@@ -997,6 +1126,8 @@ var buildFeed = function(newsItems, season, lastMatch, onOpenVideos, allLikes, n
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} noBorder={hideBorder} />);
     // Thin inline separators
     if (i + 1 === 2 && lastMatch) elements.push(<LastMatchBar key="last-match-bar" match={lastMatch} />);
+    if (i + 1 === 3 && matchStats) elements.push(<MatchStatsCard key="match-stats" stats={matchStats} />);
+    if (i + 1 === 5 && h2hData && nextMatch) elements.push(<H2HCard key="h2h-card" h2h={h2hData} nextMatch={nextMatch} />);
     if (i + 1 === 6 && season) elements.push(<SeasonBar key="season-bar" season={season} />);
     if (i + 1 === 10) elements.push(<DailyPoll key="daily-poll" />);
     // Main banners
@@ -1033,6 +1164,9 @@ export default function JoaoFonsecaNews() {
   var _scal = useState(false); var showCalendar = _scal[0]; var setShowCalendar = _scal[1];
   var _svid = useState(false); var showVideos = _svid[0]; var setShowVideos = _svid[1];
   var _allLikes = useState({}); var allLikes = _allLikes[0]; var setAllLikes = _allLikes[1];
+  var _matchStats = useState(null); var matchStats = _matchStats[0]; var setMatchStats = _matchStats[1];
+  var _h2hData = useState(null); var h2hData = _h2hData[0]; var setH2hData = _h2hData[1];
+  var _recentForm = useState(null); var recentForm = _recentForm[0]; var setRecentForm = _recentForm[1];
   var _visibleCount = useState(12); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
@@ -1124,7 +1258,19 @@ export default function JoaoFonsecaNews() {
   var handleRefresh = async function() { await fetchNews(); };
 
   useEffect(function() { if (initDone.current) return; initDone.current = true; (async function() { if (!(await loadCache())) await fetchNews(); })(); }, []);
-  useEffect(function() { fetch("/api/stats").then(function(r) { return r.json(); }).then(function(d) { if (d.likes) setAllLikes(d.likes); if (d.visitors) { var el = document.getElementById("fn-visitors"); var wrap = document.getElementById("fn-visitors-wrap"); if (el) el.textContent = d.visitors; if (wrap) wrap.style.display = "inline"; } }).catch(function() {}); var isNew = !localStorage.getItem("fn_visited"); if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} } }, []);
+  useEffect(function() { fetch("/api/stats").then(function(r) { return r.json(); }).then(function(d) { if (d.likes) setAllLikes(d.likes); if (d.visitors) { var el = document.getElementById("fn-visitors"); var wrap = document.getElementById("fn-visitors-wrap"); if (el) el.textContent = d.visitors; if (wrap) wrap.style.display = "inline"; } }).catch(function() {}); var isNew = !localStorage.getItem("fn_visited"); if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
+    // Fetch SofaScore data (match stats, H2H, form)
+    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
+      if (d.matchStats) setMatchStats(d.matchStats);
+      if (d.h2h) setH2hData(d.h2h);
+      if (d.recentForm) setRecentForm(d.recentForm);
+      // Override ranking/season/matches if SofaScore has fresher data
+      if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking, rankingChange: d.ranking.previousRanking ? (d.ranking.previousRanking - d.ranking.ranking) : 0 }) : { ranking: d.ranking.ranking }; });
+      if (d.season && d.season.wins !== undefined) setSeason(d.season);
+      if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
+      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
+    }).catch(function() {});
+  }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
   var dm = nextMatch || (news.length === 0 ? SAMPLE_NEXT_MATCH : null);
@@ -1187,6 +1333,9 @@ export default function JoaoFonsecaNews() {
         {/* NEXT DUEL */}
         <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 6px" }}>Próximo duelo</h2>
         <NextDuelCard match={dm} player={dp} isLive={isLive} />
+
+        {/* RECENT FORM */}
+        <RecentFormStrip form={recentForm} />
 
         {/* QUICK NAV */}
         <section style={{ padding: "14px 0" }}>
@@ -1258,7 +1407,7 @@ export default function JoaoFonsecaNews() {
           {loading && news.length === 0 && <Skeleton />}
           {dn.length > 0 && !(loading && news.length === 0) && (
             <>
-              <div>{buildFeed(dn.slice(0, visibleCount), ds, dl, function() { setShowVideos(true); }, allLikes, dm)}</div>
+              <div>{buildFeed(dn.slice(0, visibleCount), ds, dl, function() { setShowVideos(true); }, allLikes, dm, null, matchStats, h2hData)}</div>
               {visibleCount < dn.length && (
                 <button onClick={function() { setVisibleCount(function(v) { return Math.min(v + 10, dn.length); }); }} style={{ width: "100%", padding: "14px", background: "transparent", border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", fontSize: 13, fontWeight: 600, color: GREEN, fontFamily: SANS }}>
                   Carregar mais ({dn.length - visibleCount} restantes)
