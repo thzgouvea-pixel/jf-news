@@ -1435,14 +1435,13 @@ export default function JoaoFonsecaNews() {
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Parceiros</p>
           {(function() {
             var partners = [
-              { name: "Seu negócio aqui", desc: "Anuncie para fãs de tênis no Fonseca News", icon: "📢", color: GREEN, url: "mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" },
-              { name: "Seu podcast aqui", desc: "Divulgue seu canal para a comunidade do tênis", icon: "🎙️", color: "#6D35D0", url: "mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" },
-              { name: "Sua marca aqui", desc: "Seja parceiro do maior site brasileiro sobre João Fonseca", icon: "🤝", color: "#b8860b", url: "mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" },
+              { image: "/partner-banner-1.svg", url: "mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News", alt: "Fonseca News - Seja parceiro" },
             ];
             var _ci = useState(0);
             var currentIdx = _ci[0];
             var setCurrentIdx = _ci[1];
             useEffect(function() {
+              if (partners.length <= 1) return;
               var iv = setInterval(function() {
                 setCurrentIdx(function(prev) { return (prev + 1) % partners.length; });
               }, 4000);
@@ -1451,23 +1450,16 @@ export default function JoaoFonsecaNews() {
             var p = partners[currentIdx];
             return (
               <div>
-                <a href={p.url} style={{ display: "block", padding: "28px 20px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER, transition: "opacity 0.4s ease" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 12, background: p.color + "10", border: "1px solid " + p.color + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <span style={{ fontSize: 22 }}>{p.icon}</span>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{p.name}</span>
-                      <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{p.desc}</span>
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: p.color, fontFamily: SANS, flexShrink: 0 }}>Saiba mais →</span>
-                  </div>
+                <a href={p.url} style={{ display: "block", borderRadius: 12, overflow: "hidden", border: "1px solid " + BORDER, transition: "opacity 0.4s ease" }}>
+                  <img src={p.image} alt={p.alt} style={{ width: "100%", height: "auto", display: "block" }} />
                 </a>
-                <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10 }}>
-                  {partners.map(function(_, i) {
-                    return <div key={i} onClick={function() { setCurrentIdx(i); }} style={{ width: i === currentIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === currentIdx ? GREEN : BORDER, transition: "all 0.3s ease", cursor: "pointer" }} />;
-                  })}
-                </div>
+                {partners.length > 1 && (
+                  <div style={{ display: "flex", justifyContent: "center", gap: 6, marginTop: 10 }}>
+                    {partners.map(function(_, i) {
+                      return <div key={i} onClick={function() { setCurrentIdx(i); }} style={{ width: i === currentIdx ? 16 : 6, height: 6, borderRadius: 3, background: i === currentIdx ? GREEN : BORDER, transition: "all 0.3s ease", cursor: "pointer" }} />;
+                    })}
+                  </div>
+                )}
                 <p style={{ margin: "8px 0 0", fontSize: 9, color: DIM, fontFamily: SANS, textAlign: "center" }}>Quer ser parceiro? <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ color: GREEN, textDecoration: "none", fontWeight: 600 }}>Entre em contato</a></p>
               </div>
             );
