@@ -1430,6 +1430,27 @@ export default function JoaoFonsecaNews() {
           )}
         </section>
 
+        {/* PARTNERS SECTION */}
+        <section style={{ padding: "20px 0", borderTop: "1px solid " + BORDER }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Parceiros</p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            {[
+              { name: "Seu negócio aqui", desc: "Anuncie no FN", icon: "📢", color: GREEN },
+              { name: "Seu podcast aqui", desc: "Divulgue seu canal", icon: "🎙️", color: "#6D35D0" },
+              { name: "Sua marca aqui", desc: "Seja parceiro", icon: "🤝", color: "#b8860b" },
+            ].map(function(p, i) {
+              return (
+                <a key={i} href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ display: "block", padding: "14px 10px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER, textAlign: "center" }}>
+                  <span style={{ fontSize: 20, display: "block", marginBottom: 6 }}>{p.icon}</span>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", marginBottom: 2 }}>{p.name}</span>
+                  <span style={{ fontSize: 9, color: DIM, fontFamily: SANS }}>{p.desc}</span>
+                </a>
+              );
+            })}
+          </div>
+          <p style={{ margin: "10px 0 0", fontSize: 9, color: DIM, fontFamily: SANS, textAlign: "center" }}>Quer divulgar sua marca, produto ou canal? <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ color: GREEN, textDecoration: "none", fontWeight: 600 }}>Entre em contato</a></p>
+        </section>
+
         {/* DISCOVER SECTION — subtle links */}
         <section style={{ padding: "20px 0", borderTop: "1px solid " + BORDER }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Explore também</p>
