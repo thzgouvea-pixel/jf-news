@@ -1505,15 +1505,6 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Highlights e jogadas no YouTube</span>
               </div>
             </a>
-            <a href="/regras" style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: GREEN + "10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              </div>
-              <div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Novo no tênis?</span>
-                <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Guia completo de regras pra acompanhar o João</span>
-              </div>
-            </a>
             <div onClick={function(){setShowInstallGuide(true);}} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, border: "1px solid " + BORDER, cursor: "pointer" }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: "#0D172610", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0D1726" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
