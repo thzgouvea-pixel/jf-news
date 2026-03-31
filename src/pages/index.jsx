@@ -1255,7 +1255,20 @@ export default function JoaoFonsecaNews() {
   var loadCache = async function() { try { var raw = localStorage.getItem("jf-news-v4"); if (raw) { var c = JSON.parse(raw); if (Date.now() - c.timestamp < CACHE_DURATION_MS && c.news && c.news.length) { setNews(c.news); setNextMatch(c.nextMatch||null); setLastMatch(c.lastMatch||null); setPlayer(c.player||null); setSeason(c.season||null); setIsLive(true); setLastUpdate(new Date(c.timestamp).toISOString()); setCacheExpiresAt(c.timestamp+CACHE_DURATION_MS); setCacheStatus("cached"); return true; } } } catch(e) {} return false; };
   var saveCache = async function(d) { try { var o = Object.assign({}, d, { timestamp: Date.now() }); localStorage.setItem("jf-news-v4", JSON.stringify(o)); setCacheExpiresAt(o.timestamp+CACHE_DURATION_MS); } catch(e) {} };
   var fetchNews = async function() { setLoading(true); setCacheStatus("loading"); try { var res = await fetch("/api/news"); if (!res.ok) throw new Error("" + res.status); var p = await res.json(); if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setIsLive(true); setLastUpdate(new Date().toISOString()); setCacheStatus("live"); await saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } else throw new Error("No data"); } catch(e) { setCacheStatus("error"); } finally { setLoading(false); } };
-  var handleRefresh = async function() { await fetchNews(); };
+  var handleRefresh = async function() {
+    // Refresh news from RSS
+    await fetchNews();
+    // Also refresh SofaScore data silently
+    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
+      if (d.matchStats) setMatchStats(d.matchStats);
+      if (d.h2h) setH2hData(d.h2h);
+      if (d.recentForm) setRecentForm(d.recentForm);
+      if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
+      if (d.season && d.season.wins !== undefined) setSeason(d.season);
+      if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
+      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
+    }).catch(function() {});
+  };
 
   useEffect(function() { if (initDone.current) return; initDone.current = true; (async function() { if (!(await loadCache())) await fetchNews(); })(); }, []);
   useEffect(function() { fetch("/api/stats").then(function(r) { return r.json(); }).then(function(d) { if (d.likes) setAllLikes(d.likes); if (d.visitors) { var el = document.getElementById("fn-visitors"); var wrap = document.getElementById("fn-visitors-wrap"); if (el) el.textContent = d.visitors; if (wrap) wrap.style.display = "inline"; } }).catch(function() {}); var isNew = !localStorage.getItem("fn_visited"); if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
