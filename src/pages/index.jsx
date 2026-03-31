@@ -847,12 +847,12 @@ var MatchStatsCard = function(props) {
   var f = stats.fonseca;
   var o = stats.opponent;
   var statRows = [
-    { label: "Aces", fVal: f.aces || f.service_aces || 0, oVal: o.aces || o.service_aces || 0, color: "#2563EB" },
-    { label: "Duplas faltas", fVal: f.double_faults || 0, oVal: o.double_faults || 0, color: "#c0392b", invert: true },
-    { label: "1º serviço %", fVal: f.first_serve_percentage || f["1st_serve"] || 0, oVal: o.first_serve_percentage || o["1st_serve"] || 0, color: GREEN, pct: true },
-    { label: "Winners", fVal: f.winners || 0, oVal: o.winners || 0, color: "#b8860b" },
-    { label: "Erros não-forçados", fVal: f.unforced_errors || 0, oVal: o.unforced_errors || 0, color: "#c0392b", invert: true },
-    { label: "Break points", fVal: f.break_points_converted || f.break_points_won || 0, oVal: o.break_points_converted || o.break_points_won || 0, color: "#6D35D0" },
+    { label: "Aces", fVal: f.aces || f.service_aces || 0, oVal: o.aces || o.service_aces || 0 },
+    { label: "Duplas faltas", fVal: f.double_faults || 0, oVal: o.double_faults || 0, invert: true },
+    { label: "1º serviço %", fVal: f.first_serve_percentage || f["1st_serve"] || 0, oVal: o.first_serve_percentage || o["1st_serve"] || 0, pct: true },
+    { label: "Winners", fVal: f.winners || 0, oVal: o.winners || 0 },
+    { label: "Erros não-forçados", fVal: f.unforced_errors || 0, oVal: o.unforced_errors || 0, invert: true },
+    { label: "Break points", fVal: f.break_points_converted || f.break_points_won || 0, oVal: o.break_points_converted || o.break_points_won || 0 },
   ];
   // Filter out rows where both values are 0
   statRows = statRows.filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
@@ -884,10 +884,10 @@ var MatchStatsCard = function(props) {
               </div>
               <div style={{ display: "flex", gap: 4, height: 4 }}>
                 <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
-                  <div style={{ height: 4, background: fBetter ? GREEN : "#ddd", borderRadius: 2, width: Math.max(fPct, 8) + "%", transition: "width 0.5s" }} />
+                  <div style={{ height: 4, background: fBetter ? GREEN : BORDER, borderRadius: 2, width: Math.max(fPct, 8) + "%", transition: "width 0.5s" }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ height: 4, background: !fBetter ? RED : "#ddd", borderRadius: 2, width: Math.max(oPct, 8) + "%", transition: "width 0.5s" }} />
+                  <div style={{ height: 4, background: !fBetter ? RED : BORDER, borderRadius: 2, width: Math.max(oPct, 8) + "%", transition: "width 0.5s" }} />
                 </div>
               </div>
             </div>
