@@ -19,8 +19,8 @@ var TIMELINE = [
   { year: "2022", age: "16 anos", title: "Primeiros passos", text: "Atinge quartas de final em dois Challengers. Começa a aparecer no radar do circuito profissional." },
   { year: "2023", age: "17 anos", title: "Ano revelação", emoji: "🏆", text: "Campeão do US Open Juvenil. Primeiro brasileiro nº1 do ranking juvenil da ITF. Estreia no ATP no Rio Open. Convidado como sparring no ATP Finals — treina com Alcaraz, Medvedev e Sinner." },
   { year: "2024", age: "18 anos", title: "A explosão", emoji: "🔥", text: "Quartas do Rio Open (ATP 500) com vitória sobre Arthur Fils. Vira profissional. Salta do #727 para #145 no ranking. Campeão do NextGen ATP Finals invicto (5-0) — primeiro sul-americano e terceiro mais jovem da história, ao lado de Alcaraz e Sinner." },
-  { year: "2025", age: "19 anos", title: "Elite mundial", emoji: "⭐", text: "Derrota Rublev (#9) na estreia do Australian Open. Campeão do ATP 250 de Buenos Aires — mais jovem sul-americano campeão desde 1987. Campeão do ATP 500 de Basel — primeiro brasileiro a vencer um ATP 500, feito inédito desde Kuerten. Encerra o ano como #24 do mundo." },
-  { year: "2026", age: "19 anos", title: "Em ascensão", emoji: "🚀", text: "Lesão nas costas atrasa início da temporada. Volta forte: oitavas em Indian Wells com vitórias sobre Khachanov e Tommy Paul. Enfrenta Sinner em jogo épico (dois tiebreaks). Enfrenta Alcaraz no Miami Open. Se prepara para a gira de saibro europeu: Monte Carlo, Munique, Madri, Roma e Roland Garros." },
+  { year: "2025", age: "19 anos", title: "Elite mundial", emoji: "⭐", text: "Derrota Rublev (#9) na estreia do Australian Open. Campeão do ATP 250 de Buenos Aires — mais jovem sul-americano campeão desde Perez-Roldan em 1987. Campeão do ATP 500 de Basel — primeiro brasileiro a vencer um ATP 500, feito inédito desde Kuerten. Encerra o ano como #24 do mundo." },
+  { year: "2026", age: "19 anos", title: "Em ascensão", emoji: "🚀", text: "Lesão nas costas atrasa início da temporada. Volta forte: oitavas em Indian Wells com vitórias sobre Collignon, Khachanov e Tommy Paul. Jogo épico contra Sinner nas oitavas (dois tiebreaks). Perde para Alcaraz no Miami Open. Campeão de duplas no Rio Open com Marcelo Melo. Se prepara para a gira de saibro: Monte Carlo, Munique, Madri, Roma e Roland Garros." },
 ];
 
 var STATS = [
@@ -48,7 +48,7 @@ var CURIOSIDADES = [
   "Aos 2 anos, o professor de yoga do pai já notava coordenação fora do normal",
   "Cresceu a 10 minutos do Rio Open — assistia o torneio todo ano",
   "Tirou foto com Nadal na Copa do Mundo de 2010, na África do Sul, aos 4 anos — e recriou a foto em 2024 no NextGen Finals",
-  "Tem mais títulos ATP aos 19 do que Federer, Djokovic e Nadal tinham na mesma idade",
+  "Aos 19, já tem mais títulos ATP que Federer e Djokovic tinham na mesma idade",
   "O New York Times o chamou de 'futura estrela' e comparou seu forehand a uma 'bola de demolição'",
   "Foi o primeiro sul-americano campeão do NextGen ATP Finals",
   "Torneios viram 'carnaval brasileiro' quando ele joga, segundo a imprensa internacional",
