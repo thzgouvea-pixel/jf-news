@@ -1,10 +1,10 @@
-// ===== FONSECA NEWS - TWITTER BOT v6 =====
-// Algorithm-optimized: link in reply, max 1-2 hashtags, conversational voice
-// Uses X API v2 tweets endpoint
+// ===== FONSECA NEWS - TWITTER BOT v7 =====
+// Anti-repetition: KV-based history, similarity check, rate limits
+// Algorithm-optimized: link in reply, max 1-2 hashtags, conversational
+// Schedule: max 4 tweets/day (1 poll/promo + 3 news), min 2h between posts
 
 import crypto from "crypto";
-
-let postedTitles = new Set();
+import { kv } from "@vercel/kv";
 
 function percentEncode(str) {
   return encodeURIComponent(str)
@@ -72,9 +72,6 @@ async function postTweet(text, replyTo) {
   return JSON.parse(raw);
 }
 
-// ===== REPLY WITH LINK =====
-// Algorithm penalizes links in main tweet by 30-50%
-// Post link as reply to own tweet instead
 async function postWithLinkReply(mainText, linkText) {
   var result = await postTweet(mainText);
   if (result.data && result.data.id && linkText) {
@@ -87,7 +84,79 @@ async function postWithLinkReply(mainText, linkText) {
   return result;
 }
 
-// ===== SMART TWEET FORMATTING =====
+// ===== KV-BASED DEDUPLICATION =====
+// Persists across deploys/cold starts
+
+async function wasRecentlyPosted(titleHash) {
+  try {
+    var val = await kv.get("tw:" + titleHash);
+    return !!val;
+  } catch (e) { return false; }
+}
+
+async function markAsPosted(titleHash) {
+  try {
+    await kv.set("tw:" + titleHash, Date.now(), { ex: 60 * 60 * 24 * 7 }); // 7 days expiry
+  } catch (e) {}
+}
+
+async function getLastPostTime() {
+  try {
+    var val = await kv.get("tw:last_post");
+    return val ? parseInt(val, 10) : 0;
+  } catch (e) { return 0; }
+}
+
+async function setLastPostTime() {
+  try {
+    await kv.set("tw:last_post", Date.now());
+  } catch (e) {}
+}
+
+async function getTodayPostCount() {
+  try {
+    var today = new Date().toISOString().split("T")[0];
+    var val = await kv.get("tw:count:" + today);
+    return val ? parseInt(val, 10) : 0;
+  } catch (e) { return 0; }
+}
+
+async function incrementTodayPostCount() {
+  try {
+    var today = new Date().toISOString().split("T")[0];
+    await kv.incr("tw:count:" + today);
+    // Set expiry so old counts auto-delete
+    await kv.expire("tw:count:" + today, 60 * 60 * 48);
+  } catch (e) {}
+}
+
+// ===== SIMILARITY CHECK =====
+// Prevents posting titles that are too similar
+
+function normalizeTitle(title) {
+  return (title || "").toLowerCase()
+    .replace(/[^a-záàãâéêíóôõúüç\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function titleHash(title) {
+  var norm = normalizeTitle(title);
+  // Use first 8 significant words as hash key
+  var words = norm.split(" ").filter(function(w) {
+    return w.length > 3 && !["joão", "fonseca", "para", "sobre", "após", "como", "mais", "pela", "pelo", "com", "que", "uma", "dos", "das", "este", "esta", "isso"].includes(w);
+  }).slice(0, 8);
+  return words.join("_").substring(0, 80);
+}
+
+async function isTooSimilar(title) {
+  var hash = titleHash(title);
+  if (!hash || hash.length < 5) return false;
+  return await wasRecentlyPosted(hash);
+}
+
+// ===== TWEET FORMATTING =====
+
 function cleanTitle(title, source) {
   if (!title) return "";
   var cleaned = title;
@@ -103,8 +172,6 @@ function cleanTitle(title, source) {
   return cleaned.trim();
 }
 
-// Multiple conversational templates per category
-// NO links in main tweet, max 1-2 hashtags
 var NEWS_TEMPLATES = {
   "Resultado": {
     win: [
@@ -123,17 +190,15 @@ var NEWS_TEMPLATES = {
     ]
   },
   "Ranking": [
-    "Ranking atualizado! 📈\n\n{title}\n\nJoão Fonseca: #{ranking} ATP 🇧🇷\n\n#JoãoFonseca",
-    "Subiu! {title}\n\n🇧🇷 #{ranking} no mundo\n\n#JoãoFonseca #ATP",
+    "Ranking atualizado! 📈\n\n{title}\n\n🇧🇷 #{ranking} no mundo\n\n#JoãoFonseca",
   ],
   "Declaração": [
     "Olha o que falaram do João 👀\n\n{title}\n\n#JoãoFonseca",
-    "\"{title}\"\n\n#JoãoFonseca #Tennis",
     "{title}\n\nConcordam? 🤔\n\n#JoãoFonseca",
   ],
   "Torneio": [
     "{title} 🎾\n\nBora acompanhar!\n\n#JoãoFonseca",
-    "{title}\n\nQuem tá ansioso? 🔥\n\n#JoãoFonseca #ATP",
+    "{title}\n\nQuem tá ansioso? 🔥\n\n#JoãoFonseca",
   ],
   "default": [
     "{title}\n\n#JoãoFonseca",
@@ -167,9 +232,8 @@ function formatTweet(newsItem, lastMatch, player) {
   var tweet = template
     .replace(/\{title\}/g, title)
     .replace(/\{score\}/g, score)
-    .replace(/\{ranking\}/g, player ? player.ranking : "59");
+    .replace(/\{ranking\}/g, player ? player.ranking : "41");
 
-  // Clean empty lines from missing score
   tweet = tweet.replace(/\n\n\n/g, "\n\n").replace(/\n\n$/g, "");
 
   if (tweet.length > 280) {
@@ -181,7 +245,6 @@ function formatTweet(newsItem, lastMatch, player) {
   return tweet;
 }
 
-// Link reply text (short, just the source + site link)
 function formatLinkReply(newsItem) {
   var parts = [];
   if (newsItem.source) parts.push("📰 " + newsItem.source);
@@ -189,63 +252,34 @@ function formatLinkReply(newsItem) {
   return parts.join("\n");
 }
 
-// ===== PROMOTIONAL TWEETS — conversational, no links in main =====
+// ===== PROMOTIONAL TWEETS =====
 var PROMO_TWEETS = [
-  // === Features — conversational, questions, opinions ===
   { main: "Você já deu seu palpite pro próximo jogo do João? 🔮\n\nEscolhe o placar e compartilha pra ver se acertou\n\n#JoãoFonseca #Tennis", link: "🔗 fonsecanews.com.br" },
-
   { main: "Fiz 95 pontos no Quiz do Fonseca News e achei que manjava de tênis 😂\n\nAlguém consegue mais?\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-
-  { main: "Monte Carlo começa em poucos dias e o countdown tá correndo ⏳🔥\n\nQuem mais tá ansioso?\n\n#JoãoFonseca #MonteCarlo", link: "Palpite + notícias + quiz:\n🔗 fonsecanews.com.br" },
-
+  { main: "Monte Carlo começa em poucos dias e o countdown tá correndo ⏳🔥\n\nQuem mais tá ansioso?\n\n#JoãoFonseca #MonteCarlo", link: "🔗 fonsecanews.com.br" },
   { main: "Novo no tênis e quer entender o que tá acontecendo em cada ponto? A gente fez um guia completo 🎾\n\n#Tennis #JoãoFonseca", link: "🔗 fonsecanews.com.br/regras" },
-
   { main: "Tem raquete parada em casa? Anuncia grátis na comunidade do FN no Telegram 🏷️\n\n#Tennis #Raquete", link: "🔗 fonsecanews.com.br/raquetes" },
-
   { main: "A enquete de hoje tá polêmica 🔥\n\nVota lá e vê o que a comunidade acha\n\n#JoãoFonseca #Tennis", link: "🔗 fonsecanews.com.br" },
-
   { main: "O Fonseca News é o único site brasileiro 100% dedicado ao João Fonseca 🇧🇷\n\nNotícias, ranking, quiz, palpite, enquete... tudo num lugar só\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-
-  { main: "Esse quiz é viciante, não vou mentir 🎾\n\n10 perguntas com fun facts que você não sabia sobre o João\n\n#JoãoFonseca #Quiz", link: "🔗 fonsecanews.com.br" },
-
-  // === Opinions & engagement — NO links, pure engagement ===
+  { main: "Esse quiz é viciante, não vou mentir 🎾\n\n10 perguntas com fun facts que você não sabia sobre o João\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
   { main: "O forehand do João Fonseca é o mais bonito do circuito atualmente\n\nMudo de opinião? Não 🇧🇷🎾\n\n#JoãoFonseca #ATP" },
-
   { main: "Se o João fosse espanhol, já estaria na capa de todo jornal esportivo do mundo\n\nO Brasil precisa valorizar mais 🇧🇷\n\n#JoãoFonseca" },
-
   { main: "Quem assistiu João vs Rublev no Australian Open sabe: aquele jogo mudou tudo\n\nO mundo conheceu o Fonseca ali 🔥\n\n#JoãoFonseca #AusOpen" },
-
-  { main: "O tênis brasileiro não tinha um fenômeno assim desde o Guga\n\nE o João tem só 19 anos. Imagina com 25 🤯\n\n#JoãoFonseca #Guga" },
-
+  { main: "O tênis brasileiro não tinha um fenômeno assim desde o Guga\n\nE o João tem só 19 anos. Imagina com 25 🤯\n\n#JoãoFonseca" },
   { main: "Hot take: João Fonseca vai ganhar Roland Garros antes dos 22 anos\n\nAnotem 📝\n\n#JoãoFonseca #RolandGarros" },
-
   { main: "O João tem 19 anos e já venceu um top 10 em Grand Slam\n\nCom 19 anos eu mal sabia sacar 😂\n\n#JoãoFonseca" },
-
-  { main: "Discussão séria: Alcaraz, Sinner ou Fonseca — quem vai dominar o tênis em 2030? 🏆\n\n#Alcaraz #Sinner #JoãoFonseca" },
-
+  { main: "Alcaraz, Sinner ou Fonseca — quem vai dominar o tênis em 2030? 🏆\n\n#Alcaraz #Sinner #JoãoFonseca" },
   { main: "Saibro ou quadra dura? Acho que o João vai ser devastador no saibro\n\nMonte Carlo vai provar 🟤\n\n#JoãoFonseca #MonteCarlo" },
-
   { main: "O Brasil tem o melhor sub-20 do mundo e pouca gente sabe\n\nIsso precisa mudar 🇧🇷🎾\n\n#JoãoFonseca" },
-
   { main: "Quem vai ser o maior rival do João na carreira? Tien? Mensik? Fils?\n\nEu aposto no Tien 🤔\n\n#JoãoFonseca #NextGen" },
-
-  { main: "Vocês preferem assistir tênis na TV ou no estádio?\n\nNo estádio a velocidade da bola é surreal 🏟️\n\n#Tennis #ATP" },
-
-  { main: "Unpopular opinion: o NextGen Finals deveria valer pontos pro ranking\n\nMudaria tudo 🤔\n\n#ATP #NextGen" },
-
-  { main: "Alguém mais vê semelhanças entre o jogo do João e o do Federer?\n\nO estilo é parecido, mas com mais potência 👀\n\n#JoãoFonseca #Federer" },
-
   { main: "Acordei pensando em tênis. De novo\n\nCulpa do João 😂🎾\n\n#JoãoFonseca" },
-
-  { main: "Será que a gente vai ver o João nas Olimpíadas de 2028 em LA?\n\nEu já estou contando os dias 🇧🇷🏅\n\n#JoãoFonseca #Olympics #LA2028" },
-
+  { main: "Será que a gente vai ver o João nas Olimpíadas de 2028 em LA?\n\nJá estou contando os dias 🇧🇷🏅\n\n#JoãoFonseca #LA2028" },
+  { main: "A biografia completa do João tá no site — de Ipanema ao top 25 do mundo 🇧🇷\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br/biografia" },
   { main: "Já votou na enquete de hoje? A comunidade tá dividida 🔥\n\n#JoãoFonseca #Tennis", link: "🔗 fonsecanews.com.br" },
+  { main: "O João fez Sinner suar em dois tiebreaks em Indian Wells\n\nA evolução é real 🔥\n\n#JoãoFonseca #ATP" },
+  { main: "Vocês preferem assistir tênis na TV ou no estádio?\n\nNo estádio a velocidade da bola é surreal 🏟️\n\n#Tennis #ATP" },
 ];
 
-var lastPollDay = "";
-var lastPromoDay = "";
-
-// ===== DAILY POLL TWEETS =====
 var DAILY_POLLS = [
   "João vence o primeiro jogo em Monte Carlo?",
   "João chega ao Top 30 até o fim de 2026?",
@@ -256,39 +290,19 @@ var DAILY_POLLS = [
   "Quem é mais talentoso: João ou Alcaraz aos 19?",
 ];
 
-function getTodayPollTweet() {
-  var today = new Date().toISOString().split("T")[0];
-  if (lastPollDay === today) return null;
-  var dayIdx = Math.floor(Date.now() / 86400000) % DAILY_POLLS.length;
-  var question = DAILY_POLLS[dayIdx];
-  return {
-    main: "📊 ENQUETE DO DIA\n\n" + question + "\n\nVota lá 👇\n\n#JoãoFonseca #Tennis",
-    link: "🗳️ fonsecanews.com.br",
-    day: today
-  };
-}
-
-function getTodayPromoTweet() {
-  var today = new Date().toISOString().split("T")[0];
-  if (lastPromoDay === today) return null;
-  var dayIdx = Math.floor(Date.now() / 86400000) % PROMO_TWEETS.length;
-  return { tweet: PROMO_TWEETS[dayIdx], day: today };
-}
-
 // ===== MAIN HANDLER =====
 export default async function handler(req, res) {
+  // Check posting hours (6h-00h Brasília)
   var nowUTC = new Date().getUTCHours();
   var brasilia = (nowUTC - 3 + 24) % 24;
   if (brasilia < 6) {
-    return res.status(200).json({ message: "Fora do horário (6h-00h BRT). Atual: " + brasilia + "h", posted: 0 });
+    return res.status(200).json({ message: "Fora do horário (6h-00h BRT). Atual: " + brasilia + "h" });
   }
 
+  // Test mode
   if (req.query.test === "1") {
     try {
-      var result = await postWithLinkReply(
-        "🎾 Teste do Fonseca News Bot!\n\n#JoãoFonseca",
-        "🔗 fonsecanews.com.br"
-      );
+      var result = await postWithLinkReply("🎾 Teste do bot!\n\n#JoãoFonseca", "🔗 fonsecanews.com.br");
       return res.status(200).json({ success: true, result: result });
     } catch (e) {
       return res.status(200).json({ success: false, error: e.message });
@@ -296,78 +310,124 @@ export default async function handler(req, res) {
   }
 
   try {
+    // ===== RATE LIMITING =====
+    // Max 4 posts per day
+    var todayCount = await getTodayPostCount();
+    if (todayCount >= 4) {
+      return res.status(200).json({ message: "Limite diário atingido (4 posts)", count: todayCount });
+    }
+
+    // Min 2 hours between posts
+    var lastPost = await getLastPostTime();
+    var hoursSinceLast = (Date.now() - lastPost) / (1000 * 60 * 60);
+    if (hoursSinceLast < 2) {
+      return res.status(200).json({ message: "Intervalo mínimo de 2h. Última: " + Math.round(hoursSinceLast * 60) + "min atrás" });
+    }
+
+    var posted = [];
+
+    // ===== 1. POLL (once per day, morning) =====
+    if (brasilia >= 8 && brasilia <= 11) {
+      var today = new Date().toISOString().split("T")[0];
+      var pollPosted = await kv.get("tw:poll:" + today);
+      if (!pollPosted) {
+        var dayIdx = Math.floor(Date.now() / 86400000) % DAILY_POLLS.length;
+        var question = DAILY_POLLS[dayIdx];
+        try {
+          var pollResult = await postWithLinkReply(
+            "📊 ENQUETE DO DIA\n\n" + question + "\n\nVota lá 👇\n\n#JoãoFonseca #Tennis",
+            "🗳️ fonsecanews.com.br"
+          );
+          await kv.set("tw:poll:" + today, "1", { ex: 60 * 60 * 48 });
+          await setLastPostTime();
+          await incrementTodayPostCount();
+          posted.push({ type: "poll", tweetId: pollResult.data ? pollResult.data.id : null });
+          return res.status(200).json({ message: "Poll posted", posted: posted });
+        } catch (e) {
+          console.log("[tweet] Poll error:", e.message);
+          await kv.set("tw:poll:" + today, "error", { ex: 60 * 60 * 48 });
+        }
+      }
+    }
+
+    // ===== 2. PROMO (once per day, afternoon/evening) =====
+    if (brasilia >= 14 && brasilia <= 20) {
+      var today = new Date().toISOString().split("T")[0];
+      var promoPosted = await kv.get("tw:promo:" + today);
+      if (!promoPosted) {
+        // Use random instead of dayIdx to avoid same promo every week
+        var promoIdx = Math.floor(Math.random() * PROMO_TWEETS.length);
+        var promo = PROMO_TWEETS[promoIdx];
+        try {
+          var promoResult = promo.link
+            ? await postWithLinkReply(promo.main, promo.link)
+            : await postTweet(promo.main);
+          await kv.set("tw:promo:" + today, "1", { ex: 60 * 60 * 48 });
+          await setLastPostTime();
+          await incrementTodayPostCount();
+          posted.push({ type: "promo", tweetId: promoResult.data ? promoResult.data.id : null });
+          return res.status(200).json({ message: "Promo posted", posted: posted });
+        } catch (e) {
+          console.log("[tweet] Promo error:", e.message);
+          await kv.set("tw:promo:" + today, "error", { ex: 60 * 60 * 48 });
+        }
+      }
+    }
+
+    // ===== 3. NEWS =====
     var protocol = req.headers["x-forwarded-proto"] || "https";
     var host = req.headers.host;
     var newsRes = await fetch(protocol + "://" + host + "/api/news");
     if (!newsRes.ok) throw new Error("Failed to fetch news");
     var newsData = await newsRes.json();
 
-    var posted = [];
-
-    // ===== 1. TRY DAILY POLL TWEET =====
-    var pollTweet = getTodayPollTweet();
-    if (pollTweet) {
-      try {
-        var pollResult = await postWithLinkReply(pollTweet.main, pollTweet.link);
-        lastPollDay = pollTweet.day;
-        posted.push({ type: "poll", tweetId: pollResult.data ? pollResult.data.id : null });
-        return res.status(200).json({ message: "Poll posted", posted: posted });
-      } catch (e) {
-        console.log("[tweet] Poll error:", e.message);
-        lastPollDay = pollTweet.day;
-      }
-    }
-
-    // ===== 2. TRY PROMOTIONAL TWEET =====
-    var promoData = getTodayPromoTweet();
-    if (promoData) {
-      try {
-        var promo = promoData.tweet;
-        var promoResult = promo.link
-          ? await postWithLinkReply(promo.main, promo.link)
-          : await postTweet(promo.main);
-        lastPromoDay = promoData.day;
-        posted.push({ type: "promo", tweetId: promoResult.data ? promoResult.data.id : null });
-        return res.status(200).json({ message: "Promo posted", posted: posted });
-      } catch (e) {
-        console.log("[tweet] Promo error:", e.message);
-        lastPromoDay = promoData.day;
-      }
-    }
-
-    // ===== 3. POST NEWS TWEET =====
     if (!newsData.news || newsData.news.length === 0) {
-      return res.status(200).json({ message: "No news", posted: 0 });
+      return res.status(200).json({ message: "Sem notícias" });
     }
 
-    var newItems = newsData.news.filter(function(item) { return !postedTitles.has(item.title); });
-    if (newItems.length === 0) {
-      return res.status(200).json({ message: "All posted", posted: 0 });
+    // Find first news that hasn't been posted AND isn't too similar
+    var newsToPost = null;
+    for (var i = 0; i < newsData.news.length; i++) {
+      var item = newsData.news[i];
+      var hash = titleHash(item.title);
+
+      // Check if exact title was posted
+      if (await wasRecentlyPosted(hash)) continue;
+
+      // Check if something too similar was posted
+      if (await isTooSimilar(item.title)) continue;
+
+      newsToPost = item;
+      break;
     }
 
-    var item = newItems[0];
+    if (!newsToPost) {
+      return res.status(200).json({ message: "Todas as notícias já postadas ou similares" });
+    }
+
     try {
-      var tweetText = formatTweet(item, newsData.lastMatch, newsData.player);
-      var linkReply = formatLinkReply(item);
+      var tweetText = formatTweet(newsToPost, newsData.lastMatch, newsData.player);
+      var linkReply = formatLinkReply(newsToPost);
       var tweetResult = await postWithLinkReply(tweetText, linkReply);
-      postedTitles.add(item.title);
+
+      // Mark as posted
+      await markAsPosted(titleHash(newsToPost.title));
+      await setLastPostTime();
+      await incrementTodayPostCount();
+
       posted.push({
         type: "news",
-        title: item.title,
+        title: newsToPost.title,
         tweetId: tweetResult.data ? tweetResult.data.id : null,
-        text: tweetText,
         chars: tweetText.length
       });
     } catch (e) {
-      posted.push({ title: item.title, error: e.message });
-    }
-
-    if (postedTitles.size > 100) {
-      postedTitles = new Set(Array.from(postedTitles).slice(-50));
+      posted.push({ title: newsToPost.title, error: e.message });
     }
 
     res.status(200).json({
       message: "Posted " + posted.filter(function(p) { return !p.error; }).length,
+      todayTotal: todayCount + 1,
       posted: posted
     });
 
