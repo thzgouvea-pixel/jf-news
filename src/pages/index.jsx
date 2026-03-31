@@ -1451,10 +1451,10 @@ export default function JoaoFonsecaNews() {
             var p = partners[currentIdx];
             return (
               <div>
-                <a href={p.url} style={{ display: "block", padding: "22px 20px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER, transition: "opacity 0.4s ease" }}>
+                <a href={p.url} style={{ display: "block", padding: "28px 20px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER, transition: "opacity 0.4s ease" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: p.color + "10", border: "1px solid " + p.color + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <span style={{ fontSize: 18 }}>{p.icon}</span>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: p.color + "10", border: "1px solid " + p.color + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <span style={{ fontSize: 22 }}>{p.icon}</span>
                     </div>
                     <div style={{ flex: 1 }}>
                       <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{p.name}</span>
