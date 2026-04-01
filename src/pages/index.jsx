@@ -1445,7 +1445,6 @@ export default function JoaoFonsecaNews() {
           {(function() {
             var partners = [
               { image: "/partner-banner-1.svg", url: "mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News", alt: "Fonseca News - Seja parceiro" },
-              { image: "/partner-banner-2.svg", url: "https://www.amazon.com.br/dp/8520468977", alt: "Meus Robôs - Ben-Hur Correia" },
             ];
             var _ci = useState(0);
             var currentIdx = _ci[0];
