@@ -367,7 +367,22 @@ function parseMatch(m, isNext) {
         sets.push(fScore[key] + "-" + oScore[key]);
       }
     }
-    var wonMatch = (m.winnerCode === 1 && isFonsecaHome) || (m.winnerCode === 2 && !isFonsecaHome);
+    var wonMatch = false;
+    // Calculate result from sets won (winnerCode is unreliable/missing)
+    var fSetsWon = 0;
+    var oSetsWon = 0;
+    for (var si = 1; si <= 5; si++) {
+      var sk = "period" + si;
+      if (fScore[sk] !== undefined && oScore[sk] !== undefined) {
+        if (fScore[sk] > oScore[sk]) fSetsWon++;
+        else if (oScore[sk] > fScore[sk]) oSetsWon++;
+      }
+    }
+    wonMatch = fSetsWon > oSetsWon;
+    // Fallback to winnerCode if sets are tied (shouldn't happen in finished matches)
+    if (fSetsWon === oSetsWon && m.winnerCode) {
+      wonMatch = (m.winnerCode === 1 && isFonsecaHome) || (m.winnerCode === 2 && !isFonsecaHome);
+    }
     result.result = wonMatch ? "V" : "D";
     result.score = sets.join(" ");
     result.opponent = result.opponent_name;
@@ -474,7 +489,17 @@ export default async function handler(req, res) {
             if (allFinished.length >= 10) break;
           }
           allFinished.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
-          form = allFinished.slice(0, 10).map(function(m) { return parseMatch(m, false); });
+          // Deduplicate by event id (same match can appear on multiple date scans)
+          var seenIds = {};
+          var uniqueFinished = [];
+          for (var ui = 0; ui < allFinished.length; ui++) {
+            var mid = allFinished[ui].id;
+            if (!seenIds[mid]) {
+              seenIds[mid] = true;
+              uniqueFinished.push(allFinished[ui]);
+            }
+          }
+          form = uniqueFinished.slice(0, 10).map(function(m) { return parseMatch(m, false); });
           await kv.set("fn:recentForm", JSON.stringify(form), { ex: 86400 * 7 });
           log.push("form: " + form.map(function(m) { return m.result; }).join("") + " (" + form.length + " jogos)");
         } else {
