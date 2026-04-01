@@ -37,6 +37,13 @@ export default async function handler(req, res) {
   results.results_endpoint = await testEndpoint("/v1/team/results?team_id=" + FONSECA_TEAM_ID, apiKey);
   results.near_events = await testEndpoint("/v1/team/near-events?team_id=" + FONSECA_TEAM_ID + "&upcoming=true", apiKey);
 
+  // Try alternative endpoints for ranking
+  results.player_rankings = await testEndpoint("/v1/rankings/type/1", apiKey); // ATP singles ranking
+  results.team_events = await testEndpoint("/v1/team/events?team_id=" + FONSECA_TEAM_ID + "&page=0", apiKey);
+  results.team_last_events = await testEndpoint("/v1/team/events/last?team_id=" + FONSECA_TEAM_ID + "&page=0", apiKey);
+  results.team_next_events = await testEndpoint("/v1/team/events/next?team_id=" + FONSECA_TEAM_ID + "&page=0", apiKey);
+  results.team_statistics = await testEndpoint("/v1/team/statistics?team_id=" + FONSECA_TEAM_ID, apiKey);
+
   // Also test the direct SofaScore API
   try {
     var directRes = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID, {
