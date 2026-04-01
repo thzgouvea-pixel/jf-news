@@ -1,4 +1,4 @@
-// ===== DEBUG v4: UT standings + match odds =====
+// ===== DEBUG v5: Find ranking via Miami standings or team ranking field =====
 var RAPIDAPI_HOST = "sofascore6.p.rapidapi.com";
 
 async function testEndpoint(path, apiKey) {
@@ -21,23 +21,30 @@ export default async function handler(req, res) {
 
   var results = {};
 
-  // ATP Rankings is unique_tournament_id 3371 on SofaScore
-  // Try common ATP ranking IDs
-  results.ut_standings_3371 = await testEndpoint("/v1/unique-tournament/season/standings?unique_tournament_id=3371&season_id=80799", apiKey);
-  results.ut_standings_2519 = await testEndpoint("/v1/unique-tournament/season/standings?unique_tournament_id=2519&season_id=80799", apiKey);
+  // Miami Open = unique_tournament_id 2430, season_id 80799
+  // Get seasons to find the right season_id
+  results.miami_seasons = await testEndpoint("/v1/unique-tournament/seasons?unique_tournament_id=2430", apiKey);
 
-  // Try getting UT details for ATP to find the right IDs
-  results.ut_details_atp = await testEndpoint("/v1/unique-tournament/details?unique_tournament_id=3371", apiKey);
+  // Get standings for Miami 2026
+  results.miami_standings = await testEndpoint("/v1/unique-tournament/season/standings?unique_tournament_id=2430&season_id=80799", apiKey);
 
-  // Try ATP seasons to find season_id
-  results.ut_seasons_3371 = await testEndpoint("/v1/unique-tournament/seasons?unique_tournament_id=3371", apiKey);
+  // Get the full team details response (ALL fields, not truncated)
+  // to check every single field for ranking data
+  var teamUrl = "https://" + RAPIDAPI_HOST + "/api/sofascore/v1/team/details?team_id=403869";
+  try {
+    var teamRes = await fetch(teamUrl, {
+      headers: { "x-rapidapi-host": RAPIDAPI_HOST, "x-rapidapi-key": apiKey },
+    });
+    var teamData = await teamRes.json();
+    results.team_full = { 
+      allKeys: Object.keys(teamData),
+      fullJSON: JSON.stringify(teamData)
+    };
+  } catch(e) { results.team_full = { error: e.message }; }
 
-  // Also try the rankings-style unique tournament IDs
-  // SofaScore uses 4820 for ATP Rankings in some versions
-  results.ut_standings_4820 = await testEndpoint("/v1/unique-tournament/season/standings?unique_tournament_id=4820&season_id=80799", apiKey);
-
-  // Try without season_id
-  results.ut_standings_no_season = await testEndpoint("/v1/unique-tournament/season/standings?unique_tournament_id=3371", apiKey);
+  // Try searching for "rankings" in endpoint URL patterns
+  results.rankings_atp = await testEndpoint("/v1/rankings?sport_slug=tennis&type=atp", apiKey);
+  results.rankings_singles = await testEndpoint("/v1/rankings?type=singles&category=atp", apiKey);
 
   res.status(200).json(results);
 }
