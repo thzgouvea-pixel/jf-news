@@ -29,25 +29,34 @@ async function sofaFetch(path, apiKey) {
   return res.json();
 }
 
-// Fetch ranking via direct SofaScore API (free, no RapidAPI quota)
-async function fetchRanking() {
+// Fetch ranking - try RapidAPI first, then direct
+async function fetchRanking(apiKey) {
+  // Try RapidAPI "Get team details"
+  try {
+    var data = await sofaFetch("/v1/team/details?team_id=" + FONSECA_TEAM_ID, apiKey);
+    if (data && data.team) {
+      var team = data.team;
+      return { ranking: team.ranking || null, points: team.rankingPoints || null, previousRanking: team.previousRanking || null, bestRanking: team.bestRanking || null };
+    }
+    // If response is the team directly
+    if (data && data.ranking) {
+      return { ranking: data.ranking, points: data.rankingPoints || null, previousRanking: data.previousRanking || null, bestRanking: data.bestRanking || null };
+    }
+  } catch (e) {}
+
+  // Fallback: try direct SofaScore API
   try {
     var res = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID, {
       headers: { "User-Agent": "FonsecaNews/3.0" }
     });
-    if (!res.ok) return null;
-    var data = await res.json();
-    var team = data.team || data;
-    return {
-      ranking: team.ranking || null,
-      points: team.rankingPoints || null,
-      previousRanking: team.previousRanking || null,
-      bestRanking: team.bestRanking || null
-    };
-  } catch (e) {
-    console.log("[cron] Direct ranking failed:", e.message);
-    return null;
-  }
+    if (res.ok) {
+      var d = await res.json();
+      var t = d.team || d;
+      if (t.ranking) return { ranking: t.ranking, points: t.rankingPoints || null, previousRanking: t.previousRanking || null, bestRanking: t.bestRanking || null };
+    }
+  } catch (e) {}
+
+  return null;
 }
 
 // Find Fonseca matches from "Get matches by date"
@@ -215,7 +224,8 @@ export default async function handler(req, res) {
     var totalRequests = 0;
 
     // 1. Fetch ranking (free, no RapidAPI)
-    var ranking = await fetchRanking();
+    var ranking = await fetchRanking(apiKey);
+    totalRequests++;
     if (ranking && ranking.ranking) {
       await kv.set("fn:ranking", JSON.stringify(ranking), { ex: 86400 });
       log.push("ranking: #" + ranking.ranking);
