@@ -1,11 +1,13 @@
-// ===== CRON: SofaScore Update v4 =====
-// CHANGES FROM v3:
-//   + Block 5: Odds via The Odds API (free tier, ~1 req/day during tournament)
-//     Saves to KV as "fn:winProb" — only normalized % probability, no odds data
+// ===== CRON: SofaScore Update v5 =====
+// CHANGES FROM v4:
+//   - Ranking: tries 3 endpoints (rankings, details, direct) instead of 2
+//   - Added Block 6: Season stats via /v1/team/results (W/L count for current year)
 // TESTED ENDPOINTS:
 //   GET /v1/match/list?sport_slug=tennis&date=YYYY-MM-DD
 //   GET /v1/match/statistics?match_id=XXXXX
 //   GET /v1/team/details?team_id=403869
+//   GET /v1/team/rankings?team_id=403869
+//   GET /v1/team/results?team_id=403869
 // Runs 3x/day via cron-job.org POST to /api/cron-update
 // Host: sofascore6.p.rapidapi.com
 
@@ -15,11 +17,10 @@ var RAPIDAPI_HOST = "sofascore6.p.rapidapi.com";
 var FONSECA_SLUG = "fonseca";
 var FONSECA_TEAM_ID = 403869;
 
-// Map tournament names → The Odds API sport keys
-// Only ATP 1000 + Grand Slams are covered by The Odds API free tier
 var ODDS_TOURNAMENT_MAP = {
   "monte-carlo masters": "tennis_atp_monte_carlo_masters",
   "monte carlo masters": "tennis_atp_monte_carlo_masters",
+  "monte carlo": "tennis_atp_monte_carlo_masters",
   "madrid open": "tennis_atp_madrid_open",
   "italian open": "tennis_atp_italian_open",
   "french open": "tennis_atp_french_open",
@@ -51,30 +52,108 @@ async function sofaFetch(path, apiKey) {
   return res.json();
 }
 
-async function fetchRanking(apiKey) {
+// ===== RANKING — tries 3 endpoints =====
+async function fetchRanking(apiKey, log) {
+  // Attempt 1: /v1/team/rankings (used by news.js v5, returns rankings array)
   try {
-    var data = await sofaFetch("/v1/team/details?team_id=" + FONSECA_TEAM_ID, apiKey);
-    if (data && data.team) {
-      var team = data.team;
-      return { ranking: team.ranking || null, points: team.rankingPoints || null, previousRanking: team.previousRanking || null, bestRanking: team.bestRanking || null };
+    var data = await sofaFetch("/v1/team/rankings?team_id=" + FONSECA_TEAM_ID, apiKey);
+    if (data) {
+      var rankings = Array.isArray(data) ? data : data.rankings;
+      if (rankings && rankings.length > 0) {
+        var r = rankings[0];
+        log.push("ranking: #" + r.ranking + " (via /rankings)");
+        return {
+          ranking: r.ranking,
+          points: r.points || null,
+          previousRanking: r.previousRanking || null,
+          bestRanking: r.bestRanking || null,
+          rankingChange: (r.previousRanking || 0) - (r.ranking || 0)
+        };
+      }
     }
-    if (data && data.ranking) {
-      return { ranking: data.ranking, points: data.rankingPoints || null, previousRanking: data.previousRanking || null, bestRanking: data.bestRanking || null };
-    }
-  } catch (e) {}
+  } catch (e) { console.log("[cron] rankings endpoint failed:", e.message); }
 
+  // Attempt 2: /v1/team/details (returns team object with ranking field)
+  try {
+    var data2 = await sofaFetch("/v1/team/details?team_id=" + FONSECA_TEAM_ID, apiKey);
+    if (data2) {
+      var team = data2.team || data2;
+      if (team.ranking) {
+        log.push("ranking: #" + team.ranking + " (via /details)");
+        return {
+          ranking: team.ranking,
+          points: team.rankingPoints || null,
+          previousRanking: team.previousRanking || null,
+          bestRanking: team.bestRanking || null,
+          rankingChange: (team.previousRanking || 0) - (team.ranking || 0)
+        };
+      }
+    }
+  } catch (e) { console.log("[cron] details endpoint failed:", e.message); }
+
+  // Attempt 3: direct SofaScore API (no RapidAPI, free but may be blocked)
   try {
     var res = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID, {
-      headers: { "User-Agent": "FonsecaNews/4.0" },
+      headers: { "User-Agent": "FonsecaNews/5.0" },
     });
     if (res.ok) {
       var d = await res.json();
       var t = d.team || d;
-      if (t.ranking) return { ranking: t.ranking, points: t.rankingPoints || null, previousRanking: t.previousRanking || null, bestRanking: t.bestRanking || null };
+      if (t.ranking) {
+        log.push("ranking: #" + t.ranking + " (via direct API)");
+        return {
+          ranking: t.ranking,
+          points: t.rankingPoints || null,
+          previousRanking: t.previousRanking || null,
+          bestRanking: t.bestRanking || null,
+          rankingChange: (t.previousRanking || 0) - (t.ranking || 0)
+        };
+      }
     }
-  } catch (e) {}
+  } catch (e) { console.log("[cron] direct API failed:", e.message); }
 
+  log.push("ranking: all 3 endpoints failed");
   return null;
+}
+
+// ===== SEASON STATS — W/L for current year =====
+async function fetchSeasonStats(apiKey, log) {
+  try {
+    var data = await sofaFetch("/v1/team/results?team_id=" + FONSECA_TEAM_ID, apiKey);
+    if (!data) { log.push("season: endpoint returned null"); return null; }
+
+    var results = Array.isArray(data) ? data : (data.events || data.results || []);
+    if (results.length === 0) { log.push("season: no results returned"); return null; }
+
+    var currentYear = new Date().getFullYear();
+    var wins = 0;
+    var losses = 0;
+
+    for (var i = 0; i < results.length; i++) {
+      var match = results[i];
+      if (!match.startTimestamp && !match.timestamp) continue;
+      var ts = match.startTimestamp || match.timestamp;
+      var matchYear = new Date(ts * 1000).getFullYear();
+      if (matchYear !== currentYear) continue;
+      if (match.status && match.status.type !== "finished" && !match.status.isFinished) continue;
+
+      var isFonsecaHome = (match.homeTeam && match.homeTeam.id === FONSECA_TEAM_ID);
+      var fScore = isFonsecaHome ? (match.homeScore || {}) : (match.awayScore || {});
+      var oScore = isFonsecaHome ? (match.awayScore || {}) : (match.homeScore || {});
+
+      if ((fScore.current || 0) > (oScore.current || 0)) wins++;
+      else if ((oScore.current || 0) > (fScore.current || 0)) losses++;
+    }
+
+    if (wins === 0 && losses === 0) { log.push("season: no " + currentYear + " matches found in results"); return null; }
+
+    var season = { wins: wins, losses: losses, year: currentYear };
+    log.push("season: " + wins + "W-" + losses + "L (" + currentYear + ")");
+    return season;
+  } catch (e) {
+    log.push("season: error " + e.message);
+    return null;
+  }
 }
 
 async function findFonsecaMatches(date, apiKey) {
@@ -89,13 +168,10 @@ async function findFonsecaMatches(date, apiKey) {
     for (var k of Object.keys(data)) {
       if (Array.isArray(data[k])) {
         matches = data[k];
-        console.log("[cron] Found array in key: " + k + " with " + matches.length + " items");
         break;
       }
     }
   }
-
-  console.log("[cron] Date " + dateStr + ": " + matches.length + " total matches");
 
   var fonsecaMatches = matches.filter(function (m) {
     var slug = (m.slug || "").toLowerCase();
@@ -104,7 +180,6 @@ async function findFonsecaMatches(date, apiKey) {
     return slug.includes("fonseca") || homeName.includes("fonseca") || awayName.includes("fonseca");
   });
 
-  console.log("[cron] Date " + dateStr + ": " + fonsecaMatches.length + " Fonseca matches");
   return fonsecaMatches;
 }
 
@@ -161,11 +236,7 @@ async function fetchMatchStats(matchId, apiKey) {
   return { home, away };
 }
 
-// ===== BLOCK 5: Win probability via The Odds API =====
-// Fetches h2h odds, converts to normalized win probability (0-100%).
-// NOTHING related to betting is stored or exposed — only the probability %.
-// Saves { fonseca_pct: 45, opponent_pct: 55, opponent_name: "...", updatedAt }
-// Cost: 1 credit per call (1 market × 1 region). Free tier = 500/month.
+// ===== ODDS — The Odds API =====
 async function fetchOdds(nextMatch, log) {
   var oddsApiKey = process.env.ODDS_API_KEY;
   if (!oddsApiKey) { log.push("prob: no ODDS_API_KEY"); return; }
@@ -187,21 +258,17 @@ async function fetchOdds(nextMatch, log) {
 
   try {
     var url = "https://api.the-odds-api.com/v4/sports/" + sportKey + "/odds"
-      + "?regions=eu"
-      + "&markets=h2h"
-      + "&oddsFormat=decimal"
-      + "&apiKey=" + oddsApiKey;
+      + "?regions=eu&markets=h2h&oddsFormat=decimal&apiKey=" + oddsApiKey;
 
     var res = await fetch(url);
     if (!res.ok) { log.push("prob: API error " + res.status); return; }
 
     var data = await res.json();
     if (!Array.isArray(data) || data.length === 0) {
-      log.push("prob: no data for " + sportKey + " (not listed yet)");
+      log.push("prob: no data for " + sportKey);
       return;
     }
 
-    // Find match involving Fonseca
     var fonsecaMatch = data.find(function (event) {
       var home = (event.home_team || "").toLowerCase();
       var away = (event.away_team || "").toLowerCase();
@@ -209,14 +276,13 @@ async function fetchOdds(nextMatch, log) {
     });
 
     if (!fonsecaMatch) {
-      log.push("prob: Fonseca not found in " + data.length + " events");
+      log.push("prob: Fonseca not in " + data.length + " events");
       return;
     }
 
     var isFonsecaHome = (fonsecaMatch.home_team || "").toLowerCase().includes("fonseca");
     var opponentName = isFonsecaHome ? fonsecaMatch.away_team : fonsecaMatch.home_team;
 
-    // Collect raw decimal odds per player across all bookmakers
     var fonsecaOdds = [], opponentOdds = [];
     (fonsecaMatch.bookmakers || []).forEach(function (bm) {
       var market = (bm.markets || []).find(function (m) { return m.key === "h2h"; });
@@ -228,11 +294,10 @@ async function fetchOdds(nextMatch, log) {
     });
 
     if (!fonsecaOdds.length || !opponentOdds.length) {
-      log.push("prob: incomplete odds data");
+      log.push("prob: incomplete data");
       return;
     }
 
-    // Median odds per player
     function median(arr) {
       var sorted = arr.slice().sort(function (a, b) { return a - b; });
       var mid = Math.floor(sorted.length / 2);
@@ -241,20 +306,15 @@ async function fetchOdds(nextMatch, log) {
 
     var medF = median(fonsecaOdds);
     var medO = median(opponentOdds);
-
-    // Convert decimal odds → implied probability → normalize (removes bookmaker margin)
-    // implied prob = 1 / odd
     var impliedF = 1 / medF;
     var impliedO = 1 / medO;
     var total = impliedF + impliedO;
-
     var fonsecaPct = Math.round((impliedF / total) * 100);
     var opponentPct = 100 - fonsecaPct;
 
-    // Store ONLY the probability — no odds, no bookmaker names
     var payload = {
-      fonseca_pct: fonsecaPct,
-      opponent_pct: opponentPct,
+      fonseca: fonsecaPct,
+      opponent: opponentPct,
       opponent_name: opponentName,
       tournament: nextMatch.tournament_name,
       commence_time: fonsecaMatch.commence_time,
@@ -327,14 +387,11 @@ export default async function handler(req, res) {
     var totalRequests = 0;
     var now = new Date();
 
-    // 1. Ranking
-    var ranking = await fetchRanking(apiKey);
-    totalRequests++;
+    // 1. Ranking (tries 3 endpoints)
+    var ranking = await fetchRanking(apiKey, log);
+    totalRequests += 2; // worst case: 2 RapidAPI calls + 1 direct
     if (ranking && ranking.ranking) {
       await kv.set("fn:ranking", JSON.stringify(ranking), { ex: 86400 });
-      log.push("ranking: #" + ranking.ranking);
-    } else {
-      log.push("ranking: failed");
     }
 
     // 1b. Prize money (Mondays 9-12h BRT only)
@@ -342,7 +399,7 @@ export default async function handler(req, res) {
     if (now.getUTCDay() === 1 && brasiliaHour >= 9 && brasiliaHour <= 12) {
       try {
         var pmRes = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID, {
-          headers: { "User-Agent": "FonsecaNews/4.0" },
+          headers: { "User-Agent": "FonsecaNews/5.0" },
         });
         if (pmRes.ok) {
           var pmData = await pmRes.json();
@@ -396,17 +453,13 @@ export default async function handler(req, res) {
         log.push("stats: already fetched");
       }
 
-      // Form — busca os últimos 30 dias de uma vez para ter histórico completo
-      // Só faz o scan completo se o form estiver incompleto (< 5 resultados)
+      // Form — scan last 30 days for complete history
       try {
         var existingForm = await kv.get("fn:recentForm");
         var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
-
-        // Se já tem 5+ resultados e o último jogo já está no form, não faz nada
         var lastAlreadyInForm = form.some(function(f) { return f.event_id === lastMatch.event_id; });
 
         if (!lastAlreadyInForm || form.length < 5) {
-          // Scan dos últimos 30 dias para pegar histórico completo
           var allFinished = [];
           var today = new Date();
           for (var fd = 0; fd < 30; fd++) {
@@ -418,15 +471,12 @@ export default async function handler(req, res) {
               return m.status && (m.status.type === "finished" || m.status.isFinished);
             });
             allFinished = allFinished.concat(finished);
-            // Para quando já tem 10 partidas finalizadas
             if (allFinished.length >= 10) break;
           }
-
-          // Ordena por timestamp decrescente e pega as 10 mais recentes
           allFinished.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
           form = allFinished.slice(0, 10).map(function(m) { return parseMatch(m, false); });
           await kv.set("fn:recentForm", JSON.stringify(form), { ex: 86400 * 7 });
-          log.push("form: " + form.map(function(m) { return m.result; }).join("") + " (" + form.length + " jogos, scan completo)");
+          log.push("form: " + form.map(function(m) { return m.result; }).join("") + " (" + form.length + " jogos)");
         } else {
           log.push("form: " + form.map(function(m) { return m.result; }).join("") + " (cache ok)");
         }
@@ -450,18 +500,24 @@ export default async function handler(req, res) {
       log.push("nextMatch: none in next 14 days");
     }
 
-    // 5. Odds (The Odds API — free tier, ~1 credit/call)
+    // 5. Odds
     await fetchOdds(nextMatch, log);
+
+    // 6. Season stats (W/L for current year)
+    var seasonData = await fetchSeasonStats(apiKey, log);
+    totalRequests++;
+    if (seasonData) {
+      await kv.set("fn:season", JSON.stringify(seasonData), { ex: 86400 });
+    }
 
     // Timestamp
     await kv.set("fn:cronLastRun", now.toISOString());
 
-    console.log("[cron-v4] Done. Requests: " + totalRequests + ". " + log.join(" | "));
-
+    console.log("[cron-v5] Done. Requests: " + totalRequests + ". " + log.join(" | "));
     return res.status(200).json({ ok: true, requests: totalRequests, log, timestamp: now.toISOString() });
 
   } catch (error) {
-    console.error("[cron-v4] Error:", error);
+    console.error("[cron-v5] Error:", error);
     return res.status(500).json({ ok: false, error: error.message });
   }
 }
