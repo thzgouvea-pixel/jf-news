@@ -32,17 +32,21 @@ export default async function handler(req, res) {
   var results = {};
 
   // Test ranking endpoints
-  results.rankings = await testEndpoint("/v1/team/rankings?team_id=" + FONSECA_TEAM_ID, apiKey);
   results.details = await testEndpoint("/v1/team/details?team_id=" + FONSECA_TEAM_ID, apiKey);
-  results.results_endpoint = await testEndpoint("/v1/team/results?team_id=" + FONSECA_TEAM_ID, apiKey);
-  results.near_events = await testEndpoint("/v1/team/near-events?team_id=" + FONSECA_TEAM_ID + "&upcoming=true", apiKey);
 
-  // Try alternative endpoints for ranking
-  results.player_rankings = await testEndpoint("/v1/rankings/type/1", apiKey); // ATP singles ranking
-  results.team_events = await testEndpoint("/v1/team/events?team_id=" + FONSECA_TEAM_ID + "&page=0", apiKey);
-  results.team_last_events = await testEndpoint("/v1/team/events/last?team_id=" + FONSECA_TEAM_ID + "&page=0", apiKey);
-  results.team_next_events = await testEndpoint("/v1/team/events/next?team_id=" + FONSECA_TEAM_ID + "&page=0", apiKey);
-  results.team_statistics = await testEndpoint("/v1/team/statistics?team_id=" + FONSECA_TEAM_ID, apiKey);
+  // Try scraping ranking from match data (players in match list often include ranking)
+  var today = new Date().toISOString().split("T")[0];
+  results.match_list_today = await testEndpoint("/v1/match/list?sport_slug=tennis&date=" + today, apiKey);
+
+  // Try ATP rankings endpoint variations
+  results.atp_rankings = await testEndpoint("/v1/rankings/type/1", apiKey);
+  results.atp_rankings_v2 = await testEndpoint("/v1/sport/tennis/rankings", apiKey);
+  results.atp_rankings_v3 = await testEndpoint("/v1/unique-tournament/2519/rankings", apiKey); // 2519 = ATP Rankings
+  results.atp_rankings_v4 = await testEndpoint("/v1/rankings/type/1/page/1", apiKey);
+
+  // Check if match data includes player ranking
+  // Look at a recent Fonseca match to see if ranking is embedded
+  results.match_detail = await testEndpoint("/v1/match/details?match_id=15708865", apiKey); // Alcaraz match
 
   // Also test the direct SofaScore API
   try {
