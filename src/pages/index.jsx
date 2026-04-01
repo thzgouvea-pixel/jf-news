@@ -459,40 +459,57 @@ var PlayerBlock = function(props) {
       {matchStats && matchStats.fonseca && (function() {
         var f = matchStats.fonseca;
         var o = matchStats.opponent;
+        // Field names match exactly what SofaScore returns (confirmed from KV):
+        // aces, doublefaults, firstserveaccuracy, secondserveaccuracy,
+        // firstservepointsaccuracy, secondservepointsaccuracy,
+        // servicegamestotal, breakpointssaved, pointstotal
         var statRows = [
-          { label: "Aces", fVal: f.aces || f.service_aces || 0, oVal: o.aces || o.service_aces || 0 },
-          { label: "1º saque %", fVal: f.first_serve_percentage || f["1st_serve"] || 0, oVal: o.first_serve_percentage || o["1st_serve"] || 0, pct: true },
-          { label: "Winners", fVal: f.winners || 0, oVal: o.winners || 0 },
-          { label: "Erros", fVal: f.unforced_errors || 0, oVal: o.unforced_errors || 0, invert: true },
+          { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0 },
+          { label: "Duplas faltas", fVal: f.doublefaults || 0, oVal: o.doublefaults || 0, invert: true },
+          { label: "1º saque %", fVal: f.firstserveaccuracy || 0, oVal: o.firstserveaccuracy || 0, pct: true },
+          { label: "Pontos no 1º saque", fVal: f.firstservepointsaccuracy || 0, oVal: o.firstservepointsaccuracy || 0, pct: true },
+          { label: "Pontos no 2º saque", fVal: f.secondservepointsaccuracy || 0, oVal: o.secondservepointsaccuracy || 0, pct: true },
+          { label: "Breaks salvos", fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0 },
+          { label: "Total de pontos", fVal: f.pointstotal || 0, oVal: o.pointstotal || 0 },
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
         if (statRows.length === 0) return null;
         var oppShort = (matchStats.opponent_name || "Adv.").split(" ").pop();
+        var isWin = matchStats.result === "V";
         var hasBelowContent = (recentForm && recentForm.length > 0) || season || prizeMoney;
         return (
-          <div style={{ padding: "14px 0", borderBottom: hasBelowContent ? "1px solid " + BORDER : "none" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, fontFamily: SANS }}>Fonseca</span>
-              <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Stats do jogo</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: SUB, fontFamily: SANS }}>{oppShort}</span>
+          <div style={{ padding: "16px 0", borderBottom: hasBelowContent ? "1px solid " + BORDER : "none" }}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div>
+                <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS, display: "block" }}>Stats · Última partida</span>
+                <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{matchStats.tournament} · {matchStats.score}</span>
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "0A" : RED + "0A", padding: "3px 10px", borderRadius: 999 }}>{isWin ? "Vitória" : "Derrota"}</span>
             </div>
+            {/* Players label */}
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS }}>Fonseca</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: SUB, fontFamily: SANS }}>{oppShort}</span>
+            </div>
+            {/* Stat rows */}
             {statRows.map(function(row, i) {
               var fMax = Math.max(row.fVal, row.oVal, 1);
               var fPct = row.pct ? row.fVal : Math.round((row.fVal / fMax) * 100);
               var oPct = row.pct ? row.oVal : Math.round((row.oVal / fMax) * 100);
               var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
               return (
-                <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 8 : 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 3 }}>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: fBetter ? TEXT : DIM, fontFamily: SANS }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
-                    <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{row.label}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: !fBetter ? TEXT : DIM, fontFamily: SANS }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 10 : 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: fBetter ? TEXT : DIM, fontFamily: SANS }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
+                    <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center", flex: 1, padding: "0 8px" }}>{row.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: !fBetter ? TEXT : DIM, fontFamily: SANS }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                   </div>
-                  <div style={{ display: "flex", gap: 4, height: 3 }}>
-                    <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}>
-                      <div style={{ height: 3, background: fBetter ? GREEN : BORDER, borderRadius: 2, width: Math.max(fPct, 6) + "%", transition: "width 0.5s" }} />
+                  <div style={{ display: "flex", height: 3, gap: 3 }}>
+                    <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", background: "#f0f0f0", borderRadius: "2px 0 0 2px" }}>
+                      <div style={{ height: 3, background: fBetter ? GREEN : "#d0d0d0", borderRadius: "2px 0 0 2px", width: Math.max(fPct, 4) + "%", transition: "width 0.6s ease" }} />
                     </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ height: 3, background: !fBetter ? RED : BORDER, borderRadius: 2, width: Math.max(oPct, 6) + "%", transition: "width 0.5s" }} />
+                    <div style={{ flex: 1, background: "#f0f0f0", borderRadius: "0 2px 2px 0" }}>
+                      <div style={{ height: 3, background: !fBetter ? RED : "#d0d0d0", borderRadius: "0 2px 2px 0", width: Math.max(oPct, 4) + "%", transition: "width 0.6s ease" }} />
                     </div>
                   </div>
                 </div>
