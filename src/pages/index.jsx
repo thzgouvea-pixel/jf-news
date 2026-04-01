@@ -1167,6 +1167,7 @@ export default function JoaoFonsecaNews() {
   var _matchStats = useState(null); var matchStats = _matchStats[0]; var setMatchStats = _matchStats[1];
   var _h2hData = useState(null); var h2hData = _h2hData[0]; var setH2hData = _h2hData[1];
   var _recentForm = useState(null); var recentForm = _recentForm[0]; var setRecentForm = _recentForm[1];
+  var _prizeMoney = useState(null); var prizeMoney = _prizeMoney[0]; var setPrizeMoney = _prizeMoney[1];
   var _visibleCount = useState(12); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
@@ -1263,6 +1264,7 @@ export default function JoaoFonsecaNews() {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.h2h) setH2hData(d.h2h);
       if (d.recentForm) setRecentForm(d.recentForm);
+      if (d.prizeMoney && d.prizeMoney.amount) setPrizeMoney(d.prizeMoney.amount);
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
@@ -1353,7 +1355,7 @@ export default function JoaoFonsecaNews() {
         {/* PRIZE MONEY */}
         <div style={{ padding: "14px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
           <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS }}>Prize money</span>
-          <span style={{ fontSize: 18, fontWeight: 800, color: GREEN, fontFamily: SANS }}>US$ 2.8M</span>
+          <span style={{ fontSize: 18, fontWeight: 800, color: GREEN, fontFamily: SANS }}>{prizeMoney ? "US$ " + (prizeMoney >= 1000000 ? (prizeMoney / 1000000).toFixed(1) + "M" : Math.round(prizeMoney / 1000) + "K") : "US$ 2.8M"}</span>
           <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>na carreira</span>
         </div>
 
