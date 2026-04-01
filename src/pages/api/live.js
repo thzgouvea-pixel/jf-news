@@ -7,6 +7,9 @@
 
 import { kv } from "@vercel/kv";
 
+// IMPORTANTE: impede o Next.js de tentar pré-renderizar essa rota no build
+export const dynamic = "force-dynamic";
+
 var RAPIDAPI_HOST = "sofascore6.p.rapidapi.com";
 var FONSECA_SLUG = "fonseca";
 var CACHE_KEY = "fn:liveMatch";
