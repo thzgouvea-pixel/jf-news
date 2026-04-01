@@ -560,7 +560,7 @@ var WinProbBar = function(props) {
   );
 };
 
-// ===== PLAYER BLOCK (CORRIGIDO) =====
+// ===== PLAYER BLOCK (REDESIGN) =====
 var PlayerBlock = function(props) {
   var lastMatch = props.lastMatch;
   var matchStats = props.matchStats;
@@ -572,56 +572,93 @@ var PlayerBlock = function(props) {
   if (!hasAnyData) return null;
 
   return (
-    <div style={{ borderTop: "1px solid " + BORDER, margin: "0 0 4px" }}>
+    <div style={{ margin: "12px 0 4px" }}>
 
-      {/* Stats do jogo */}
+      {/* Metric pills row: Season W-L + Forma + Prize Money */}
+      {(season || (recentForm && recentForm.length > 0) || prizeMoney) && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          {season && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: BG_ALT, borderRadius: 10, border: "1px solid " + BORDER }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>2026</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: GREEN, fontFamily: SANS }}>{season.wins}V</span>
+              <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>-</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: RED, fontFamily: SANS }}>{season.losses}D</span>
+            </div>
+          )}
+          {recentForm && recentForm.length > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "8px 14px", background: BG_ALT, borderRadius: 10, border: "1px solid " + BORDER }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", marginRight: 4 }}>Forma</span>
+              {recentForm.map(function(m, i) {
+                var w = m.result === "V";
+                return (
+                  <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 22, height: 22, borderRadius: 6, background: w ? GREEN + "15" : RED + "15", border: "1.5px solid " + (w ? GREEN + "40" : RED + "40"), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {prizeMoney && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: BG_ALT, borderRadius: 10, border: "1px solid " + BORDER }}>
+              <span style={{ fontSize: 10, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Prize</span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: GREEN, fontFamily: SANS }}>
+                {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000) + "K"}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Stats da ultima partida — card com fundo */}
       {matchStats && matchStats.fonseca && (function() {
         var f = matchStats.fonseca;
         var o = matchStats.opponent;
         var statRows = [
           { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0 },
           { label: "Duplas faltas", fVal: f.doublefaults || 0, oVal: o.doublefaults || 0, invert: true },
-          { label: "1º saque %", fVal: f.firstserveaccuracy || 0, oVal: o.firstserveaccuracy || 0, pct: true },
-          { label: "Pontos no 1º saque", fVal: f.firstservepointsaccuracy || 0, oVal: o.firstservepointsaccuracy || 0, pct: true },
-          { label: "Pontos no 2º saque", fVal: f.secondservepointsaccuracy || 0, oVal: o.secondservepointsaccuracy || 0, pct: true },
+          { label: "1o saque", fVal: f.firstserveaccuracy || 0, oVal: o.firstserveaccuracy || 0, pct: true },
+          { label: "Pts no 1o saque", fVal: f.firstservepointsaccuracy || 0, oVal: o.firstservepointsaccuracy || 0, pct: true },
+          { label: "Pts no 2o saque", fVal: f.secondservepointsaccuracy || 0, oVal: o.secondservepointsaccuracy || 0, pct: true },
           { label: "Breaks salvos", fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0 },
           { label: "Total de pontos", fVal: f.pointstotal || 0, oVal: o.pointstotal || 0 },
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
         if (statRows.length === 0) return null;
         var oppShort = (matchStats.opponent_name || "Adv.").split(" ").pop();
         var isWin = matchStats.result === "V";
-        var hasBelowContent = (recentForm && recentForm.length > 0) || prizeMoney;
         return (
-          <div style={{ padding: "16px 0", borderBottom: hasBelowContent ? "1px solid " + BORDER : "none" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ background: BG_ALT, borderRadius: 14, padding: "18px 18px 14px", border: "1px solid " + BORDER }}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div>
-                <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS, display: "block" }}>Stats · Última partida</span>
-                <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{matchStats.tournament} · {matchStats.score}</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>Ultima partida</span>
+                <span style={{ fontSize: 12, color: SUB, fontFamily: SANS, marginTop: 2, display: "block" }}>{matchStats.tournament} · {matchStats.score}</span>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "0A" : RED + "0A", padding: "3px 10px", borderRadius: 999 }}>{isWin ? "Vitória" : "Derrota"}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: isWin ? GREEN : "#fff", fontFamily: SANS, background: isWin ? GREEN : RED, padding: "4px 12px", borderRadius: 8 }}>{isWin ? "Vitoria" : "Derrota"}</span>
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS }}>Fonseca</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: SUB, fontFamily: SANS }}>{oppShort}</span>
+            {/* Player names */}
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, padding: "0 2px" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: GREEN, fontFamily: SANS }}>Fonseca</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS }}>{oppShort}</span>
             </div>
+            {/* Stat rows */}
             {statRows.map(function(row, i) {
               var fMax = Math.max(row.fVal, row.oVal, 1);
               var fPct = row.pct ? row.fVal : Math.round((row.fVal / fMax) * 100);
               var oPct = row.pct ? row.oVal : Math.round((row.oVal / fMax) * 100);
               var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
               return (
-                <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 10 : 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: fBetter ? TEXT : DIM, fontFamily: SANS }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
-                    <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center", flex: 1, padding: "0 8px" }}>{row.label}</span>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: !fBetter ? TEXT : DIM, fontFamily: SANS }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 12 : 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: fBetter ? GREEN : DIM, fontFamily: SANS }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
+                    <span style={{ fontSize: 11, color: SUB, fontFamily: SANS, textAlign: "center", flex: 1, padding: "0 8px" }}>{row.label}</span>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                   </div>
-                  <div style={{ display: "flex", height: 3, gap: 3 }}>
-                    <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", background: "#f0f0f0", borderRadius: "2px 0 0 2px" }}>
-                      <div style={{ height: 3, background: fBetter ? GREEN : "#d0d0d0", borderRadius: "2px 0 0 2px", width: Math.max(fPct, 4) + "%", transition: "width 0.6s ease" }} />
+                  <div style={{ display: "flex", height: 5, gap: 3, borderRadius: 3 }}>
+                    <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", background: "#e8e8e8", borderRadius: "3px 0 0 3px" }}>
+                      <div style={{ height: 5, background: fBetter ? GREEN : "#ccc", borderRadius: "3px 0 0 3px", width: Math.max(fPct, 6) + "%", transition: "width 0.6s ease" }} />
                     </div>
-                    <div style={{ flex: 1, background: "#f0f0f0", borderRadius: "0 2px 2px 0" }}>
-                      <div style={{ height: 3, background: !fBetter ? RED : "#d0d0d0", borderRadius: "0 2px 2px 0", width: Math.max(oPct, 4) + "%", transition: "width 0.6s ease" }} />
+                    <div style={{ flex: 1, background: "#e8e8e8", borderRadius: "0 3px 3px 0" }}>
+                      <div style={{ height: 5, background: !fBetter ? RED : "#ccc", borderRadius: "0 3px 3px 0", width: Math.max(oPct, 6) + "%", transition: "width 0.6s ease" }} />
                     </div>
                   </div>
                 </div>
@@ -630,29 +667,6 @@ var PlayerBlock = function(props) {
           </div>
         );
       })()}
-
-      {/* Forma recente */}
-      {recentForm && recentForm.length > 0 && (
-        <div style={{ padding: "10px 0", borderBottom: prizeMoney ? "1px solid " + BORDER : "none", display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>Forma</span>
-          <div style={{ display: "flex", gap: 3 }}>
-            {recentForm.map(function(m, i) {
-              var w = m.result === "V";
-              return (<div key={i} title={(m.opponent_name || "") + " " + (m.score || "")} style={{ width: 20, height: 20, borderRadius: 5, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 9, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span></div>);
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Prize Money */}
-      {prizeMoney && (
-        <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>Prize money</span>
-          <span style={{ fontSize: 13, fontWeight: 800, color: GREEN, fontFamily: SANS }}>
-            {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000) + "K"}
-          </span>
-        </div>
-      )}
     </div>
   );
 };
