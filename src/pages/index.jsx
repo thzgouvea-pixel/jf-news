@@ -1,4 +1,4 @@
-// Fonseca News — Clean Redesign v2
+// Fonseca News — Clean Redesign v2 (corrigido)
 import { useState, useEffect, useRef } from "react";
 
 const GREEN = "#00A859";
@@ -419,9 +419,7 @@ var NextDuelCard = function(props) {
   );
 };
 
-// ===== PLAYER BLOCK =====
-// Agrupa: última partida, stats do jogo, forma recente, temporada, prize money
-// Aparece uma única vez, logo abaixo do NextDuelCard
+// ===== PLAYER BLOCK (CORRIGIDO) =====
 var PlayerBlock = function(props) {
   var lastMatch = props.lastMatch;
   var matchStats = props.matchStats;
@@ -435,14 +433,10 @@ var PlayerBlock = function(props) {
   return (
     <div style={{ borderTop: "1px solid " + BORDER, margin: "0 0 4px" }}>
 
-      {/* Stats do jogo — versão compacta */}
+      {/* Stats do jogo */}
       {matchStats && matchStats.fonseca && (function() {
         var f = matchStats.fonseca;
         var o = matchStats.opponent;
-        // Field names match exactly what SofaScore returns (confirmed from KV):
-        // aces, doublefaults, firstserveaccuracy, secondserveaccuracy,
-        // firstservepointsaccuracy, secondservepointsaccuracy,
-        // servicegamestotal, breakpointssaved, pointstotal
         var statRows = [
           { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0 },
           { label: "Duplas faltas", fVal: f.doublefaults || 0, oVal: o.doublefaults || 0, invert: true },
@@ -455,10 +449,9 @@ var PlayerBlock = function(props) {
         if (statRows.length === 0) return null;
         var oppShort = (matchStats.opponent_name || "Adv.").split(" ").pop();
         var isWin = matchStats.result === "V";
-        var hasBelowContent = (recentForm && recentForm.length > 0) || season || prizeMoney;
+        var hasBelowContent = (recentForm && recentForm.length > 0) || prizeMoney;
         return (
           <div style={{ padding: "16px 0", borderBottom: hasBelowContent ? "1px solid " + BORDER : "none" }}>
-            {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <div>
                 <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS, display: "block" }}>Stats · Última partida</span>
@@ -466,12 +459,10 @@ var PlayerBlock = function(props) {
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "0A" : RED + "0A", padding: "3px 10px", borderRadius: 999 }}>{isWin ? "Vitória" : "Derrota"}</span>
             </div>
-            {/* Players label */}
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS }}>Fonseca</span>
               <span style={{ fontSize: 11, fontWeight: 700, color: SUB, fontFamily: SANS }}>{oppShort}</span>
             </div>
-            {/* Stat rows */}
             {statRows.map(function(row, i) {
               var fMax = Math.max(row.fVal, row.oVal, 1);
               var fPct = row.pct ? row.fVal : Math.round((row.fVal / fMax) * 100);
@@ -499,9 +490,9 @@ var PlayerBlock = function(props) {
         );
       })()}
 
-   {/* Forma recente */}
+      {/* Forma recente */}
       {recentForm && recentForm.length > 0 && (
-        <div style={{ padding: "10px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", gap: 6 }}>
+        <div style={{ padding: "10px 0", borderBottom: prizeMoney ? "1px solid " + BORDER : "none", display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>Forma</span>
           <div style={{ display: "flex", gap: 3 }}>
             {recentForm.map(function(m, i) {
@@ -519,18 +510,6 @@ var PlayerBlock = function(props) {
           <span style={{ fontSize: 13, fontWeight: 800, color: GREEN, fontFamily: SANS }}>
             {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000) + "K"}
           </span>
-        </div>
-      )}
-          )}
-          {recentForm && recentForm.length > 0 && prizeMoney && <span style={{ color: BORDER }}>|</span>}
-          {prizeMoney && (
-            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>Prize money</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: GREEN, fontFamily: SANS }}>
-                {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000) + "K"}
-              </span>
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -615,7 +594,7 @@ var NewsCard = function(props) {
   );
 };
 
-// ===== BUILD FEED — apenas notícias + interações =====
+// ===== BUILD FEED =====
 var buildFeed = function(newsItems, allLikes, nextMatch) {
   var elements = [];
   var interactions = [
@@ -624,7 +603,6 @@ var buildFeed = function(newsItems, allLikes, nextMatch) {
     <DailyPoll key="poll" />,
   ].filter(Boolean);
   var interactionIdx = 0;
-
   newsItems.forEach(function(item, i) {
     var isLastBeforeInteraction = (i + 1) % 4 === 0 && interactionIdx < interactions.length;
     elements.push(<NewsCard key={"news-" + i} item={item} index={i} allLikes={allLikes} noBorder={isLastBeforeInteraction} />);
@@ -753,9 +731,9 @@ export default function JoaoFonsecaNews() {
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
   var dm = nextMatch || (news.length === 0 ? SAMPLE_NEXT_MATCH : null);
-  var dl = lastMatch || null; // comes from SofaScore async, no sample fallback needed
+  var dl = lastMatch || null;
   var dp = player || (news.length === 0 ? SAMPLE_PLAYER : null);
-  var ds = season || null; // comes from SofaScore async, no sample fallback needed
+  var ds = season || null;
 
   var Modal = function(p) { return (
     <div onClick={p.onClose} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInO 0.3s ease", overflowY: "auto" }}>
@@ -813,7 +791,7 @@ export default function JoaoFonsecaNews() {
         <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 6px" }}>Próximo duelo</h2>
         <NextDuelCard match={dm} player={dp} />
 
-        {/* 2. PLAYER BLOCK — última partida, stats, forma, temporada, prize */}
+        {/* 2. PLAYER BLOCK */}
         <PlayerBlock
           lastMatch={dl}
           matchStats={matchStats}
@@ -822,8 +800,8 @@ export default function JoaoFonsecaNews() {
           prizeMoney={prizeMoney}
         />
 
-        {/* 3. QUICK NAV */}
-        <section style={{ padding: "14px 0" }}>
+        {/* 3. QUICK NAV — FIX 3: padding reduzido */}
+        <section style={{ padding: "8px 0" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
             <a href="/biografia" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -885,9 +863,9 @@ export default function JoaoFonsecaNews() {
           )}
         </section>
 
-        {/* 5. NOTÍCIAS — feed limpo */}
+        {/* 5. NOTÍCIAS — FIX 2: spacing reduzido */}
         <section style={{ paddingTop: 4 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 8px" }}>Notícias</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "6px 0 4px" }}>Notícias</h2>
           {loading && news.length === 0 && <Skeleton />}
           {dn.length > 0 && !(loading && news.length === 0) && (
             <>
