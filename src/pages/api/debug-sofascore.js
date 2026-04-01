@@ -17,8 +17,7 @@ async function testEndpoint(path, apiKey) {
     var status = res.status;
     if (!res.ok) return { path: path, status: status, data: null, error: "HTTP " + status };
     var data = await res.json();
-    // Return first 500 chars to avoid huge response
-    var preview = JSON.stringify(data).substring(0, 500);
+    var preview = JSON.stringify(data).substring(0, 2000);
     return { path: path, status: status, keys: Object.keys(data), preview: preview };
   } catch (e) {
     return { path: path, status: 0, error: e.message };
@@ -31,22 +30,27 @@ export default async function handler(req, res) {
 
   var results = {};
 
-  // Test ranking endpoints
-  results.details = await testEndpoint("/v1/team/details?team_id=" + FONSECA_TEAM_ID, apiKey);
+  // Focus: does match_detail include ranking in homeTeam/awayTeam?
+  results.match_detail = await testEndpoint("/v1/match/details?match_id=15708865", apiKey);
 
-  // Try scraping ranking from match data (players in match list often include ranking)
-  var today = new Date().toISOString().split("T")[0];
-  results.match_list_today = await testEndpoint("/v1/match/list?sport_slug=tennis&date=" + today, apiKey);
-
-  // Try ATP rankings endpoint variations
-  results.atp_rankings = await testEndpoint("/v1/rankings/type/1", apiKey);
-  results.atp_rankings_v2 = await testEndpoint("/v1/sport/tennis/rankings", apiKey);
-  results.atp_rankings_v3 = await testEndpoint("/v1/unique-tournament/2519/rankings", apiKey); // 2519 = ATP Rankings
-  results.atp_rankings_v4 = await testEndpoint("/v1/rankings/type/1/page/1", apiKey);
-
-  // Check if match data includes player ranking
-  // Look at a recent Fonseca match to see if ranking is embedded
-  results.match_detail = await testEndpoint("/v1/match/details?match_id=15708865", apiKey); // Alcaraz match
+  // Also check a match from the list to see if ranking is there
+  // Pick first match from today's list and inspect team objects
+  try {
+    var listUrl = "https://" + RAPIDAPI_HOST + "/api/sofascore/v1/match/list?sport_slug=tennis&date=2026-04-01";
+    var listRes = await fetch(listUrl, { headers: { "x-rapidapi-host": RAPIDAPI_HOST, "x-rapidapi-key": apiKey } });
+    var listData = await listRes.json();
+    var matches = Array.isArray(listData) ? listData : [];
+    // Find any ATP match and show the homeTeam/awayTeam structure
+    var sample = matches.find(function(m) { return m.tournament && m.tournament.name && m.tournament.category && m.tournament.category.slug === "atp"; });
+    if (sample) {
+      results.sample_match = {
+        homeTeam: sample.homeTeam,
+        awayTeam: sample.awayTeam,
+        homeTeamKeys: Object.keys(sample.homeTeam || {}),
+        awayTeamKeys: Object.keys(sample.awayTeam || {}),
+      };
+    }
+  } catch(e) { results.sample_match = { error: e.message }; }
 
   // Also test the direct SofaScore API
   try {
