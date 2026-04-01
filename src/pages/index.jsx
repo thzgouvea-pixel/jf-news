@@ -429,31 +429,11 @@ var PlayerBlock = function(props) {
   var season = props.season;
   var prizeMoney = props.prizeMoney;
 
-  var hasAnyData = lastMatch || (matchStats && matchStats.fonseca) || (recentForm && recentForm.length > 0) || season || prizeMoney;
+  var hasAnyData = (matchStats && matchStats.fonseca) || (recentForm && recentForm.length > 0) || season || prizeMoney;
   if (!hasAnyData) return null;
 
   return (
     <div style={{ borderTop: "1px solid " + BORDER, margin: "0 0 4px" }}>
-
-      {/* Última partida */}
-      {lastMatch && (function() {
-        var w = lastMatch.result === "V";
-        var hasBelowContent = (matchStats && matchStats.fonseca) || (recentForm && recentForm.length > 0) || season || prizeMoney;
-        return (
-          <div style={{ padding: "14px 0", borderBottom: hasBelowContent ? "1px solid " + BORDER : "none", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>Última partida</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-              <span style={{ fontSize: 11, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS, background: w ? GREEN + "0A" : RED + "0A", padding: "2px 8px", borderRadius: 999 }}>{w ? "V" : "D"}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>
-                Fonseca <span style={{ color: w ? GREEN : RED }}>{lastMatch.score}</span> {lastMatch.opponent_name || lastMatch.opponent}
-              </span>
-              <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>
-                {lastMatch.tournament_name || lastMatch.tournament}{lastMatch.round ? (" · " + lastMatch.round) : ""}
-              </span>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Stats do jogo — versão compacta */}
       {matchStats && matchStats.fonseca && (function() {
@@ -519,8 +499,8 @@ var PlayerBlock = function(props) {
         );
       })()}
 
-      {/* Forma + Temporada + Prize em uma linha */}
-      {((recentForm && recentForm.length > 0) || season || prizeMoney) && (
+      {/* Forma + Prize — linha inferior limpa */}
+      {((recentForm && recentForm.length > 0) || prizeMoney) && (
         <div style={{ padding: "12px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
           {recentForm && recentForm.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -533,19 +513,10 @@ var PlayerBlock = function(props) {
               </div>
             </div>
           )}
-          {recentForm && recentForm.length > 0 && (season || prizeMoney) && <span style={{ color: BORDER }}>|</span>}
-          {season && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>{season.year}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: GREEN, fontFamily: SANS }}>{season.wins}V</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: RED, fontFamily: SANS }}>{season.losses}D</span>
-              {season.titles > 0 && <span style={{ fontSize: 12, fontFamily: SANS }}>🏆 <span style={{ fontWeight: 700, color: "#b8860b" }}>{season.titles}</span></span>}
-            </div>
-          )}
-          {season && prizeMoney && <span style={{ color: BORDER }}>|</span>}
+          {recentForm && recentForm.length > 0 && prizeMoney && <span style={{ color: BORDER }}>|</span>}
           {prizeMoney && (
             <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>Prize</span>
+              <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>Prize money</span>
               <span style={{ fontSize: 13, fontWeight: 800, color: GREEN, fontFamily: SANS }}>
                 {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000) + "K"}
               </span>
