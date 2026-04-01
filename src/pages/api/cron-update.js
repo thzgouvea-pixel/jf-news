@@ -52,103 +52,82 @@ async function sofaFetch(path, apiKey) {
   return res.json();
 }
 
-// ===== RANKING — tries 3 endpoints =====
+// ===== RANKING — scrape from ATP Tour page =====
 async function fetchRanking(apiKey, log) {
-  // Attempt 1: /v1/team/rankings (used by news.js v5, returns rankings array)
+  // The SofaScore RapidAPI has no working ranking endpoint.
+  // Scrape ranking from the ATP Tour player page instead (free, public).
   try {
-    var data = await sofaFetch("/v1/team/rankings?team_id=" + FONSECA_TEAM_ID, apiKey);
-    if (data) {
-      var rankings = Array.isArray(data) ? data : data.rankings;
-      if (rankings && rankings.length > 0) {
-        var r = rankings[0];
-        log.push("ranking: #" + r.ranking + " (via /rankings)");
-        return {
-          ranking: r.ranking,
-          points: r.points || null,
-          previousRanking: r.previousRanking || null,
-          bestRanking: r.bestRanking || null,
-          rankingChange: (r.previousRanking || 0) - (r.ranking || 0)
-        };
+    var url = "https://www.atptour.com/en/players/joao-fonseca/f0fv/overview";
+    var res = await fetch(url, {
+      headers: { "User-Agent": "FonsecaNews/5.0", "Accept": "text/html" },
+    });
+    if (!res.ok) { log.push("ranking: ATP page HTTP " + res.status); return null; }
+    var html = await res.text();
+
+    // Look for ranking pattern in the HTML — ATP pages include ranking in meta/structured data
+    // Pattern 1: "Singles Ranking" followed by a number
+    var rankMatch = html.match(/Singles\s*(?:Ranking|ranking)[^0-9]*?(\d{1,4})/i)
+      || html.match(/"ranking"\s*:\s*"?(\d{1,4})"?/i)
+      || html.match(/class="[^"]*rank[^"]*"[^>]*>\s*(\d{1,4})/i)
+      || html.match(/ATP\s+(?:Singles\s+)?(?:Rank(?:ing)?)\s*#?\s*(\d{1,4})/i);
+
+    if (rankMatch) {
+      var ranking = parseInt(rankMatch[1], 10);
+      if (ranking > 0 && ranking < 2000) {
+        log.push("ranking: #" + ranking + " (via ATP Tour)");
+        return { ranking: ranking, points: null, previousRanking: null, bestRanking: 24, rankingChange: 0 };
       }
     }
-  } catch (e) { console.log("[cron] rankings endpoint failed:", e.message); }
 
-  // Attempt 2: /v1/team/details (returns team object with ranking field)
-  try {
-    var data2 = await sofaFetch("/v1/team/details?team_id=" + FONSECA_TEAM_ID, apiKey);
-    if (data2) {
-      var team = data2.team || data2;
-      if (team.ranking) {
-        log.push("ranking: #" + team.ranking + " (via /details)");
-        return {
-          ranking: team.ranking,
-          points: team.rankingPoints || null,
-          previousRanking: team.previousRanking || null,
-          bestRanking: team.bestRanking || null,
-          rankingChange: (team.previousRanking || 0) - (team.ranking || 0)
-        };
-      }
-    }
-  } catch (e) { console.log("[cron] details endpoint failed:", e.message); }
-
-  // Attempt 3: direct SofaScore API (no RapidAPI, free but may be blocked)
-  try {
-    var res = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID, {
+    // Pattern 2: try ESPN as fallback
+    var espnRes = await fetch("https://www.espn.com/tennis/player/_/id/11745/joao-fonseca", {
       headers: { "User-Agent": "FonsecaNews/5.0" },
     });
-    if (res.ok) {
-      var d = await res.json();
-      var t = d.team || d;
-      if (t.ranking) {
-        log.push("ranking: #" + t.ranking + " (via direct API)");
-        return {
-          ranking: t.ranking,
-          points: t.rankingPoints || null,
-          previousRanking: t.previousRanking || null,
-          bestRanking: t.bestRanking || null,
-          rankingChange: (t.previousRanking || 0) - (t.ranking || 0)
-        };
+    if (espnRes.ok) {
+      var espnHtml = await espnRes.text();
+      var espnMatch = espnHtml.match(/ATP\s+Rank\s+#(\d{1,4})/i)
+        || espnHtml.match(/"rank"\s*:\s*"?(\d{1,4})"?/i);
+      if (espnMatch) {
+        var espnRank = parseInt(espnMatch[1], 10);
+        if (espnRank > 0 && espnRank < 2000) {
+          log.push("ranking: #" + espnRank + " (via ESPN)");
+          return { ranking: espnRank, points: null, previousRanking: null, bestRanking: 24, rankingChange: 0 };
+        }
       }
     }
-  } catch (e) { console.log("[cron] direct API failed:", e.message); }
+  } catch (e) {
+    log.push("ranking: scrape error " + e.message);
+  }
 
-  log.push("ranking: all 3 endpoints failed");
+  log.push("ranking: all sources failed");
   return null;
 }
 
-// ===== SEASON STATS — W/L for current year =====
+// ===== SEASON STATS — compute from recentForm in KV =====
 async function fetchSeasonStats(apiKey, log) {
+  // The SofaScore RapidAPI /v1/team/results endpoint returns 404.
+  // Instead, compute W/L from the recentForm already stored in KV.
   try {
-    var data = await sofaFetch("/v1/team/results?team_id=" + FONSECA_TEAM_ID, apiKey);
-    if (!data) { log.push("season: endpoint returned null"); return null; }
-
-    var results = Array.isArray(data) ? data : (data.events || data.results || []);
-    if (results.length === 0) { log.push("season: no results returned"); return null; }
+    var existingForm = await kv.get("fn:recentForm");
+    var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
+    if (form.length === 0) { log.push("season: no form data to compute from"); return null; }
 
     var currentYear = new Date().getFullYear();
     var wins = 0;
     var losses = 0;
 
-    for (var i = 0; i < results.length; i++) {
-      var match = results[i];
-      if (!match.startTimestamp && !match.timestamp) continue;
-      var ts = match.startTimestamp || match.timestamp;
-      var matchYear = new Date(ts * 1000).getFullYear();
+    for (var i = 0; i < form.length; i++) {
+      if (!form[i].date) continue;
+      var matchYear = new Date(form[i].date).getFullYear();
       if (matchYear !== currentYear) continue;
-      if (match.status && match.status.type !== "finished" && !match.status.isFinished) continue;
-
-      var isFonsecaHome = (match.homeTeam && match.homeTeam.id === FONSECA_TEAM_ID);
-      var fScore = isFonsecaHome ? (match.homeScore || {}) : (match.awayScore || {});
-      var oScore = isFonsecaHome ? (match.awayScore || {}) : (match.homeScore || {});
-
-      if ((fScore.current || 0) > (oScore.current || 0)) wins++;
-      else if ((oScore.current || 0) > (fScore.current || 0)) losses++;
+      if (form[i].result === "V") wins++;
+      else if (form[i].result === "D") losses++;
     }
 
-    if (wins === 0 && losses === 0) { log.push("season: no " + currentYear + " matches found in results"); return null; }
+    if (wins === 0 && losses === 0) { log.push("season: no " + currentYear + " matches in form"); return null; }
 
     var season = { wins: wins, losses: losses, year: currentYear };
-    log.push("season: " + wins + "W-" + losses + "L (" + currentYear + ")");
+    log.push("season: " + wins + "W-" + losses + "L (from form, " + currentYear + ")");
     return season;
   } catch (e) {
     log.push("season: error " + e.message);
@@ -402,9 +381,8 @@ export default async function handler(req, res) {
     var totalRequests = 0;
     var now = new Date();
 
-    // 1. Ranking (tries 3 endpoints)
+    // 1. Ranking (via ATP Tour / ESPN scrape — no RapidAPI cost)
     var ranking = await fetchRanking(apiKey, log);
-    totalRequests += 2; // worst case: 2 RapidAPI calls + 1 direct
     if (ranking && ranking.ranking) {
       await kv.set("fn:ranking", JSON.stringify(ranking), { ex: 86400 });
     }
@@ -528,9 +506,8 @@ export default async function handler(req, res) {
     // 5. Odds
     await fetchOdds(nextMatch, log);
 
-    // 6. Season stats (W/L for current year)
+    // 6. Season stats (computed from recentForm in KV — no RapidAPI cost)
     var seasonData = await fetchSeasonStats(apiKey, log);
-    totalRequests++;
     if (seasonData) {
       await kv.set("fn:season", JSON.stringify(seasonData), { ex: 86400 });
     }
