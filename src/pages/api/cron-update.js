@@ -52,36 +52,45 @@ async function sofaFetch(path, apiKey) {
   return res.json();
 }
 
-// ===== RANKING — from Wikipedia (public, free, never blocks servers) =====
+// ===== RANKING — from Wikipedia API (wikitext, public, free) =====
 async function fetchRanking(apiKey, log) {
   try {
-    var url = "https://en.wikipedia.org/wiki/Jo%C3%A3o_Fonseca_(tennis)";
-    var res = await fetch(url, {
-      headers: { "User-Agent": "FonsecaNews/5.0 (fan site; contact: thzgouvea@gmail.com)", "Accept": "text/html" },
+    // Use Wikipedia API to get the infobox wikitext — more reliable than HTML scrape
+    var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&section=0&format=json";
+    var res = await fetch(apiUrl, {
+      headers: { "User-Agent": "FonsecaNews/5.0 (fan site; contact: thzgouvea@gmail.com)" },
     });
-    if (!res.ok) { log.push("ranking: Wikipedia HTTP " + res.status); return null; }
-    var html = await res.text();
+    if (!res.ok) { log.push("ranking: Wikipedia API HTTP " + res.status); return null; }
+    var data = await res.json();
+    var wikitext = (data && data.parse && data.parse.wikitext) ? (data.parse.wikitext["*"] || "") : "";
 
-    // Extract current ranking: "Current ranking: No. XX"
-    var rankMatch = html.match(/Current\s+ranking[^N]*No\.\s*(\d{1,4})/i);
+    if (!wikitext) { log.push("ranking: empty wikitext"); return null; }
+
+    // Extract from infobox fields:
+    // | singles_current_ranking = No. [[ATP rankings|38]]
+    // or: | singles_current_ranking = No. 38
+    // or: | current_ranking = No. 38
+    var rankMatch = wikitext.match(/singles_current_ranking\s*=\s*(?:No\.\s*)?(?:\[\[(?:[^\]]*\|)?)?(\d{1,4})/i)
+      || wikitext.match(/current_ranking\s*=\s*(?:No\.\s*)?(?:\[\[(?:[^\]]*\|)?)?(\d{1,4})/i);
+
     if (!rankMatch) {
-      // Fallback pattern: "Highest ranking" for career high
-      log.push("ranking: could not parse from Wikipedia");
+      log.push("ranking: could not parse wikitext infobox");
       return null;
     }
 
     var ranking = parseInt(rankMatch[1], 10);
     if (ranking <= 0 || ranking > 2000) { log.push("ranking: invalid value " + ranking); return null; }
 
-    // Also try to extract career high
-    var highMatch = html.match(/Highest\s+ranking[^N]*No\.\s*(\d{1,4})/i);
+    // Career high
+    var highMatch = wikitext.match(/singles_highest_ranking\s*=\s*(?:No\.\s*)?(?:\[\[(?:[^\]]*\|)?)?(\d{1,4})/i)
+      || wikitext.match(/highest_ranking\s*=\s*(?:No\.\s*)?(?:\[\[(?:[^\]]*\|)?)?(\d{1,4})/i);
     var bestRanking = highMatch ? parseInt(highMatch[1], 10) : 24;
 
-    // Prize money
-    var prizeMatch = html.match(/Prize\s+money[^$]*\$\s*([\d,]+)/i);
+    // Prize money: | prize_money = US $2,816,305
+    var prizeMatch = wikitext.match(/prize_money\s*=\s*(?:US\s*)?\$\s*([\d,]+)/i);
     var prizeMoney = prizeMatch ? parseInt(prizeMatch[1].replace(/,/g, ""), 10) : null;
 
-    log.push("ranking: #" + ranking + " (via Wikipedia)");
+    log.push("ranking: #" + ranking + " (via Wikipedia API)");
     return {
       ranking: ranking,
       points: null,
@@ -91,7 +100,7 @@ async function fetchRanking(apiKey, log) {
       prizeMoney: prizeMoney
     };
   } catch (e) {
-    log.push("ranking: Wikipedia error " + e.message);
+    log.push("ranking: Wikipedia API error " + e.message);
   }
   return null;
 }
