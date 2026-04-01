@@ -227,6 +227,31 @@ export default async function handler(req, res) {
       log.push("ranking: #" + ranking.ranking);
     }
 
+    // 1b. Fetch prize money (Mondays only, free endpoint)
+    var today = new Date();
+    var brasiliaHour = (today.getUTCHours() - 3 + 24) % 24;
+    if (today.getUTCDay() === 1 && brasiliaHour >= 9 && brasiliaHour <= 12) {
+      try {
+        var pmRes = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID, {
+          headers: { "User-Agent": "FonsecaNews/2.0" }
+        });
+        if (pmRes.ok) {
+          var pmData = await pmRes.json();
+          var team = pmData.team || pmData;
+          // SofaScore may return prize money in different fields
+          var prizeMoney = team.prizeMoney || team.totalPrizeMoney || team.careerPrizeMoney || null;
+          if (prizeMoney) {
+            await kv.set("fn:prizeMoney", JSON.stringify({ amount: prizeMoney, currency: "USD", updatedAt: today.toISOString() }), { ex: 86400 * 8 }); // 8 days
+            log.push("prizeMoney: $" + prizeMoney);
+          } else {
+            log.push("prizeMoney: field not found in API response");
+          }
+        }
+      } catch (e) {
+        log.push("prizeMoney: error " + e.message);
+      }
+    }
+
     // 2. Fetch last events (1 RapidAPI request)
     var lastEvents = await fetchLastEvents(apiKey);
     requestCount++;
