@@ -54,19 +54,48 @@ async function fetchRanking() {
 async function findFonsecaMatches(date, apiKey) {
   var dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD
   var data = await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + dateStr, apiKey);
-  if (!data || !Array.isArray(data)) return [];
+  
+  if (!data) return [];
 
-  // Filter matches containing "fonseca" in slug
-  var matches = data.filter(function(m) {
-    return m.slug && m.slug.toLowerCase().indexOf(FONSECA_SLUG) !== -1;
+  // Handle different response formats
+  var matches = [];
+  if (Array.isArray(data)) {
+    matches = data;
+  } else if (data.events && Array.isArray(data.events)) {
+    matches = data.events;
+  } else if (typeof data === "object") {
+    // Try to find any array in the response
+    var keys = Object.keys(data);
+    for (var k = 0; k < keys.length; k++) {
+      if (Array.isArray(data[keys[k]])) {
+        matches = data[keys[k]];
+        console.log("[cron] Found array in key: " + keys[k] + " with " + matches.length + " items");
+        break;
+      }
+    }
+    if (matches.length === 0) {
+      console.log("[cron] Response keys: " + keys.join(", ") + " | type: " + typeof data + " | sample: " + JSON.stringify(data).substring(0, 300));
+    }
+  }
+
+  console.log("[cron] Date " + dateStr + ": " + matches.length + " total matches");
+
+  // Filter matches containing "fonseca" in slug or team names
+  var fonsecaMatches = matches.filter(function(m) {
+    var slug = (m.slug || "").toLowerCase();
+    var homeName = (m.homeTeam && (m.homeTeam.slug || m.homeTeam.name || "")).toLowerCase();
+    var awayName = (m.awayTeam && (m.awayTeam.slug || m.awayTeam.name || "")).toLowerCase();
+    return slug.indexOf("fonseca") !== -1 || homeName.indexOf("fonseca") !== -1 || awayName.indexOf("fonseca") !== -1;
   });
-  return matches;
+
+  console.log("[cron] Date " + dateStr + ": " + fonsecaMatches.length + " Fonseca matches");
+  return fonsecaMatches;
 }
 
 // Search last 7 days for Fonseca's most recent match
 async function findLastMatch(apiKey) {
   var today = new Date();
-  for (var i = 0; i < 7; i++) {
+  for (var i = 0; i < 14; i++) {
     var d = new Date(today);
     d.setDate(d.getDate() - i);
     var matches = await findFonsecaMatches(d, apiKey);
@@ -78,13 +107,13 @@ async function findLastMatch(apiKey) {
       if (finished.length > 0) return { match: finished[0], daysAgo: i, requestsUsed: i + 1 };
     }
   }
-  return { match: null, daysAgo: -1, requestsUsed: 7 };
+  return { match: null, daysAgo: -1, requestsUsed: i + 1 };
 }
 
 // Search next 7 days for Fonseca's upcoming match
 async function findNextMatch(apiKey) {
   var today = new Date();
-  for (var i = 0; i <= 7; i++) {
+  for (var i = 0; i <= 14; i++) {
     var d = new Date(today);
     d.setDate(d.getDate() + i);
     var matches = await findFonsecaMatches(d, apiKey);
@@ -97,7 +126,7 @@ async function findNextMatch(apiKey) {
       if (i === 0) continue;
     }
   }
-  return { match: null, requestsUsed: 7 };
+  return { match: null, requestsUsed: i + 1 };
 }
 
 // Fetch match statistics (aces, DFs, winners, serve %)
@@ -272,7 +301,7 @@ export default async function handler(req, res) {
         log.push("form: error");
       }
     } else {
-      log.push("lastMatch: none in last 7 days (" + lastResult.requestsUsed + " req)");
+      log.push("lastMatch: none in last 14 days (" + lastResult.requestsUsed + " req)");
     }
 
     // 4. Find next match (searches forward up to 7 days)
@@ -284,7 +313,7 @@ export default async function handler(req, res) {
       await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 });
       log.push("nextMatch: vs " + nextMatch.opponent_name + " @ " + nextMatch.tournament_name + " (" + nextResult.requestsUsed + " req)");
     } else {
-      log.push("nextMatch: none in next 7 days (" + nextResult.requestsUsed + " req)");
+      log.push("nextMatch: none in next 14 days (" + nextResult.requestsUsed + " req)");
     }
 
     // Save cron timestamp
