@@ -52,54 +52,47 @@ async function sofaFetch(path, apiKey) {
   return res.json();
 }
 
-// ===== RANKING — scrape from ATP Tour page =====
+// ===== RANKING — from Wikipedia (public, free, never blocks servers) =====
 async function fetchRanking(apiKey, log) {
-  // The SofaScore RapidAPI has no working ranking endpoint.
-  // Scrape ranking from the ATP Tour player page instead (free, public).
   try {
-    var url = "https://www.atptour.com/en/players/joao-fonseca/f0fv/overview";
+    var url = "https://en.wikipedia.org/wiki/Jo%C3%A3o_Fonseca_(tennis)";
     var res = await fetch(url, {
-      headers: { "User-Agent": "FonsecaNews/5.0", "Accept": "text/html" },
+      headers: { "User-Agent": "FonsecaNews/5.0 (fan site; contact: thzgouvea@gmail.com)", "Accept": "text/html" },
     });
-    if (!res.ok) { log.push("ranking: ATP page HTTP " + res.status); return null; }
+    if (!res.ok) { log.push("ranking: Wikipedia HTTP " + res.status); return null; }
     var html = await res.text();
 
-    // Look for ranking pattern in the HTML — ATP pages include ranking in meta/structured data
-    // Pattern 1: "Singles Ranking" followed by a number
-    var rankMatch = html.match(/Singles\s*(?:Ranking|ranking)[^0-9]*?(\d{1,4})/i)
-      || html.match(/"ranking"\s*:\s*"?(\d{1,4})"?/i)
-      || html.match(/class="[^"]*rank[^"]*"[^>]*>\s*(\d{1,4})/i)
-      || html.match(/ATP\s+(?:Singles\s+)?(?:Rank(?:ing)?)\s*#?\s*(\d{1,4})/i);
-
-    if (rankMatch) {
-      var ranking = parseInt(rankMatch[1], 10);
-      if (ranking > 0 && ranking < 2000) {
-        log.push("ranking: #" + ranking + " (via ATP Tour)");
-        return { ranking: ranking, points: null, previousRanking: null, bestRanking: 24, rankingChange: 0 };
-      }
+    // Extract current ranking: "Current ranking: No. XX"
+    var rankMatch = html.match(/Current\s+ranking[^N]*No\.\s*(\d{1,4})/i);
+    if (!rankMatch) {
+      // Fallback pattern: "Highest ranking" for career high
+      log.push("ranking: could not parse from Wikipedia");
+      return null;
     }
 
-    // Pattern 2: try ESPN as fallback
-    var espnRes = await fetch("https://www.espn.com/tennis/player/_/id/11745/joao-fonseca", {
-      headers: { "User-Agent": "FonsecaNews/5.0" },
-    });
-    if (espnRes.ok) {
-      var espnHtml = await espnRes.text();
-      var espnMatch = espnHtml.match(/ATP\s+Rank\s+#(\d{1,4})/i)
-        || espnHtml.match(/"rank"\s*:\s*"?(\d{1,4})"?/i);
-      if (espnMatch) {
-        var espnRank = parseInt(espnMatch[1], 10);
-        if (espnRank > 0 && espnRank < 2000) {
-          log.push("ranking: #" + espnRank + " (via ESPN)");
-          return { ranking: espnRank, points: null, previousRanking: null, bestRanking: 24, rankingChange: 0 };
-        }
-      }
-    }
+    var ranking = parseInt(rankMatch[1], 10);
+    if (ranking <= 0 || ranking > 2000) { log.push("ranking: invalid value " + ranking); return null; }
+
+    // Also try to extract career high
+    var highMatch = html.match(/Highest\s+ranking[^N]*No\.\s*(\d{1,4})/i);
+    var bestRanking = highMatch ? parseInt(highMatch[1], 10) : 24;
+
+    // Prize money
+    var prizeMatch = html.match(/Prize\s+money[^$]*\$\s*([\d,]+)/i);
+    var prizeMoney = prizeMatch ? parseInt(prizeMatch[1].replace(/,/g, ""), 10) : null;
+
+    log.push("ranking: #" + ranking + " (via Wikipedia)");
+    return {
+      ranking: ranking,
+      points: null,
+      previousRanking: null,
+      bestRanking: bestRanking,
+      rankingChange: 0,
+      prizeMoney: prizeMoney
+    };
   } catch (e) {
-    log.push("ranking: scrape error " + e.message);
+    log.push("ranking: Wikipedia error " + e.message);
   }
-
-  log.push("ranking: all sources failed");
   return null;
 }
 
@@ -387,23 +380,10 @@ export default async function handler(req, res) {
       await kv.set("fn:ranking", JSON.stringify(ranking), { ex: 86400 });
     }
 
-    // 1b. Prize money (Mondays 9-12h BRT only)
-    var brasiliaHour = (now.getUTCHours() - 3 + 24) % 24;
-    if (now.getUTCDay() === 1 && brasiliaHour >= 9 && brasiliaHour <= 12) {
-      try {
-        var pmRes = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID, {
-          headers: { "User-Agent": "FonsecaNews/5.0" },
-        });
-        if (pmRes.ok) {
-          var pmData = await pmRes.json();
-          var team = pmData.team || pmData;
-          var prizeMoney = team.prizeMoney || team.totalPrizeMoney || team.careerPrizeMoney || null;
-          if (prizeMoney) {
-            await kv.set("fn:prizeMoney", JSON.stringify({ amount: prizeMoney, currency: "USD", updatedAt: now.toISOString() }), { ex: 86400 * 8 });
-            log.push("prizeMoney: $" + prizeMoney);
-          }
-        }
-      } catch (e) {}
+    // 1b. Prize money (from Wikipedia ranking data, or SofaScore Mondays 9-12h BRT)
+    if (ranking && ranking.prizeMoney) {
+      await kv.set("fn:prizeMoney", JSON.stringify({ amount: ranking.prizeMoney, currency: "USD", updatedAt: now.toISOString() }), { ex: 86400 * 8 });
+      log.push("prizeMoney: $" + ranking.prizeMoney + " (Wikipedia)");
     }
 
     // 2. Last match
