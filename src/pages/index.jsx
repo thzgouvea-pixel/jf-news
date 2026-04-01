@@ -499,19 +499,28 @@ var PlayerBlock = function(props) {
         );
       })()}
 
-      {/* Forma + Prize — linha inferior limpa */}
-      {((recentForm && recentForm.length > 0) || prizeMoney) && (
-        <div style={{ padding: "12px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: 16, flexWrap: "wrap" }}>
-          {recentForm && recentForm.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>Forma</span>
-              <div style={{ display: "flex", gap: 3 }}>
-                {recentForm.map(function(m, i) {
-                  var w = m.result === "V";
-                  return (<div key={i} title={(m.opponent_name || "") + " " + (m.score || "")} style={{ width: 20, height: 20, borderRadius: 5, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 9, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span></div>);
-                })}
-              </div>
-            </div>
+   {/* Forma recente */}
+      {recentForm && recentForm.length > 0 && (
+        <div style={{ padding: "10px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>Forma</span>
+          <div style={{ display: "flex", gap: 3 }}>
+            {recentForm.map(function(m, i) {
+              var w = m.result === "V";
+              return (<div key={i} title={(m.opponent_name || "") + " " + (m.score || "")} style={{ width: 20, height: 20, borderRadius: 5, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 9, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span></div>);
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Prize Money */}
+      {prizeMoney && (
+        <div style={{ padding: "10px 0", display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: DIM, fontFamily: SANS }}>Prize money</span>
+          <span style={{ fontSize: 13, fontWeight: 800, color: GREEN, fontFamily: SANS }}>
+            {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000) + "K"}
+          </span>
+        </div>
+      )}
           )}
           {recentForm && recentForm.length > 0 && prizeMoney && <span style={{ color: BORDER }}>|</span>}
           {prizeMoney && (
