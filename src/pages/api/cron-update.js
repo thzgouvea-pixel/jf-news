@@ -1,7 +1,7 @@
 // ===== CRON: SofaScore Update v4 =====
 // CHANGES FROM v3:
 //   + Block 5: Odds via The Odds API (free tier, ~1 req/day during tournament)
-//     Saves to KV as "fn:odds" when tournament is active
+//     Saves to KV as "fn:winProb" — only normalized % probability, no odds data
 // TESTED ENDPOINTS:
 //   GET /v1/match/list?sport_slug=tennis&date=YYYY-MM-DD
 //   GET /v1/match/statistics?match_id=XXXXX
@@ -161,15 +161,15 @@ async function fetchMatchStats(matchId, apiKey) {
   return { home, away };
 }
 
-// ===== BLOCK 5: Odds via The Odds API =====
-// Fetches h2h odds for Fonseca's next match.
-// Only runs if: ODDS_API_KEY is set + tournament is in ODDS_TOURNAMENT_MAP.
-// Saves { fonseca: 2.10, opponent: 1.70, opponent_name: "...", bookmakers: [...], updatedAt }
+// ===== BLOCK 5: Win probability via The Odds API =====
+// Fetches h2h odds, converts to normalized win probability (0-100%).
+// NOTHING related to betting is stored or exposed — only the probability %.
+// Saves { fonseca_pct: 45, opponent_pct: 55, opponent_name: "...", updatedAt }
 // Cost: 1 credit per call (1 market × 1 region). Free tier = 500/month.
 async function fetchOdds(nextMatch, log) {
   var oddsApiKey = process.env.ODDS_API_KEY;
-  if (!oddsApiKey) { log.push("odds: no ODDS_API_KEY"); return; }
-  if (!nextMatch) { log.push("odds: no next match"); return; }
+  if (!oddsApiKey) { log.push("prob: no ODDS_API_KEY"); return; }
+  if (!nextMatch) { log.push("prob: no next match"); return; }
 
   var tournamentName = (nextMatch.tournament_name || "").toLowerCase();
   var sportKey = null;
@@ -181,32 +181,27 @@ async function fetchOdds(nextMatch, log) {
   }
 
   if (!sportKey) {
-    log.push("odds: tournament not covered (" + nextMatch.tournament_name + ")");
+    log.push("prob: tournament not covered (" + nextMatch.tournament_name + ")");
     return;
   }
 
   try {
     var url = "https://api.the-odds-api.com/v4/sports/" + sportKey + "/odds"
-      + "?regions=eu"        // eu region = Bet365, William Hill etc. Good coverage globally
-      + "&markets=h2h"       // match winner only — 1 credit cost
+      + "?regions=eu"
+      + "&markets=h2h"
       + "&oddsFormat=decimal"
       + "&apiKey=" + oddsApiKey;
 
     var res = await fetch(url);
-
-    if (!res.ok) {
-      log.push("odds: API error " + res.status);
-      return;
-    }
+    if (!res.ok) { log.push("prob: API error " + res.status); return; }
 
     var data = await res.json();
-
     if (!Array.isArray(data) || data.length === 0) {
-      log.push("odds: no data for " + sportKey + " (tournament may not be listed yet)");
+      log.push("prob: no data for " + sportKey + " (not listed yet)");
       return;
     }
 
-    // Find the match involving Fonseca
+    // Find match involving Fonseca
     var fonsecaMatch = data.find(function (event) {
       var home = (event.home_team || "").toLowerCase();
       var away = (event.away_team || "").toLowerCase();
@@ -214,14 +209,14 @@ async function fetchOdds(nextMatch, log) {
     });
 
     if (!fonsecaMatch) {
-      log.push("odds: Fonseca not found in " + data.length + " events (match not listed yet)");
+      log.push("prob: Fonseca not found in " + data.length + " events");
       return;
     }
 
     var isFonsecaHome = (fonsecaMatch.home_team || "").toLowerCase().includes("fonseca");
     var opponentName = isFonsecaHome ? fonsecaMatch.away_team : fonsecaMatch.home_team;
 
-    // Aggregate odds across bookmakers — take median
+    // Collect raw decimal odds per player across all bookmakers
     var fonsecaOdds = [], opponentOdds = [];
     (fonsecaMatch.bookmakers || []).forEach(function (bm) {
       var market = (bm.markets || []).find(function (m) { return m.key === "h2h"; });
@@ -232,29 +227,45 @@ async function fetchOdds(nextMatch, log) {
       });
     });
 
-    function median(arr) {
-      if (!arr.length) return null;
-      var sorted = arr.slice().sort(function (a, b) { return a - b; });
-      var mid = Math.floor(sorted.length / 2);
-      return sorted.length % 2 !== 0 ? sorted[mid] : +((sorted[mid - 1] + sorted[mid]) / 2).toFixed(2);
+    if (!fonsecaOdds.length || !opponentOdds.length) {
+      log.push("prob: incomplete odds data");
+      return;
     }
 
-    var oddsPayload = {
-      tournament: fonsecaMatch.sport_title,
-      sport_key: sportKey,
+    // Median odds per player
+    function median(arr) {
+      var sorted = arr.slice().sort(function (a, b) { return a - b; });
+      var mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    var medF = median(fonsecaOdds);
+    var medO = median(opponentOdds);
+
+    // Convert decimal odds → implied probability → normalize (removes bookmaker margin)
+    // implied prob = 1 / odd
+    var impliedF = 1 / medF;
+    var impliedO = 1 / medO;
+    var total = impliedF + impliedO;
+
+    var fonsecaPct = Math.round((impliedF / total) * 100);
+    var opponentPct = 100 - fonsecaPct;
+
+    // Store ONLY the probability — no odds, no bookmaker names
+    var payload = {
+      fonseca_pct: fonsecaPct,
+      opponent_pct: opponentPct,
       opponent_name: opponentName,
-      fonseca: median(fonsecaOdds),
-      opponent: median(opponentOdds),
-      bookmaker_count: (fonsecaMatch.bookmakers || []).length,
+      tournament: nextMatch.tournament_name,
       commence_time: fonsecaMatch.commence_time,
       updatedAt: new Date().toISOString(),
     };
 
-    await kv.set("fn:odds", JSON.stringify(oddsPayload), { ex: 86400 }); // 24h TTL
-    log.push("odds: Fonseca " + oddsPayload.fonseca + " vs " + opponentName + " " + oddsPayload.opponent + " (" + oddsPayload.bookmaker_count + " bm)");
+    await kv.set("fn:winProb", JSON.stringify(payload), { ex: 86400 });
+    log.push("prob: Fonseca " + fonsecaPct + "% vs " + opponentName + " " + opponentPct + "%");
 
   } catch (e) {
-    log.push("odds: exception " + e.message);
+    log.push("prob: exception " + e.message);
   }
 }
 
