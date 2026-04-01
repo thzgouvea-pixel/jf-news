@@ -576,7 +576,7 @@ var PlayerBlock = function(props) {
 
       {/* Metric pills row: Season W-L + Forma + Prize Money */}
       {(season || (recentForm && recentForm.length > 0) || prizeMoney) && (
-        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", justifyContent: "center" }}>
           {season && (
             <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: BG_ALT, borderRadius: 10, border: "1px solid " + BORDER }}>
               <span style={{ fontSize: 10, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>2026</span>
