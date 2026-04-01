@@ -419,6 +419,147 @@ var NextDuelCard = function(props) {
   );
 };
 
+// ===== LIVE SCORE CARD =====
+var LiveScoreCard = function(props) {
+  var data = props.data;
+  if (!data || !data.live) return null;
+
+  var match = data.match || {};
+  var stats = data.stats || {};
+  var homeTeam = match.homeTeam || {};
+  var awayTeam = match.awayTeam || {};
+  var homeScore = match.homeScore || {};
+  var awayScore = match.awayScore || {};
+  var status = match.status || {};
+
+  // Determine which side is Fonseca
+  var homeName = (homeTeam.name || homeTeam.slug || "").toLowerCase();
+  var isFonsecaHome = homeName.includes("fonseca");
+  var fTeam = isFonsecaHome ? homeTeam : awayTeam;
+  var oTeam = isFonsecaHome ? awayTeam : homeTeam;
+  var fScore = isFonsecaHome ? homeScore : awayScore;
+  var oScore = isFonsecaHome ? awayScore : homeScore;
+
+  // Set scores
+  var fSets = fScore.period1 !== undefined ? [fScore.period1, fScore.period2, fScore.period3].filter(function(s) { return s !== undefined; }) : [];
+  var oSets = oScore.period1 !== undefined ? [oScore.period1, oScore.period2, oScore.period3].filter(function(s) { return s !== undefined; }) : [];
+
+  var fName = (fTeam.name || "J. Fonseca").split(" ").pop();
+  var oName = (oTeam.name || "Oponente").split(" ").pop();
+
+  // Current game score
+  var fGame = fScore.point || "";
+  var oGame = oScore.point || "";
+
+  // Tournament info
+  var tournament = match.tournament || {};
+  var tourneyName = tournament.name || data.tournament || "";
+  var surface = data.surface || "";
+  var sc = surfaceColorMap[surface] || "#999";
+  var statusText = status.description || "Ao vivo";
+
+  // Live stats (if available from the same fetch)
+  var fStats = isFonsecaHome ? (stats.home || {}) : (stats.away || {});
+  var oStats = isFonsecaHome ? (stats.away || {}) : (stats.home || {});
+
+  var liveStatRows = [
+    { label: "Aces", f: fStats.aces || 0, o: oStats.aces || 0 },
+    { label: "D. Faltas", f: fStats.doublefaults || 0, o: oStats.doublefaults || 0, invert: true },
+    { label: "1o Saque %", f: fStats.firstserveaccuracy || 0, o: oStats.firstserveaccuracy || 0, pct: true },
+    { label: "Winners", f: fStats.winners || 0, o: oStats.winners || 0 },
+    { label: "Pontos", f: fStats.pointstotal || 0, o: oStats.pointstotal || 0 },
+  ].filter(function(r) { return r.f > 0 || r.o > 0; });
+
+  return (
+    <section style={{ margin: "4px -20px 0", padding: "20px 24px", background: "linear-gradient(145deg, #0D1726 0%, #1a3050 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
+      {/* Pulsing live dot */}
+      <div style={{ position: "absolute", top: 16, right: 20, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
+        <span style={{ fontSize: 10, fontWeight: 700, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ao vivo</span>
+      </div>
+
+      {/* Tournament info */}
+      <div style={{ textAlign: "center", marginBottom: 16 }}>
+        {surface && <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: SANS }}>{surface}</span>}
+        {tourneyName && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}> · {tourneyName}</span>}
+        <div style={{ marginTop: 4 }}><span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{statusText}</span></div>
+      </div>
+
+      {/* Scoreboard */}
+      <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 12, padding: "16px 20px", marginBottom: liveStatRows.length > 0 ? 16 : 0 }}>
+        {/* Player names row */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+          <span style={{ fontSize: 15, fontWeight: 700, color: GREEN, fontFamily: SERIF }}>J. Fonseca</span>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>{oName}</span>
+        </div>
+
+        {/* Sets */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10 }}>
+            {fSets.map(function(s, i) {
+              var won = s > oSets[i];
+              return (<span key={i} style={{ fontSize: 22, fontWeight: 800, color: won ? GREEN : "rgba(255,255,255,0.5)", fontFamily: SANS }}>{s}</span>);
+            })}
+            {fGame !== "" && <span style={{ fontSize: 16, fontWeight: 600, color: YELLOW, fontFamily: SANS, marginLeft: 6 }}>{fGame}</span>}
+          </div>
+          <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS }}>SETS</span>
+          <div style={{ display: "flex", gap: 10 }}>
+            {oGame !== "" && <span style={{ fontSize: 16, fontWeight: 600, color: YELLOW, fontFamily: SANS, marginRight: 6 }}>{oGame}</span>}
+            {oSets.map(function(s, i) {
+              var won = s > fSets[i];
+              return (<span key={i} style={{ fontSize: 22, fontWeight: 800, color: won ? "#ef4444" : "rgba(255,255,255,0.5)", fontFamily: SANS }}>{s}</span>);
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Live stats */}
+      {liveStatRows.length > 0 && (
+        <div style={{ padding: "0 4px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: SANS }}>Fonseca</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{oName}</span>
+          </div>
+          {liveStatRows.map(function(row, i) {
+            var fBetter = row.invert ? row.f < row.o : row.f >= row.o;
+            return (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: fBetter ? GREEN : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 30 }}>{row.pct ? row.f + "%" : row.f}</span>
+                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textAlign: "center", flex: 1 }}>{row.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: !fBetter ? "#ef4444" : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 30, textAlign: "right" }}>{row.pct ? row.o + "%" : row.o}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+};
+
+// ===== WIN PROBABILITY BAR =====
+var WinProbBar = function(props) {
+  var winProb = props.winProb;
+  if (!winProb || !winProb.fonseca) return null;
+
+  var fPct = Math.round(winProb.fonseca);
+  var oPct = Math.round(winProb.opponent);
+  var oppName = (winProb.opponent_name || "Oponente").split(" ").pop();
+
+  return (
+    <div style={{ padding: "12px 0", borderBottom: "1px solid " + BORDER }}>
+      <span style={{ fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", color: DIM, fontFamily: SANS, display: "block", marginBottom: 8 }}>Probabilidade de vitória</span>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: fPct >= oPct ? GREEN : DIM, fontFamily: SANS }}>Fonseca {fPct}%</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: oPct > fPct ? RED : DIM, fontFamily: SANS }}>{oppName} {oPct}%</span>
+      </div>
+      <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", gap: 2 }}>
+        <div style={{ width: fPct + "%", background: GREEN, borderRadius: "3px 0 0 3px", transition: "width 0.8s ease" }} />
+        <div style={{ width: oPct + "%", background: RED, borderRadius: "0 3px 3px 0", transition: "width 0.8s ease" }} />
+      </div>
+    </div>
+  );
+};
+
 // ===== PLAYER BLOCK (CORRIGIDO) =====
 var PlayerBlock = function(props) {
   var lastMatch = props.lastMatch;
@@ -660,6 +801,8 @@ export default function JoaoFonsecaNews() {
   var _matchStats = useState(null); var matchStats = _matchStats[0]; var setMatchStats = _matchStats[1];
   var _recentForm = useState(null); var recentForm = _recentForm[0]; var setRecentForm = _recentForm[1];
   var _prizeMoney = useState(null); var prizeMoney = _prizeMoney[0]; var setPrizeMoney = _prizeMoney[1];
+  var _liveMatch = useState(null); var liveMatch = _liveMatch[0]; var setLiveMatch = _liveMatch[1];
+  var _winProb = useState(null); var winProb = _winProb[0]; var setWinProb = _winProb[1];
   var _visibleCount = useState(12); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
@@ -671,6 +814,24 @@ export default function JoaoFonsecaNews() {
   var _fbSent = useState(false); var fbSent = _fbSent[0]; var setFbSent = _fbSent[1];
 
   var initDone = useRef(false);
+
+  // Live score polling — every 60s, only when page visible
+  useEffect(function() {
+    var pollLive = function() {
+      fetch("/api/live").then(function(r) { return r.json(); }).then(function(d) {
+        if (d && d.live) {
+          setLiveMatch(d);
+        } else {
+          setLiveMatch(null);
+        }
+      }).catch(function() {});
+    };
+    pollLive(); // initial
+    var iv = setInterval(function() {
+      if (!document.hidden) pollLive();
+    }, 60000);
+    return function() { clearInterval(iv); };
+  }, []);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 60000); return function() { clearTimeout(t); }; }, [popupDismissed]);
 
@@ -706,6 +867,7 @@ export default function JoaoFonsecaNews() {
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
       if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
+      if (d.winProb) setWinProb(d.winProb);
     }).catch(function() {});
   };
 
@@ -726,6 +888,7 @@ export default function JoaoFonsecaNews() {
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
       if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
+      if (d.winProb) setWinProb(d.winProb);
     }).catch(function() {});
   }, []);
 
@@ -787,11 +950,21 @@ export default function JoaoFonsecaNews() {
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px" }}>
 
-        {/* 1. PRÓXIMO DUELO */}
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 6px" }}>Próximo duelo</h2>
-        <NextDuelCard match={dm} player={dp} />
+        {/* 1. AO VIVO ou PRÓXIMO DUELO */}
+        {liveMatch ? (
+          <>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 6px" }}>Ao vivo</h2>
+            <LiveScoreCard data={liveMatch} />
+          </>
+        ) : (
+          <>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 6px" }}>Próximo duelo</h2>
+            <NextDuelCard match={dm} player={dp} />
+          </>
+        )}
 
-        {/* 2. PLAYER BLOCK */}
+        {/* 2. WIN PROB + PLAYER BLOCK */}
+        <WinProbBar winProb={winProb} />
         <PlayerBlock
           lastMatch={dl}
           matchStats={matchStats}
