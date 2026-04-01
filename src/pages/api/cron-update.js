@@ -66,28 +66,24 @@ async function fetchRanking(apiKey, log) {
 
     if (!wikitext) { log.push("ranking: empty wikitext"); return null; }
 
-    // Extract from infobox fields:
-    // | singles_current_ranking = No. [[ATP rankings|38]]
-    // or: | singles_current_ranking = No. 38
-    // or: | current_ranking = No. 38
-    var rankMatch = wikitext.match(/singles_current_ranking\s*=\s*(?:No\.\s*)?(?:\[\[(?:[^\]]*\|)?)?(\d{1,4})/i)
-      || wikitext.match(/current_ranking\s*=\s*(?:No\.\s*)?(?:\[\[(?:[^\]]*\|)?)?(\d{1,4})/i);
+    // Extract from infobox fields (actual format from Wikipedia):
+    // |currentsinglesranking             = No. 40 (30 March 2026)
+    var rankMatch = wikitext.match(/currentsinglesranking\s*=\s*No\.\s*(\d{1,4})/i);
 
     if (!rankMatch) {
-      log.push("ranking: could not parse wikitext infobox");
+      log.push("ranking: field not found in wikitext");
       return null;
     }
 
     var ranking = parseInt(rankMatch[1], 10);
     if (ranking <= 0 || ranking > 2000) { log.push("ranking: invalid value " + ranking); return null; }
 
-    // Career high
-    var highMatch = wikitext.match(/singles_highest_ranking\s*=\s*(?:No\.\s*)?(?:\[\[(?:[^\]]*\|)?)?(\d{1,4})/i)
-      || wikitext.match(/highest_ranking\s*=\s*(?:No\.\s*)?(?:\[\[(?:[^\]]*\|)?)?(\d{1,4})/i);
+    // Career high: |highestsinglesranking             = No. 24
+    var highMatch = wikitext.match(/highestsinglesranking\s*=\s*No\.\s*(\d{1,4})/i);
     var bestRanking = highMatch ? parseInt(highMatch[1], 10) : 24;
 
-    // Prize money: | prize_money = US $2,816,305
-    var prizeMatch = wikitext.match(/prize_money\s*=\s*(?:US\s*)?\$\s*([\d,]+)/i);
+    // Prize money: |careerprizemoney                  = US $2,932,555
+    var prizeMatch = wikitext.match(/careerprizemoney\s*=\s*(?:US\s*)?\$\s*([\d,]+)/i);
     var prizeMoney = prizeMatch ? parseInt(prizeMatch[1].replace(/,/g, ""), 10) : null;
 
     log.push("ranking: #" + ranking + " (via Wikipedia API)");
