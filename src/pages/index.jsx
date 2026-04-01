@@ -773,9 +773,9 @@ export default function JoaoFonsecaNews() {
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
   var dm = nextMatch || (news.length === 0 ? SAMPLE_NEXT_MATCH : null);
-  var dl = lastMatch || (news.length === 0 ? SAMPLE_LAST_MATCH : null);
+  var dl = lastMatch || null; // comes from SofaScore async, no sample fallback needed
   var dp = player || (news.length === 0 ? SAMPLE_PLAYER : null);
-  var ds = season || (news.length === 0 ? SAMPLE_SEASON : null);
+  var ds = season || null; // comes from SofaScore async, no sample fallback needed
 
   var Modal = function(p) { return (
     <div onClick={p.onClose} style={{ position: "fixed", inset: 0, zIndex: 300, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInO 0.3s ease", overflowY: "auto" }}>
