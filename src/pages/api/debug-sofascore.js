@@ -1,50 +1,55 @@
-// ===== DEBUG v5: Find ranking via Miami standings or team ranking field =====
-var RAPIDAPI_HOST = "sofascore6.p.rapidapi.com";
-
-async function testEndpoint(path, apiKey) {
-  try {
-    var url = "https://" + RAPIDAPI_HOST + "/api/sofascore" + path;
-    var res = await fetch(url, {
-      headers: { "x-rapidapi-host": RAPIDAPI_HOST, "x-rapidapi-key": apiKey },
-    });
-    if (!res.ok) return { path: path, status: res.status, error: "HTTP " + res.status };
-    var data = await res.json();
-    return { path: path, status: res.status, keys: Object.keys(data), preview: JSON.stringify(data).substring(0, 3000) };
-  } catch (e) {
-    return { path: path, error: e.message };
-  }
-}
-
+// ===== DEBUG: Wikipedia HTML inspection =====
 export default async function handler(req, res) {
-  var apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) return res.status(200).json({ error: "No RAPIDAPI_KEY" });
-
-  var results = {};
-
-  // Miami Open = unique_tournament_id 2430, season_id 80799
-  // Get seasons to find the right season_id
-  results.miami_seasons = await testEndpoint("/v1/unique-tournament/seasons?unique_tournament_id=2430", apiKey);
-
-  // Get standings for Miami 2026
-  results.miami_standings = await testEndpoint("/v1/unique-tournament/season/standings?unique_tournament_id=2430&season_id=80799", apiKey);
-
-  // Get the full team details response (ALL fields, not truncated)
-  // to check every single field for ranking data
-  var teamUrl = "https://" + RAPIDAPI_HOST + "/api/sofascore/v1/team/details?team_id=403869";
   try {
-    var teamRes = await fetch(teamUrl, {
-      headers: { "x-rapidapi-host": RAPIDAPI_HOST, "x-rapidapi-key": apiKey },
+    var url = "https://en.wikipedia.org/wiki/Jo%C3%A3o_Fonseca_(tennis)";
+    var r = await fetch(url, {
+      headers: { "User-Agent": "FonsecaNews/5.0 (fan site)", "Accept": "text/html" },
     });
-    var teamData = await teamRes.json();
-    results.team_full = { 
-      allKeys: Object.keys(teamData),
-      fullJSON: JSON.stringify(teamData)
-    };
-  } catch(e) { results.team_full = { error: e.message }; }
+    var html = await r.text();
 
-  // Try searching for "rankings" in endpoint URL patterns
-  results.rankings_atp = await testEndpoint("/v1/rankings?sport_slug=tennis&type=atp", apiKey);
-  results.rankings_singles = await testEndpoint("/v1/rankings?type=singles&category=atp", apiKey);
+    // Search for ranking-related text in the HTML
+    var patterns = [
+      /Current\s+ranking[^<]{0,100}/gi,
+      /ranking[^<]{0,60}No\.\s*\d+/gi,
+      /No\.\s*\d+[^<]{0,40}ranking/gi,
+      /singles_ranking\s*=\s*[^|}{]{0,50}/gi,
+      /ranking[^<]{0,30}\d{1,4}/gi,
+      /ATP[^<]{0,30}\d{1,4}/gi,
+    ];
 
-  res.status(200).json(results);
+    var matches = {};
+    for (var i = 0; i < patterns.length; i++) {
+      var found = html.match(patterns[i]);
+      matches["pattern_" + i] = found ? found.slice(0, 5) : null;
+    }
+
+    // Also show a chunk around "ranking" in the raw HTML
+    var idx = html.toLowerCase().indexOf("current_ranking");
+    if (idx === -1) idx = html.toLowerCase().indexOf("singles_ranking");
+    if (idx === -1) idx = html.toLowerCase().indexOf("currentranking");
+    var snippet = idx >= 0 ? html.substring(idx - 50, idx + 200) : "not found";
+
+    // Try the Wikipedia API instead (returns wikitext which is easier to parse)
+    var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&section=0&format=json";
+    var apiRes = await fetch(apiUrl, { headers: { "User-Agent": "FonsecaNews/5.0" } });
+    var apiData = apiRes.ok ? await apiRes.json() : null;
+    var wikitext = apiData && apiData.parse && apiData.parse.wikitext ? apiData.parse.wikitext["*"] || "" : "";
+
+    // Find ranking in wikitext (format: | current_ranking = No. 38)
+    var wikiRankMatch = wikitext.match(/current_ranking\s*=\s*(?:No\.\s*)?(\d{1,4})/i);
+    var singlesRankMatch = wikitext.match(/singles_current_ranking\s*=\s*(?:No\.\s*)?(\d{1,4})/i);
+
+    res.status(200).json({
+      htmlLength: html.length,
+      htmlStatus: r.status,
+      regexMatches: matches,
+      htmlSnippet: snippet,
+      wikitextAvailable: wikitext.length > 0,
+      wikitextSnippet: wikitext.substring(0, 1000),
+      wikiRankMatch: wikiRankMatch ? wikiRankMatch[1] : null,
+      singlesRankMatch: singlesRankMatch ? singlesRankMatch[1] : null,
+    });
+  } catch (e) {
+    res.status(200).json({ error: e.message });
+  }
 }
