@@ -1,15 +1,21 @@
-// ===== CRON: Daily SofaScore Update v2 =====
-// Fetches: ranking, last match, next match, match stats, H2H
-// Runs daily via cron-job.org POST to /api/cron-update
-// Budget: ~60 req/month of 500 free
+// ===== CRON: SofaScore Update v3 =====
+// TESTED ENDPOINTS:
+//   GET /v1/match/list?sport_slug=tennis&date=YYYY-MM-DD → 585 items, filter by "fonseca"
+//   GET /v1/match/statistics?match_id=XXXXX → aces, DFs, serve %, winners
+//   GET /v1/team/details?team_id=403869 → team/player info
+// Runs 3x/day via cron-job.org POST to /api/cron-update
+// Host: sofascore6.p.rapidapi.com
+// Path prefix: /api/sofascore
 
 import { kv } from "@vercel/kv";
 
-var FONSECA_TEAM_ID = 403869;
 var RAPIDAPI_HOST = "sofascore6.p.rapidapi.com";
+var FONSECA_SLUG = "fonseca";
+var FONSECA_TEAM_ID = 403869;
 
 async function sofaFetch(path, apiKey) {
   var url = "https://" + RAPIDAPI_HOST + "/api/sofascore" + path;
+  console.log("[cron] Fetching:", path);
   var res = await fetch(url, {
     headers: {
       "x-rapidapi-host": RAPIDAPI_HOST,
@@ -17,17 +23,17 @@ async function sofaFetch(path, apiKey) {
     }
   });
   if (!res.ok) {
-    console.log("[cron] SofaScore " + path + " returned " + res.status);
+    console.log("[cron] Error " + res.status + " for " + path);
     return null;
   }
   return res.json();
 }
 
-// Direct SofaScore API (free, no key needed) for ranking
+// Fetch ranking via direct SofaScore API (free, no RapidAPI quota)
 async function fetchRanking() {
   try {
     var res = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID, {
-      headers: { "User-Agent": "FonsecaNews/2.0" }
+      headers: { "User-Agent": "FonsecaNews/3.0" }
     });
     if (!res.ok) return null;
     var data = await res.json();
@@ -36,147 +42,130 @@ async function fetchRanking() {
       ranking: team.ranking || null,
       points: team.rankingPoints || null,
       previousRanking: team.previousRanking || null,
-      bestRanking: team.bestRanking || null,
-      bestRankingDate: team.bestRankingTimestamp ? new Date(team.bestRankingTimestamp * 1000).toISOString() : null
+      bestRanking: team.bestRanking || null
     };
   } catch (e) {
-    console.log("[cron] Ranking fetch error:", e.message);
+    console.log("[cron] Direct ranking failed:", e.message);
     return null;
   }
 }
 
-// Fetch last events (uses 1 RapidAPI request)
-async function fetchLastEvents(apiKey) {
-  // Try RapidAPI first
-  var data = await sofaFetch("/v1/team/" + FONSECA_TEAM_ID + "/events/last/0", apiKey);
-  if (data && data.events && data.events.length > 0) return data.events;
+// Find Fonseca matches from "Get matches by date"
+async function findFonsecaMatches(date, apiKey) {
+  var dateStr = date.toISOString().split("T")[0]; // YYYY-MM-DD
+  var data = await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + dateStr, apiKey);
+  if (!data || !Array.isArray(data)) return [];
 
-  // Fallback: try direct API
-  try {
-    var res = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID + "/events/last/0", {
-      headers: { "User-Agent": "FonsecaNews/2.0" }
-    });
-    if (res.ok) {
-      var d = await res.json();
-      if (d.events) return d.events;
-    }
-  } catch (e) {}
-  return [];
+  // Filter matches containing "fonseca" in slug
+  var matches = data.filter(function(m) {
+    return m.slug && m.slug.toLowerCase().indexOf(FONSECA_SLUG) !== -1;
+  });
+  return matches;
 }
 
-// Fetch next events (uses 1 RapidAPI request)
-async function fetchNextEvents(apiKey) {
-  var data = await sofaFetch("/v1/team/" + FONSECA_TEAM_ID + "/events/next/0", apiKey);
-  if (data && data.events && data.events.length > 0) return data.events;
-
-  try {
-    var res = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID + "/events/next/0", {
-      headers: { "User-Agent": "FonsecaNews/2.0" }
-    });
-    if (res.ok) {
-      var d = await res.json();
-      if (d.events) return d.events;
-    }
-  } catch (e) {}
-  return [];
-}
-
-// Fetch match statistics (aces, winners, serve %, etc)
-async function fetchMatchStats(eventId, apiKey) {
-  if (!eventId) return null;
-  var data = await sofaFetch("/v1/event/" + eventId + "/statistics", apiKey);
-  if (!data) return null;
-
-  // SofaScore returns statistics in groups
-  var stats = data.statistics || [];
-  var result = { home: {}, away: {} };
-
-  stats.forEach(function(group) {
-    var groups = group.groups || [];
-    groups.forEach(function(g) {
-      var items = g.statisticsItems || [];
-      items.forEach(function(item) {
-        var key = (item.name || "").toLowerCase().replace(/\s+/g, "_");
-        result.home[key] = item.home || item.homeValue || 0;
-        result.away[key] = item.away || item.awayValue || 0;
+// Search last 7 days for Fonseca's most recent match
+async function findLastMatch(apiKey) {
+  var today = new Date();
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(today);
+    d.setDate(d.getDate() - i);
+    var matches = await findFonsecaMatches(d, apiKey);
+    if (matches.length > 0) {
+      // Return finished matches only
+      var finished = matches.filter(function(m) {
+        return m.status && (m.status.type === "finished" || m.status.isFinished);
       });
+      if (finished.length > 0) return { match: finished[0], daysAgo: i, requestsUsed: i + 1 };
+    }
+  }
+  return { match: null, daysAgo: -1, requestsUsed: 7 };
+}
+
+// Search next 7 days for Fonseca's upcoming match
+async function findNextMatch(apiKey) {
+  var today = new Date();
+  for (var i = 0; i <= 7; i++) {
+    var d = new Date(today);
+    d.setDate(d.getDate() + i);
+    var matches = await findFonsecaMatches(d, apiKey);
+    if (matches.length > 0) {
+      var upcoming = matches.filter(function(m) {
+        return m.status && (m.status.type === "notstarted" || !m.status.isFinished);
+      });
+      if (upcoming.length > 0) return { match: upcoming[0], requestsUsed: i + 1 };
+      // If today has a finished match, skip
+      if (i === 0) continue;
+    }
+  }
+  return { match: null, requestsUsed: 7 };
+}
+
+// Fetch match statistics (aces, DFs, winners, serve %)
+async function fetchMatchStats(matchId, apiKey) {
+  if (!matchId) return null;
+  var data = await sofaFetch("/v1/match/statistics?match_id=" + matchId, apiKey);
+  if (!data || !Array.isArray(data)) return null;
+
+  // Find the "ALL" period
+  var allPeriod = data.find(function(p) { return p.period === "ALL"; });
+  if (!allPeriod || !allPeriod.groups) return null;
+
+  var home = {};
+  var away = {};
+  allPeriod.groups.forEach(function(group) {
+    var items = group.statisticsItems || [];
+    items.forEach(function(item) {
+      var key = (item.key || item.name || "").toLowerCase().replace(/\s+/g, "_");
+      home[key] = item.homeValue !== undefined ? item.homeValue : parseInt(item.home, 10) || 0;
+      away[key] = item.awayValue !== undefined ? item.awayValue : parseInt(item.away, 10) || 0;
     });
   });
 
-  return result;
+  return { home: home, away: away };
 }
 
-// Fetch H2H between two players
-async function fetchH2H(eventId, apiKey) {
-  if (!eventId) return null;
-  var data = await sofaFetch("/v1/event/" + eventId + "/h2h", apiKey);
-  if (!data) return null;
+// Parse match into our format
+function parseMatch(m, isNext) {
+  if (!m) return null;
+  var homeTeam = m.homeTeam || {};
+  var awayTeam = m.awayTeam || {};
+  var tournament = m.tournament || {};
+  var season = m.season || {};
+  var roundInfo = m.roundInfo || {};
+  var homeScore = m.homeScore || {};
+  var awayScore = m.awayScore || {};
 
-  var h2h = {};
-  // Extract win counts
-  if (data.teamDuel) {
-    h2h.homeWins = data.teamDuel.homeWins || 0;
-    h2h.awayWins = data.teamDuel.awayWins || 0;
-  }
-  // Extract past events
-  if (data.events && data.events.length > 0) {
-    h2h.pastMatches = data.events.slice(0, 5).map(function(ev) {
-      var homeScore = ev.homeScore || {};
-      var awayScore = ev.awayScore || {};
-      return {
-        date: ev.startTimestamp ? new Date(ev.startTimestamp * 1000).toISOString() : null,
-        tournament: ev.tournament ? ev.tournament.name : "",
-        round: ev.roundInfo ? ev.roundInfo.name : "",
-        homePlayer: ev.homeTeam ? ev.homeTeam.name : "",
-        awayPlayer: ev.awayTeam ? ev.awayTeam.name : "",
-        score: (homeScore.current || 0) + "-" + (awayScore.current || 0),
-        winner: ev.winnerCode === 1 ? "home" : (ev.winnerCode === 2 ? "away" : "unknown")
-      };
-    });
-  }
-  return h2h;
-}
-
-// Parse a SofaScore event into our format
-function parseEvent(ev, isNext) {
-  var isFonsecaHome = ev.homeTeam && ev.homeTeam.id === FONSECA_TEAM_ID;
-  var opponent = isFonsecaHome ? ev.awayTeam : ev.homeTeam;
-  var homeScore = ev.homeScore || {};
-  var awayScore = ev.awayScore || {};
-
-  var surfaceMap = { 1: "Duro", 2: "Saibro", 3: "Grama", 4: "Carpet", 5: "Duro (indoor)" };
-  var tournament = ev.tournament || {};
-  var uniqueTournament = tournament.uniqueTournament || {};
-  var season = ev.season || {};
-  var roundInfo = ev.roundInfo || {};
-  var groundType = uniqueTournament.groundType || ev.groundType;
+  var isFonsecaHome = (homeTeam.slug || "").toLowerCase().indexOf(FONSECA_SLUG) !== -1;
+  var opponent = isFonsecaHome ? awayTeam : homeTeam;
 
   var result = {
-    event_id: ev.id,
-    tournament_name: uniqueTournament.name || tournament.name || "",
-    tournament_category: uniqueTournament.category ? uniqueTournament.category.name : "",
-    surface: surfaceMap[groundType] || "Duro",
-    city: tournament.city || "",
-    country: tournament.country ? tournament.country.name : "",
+    event_id: m.id,
+    tournament_name: tournament.name || "",
+    tournament_category: season.name || tournament.name || "",
+    surface: "", // API doesn't return surface directly
+    city: (tournament.name || "").split(",")[0] || "",
     round: roundInfo.name || "",
-    date: ev.startTimestamp ? new Date(ev.startTimestamp * 1000).toISOString() : null,
-    opponent_name: opponent ? (opponent.shortName || opponent.name || "") : "A definir",
-    opponent_id: opponent ? opponent.id : null,
-    opponent_ranking: opponent ? (opponent.ranking || null) : null,
-    opponent_country: opponent && opponent.country ? opponent.country.alpha2 : ""
+    date: m.timestamp ? new Date(m.timestamp * 1000).toISOString() : null,
+    opponent_name: opponent.shortName || opponent.name || "A definir",
+    opponent_id: opponent.id || null,
+    opponent_ranking: opponent.ranking || null,
+    opponent_country: opponent.country ? opponent.country.name : "",
+    isFonsecaHome: isFonsecaHome
   };
 
   if (!isNext) {
-    var fonsecaScore = isFonsecaHome ? homeScore : awayScore;
-    var oppScore = isFonsecaHome ? awayScore : homeScore;
+    // Parse score
+    var fScore = isFonsecaHome ? homeScore : awayScore;
+    var oScore = isFonsecaHome ? awayScore : homeScore;
     var sets = [];
     for (var i = 1; i <= 5; i++) {
       var key = "period" + i;
-      if (fonsecaScore[key] !== undefined && oppScore[key] !== undefined) {
-        sets.push(fonsecaScore[key] + "-" + oppScore[key]);
+      if (fScore[key] !== undefined && oScore[key] !== undefined) {
+        sets.push(fScore[key] + "-" + oScore[key]);
       }
     }
-    result.result = (ev.winnerCode === 1 && isFonsecaHome) || (ev.winnerCode === 2 && !isFonsecaHome) ? "V" : "D";
+    var wonMatch = (m.winnerCode === 1 && isFonsecaHome) || (m.winnerCode === 2 && !isFonsecaHome);
+    result.result = wonMatch ? "V" : "D";
     result.score = sets.join(" ");
     result.opponent = result.opponent_name;
     result.tournament = result.tournament_name;
@@ -185,106 +174,69 @@ function parseEvent(ev, isNext) {
   return result;
 }
 
-// Calculate season record from recent events
-function calculateSeason(events, year) {
-  var wins = 0;
-  var losses = 0;
-  var titles = 0;
-
-  events.forEach(function(ev) {
-    if (!ev.startTimestamp) return;
-    var evDate = new Date(ev.startTimestamp * 1000);
-    if (evDate.getFullYear() !== year) return;
-
-    var isFonsecaHome = ev.homeTeam && ev.homeTeam.id === FONSECA_TEAM_ID;
-    var won = (ev.winnerCode === 1 && isFonsecaHome) || (ev.winnerCode === 2 && !isFonsecaHome);
-    if (won) wins++;
-    else losses++;
-
-    // Check if it was a final and he won
-    var round = ev.roundInfo ? (ev.roundInfo.name || "").toLowerCase() : "";
-    if (won && (round === "final" || round === "finals")) titles++;
-  });
-
-  return { wins: wins, losses: losses, titles: titles, year: year };
-}
-
 // ===== MAIN HANDLER =====
 export default async function handler(req, res) {
   var apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) {
-    return res.status(200).json({ ok: false, error: "No RAPIDAPI_KEY" });
+    return res.status(200).json({ ok: false, error: "No RAPIDAPI_KEY env var" });
   }
 
   try {
     var log = [];
-    var requestCount = 0;
+    var totalRequests = 0;
 
     // 1. Fetch ranking (free, no RapidAPI)
     var ranking = await fetchRanking();
-    if (ranking) {
-      await kv.set("fn:ranking", JSON.stringify(ranking), { ex: 86400 }); // 24h
+    if (ranking && ranking.ranking) {
+      await kv.set("fn:ranking", JSON.stringify(ranking), { ex: 86400 });
       log.push("ranking: #" + ranking.ranking);
+    } else {
+      log.push("ranking: direct API failed");
     }
 
-    // 1b. Fetch prize money (Mondays only, free endpoint)
-    var today = new Date();
-    var brasiliaHour = (today.getUTCHours() - 3 + 24) % 24;
-    if (today.getUTCDay() === 1 && brasiliaHour >= 9 && brasiliaHour <= 12) {
+    // 1b. Prize money (Mondays 9-12h BRT only)
+    var now = new Date();
+    var brasiliaHour = (now.getUTCHours() - 3 + 24) % 24;
+    if (now.getUTCDay() === 1 && brasiliaHour >= 9 && brasiliaHour <= 12) {
       try {
         var pmRes = await fetch("https://api.sofascore.com/api/v1/team/" + FONSECA_TEAM_ID, {
-          headers: { "User-Agent": "FonsecaNews/2.0" }
+          headers: { "User-Agent": "FonsecaNews/3.0" }
         });
         if (pmRes.ok) {
           var pmData = await pmRes.json();
           var team = pmData.team || pmData;
-          // SofaScore may return prize money in different fields
           var prizeMoney = team.prizeMoney || team.totalPrizeMoney || team.careerPrizeMoney || null;
           if (prizeMoney) {
-            await kv.set("fn:prizeMoney", JSON.stringify({ amount: prizeMoney, currency: "USD", updatedAt: today.toISOString() }), { ex: 86400 * 8 }); // 8 days
+            await kv.set("fn:prizeMoney", JSON.stringify({ amount: prizeMoney, currency: "USD", updatedAt: now.toISOString() }), { ex: 86400 * 8 });
             log.push("prizeMoney: $" + prizeMoney);
-          } else {
-            log.push("prizeMoney: field not found in API response");
           }
         }
-      } catch (e) {
-        log.push("prizeMoney: error " + e.message);
-      }
+      } catch (e) {}
     }
 
-    // 2. Fetch last events (1 RapidAPI request)
-    var lastEvents = await fetchLastEvents(apiKey);
-    requestCount++;
-    if (lastEvents.length > 0) {
-      var lastMatch = parseEvent(lastEvents[0], false);
-      await kv.set("fn:lastMatch", JSON.stringify(lastMatch), { ex: 86400 });
-      log.push("lastMatch: " + lastMatch.result + " vs " + lastMatch.opponent_name);
+    // 2. Find last match (searches back up to 7 days, 1 request per day searched)
+    var lastResult = await findLastMatch(apiKey);
+    totalRequests += lastResult.requestsUsed;
 
-      // Calculate season from all events
-      var currentYear = new Date().getFullYear();
-      var season = calculateSeason(lastEvents, currentYear);
-      await kv.set("fn:season", JSON.stringify(season), { ex: 86400 });
-      log.push("season: " + season.wins + "V " + season.losses + "D");
+    if (lastResult.match) {
+      var lastMatch = parseMatch(lastResult.match, false);
+      await kv.set("fn:lastMatch", JSON.stringify(lastMatch), { ex: 86400 * 3 });
+      log.push("lastMatch: " + lastMatch.result + " vs " + lastMatch.opponent_name + " (" + lastResult.daysAgo + "d ago, " + lastResult.requestsUsed + " req)");
 
-      // 3. Fetch stats for last match (1 RapidAPI request)
-      var lastEventId = lastEvents[0].id;
+      // 3. Get match statistics if new match found
       var prevStatsId = null;
-      try {
-        var prev = await kv.get("fn:lastStatsEventId");
-        prevStatsId = prev;
-      } catch (e) {}
+      try { prevStatsId = await kv.get("fn:lastStatsEventId"); } catch (e) {}
 
-      // Only fetch stats if it's a new match
-      if (lastEventId && String(lastEventId) !== String(prevStatsId)) {
-        var matchStats = await fetchMatchStats(lastEventId, apiKey);
-        requestCount++;
-        if (matchStats) {
-          var isFonsecaHome = lastEvents[0].homeTeam && lastEvents[0].homeTeam.id === FONSECA_TEAM_ID;
-          var fonsecaStats = isFonsecaHome ? matchStats.home : matchStats.away;
-          var opponentStats = isFonsecaHome ? matchStats.away : matchStats.home;
+      if (String(lastResult.match.id) !== String(prevStatsId)) {
+        var rawStats = await fetchMatchStats(lastResult.match.id, apiKey);
+        totalRequests++;
+
+        if (rawStats) {
+          var fonsecaStats = lastMatch.isFonsecaHome ? rawStats.home : rawStats.away;
+          var opponentStats = lastMatch.isFonsecaHome ? rawStats.away : rawStats.home;
 
           var statsData = {
-            event_id: lastEventId,
+            event_id: lastResult.match.id,
             fonseca: fonsecaStats,
             opponent: opponentStats,
             opponent_name: lastMatch.opponent_name,
@@ -293,62 +245,62 @@ export default async function handler(req, res) {
             result: lastMatch.result,
             score: lastMatch.score
           };
-          await kv.set("fn:matchStats", JSON.stringify(statsData), { ex: 86400 * 7 }); // 7 days
-          await kv.set("fn:lastStatsEventId", String(lastEventId));
+          await kv.set("fn:matchStats", JSON.stringify(statsData), { ex: 86400 * 7 });
+          await kv.set("fn:lastStatsEventId", String(lastResult.match.id));
           log.push("stats: " + Object.keys(fonsecaStats).length + " metrics");
         } else {
-          log.push("stats: not available for this match");
+          log.push("stats: not available");
         }
       } else {
-        log.push("stats: already fetched for this match");
+        log.push("stats: already fetched");
       }
 
-      // Store last 5 results for "forma recente"
-      var recentForm = lastEvents.slice(0, 5).map(function(ev) {
-        return parseEvent(ev, false);
-      });
-      await kv.set("fn:recentForm", JSON.stringify(recentForm), { ex: 86400 });
-      log.push("form: " + recentForm.map(function(m) { return m.result; }).join(""));
-    }
-
-    // 4. Fetch next events (1 RapidAPI request)
-    var nextEvents = await fetchNextEvents(apiKey);
-    requestCount++;
-    if (nextEvents.length > 0) {
-      var nextMatch = parseEvent(nextEvents[0], true);
-      await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 });
-      log.push("nextMatch: vs " + nextMatch.opponent_name + " @ " + nextMatch.tournament_name);
-
-      // 5. Fetch H2H for next opponent (1 RapidAPI request) - only if opponent is known
-      if (nextMatch.opponent_name && nextMatch.opponent_name !== "A definir") {
-        var nextEventId = nextEvents[0].id;
-        var h2h = await fetchH2H(nextEventId, apiKey);
-        requestCount++;
-        if (h2h) {
-          h2h.opponent_name = nextMatch.opponent_name;
-          h2h.opponent_id = nextMatch.opponent_id;
-          await kv.set("fn:h2h", JSON.stringify(h2h), { ex: 86400 * 3 }); // 3 days
-          log.push("h2h: " + (h2h.homeWins || 0) + "-" + (h2h.awayWins || 0));
+      // Store recent form (last 5 results) - reuse today's search
+      // We already have this match; to save requests, store what we have
+      try {
+        var existingForm = await kv.get("fn:recentForm");
+        var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
+        // Add this match if not already in form
+        var alreadyInForm = form.some(function(f) { return f.event_id === lastMatch.event_id; });
+        if (!alreadyInForm) {
+          form.unshift(lastMatch);
+          form = form.slice(0, 5);
+          await kv.set("fn:recentForm", JSON.stringify(form), { ex: 86400 * 7 });
         }
+        log.push("form: " + form.map(function(m) { return m.result; }).join(""));
+      } catch (e) {
+        log.push("form: error");
       }
     } else {
-      log.push("nextMatch: none found");
+      log.push("lastMatch: none in last 7 days (" + lastResult.requestsUsed + " req)");
     }
 
-    // Store last cron run time
-    await kv.set("fn:cronLastRun", new Date().toISOString());
+    // 4. Find next match (searches forward up to 7 days)
+    var nextResult = await findNextMatch(apiKey);
+    totalRequests += nextResult.requestsUsed;
 
-    console.log("[cron-update] Done. Requests: " + requestCount + ". " + log.join(" | "));
+    if (nextResult.match) {
+      var nextMatch = parseMatch(nextResult.match, true);
+      await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 });
+      log.push("nextMatch: vs " + nextMatch.opponent_name + " @ " + nextMatch.tournament_name + " (" + nextResult.requestsUsed + " req)");
+    } else {
+      log.push("nextMatch: none in next 7 days (" + nextResult.requestsUsed + " req)");
+    }
+
+    // Save cron timestamp
+    await kv.set("fn:cronLastRun", now.toISOString());
+
+    console.log("[cron-v3] Done. Total requests: " + totalRequests + ". " + log.join(" | "));
 
     res.status(200).json({
       ok: true,
-      requests: requestCount,
+      requests: totalRequests,
       log: log,
-      timestamp: new Date().toISOString()
+      timestamp: now.toISOString()
     });
 
   } catch (error) {
-    console.error("[cron-update] Error:", error);
+    console.error("[cron-v3] Error:", error);
     res.status(500).json({ ok: false, error: error.message });
   }
 }
