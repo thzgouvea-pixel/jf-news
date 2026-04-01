@@ -893,7 +893,20 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
-  var dm = nextMatch || (news.length === 0 ? SAMPLE_NEXT_MATCH : null);
+  // When no nextMatch in KV, use next upcoming tournament from calendar as fallback
+  var dm = nextMatch || (function() {
+    var calendarEvents = [
+      { tournament_category: "Masters 1000", tournament_name: "Monte Carlo Masters", surface: "Saibro", city: "Monte Carlo", country: "Mônaco", date: "2026-04-05T12:00:00Z" },
+      { tournament_category: "Masters 1000", tournament_name: "Madrid Open", surface: "Saibro", city: "Madri", country: "Espanha", date: "2026-04-22T12:00:00Z" },
+      { tournament_category: "Masters 1000", tournament_name: "Roma Masters", surface: "Saibro", city: "Roma", country: "Itália", date: "2026-05-06T12:00:00Z" },
+      { tournament_category: "Grand Slam", tournament_name: "Roland Garros", surface: "Saibro", city: "Paris", country: "França", date: "2026-05-24T12:00:00Z" },
+      { tournament_category: "Grand Slam", tournament_name: "Wimbledon", surface: "Grama", city: "Londres", country: "Reino Unido", date: "2026-06-29T12:00:00Z" },
+      { tournament_category: "Grand Slam", tournament_name: "US Open", surface: "Duro", city: "Nova York", country: "EUA", date: "2026-08-31T12:00:00Z" },
+    ];
+    var now = new Date();
+    var next = calendarEvents.find(function(e) { return new Date(e.date) > now; });
+    return next || calendarEvents[0];
+  })();
   var dl = lastMatch || null;
   var dp = player || (news.length === 0 ? SAMPLE_PLAYER : null);
   var ds = season || null;
