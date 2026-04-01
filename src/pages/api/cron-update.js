@@ -396,19 +396,42 @@ export default async function handler(req, res) {
         log.push("stats: already fetched");
       }
 
-      // Form
+      // Form — busca os últimos 30 dias de uma vez para ter histórico completo
+      // Só faz o scan completo se o form estiver incompleto (< 5 resultados)
       try {
         var existingForm = await kv.get("fn:recentForm");
         var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
-        var alreadyInForm = form.some(function (f) { return f.event_id === lastMatch.event_id; });
-        if (!alreadyInForm) {
-          form.unshift(lastMatch);
-          form = form.slice(0, 5);
+
+        // Se já tem 5+ resultados e o último jogo já está no form, não faz nada
+        var lastAlreadyInForm = form.some(function(f) { return f.event_id === lastMatch.event_id; });
+
+        if (!lastAlreadyInForm || form.length < 5) {
+          // Scan dos últimos 30 dias para pegar histórico completo
+          var allFinished = [];
+          var today = new Date();
+          for (var fd = 0; fd < 30; fd++) {
+            var scanDate = new Date(today);
+            scanDate.setDate(scanDate.getDate() - fd);
+            var dayMatches = await findFonsecaMatches(scanDate, apiKey);
+            totalRequests++;
+            var finished = dayMatches.filter(function(m) {
+              return m.status && (m.status.type === "finished" || m.status.isFinished);
+            });
+            allFinished = allFinished.concat(finished);
+            // Para quando já tem 10 partidas finalizadas
+            if (allFinished.length >= 10) break;
+          }
+
+          // Ordena por timestamp decrescente e pega as 10 mais recentes
+          allFinished.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+          form = allFinished.slice(0, 10).map(function(m) { return parseMatch(m, false); });
           await kv.set("fn:recentForm", JSON.stringify(form), { ex: 86400 * 7 });
+          log.push("form: " + form.map(function(m) { return m.result; }).join("") + " (" + form.length + " jogos, scan completo)");
+        } else {
+          log.push("form: " + form.map(function(m) { return m.result; }).join("") + " (cache ok)");
         }
-        log.push("form: " + form.map(function (m) { return m.result; }).join(""));
       } catch (e) {
-        log.push("form: error");
+        log.push("form: error " + e.message);
       }
     } else {
       log.push("lastMatch: none in last 14 days");
