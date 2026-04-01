@@ -175,35 +175,28 @@ function cleanTitle(title, source) {
 var NEWS_TEMPLATES = {
   "Resultado": {
     win: [
-      "VAMOS! 🇧🇷🎾\n\n{title}\n\n{score}\n\n#JoãoFonseca",
-      "Jogou demais! {title} 🔥\n\n{score}\n\n#JoãoFonseca #Tennis",
-      "Mais uma vitória do João! 🇧🇷\n\n{title}\n\n{score}",
-      "O cara não para! {title}\n\nVamos, João! 🔥\n\n#JoãoFonseca",
+      "{title} 🇧🇷🎾\n\n{score}\n\n#JoãoFonseca",
+      "{title}\n\n{score}\n\n#JoãoFonseca",
     ],
     loss: [
-      "Não foi dessa vez, mas o João segue evoluindo 💪\n\n{title}\n\n#JoãoFonseca",
-      "Derrota faz parte. A temporada é longa e o João vai voltar mais forte 🇧🇷\n\n{title}",
-      "Dia difícil, mas quem acompanha sabe o quanto ele evolui a cada torneio\n\n{title}\n\n#JoãoFonseca",
+      "{title}\n\n{score}\n\n#JoãoFonseca",
     ],
     neutral: [
       "{title} 🎾\n\n#JoãoFonseca",
     ]
   },
   "Ranking": [
-    "Ranking atualizado! 📈\n\n{title}\n\n🇧🇷 #{ranking} no mundo\n\n#JoãoFonseca",
+    "{title} 📈\n\n#JoãoFonseca",
   ],
   "Declaração": [
-    "Olha o que falaram do João 👀\n\n{title}\n\n#JoãoFonseca",
-    "{title}\n\nConcordam? 🤔\n\n#JoãoFonseca",
+    "{title}\n\n#JoãoFonseca",
   ],
   "Torneio": [
-    "{title} 🎾\n\nBora acompanhar!\n\n#JoãoFonseca",
-    "{title}\n\nQuem tá ansioso? 🔥\n\n#JoãoFonseca",
+    "{title} 🎾\n\n#JoãoFonseca",
   ],
   "default": [
     "{title}\n\n#JoãoFonseca",
-    "{title} 🇧🇷\n\n#JoãoFonseca #Tennis",
-    "{title}\n\nO que vocês acham? 👇\n\n#JoãoFonseca",
+    "{title} 🇧🇷\n\n#JoãoFonseca",
   ]
 };
 
