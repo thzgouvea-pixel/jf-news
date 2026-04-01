@@ -29,7 +29,7 @@ const SOFASCORE_TTL = 23 * 60 * 60 * 1000; // 23 hours (only via cron)
 // These serve as fallback when SofaScore quota is exhausted or cache is cold
 const SEASON_DATA = { wins: 5, losses: 5, titles: 1, year: 2026 };
 
-const PLAYER_DATA = { ranking: 39, rankingChange: -4, points: 1135, bestRanking: 24 };
+const PLAYER_DATA = { ranking: 40, rankingChange: -4, points: 1135, bestRanking: 24 };
 
 const NEXT_TOURNAMENT = {
   tournament_category: "Masters 1000",
