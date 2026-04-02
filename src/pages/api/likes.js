@@ -1,25 +1,28 @@
-// ===== API: Likes & Dislikes (Vercel KV) =====
+// ===== API: Likes & Dislikes v2 =====
+// OPTIMIZATION: On write, updates both the individual key AND "likes:all" index.
+// This way likes-all.js does 1 read instead of scan+mget.
+
 import { kv } from "@vercel/kv";
 
 export default async function handler(req, res) {
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    const { id, action } = req.query;
+    var id = req.query.id;
+    var action = req.query.action;
 
     if (!id) {
       return res.status(400).json({ error: "Missing id parameter" });
     }
 
-    const key = "likes:" + id;
+    var key = "likes:" + id;
 
     if (req.method === "GET") {
-      // Get current likes/dislikes for an article
-      const data = await kv.get(key);
+      res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
+      var data = await kv.get(key);
       return res.status(200).json(data || { likes: 0, dislikes: 0 });
     }
 
@@ -28,18 +31,21 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "action must be 'like' or 'dislike'" });
       }
 
-      // Get current data
-      const current = (await kv.get(key)) || { likes: 0, dislikes: 0 };
+      var current = (await kv.get(key)) || { likes: 0, dislikes: 0 };
+      if (action === "like") current.likes += 1;
+      else current.dislikes += 1;
 
-      // Increment
-      if (action === "like") {
-        current.likes += 1;
-      } else {
-        current.dislikes += 1;
-      }
-
-      // Save
+      // Save individual key
       await kv.set(key, current);
+
+      // Also update the "likes:all" index so likes-all.js doesn't need to scan
+      try {
+        var allLikes = (await kv.get("likes:all")) || {};
+        allLikes[id] = current;
+        await kv.set("likes:all", allLikes);
+      } catch (e) {
+        console.error("[likes] Index update error:", e.message);
+      }
 
       return res.status(200).json(current);
     }
