@@ -1,14 +1,11 @@
-// src/pages/api/prediction.js
-// Stores and retrieves match predictions in Vercel KV
-// GET: returns prediction for visitor + match
-// POST: saves prediction for visitor + match
+// ===== API: Prediction v2 =====
+// OPTIMIZATION: s-maxage=60 on GET
 
 import { kv } from "@vercel/kv";
 
 function getVisitorId(req) {
   var forwarded = req.headers["x-forwarded-for"];
   var ip = forwarded ? forwarded.split(",")[0].trim() : req.socket?.remoteAddress || "unknown";
-  // Simple hash to anonymize
   var hash = 0;
   for (var i = 0; i < ip.length; i++) {
     hash = ((hash << 5) - hash) + ip.charCodeAt(i);
@@ -22,6 +19,7 @@ export default async function handler(req, res) {
     var visitorId = getVisitorId(req);
 
     if (req.method === "GET") {
+      res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
       var matchKey = req.query.match;
       if (!matchKey) return res.status(400).json({ error: "Missing match param" });
 
@@ -29,8 +27,6 @@ export default async function handler(req, res) {
       var prediction = await kv.get(key);
       var streakKey = "pred_streak:" + visitorId;
       var streak = await kv.get(streakKey) || 0;
-
-      // Also get community stats
       var statsKey = "pred_stats:" + matchKey;
       var stats = await kv.get(statsKey) || {};
 
@@ -45,17 +41,14 @@ export default async function handler(req, res) {
       var body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
       var matchKey = body.match;
       var pred = body.prediction;
-
       if (!matchKey || !pred) return res.status(400).json({ error: "Missing data" });
 
-      // Save individual prediction
       var key = "pred:" + visitorId + ":" + matchKey;
       var existing = await kv.get(key);
       if (existing) return res.status(200).json({ message: "Already predicted", prediction: existing });
 
-      await kv.set(key, pred, { ex: 60 * 60 * 24 * 30 }); // 30 day expiry
+      await kv.set(key, pred, { ex: 60 * 60 * 24 * 30 });
 
-      // Update community stats
       var statsKey = "pred_stats:" + matchKey;
       var stats = await kv.get(statsKey) || {};
       var setKey = pred.sets || "unknown";
@@ -73,7 +66,6 @@ export default async function handler(req, res) {
     res.status(405).json({ error: "Method not allowed" });
   } catch (e) {
     console.error("[prediction] Error:", e);
-    // Fallback gracefully
     res.status(200).json({ prediction: null, streak: 0, community: {} });
   }
 }
