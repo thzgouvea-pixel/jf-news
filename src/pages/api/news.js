@@ -51,6 +51,33 @@ async function fetchGoogleNews() {
   const queries = ["João+Fonseca+tenista", "João+Fonseca+tênis+ATP", "Joao+Fonseca+tennis"];
   const allItems = [];
   const seenTitles = new Set();
+
+  // Extract significant words from a title (removes common words, keeps nouns/verbs)
+  function getKeywords(title) {
+    var stopwords = ["o","a","os","as","de","do","da","dos","das","em","no","na","nos","nas","e","que","um","uma","com","por","para","se","ao","aos","sua","seu","mais","como","sobre","entre","ate","apos","foi","ser","vai","tem","pode","diz","disse","esta","sao","faz","ter","pelo","pela","contra","muito","mas","tambem","ja","ainda","quando","onde","qual","essa","esse","isso"];
+    return title.toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s]/g, "")
+      .split(/\s+/)
+      .filter(function(w) { return w.length > 2 && stopwords.indexOf(w) === -1; });
+  }
+
+  // Check if two titles are about the same news (>50% keyword overlap)
+  function isSimilar(title1, existingTitles) {
+    var kw1 = getKeywords(title1);
+    if (kw1.length < 2) return false;
+    for (var i = 0; i < existingTitles.length; i++) {
+      var kw2 = getKeywords(existingTitles[i]);
+      if (kw2.length < 2) continue;
+      var overlap = kw1.filter(function(w) { return kw2.indexOf(w) !== -1; }).length;
+      var similarity = overlap / Math.min(kw1.length, kw2.length);
+      if (similarity > 0.5) return true;
+    }
+    return false;
+  }
+
+  var acceptedTitles = [];
+
   for (const q of queries) {
     try {
       const res = await fetch(
@@ -60,11 +87,16 @@ async function fetchGoogleNews() {
       if (!res.ok) continue;
       const xml = await res.text();
       for (const item of parseRSS(xml)) {
-        const key = item.title.toLowerCase().substring(0, 50);
-        if (!seenTitles.has(key)) {
-          seenTitles.add(key);
-          allItems.push(item);
-        }
+        // Skip exact duplicates (same first 50 chars)
+        const exactKey = item.title.toLowerCase().substring(0, 50);
+        if (seenTitles.has(exactKey)) continue;
+        seenTitles.add(exactKey);
+
+        // Skip similar titles (same news from different sources)
+        if (isSimilar(item.title, acceptedTitles)) continue;
+
+        acceptedTitles.push(item.title);
+        allItems.push(item);
       }
     } catch (e) {
       console.error("RSS error:", e);
