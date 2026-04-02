@@ -107,19 +107,15 @@ async function fetchGoogleNews() {
   // Filter out non-Portuguese/English news (Google RSS sometimes returns other languages)
   var commonPtEn = /[àáâãéêíóôõúçÀÁÂÃÉÊÍÓÔÕÚÇ]|the |and |for |with |from |that |has |was |his |her |but |not |are |can |will |about |after |into |over |such |como |para |com |por |que |mais |sobre |seu |sua |dos |das |foi |são |tem |ano |vez |ele |ela /i;
   var suspiciousChars = /[ŵŷẁẃẅ]|kwa |ndi |ya |kutali |mbewu |zapam|kumat|njira/i;
-  allItems = allItems.filter(function(item) {
+  var filtered = allItems.filter(function(item) {
     var t = item.title || "";
-    // Reject if title has suspicious non-PT/EN patterns
     if (suspiciousChars.test(t)) return false;
-    // Accept if title has common PT or EN words/characters
     if (commonPtEn.test(t)) return true;
-    // Accept if title contains recognizable tennis/name terms
     if (/Fonseca|ATP|tennis|tênis|tenis|Masters|Open|Grand Slam/i.test(t)) return true;
-    // Default: accept (don't filter too aggressively)
     return true;
   });
 
-  return allItems.slice(0, 25);
+  return filtered.slice(0, 25);
 }
 
 // ===== READ KV DATA (populated by cron-update) =====
