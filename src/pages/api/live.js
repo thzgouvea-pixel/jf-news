@@ -1,19 +1,14 @@
-// ===== API: Live Score =====
-// GET /api/live
-// Checks if Fonseca has a live match today via SofaScore RapidAPI.
-// If live: returns match + statistics (2 requests).
-// If not live: returns { live: false } from KV cache (0 requests).
-// Called client-side every 60s only when page is visible.
+// ===== API: Live Score v2 =====
+// OPTIMIZATION: Added HTTP cache headers to prevent KV reads on every request.
+// When no live match: caches for 5 minutes at edge (s-maxage=300).
+// When live: caches for 30 seconds (s-maxage=30).
+// This means crawlers/bots get cached responses without touching KV.
 
 import { kv } from "@vercel/kv";
 
-// IMPORTANTE: impede o Next.js de tentar pré-renderizar essa rota no build
-export const dynamic = "force-dynamic";
-
 var RAPIDAPI_HOST = "sofascore6.p.rapidapi.com";
-var FONSECA_SLUG = "fonseca";
 var CACHE_KEY = "fn:liveMatch";
-var CACHE_TTL = 55; // seconds — slightly under polling interval
+var CACHE_TTL = 290; // seconds — KV cache, slightly under HTTP cache
 
 async function sofaFetch(path, apiKey) {
   var url = "https://" + RAPIDAPI_HOST + "/api/sofascore" + path;
@@ -41,7 +36,6 @@ async function findLiveMatch(apiKey) {
     }
   }
 
-  // Filter Fonseca matches that are in progress
   return matches.find(function (m) {
     var slug = (m.slug || "").toLowerCase();
     var home = (m.homeTeam && (m.homeTeam.slug || m.homeTeam.name || "")).toLowerCase();
@@ -77,55 +71,38 @@ async function fetchStats(matchId, apiKey) {
   return { home, away };
 }
 
-function parseScore(m) {
-  var homeScore = m.homeScore || {};
-  var awayScore = m.awayScore || {};
-  var sets = [];
-  for (var i = 1; i <= 5; i++) {
-    var k = "period" + i;
-    if (homeScore[k] !== undefined && awayScore[k] !== undefined) {
-      sets.push({ home: homeScore[k], away: awayScore[k] });
-    }
-  }
-  return {
-    sets,
-    currentGame: {
-      home: homeScore.current,
-      away: awayScore.current,
-    },
-    serving: m.firstToServe, // 1 = home, 2 = away
-  };
-}
-
 export default async function handler(req, res) {
-  // Only GET
   if (req.method !== "GET") return res.status(405).end();
 
-  res.setHeader("Cache-Control", "no-store");
-
   var apiKey = process.env.RAPIDAPI_KEY;
-  if (!apiKey) return res.status(200).json({ live: false, error: "no key" });
+  if (!apiKey) {
+    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
+    return res.status(200).json({ live: false, error: "no key" });
+  }
 
   try {
-    // 1. Check KV cache first to avoid hitting RapidAPI on every request
+    // 1. Check KV cache first
     var cached = await kv.get(CACHE_KEY);
     if (cached) {
-      // Cache hit — return what we have (could be { live: false } or live data)
       var parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+      // If no live match, cache aggressively at edge (5 min)
+      var cacheTime = parsed.live ? 30 : 300;
+      res.setHeader("Cache-Control", "s-maxage=" + cacheTime + ", stale-while-revalidate=" + (cacheTime * 2));
       return res.status(200).json({ ...parsed, cached: true });
     }
 
-    // 2. Cache miss — fetch from SofaScore (1 request)
+    // 2. Cache miss — fetch from SofaScore
     var liveMatch = await findLiveMatch(apiKey);
 
     if (!liveMatch) {
-      // No live match — cache for 55s so next poll doesn't hit API
       var noMatch = { live: false, checkedAt: new Date().toISOString() };
       await kv.set(CACHE_KEY, JSON.stringify(noMatch), { ex: CACHE_TTL });
+      // Cache for 5 minutes at edge — no need to check more often when no match
+      res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
       return res.status(200).json(noMatch);
     }
 
-    // 3. Live match found — fetch stats (1 more request)
+    // 3. Live match found
     var stats = await fetchStats(liveMatch.id, apiKey);
     var isFonsecaHome = (liveMatch.homeTeam?.slug || liveMatch.homeTeam?.name || "").toLowerCase().includes("fonseca");
     var opponent = isFonsecaHome ? liveMatch.awayTeam : liveMatch.homeTeam;
@@ -137,10 +114,17 @@ export default async function handler(req, res) {
       opponentStats = isFonsecaHome ? stats.away : stats.home;
     }
 
-    var score = parseScore(liveMatch);
-    // Flip score so Fonseca is always "home" side in our response
-    var fonsecaSets = score.sets.map(s => isFonsecaHome ? s.home : s.away);
-    var opponentSets = score.sets.map(s => isFonsecaHome ? s.away : s.home);
+    var homeScore = liveMatch.homeScore || {};
+    var awayScore = liveMatch.awayScore || {};
+    var fonsecaSets = [];
+    var opponentSets = [];
+    for (var i = 1; i <= 5; i++) {
+      var k = "period" + i;
+      if (homeScore[k] !== undefined && awayScore[k] !== undefined) {
+        fonsecaSets.push(isFonsecaHome ? homeScore[k] : awayScore[k]);
+        opponentSets.push(isFonsecaHome ? awayScore[k] : homeScore[k]);
+      }
+    }
 
     var payload = {
       live: true,
@@ -156,26 +140,24 @@ export default async function handler(req, res) {
       score: {
         fonseca_sets: fonsecaSets,
         opponent_sets: opponentSets,
-        sets_won: { fonseca: fonsecaSets.filter((s, i) => s > opponentSets[i]).length, opponent: opponentSets.filter((s, i) => s > fonsecaSets[i]).length },
+        sets_won: { fonseca: fonsecaSets.filter(function(s, idx) { return s > opponentSets[idx]; }).length, opponent: opponentSets.filter(function(s, idx) { return s > fonsecaSets[idx]; }).length },
         current_game: isFonsecaHome
-          ? { fonseca: score.currentGame.home, opponent: score.currentGame.away }
-          : { fonseca: score.currentGame.away, opponent: score.currentGame.home },
-        serving: (score.serving === 1 && isFonsecaHome) || (score.serving === 2 && !isFonsecaHome) ? "fonseca" : "opponent",
+          ? { fonseca: homeScore.point, opponent: awayScore.point }
+          : { fonseca: awayScore.point, opponent: homeScore.point },
+        serving: (liveMatch.firstToServe === 1 && isFonsecaHome) || (liveMatch.firstToServe === 2 && !isFonsecaHome) ? "fonseca" : "opponent",
       },
-      stats: {
-        fonseca: fonsecaStats,
-        opponent: opponentStats,
-      },
+      stats: { fonseca: fonsecaStats, opponent: opponentStats },
       updatedAt: new Date().toISOString(),
     };
 
-    // Cache for 55s
-    await kv.set(CACHE_KEY, JSON.stringify(payload), { ex: CACHE_TTL });
-
+    await kv.set(CACHE_KEY, JSON.stringify(payload), { ex: 55 });
+    // Live match: cache only 30s at edge for fresher updates
+    res.setHeader("Cache-Control", "s-maxage=30, stale-while-revalidate=60");
     return res.status(200).json(payload);
 
   } catch (err) {
     console.error("[live] Error:", err);
+    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
     return res.status(200).json({ live: false, error: err.message });
   }
 }
