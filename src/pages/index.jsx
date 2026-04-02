@@ -574,30 +574,15 @@ var PlayerBlock = function(props) {
   return (
     <div style={{ margin: "12px 0 4px" }}>
 
-      {/* Metric pills row: Forma + Prize Money */}
-      {((recentForm && recentForm.length > 0) || prizeMoney) && (
+      {/* Metric pills row: Prize Money only (Forma moved inside stats card) */}
+      {prizeMoney && (
         <div style={{ display: "flex", gap: 6, marginBottom: 12, justifyContent: "center", alignItems: "center" }}>
-          {recentForm && recentForm.length > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 3, padding: "5px 10px", background: BG_ALT, borderRadius: 8, border: "1px solid " + BORDER }}>
-              <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em", marginRight: 2 }}>Forma</span>
-              {recentForm.slice().reverse().map(function(m, i) {
-                var w = m.result === "V";
-                return (
-                  <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 16, height: 16, borderRadius: 4, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <span style={{ fontSize: 8, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {prizeMoney && (
-            <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: BG_ALT, borderRadius: 8, border: "1px solid " + BORDER }}>
-              <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em" }}>Prize</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS }}>
-                {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000) + "K"}
-              </span>
-            </div>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: BG_ALT, borderRadius: 8, border: "1px solid " + BORDER }}>
+            <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em" }}>Prize</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS }}>
+              {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000) + "K"}
+            </span>
+          </div>
         </div>
       )}
 
@@ -621,12 +606,24 @@ var PlayerBlock = function(props) {
           <div>
             <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Última partida</p>
             <div style={{ background: BG_ALT, borderRadius: 14, padding: "18px 18px 14px", border: "1px solid " + BORDER }}>
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <div>
-                <span style={{ fontSize: 13, color: SUB, fontFamily: SANS }}>{matchStats.tournament} · {matchStats.score}</span>
+            {/* Header: tournament · date · forma · badge */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 6 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{matchStats.tournament}</span>
+                <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : ""}</span>
+                <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{matchStats.score}</span>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "4px 12px", borderRadius: 8 }}>{isWin ? "Vitoria" : "Derrota"}</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                {recentForm && recentForm.length > 0 && recentForm.slice().reverse().map(function(m, i) {
+                  var w = m.result === "V";
+                  return (
+                    <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 16, height: 16, borderRadius: 4, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 8, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span>
+                    </div>
+                  );
+                })}
+                <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "4px 10px", borderRadius: 8, marginLeft: 2 }}>{isWin ? "V" : "D"}</span>
+              </div>
             </div>
             {/* Player names */}
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, padding: "0 2px" }}>
