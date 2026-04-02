@@ -580,7 +580,7 @@ var PlayerBlock = function(props) {
           {recentForm && recentForm.length > 0 && (
             <div style={{ display: "flex", alignItems: "center", gap: 3, padding: "5px 10px", background: BG_ALT, borderRadius: 8, border: "1px solid " + BORDER }}>
               <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em", marginRight: 2 }}>Forma</span>
-              {recentForm.map(function(m, i) {
+              {recentForm.slice().reverse().map(function(m, i) {
                 var w = m.result === "V";
                 return (
                   <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 16, height: 16, borderRadius: 4, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -622,10 +622,10 @@ var PlayerBlock = function(props) {
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div>
-                <span style={{ fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>Ultima partida</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", lineHeight: 1.2 }}>Ultima partida</span>
                 <span style={{ fontSize: 12, color: SUB, fontFamily: SANS, marginTop: 2, display: "block" }}>{matchStats.tournament} · {matchStats.score}</span>
               </div>
-              <span style={{ fontSize: 12, fontWeight: 700, color: isWin ? GREEN : "#fff", fontFamily: SANS, background: isWin ? GREEN : RED, padding: "4px 12px", borderRadius: 8 }}>{isWin ? "Vitoria" : "Derrota"}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "4px 12px", borderRadius: 8 }}>{isWin ? "Vitoria" : "Derrota"}</span>
             </div>
             {/* Player names */}
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, padding: "0 2px" }}>
@@ -814,6 +814,7 @@ export default function JoaoFonsecaNews() {
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
   var _showFeedback = useState(false); var showFeedback = _showFeedback[0]; var setShowFeedback = _showFeedback[1];
   var _showInstallGuide = useState(false); var showInstallGuide = _showInstallGuide[0]; var setShowInstallGuide = _showInstallGuide[1];
+  var _showPixModal = useState(false); var showPixModal = _showPixModal[0]; var setShowPixModal = _showPixModal[1];
   var _fbName = useState(""); var fbName = _fbName[0]; var setFbName = _fbName[1];
   var _fbMsg = useState(""); var fbMsg = _fbMsg[0]; var setFbMsg = _fbMsg[1];
   var _fbRating = useState(null); var fbRating = _fbRating[0]; var setFbRating = _fbRating[1];
@@ -988,7 +989,6 @@ export default function JoaoFonsecaNews() {
           lastMatch={dl}
           matchStats={matchStats}
           recentForm={recentForm}
-          season={ds}
           prizeMoney={prizeMoney}
         />
 
@@ -1042,7 +1042,7 @@ export default function JoaoFonsecaNews() {
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Feedback</span>
                 </button>
-                <button onClick={function(){var m=document.querySelector('[data-pix-btn]');if(m)m.click();setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+                <button onClick={function(){setShowPixModal(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Apoiar</span>
                 </button>
@@ -1173,6 +1173,15 @@ export default function JoaoFonsecaNews() {
               <button onClick={function() { setShowFeedback(false); setFbSent(false); setFbMsg(""); setFbName(""); setFbRating(null); }} style={{ padding: "10px 20px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Fechar</button>
             </div>
           )}
+        </Modal>
+      )}
+
+      {showPixModal && (
+        <Modal title="Apoie o Fonseca News" subtitle="Ajude a manter o site no ar" onClose={function(){setShowPixModal(false);}}>
+          <div style={{ textAlign: "center", padding: "8px 0" }}>
+            <code style={{ background: BG_ALT, padding: "10px 16px", borderRadius: 8, color: SUB, fontSize: 12, display: "inline-block" }}>SUA-CHAVE-PIX-AQUI</code>
+            <button onClick={function() { if (navigator.clipboard) navigator.clipboard.writeText("SUA-CHAVE-PIX-AQUI"); }} style={{ display: "block", margin: "12px auto 0", padding: "10px 20px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Copiar chave PIX</button>
+          </div>
         </Modal>
       )}
 
