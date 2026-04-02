@@ -1,12 +1,11 @@
-// src/pages/api/feedback.js
-// Receives user feedback and stores in Vercel KV
-// Thomaz can check via /api/feedback?list=1
+// ===== API: Feedback v2 =====
+// OPTIMIZATION: s-maxage=300 on GET list
 
 import { kv } from "@vercel/kv";
 
 export default async function handler(req, res) {
-  // List all feedback (for Thomaz)
   if (req.method === "GET" && req.query.list === "1") {
+    res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
     try {
       var keys = await kv.keys("feedback:*");
       var feedbacks = [];
@@ -31,13 +30,8 @@ export default async function handler(req, res) {
     var name = (body.name || "Anônimo").trim();
     var rating = body.rating || null;
 
-    if (!message || message.length < 3) {
-      return res.status(400).json({ error: "Mensagem muito curta" });
-    }
-
-    if (message.length > 2000) {
-      return res.status(400).json({ error: "Mensagem muito longa (max 2000)" });
-    }
+    if (!message || message.length < 3) return res.status(400).json({ error: "Mensagem muito curta" });
+    if (message.length > 2000) return res.status(400).json({ error: "Mensagem muito longa (max 2000)" });
 
     var feedbackId = "feedback:" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
     var feedbackData = {
@@ -49,9 +43,7 @@ export default async function handler(req, res) {
       date: new Date().toISOString(),
     };
 
-    await kv.set(feedbackId, feedbackData, { ex: 60 * 60 * 24 * 90 }); // 90 days
-
-    // Increment feedback counter
+    await kv.set(feedbackId, feedbackData, { ex: 60 * 60 * 24 * 90 });
     await kv.incr("feedback_count");
 
     return res.status(200).json({ success: true, message: "Feedback enviado!" });
