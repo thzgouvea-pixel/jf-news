@@ -1,5 +1,6 @@
 // src/pages/biografia.jsx
 // Aesthetic biography page for João Fonseca
+// v2: Fixed height (1.88m), coach (Franco Davin + Teixeira), Challengers (3), Nadal photo story
 import Head from "next/head";
 import { useState } from "react";
 
@@ -17,15 +18,15 @@ var TIMELINE = [
   { year: "2010", age: "4 anos", title: "Primeiro contato", text: "Começa a jogar tênis no Country Club do Rio de Janeiro, ao lado de casa. Pai monta uma mini-rede no quarto pra jogar com ele." },
   { year: "2014", age: "8 anos", title: "O sonho nasce", text: "Assiste Rafael Nadal vencer o Rio Open da primeira fileira. Tira foto com Thomaz Bellucci. O tênis deixa de ser brincadeira." },
   { year: "2022", age: "16 anos", title: "Primeiros passos", text: "Atinge quartas de final em dois Challengers. Começa a aparecer no radar do circuito profissional." },
-  { year: "2023", age: "17 anos", title: "Ano revelação", emoji: "🏆", text: "Campeão do US Open Juvenil. Primeiro brasileiro nº1 do ranking juvenil da ITF. Estreia no ATP no Rio Open. Convidado como sparring no ATP Finals — treina com Alcaraz, Medvedev e Sinner." },
-  { year: "2024", age: "18 anos", title: "A explosão", emoji: "🔥", text: "Quartas do Rio Open (ATP 500) com vitória sobre Arthur Fils. Vira profissional. Salta do #727 para #145 no ranking. Campeão do NextGen ATP Finals invicto (5-0) — primeiro sul-americano e terceiro mais jovem da história, ao lado de Alcaraz e Sinner." },
-  { year: "2025", age: "19 anos", title: "Elite mundial", emoji: "⭐", text: "Derrota Rublev (#9) na estreia do Australian Open. Campeão do ATP 250 de Buenos Aires — mais jovem sul-americano campeão desde Perez-Roldan em 1987. Campeão do ATP 500 de Basel — primeiro brasileiro a vencer um ATP 500, feito inédito desde Kuerten. Encerra o ano como #24 do mundo." },
-  { year: "2026", age: "19 anos", title: "Em ascensão", emoji: "🚀", text: "Lesão nas costas atrasa início da temporada. Volta forte: oitavas em Indian Wells com vitórias sobre Collignon, Khachanov e Tommy Paul. Jogo épico contra Sinner nas oitavas (dois tiebreaks). Perde para Alcaraz no Miami Open. Campeão de duplas no Rio Open com Marcelo Melo. Se prepara para a gira de saibro: Monte Carlo, Munique, Madri, Roma e Roland Garros." },
+  { year: "2023", age: "17 anos", title: "Ano revelação", emoji: "🏆", text: "Campeão do US Open Juvenil. Primeiro brasileiro nº1 do ranking juvenil da ITF. Estreia no ATP no Rio Open. Convidado como sparring no Nitto ATP Finals — treina com Alcaraz, Medvedev e Sinner." },
+  { year: "2024", age: "18 anos", title: "A explosão", emoji: "🔥", text: "Quartas do Rio Open (ATP 500) com vitória sobre Arthur Fils. Vira profissional. Salta do #727 para #145 no ranking. Campeão do Lexington Challenger. Campeão do NextGen ATP Finals invicto (5-0) — primeiro sul-americano e terceiro mais jovem da história, ao lado de Alcaraz e Sinner." },
+  { year: "2025", age: "19 anos", title: "Elite mundial", emoji: "⭐", text: "Derrota Rublev (#9) na estreia do Australian Open. Campeão do ATP 250 de Buenos Aires — mais jovem sul-americano campeão desde Perez-Roldan em 1987. Campeão do Canberra e Phoenix Challengers. Campeão do ATP 500 de Basel — primeiro brasileiro a vencer um ATP 500, feito inédito desde Kuerten. Encerra o ano como #24 do mundo." },
+  { year: "2026", age: "19 anos", title: "Em ascensão", emoji: "🚀", text: "Lesão nas costas atrasa início da temporada. Volta forte: oitavas em Indian Wells com vitórias sobre Collignon, Khachanov e Tommy Paul. Jogo épico contra Sinner nas oitavas (dois tiebreaks). Perde para Alcaraz no Miami Open. Campeão de duplas no Rio Open com Marcelo Melo. Novo técnico: Franco Davin se junta à equipe com Guilherme Teixeira. Se prepara para a gira de saibro: Monte Carlo, Munique, Madri, Roma e Roland Garros." },
 ];
 
 var STATS = [
   { label: "Títulos ATP", value: "2", detail: "Buenos Aires + Basel" },
-  { label: "Títulos Challenger", value: "2", detail: "2025" },
+  { label: "Títulos Challenger", value: "3", detail: "Lexington, Canberra, Phoenix" },
   { label: "NextGen Finals", value: "🏆", detail: "Campeão 2024" },
   { label: "US Open Jr", value: "🏆", detail: "Campeão 2023" },
   { label: "Melhor ranking", value: "#24", detail: "Nov 2025" },
@@ -36,9 +37,9 @@ var FICHA = [
   ["Nome completo", "João Franca Guimarães Fonseca"],
   ["Nascimento", "21 de agosto de 2006 (19 anos)"],
   ["Naturalidade", "Ipanema, Rio de Janeiro 🇧🇷"],
-  ["Altura", "1,83m"],
+  ["Altura", "1,88m"],
   ["Mão", "Destro, backhand com duas mãos"],
-  ["Técnico", "Guilherme Teixeira"],
+  ["Técnico", "Franco Davin / Guilherme Teixeira"],
   ["Profissional desde", "2024"],
   ["Patrocinadores", "Nike, Rolex"],
   ["Ídolos", "Roger Federer, Gustavo Kuerten"],
@@ -46,8 +47,8 @@ var FICHA = [
 
 var CURIOSIDADES = [
   "Aos 2 anos, o professor de yoga do pai já notava coordenação fora do normal",
-  "Cresceu a 10 minutos do Rio Open — assistia o torneio todo ano",
-  "Tirou foto com Nadal na Copa do Mundo de 2010, na África do Sul, aos 4 anos — e recriou a foto em 2024 no NextGen Finals",
+  "Cresceu a 10 minutos do Rio Open — assistia o torneio todo ano desde criança",
+  "Em 2014, aos 8 anos, assistiu Nadal da primeira fileira no Rio Open e tirou foto com Bellucci — ali nasceu o sonho",
   "Aos 19, já tem mais títulos ATP que Federer e Djokovic tinham na mesma idade",
   "O New York Times o chamou de 'futura estrela' e comparou seu forehand a uma 'bola de demolição'",
   "Foi o primeiro sul-americano campeão do NextGen ATP Finals",
@@ -69,10 +70,10 @@ export default function Biografia() {
     <>
       <Head>
         <title>João Fonseca — Biografia | Fonseca News</title>
-        <meta name="description" content="Biografia completa de João Fonseca, tenista brasileiro, #24 ATP. Carreira, títulos, curiosidades e timeline completa do fenômeno do tênis brasileiro." />
+        <meta name="description" content="Biografia completa de João Fonseca, tenista brasileiro, #40 ATP. Carreira, títulos, curiosidades e timeline completa do fenômeno do tênis brasileiro." />
         <meta name="keywords" content="João Fonseca, biografia, tênis, ATP, brasileiro, ranking, carreira, títulos, NextGen" />
         <meta property="og:title" content="João Fonseca — Biografia Completa | Fonseca News" />
-        <meta property="og:description" content="Tudo sobre a carreira do fenômeno do tênis brasileiro. De Ipanema ao top 25 do mundo." />
+        <meta property="og:description" content="Tudo sobre a carreira do fenômeno do tênis brasileiro. De Ipanema ao top 40 do mundo." />
         <meta property="og:type" content="profile" />
         <meta property="og:url" content="https://fonsecanews.com.br/biografia" />
         <meta property="og:image" content="https://fonsecanews.com.br/og-image.PNG" />
@@ -104,7 +105,7 @@ export default function Biografia() {
           <h1 style={{ margin: "0 0 4px", fontSize: 28, fontWeight: 900, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.03em" }}>João Fonseca</h1>
           <p style={{ margin: "0 0 12px", fontSize: 14, color: SUB, fontFamily: SANS }}>Tenista profissional 🇧🇷</p>
           <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
-            {[["🎂", "19 anos"], ["📍", "Rio de Janeiro"], ["📏", "1,83m"], ["🎾", "Destro"], ["🏆", "#24 melhor ranking"]].map(function(p, i) {
+            {[["🎂", "19 anos"], ["📍", "Rio de Janeiro"], ["📏", "1,88m"], ["🎾", "Destro"], ["🏆", "#24 melhor ranking"]].map(function(p, i) {
               return <span key={i} style={{ fontSize: 11, color: SUB, fontFamily: SANS, background: "#f5f5f5", padding: "4px 10px", borderRadius: 8 }}>{p[0]} {p[1]}</span>;
             })}
           </div>
