@@ -1,12 +1,13 @@
-// ===== /api/sofascore-data =====
-// Serves SofaScore data stored in KV by cron-update
-// Uses mget to fetch all keys in ONE Redis request instead of N separate gets
-// This is critical for staying within Upstash free tier (500k requests/month)
+// ===== API: SofaScore Data v2 =====
+// Reads all KV data populated by cron-update.
+// OPTIMIZATION: s-maxage=300 (5 min edge cache) prevents KV reads on repeated requests.
+// Crawlers, bots, and rapid reloads all get cached response.
+
 import { kv } from "@vercel/kv";
 
 export default async function handler(req, res) {
   try {
-    var keys = [
+    var values = await kv.mget(
       "fn:ranking",
       "fn:lastMatch",
       "fn:nextMatch",
@@ -14,13 +15,10 @@ export default async function handler(req, res) {
       "fn:matchStats",
       "fn:h2h",
       "fn:recentForm",
-      "fn:cronLastRun",
-      "fn:prizeMoney",
       "fn:winProb",
-    ];
-
-    // mget = 1 Redis round-trip for all keys (vs 10 separate gets)
-    var values = await kv.mget(...keys);
+      "fn:cronLastRun",
+      "fn:prizeMoney"
+    );
 
     var parse = function(val) {
       if (!val) return null;
@@ -28,28 +26,37 @@ export default async function handler(req, res) {
       return val;
     };
 
-    var data = {
-      ranking:     parse(values[0]),
-      lastMatch:   parse(values[1]),
-      nextMatch:   parse(values[2]),
-      season:      parse(values[3]),
-      matchStats:  parse(values[4]),
-      h2h:         parse(values[5]),
-      recentForm:  parse(values[6]),
-      cronLastRun: values[7],
-      prizeMoney:  parse(values[8]),
-      winProb:     parse(values[9]),
+    var ranking = parse(values[0]);
+    var lastMatch = parse(values[1]);
+    var nextMatch = parse(values[2]);
+    var season = parse(values[3]);
+    var matchStats = parse(values[4]);
+    var h2h = parse(values[5]);
+    var recentForm = parse(values[6]);
+    var winProb = parse(values[7]);
+    var cronLastRun = parse(values[8]);
+    var prizeMoney = parse(values[9]);
+
+    var result = {
+      ranking: ranking ? ranking.ranking : null,
+      lastMatch: lastMatch,
+      nextMatch: nextMatch,
+      season: season,
+      matchStats: matchStats,
+      h2h: h2h,
+      recentForm: recentForm,
+      winProb: winProb,
+      cronLastRun: cronLastRun,
+      prizeMoney: prizeMoney ? prizeMoney.amount : null,
     };
 
-    // Cache 5 min on CDN, serve stale up to 10 min while revalidating
+    // Cache for 5 minutes at Vercel edge — prevents KV reads from crawlers/bots
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
-    res.status(200).json(data);
+    res.status(200).json(result);
+
   } catch (error) {
     console.error("[sofascore-data] Error:", error);
-    res.status(200).json({
-      ranking: null, lastMatch: null, nextMatch: null,
-      season: null, matchStats: null, h2h: null,
-      recentForm: null, winProb: null, error: error.message
-    });
+    res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
+    res.status(200).json({ error: error.message });
   }
 }
