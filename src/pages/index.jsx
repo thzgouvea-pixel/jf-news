@@ -371,7 +371,7 @@ var NextDuelCard = function(props) {
   var oppCountry = match.opponent_country || "";
   var sc = surfaceColorMap[match.surface] || "#999";
   return (
-    <section style={{ margin: "4px -20px 0", padding: "24px 24px 20px", background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
+    <section style={{ margin: "4px 0 0", padding: "24px 24px 20px", background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "15 0%, transparent 70%)", pointerEvents: "none" }} />
       <div style={{ textAlign: "center", marginBottom: 16 }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -412,8 +412,14 @@ var NextDuelCard = function(props) {
           </div>
         </div>
       )}
-      <div style={{ textAlign: "center" }}>
+      <div style={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
         <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, textDecoration: "none", padding: "6px 14px", borderRadius: 8, background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.15)" }}>Assistir ao vivo →</a>
+        {!pushEnabled && (
+          <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ padding: "6px 10px", borderRadius: 8, background: "rgba(0,168,89,0.12)", border: "1px solid rgba(0,168,89,0.25)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span style={{ fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: SANS }}>{pushLoading ? "..." : "Alertas"}</span>
+          </button>
+        )}
       </div>
     </section>
   );
@@ -471,7 +477,7 @@ var LiveScoreCard = function(props) {
   ].filter(function(r) { return r.f > 0 || r.o > 0; });
 
   return (
-    <section style={{ margin: "4px -20px 0", padding: "20px 24px", background: "linear-gradient(145deg, #0D1726 0%, #1a3050 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
+    <section style={{ margin: "4px 0 0", padding: "20px 24px", background: "linear-gradient(145deg, #0D1726 0%, #1a3050 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
       {/* Pulsing live dot */}
       <div style={{ position: "absolute", top: 16, right: 20, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
@@ -606,15 +612,23 @@ var PlayerBlock = function(props) {
           <div>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 20 }}>Última partida</p>
             <div style={{ background: BG_ALT, borderRadius: 14, padding: "18px 18px 14px", border: "1px solid " + BORDER }}>
-            {/* Header: tournament · date · forma · badge */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 6 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{matchStats.tournament}</span>
-                <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : ""}</span>
-                <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{matchStats.score}</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                {recentForm && recentForm.length > 0 && recentForm.slice().reverse().map(function(m, i) {
+            {/* Header line 1: tournament · date · score */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{matchStats.tournament}</span>
+              <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : ""}</span>
+              <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{matchStats.score}</span>
+            </div>
+            {/* Header line 2: Fonseca [V/D] Flag Opponent */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, padding: "0 2px" }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: GREEN, fontFamily: SANS }}>Fonseca</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "4px 12px", borderRadius: 8 }}>{isWin ? "Vitoria" : "Derrota"}</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS }}>{(function() { var cc = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳" }; var c = matchStats.opponent_country || ""; return cc[c] ? cc[c] + " " : ""; })()} {oppShort}</span>
+            </div>
+            {/* Header line 3: Forma pills */}
+            {recentForm && recentForm.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 3, marginBottom: 14 }}>
+                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em", marginRight: 2 }}>Forma</span>
+                {recentForm.slice().reverse().map(function(m, i) {
                   var w = m.result === "V";
                   return (
                     <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 16, height: 16, borderRadius: 4, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -622,14 +636,8 @@ var PlayerBlock = function(props) {
                     </div>
                   );
                 })}
-                <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "4px 10px", borderRadius: 8, marginLeft: 2 }}>{isWin ? "V" : "D"}</span>
               </div>
-            </div>
-            {/* Player names */}
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, padding: "0 2px" }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: GREEN, fontFamily: SANS }}>Fonseca</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS }}>{oppShort}</span>
-            </div>
+            )}
             {/* Stat rows */}
             {statRows.map(function(row, i) {
               var fMax = Math.max(row.fVal, row.oVal, 1);
@@ -1155,12 +1163,6 @@ export default function JoaoFonsecaNews() {
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
             <NextDuelCard match={dm} player={dp} />
-            {!pushEnabled && (
-              <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ width: "100%", marginTop: 10, padding: "10px 16px", background: "transparent", border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                <span style={{ fontSize: 11, fontWeight: 600, color: SUB, fontFamily: SANS }}>{pushLoading ? "Ativando..." : "Avise-me quando o jogo comecar"}</span>
-              </button>
-            )}
           </section>
         )}
 
@@ -1191,10 +1193,10 @@ export default function JoaoFonsecaNews() {
         {/* PARTNERS */}
         <section style={{ padding: "20px 0" }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Parceiros</p>
-          <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ display: "block", borderRadius: 12, overflow: "hidden", border: "1px solid " + BORDER, textDecoration: "none" }}>
-            <img src="/partner-banner-1.svg" alt="Fonseca News - Seja parceiro" style={{ width: "100%", height: "auto", display: "block" }} />
+          <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ display: "block", borderRadius: 16, overflow: "hidden", border: "1px solid " + BORDER, textDecoration: "none", background: "#0D1726" }}>
+            <img src="/partner-banner-1.svg" alt="Fonseca News - Seja parceiro" style={{ width: "100%", height: "auto", display: "block", minHeight: 120 }} />
           </a>
-          <p style={{ margin: "8px 0 0", fontSize: 9, color: DIM, fontFamily: SANS, textAlign: "center" }}>Quer ser parceiro? <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ color: GREEN, textDecoration: "none", fontWeight: 600 }}>Entre em contato</a></p>
+          <p style={{ margin: "10px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>Quer ser parceiro? <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ color: GREEN, textDecoration: "none", fontWeight: 600 }}>Entre em contato</a></p>
         </section>
 
         {/* EXPLORE */}
