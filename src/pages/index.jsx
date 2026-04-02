@@ -414,12 +414,6 @@ var NextDuelCard = function(props) {
       )}
       <div style={{ textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
         <a href="https://www.tennistv.com/players/joao-fonseca" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, textDecoration: "none", padding: "6px 14px", borderRadius: 8, background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.15)" }}>Assistir ao vivo →</a>
-        {!pushEnabled && (
-          <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ padding: "6px 10px", borderRadius: 8, background: "rgba(0,168,89,0.12)", border: "1px solid rgba(0,168,89,0.25)", cursor: "pointer", display: "flex", alignItems: "center", gap: 4 }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-            <span style={{ fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: SANS }}>{pushLoading ? "..." : "Alertas"}</span>
-          </button>
-        )}
       </div>
     </section>
   );
@@ -1163,6 +1157,12 @@ export default function JoaoFonsecaNews() {
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
             <NextDuelCard match={dm} player={dp} />
+            {!pushEnabled && (
+              <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ width: "100%", marginTop: 8, padding: "8px 16px", background: "transparent", border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span style={{ fontSize: 11, fontWeight: 600, color: SUB, fontFamily: SANS }}>{pushLoading ? "Ativando..." : "Avise-me quando o jogo comecar"}</span>
+              </button>
+            )}
           </section>
         )}
 
