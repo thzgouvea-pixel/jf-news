@@ -990,27 +990,6 @@ export default function JoaoFonsecaNews() {
           );
         })()}
 
-        {/* 1. AO VIVO ou PRÓXIMO DUELO */}
-        {liveMatch ? (
-          <>
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 10 }}>Ao vivo</p>
-            <LiveScoreCard data={liveMatch} />
-          </>
-        ) : (
-          <>
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 10 }}>Próximo duelo</p>
-            <NextDuelCard match={dm} player={dp} />
-          </>
-        )}
-
-        {/* 2. WIN PROB + PLAYER BLOCK */}
-        <WinProbBar winProb={winProb} />
-        <PlayerBlock
-          lastMatch={dl}
-          matchStats={matchStats}
-          recentForm={recentForm}
-          prizeMoney={prizeMoney}
-        />
 
         {/* 3. QUICK NAV — FIX 3: padding reduzido */}
         <section style={{ padding: "8px 0" }}>
@@ -1074,7 +1053,27 @@ export default function JoaoFonsecaNews() {
             </>
           )}
         </section>
+        {/* 1. AO VIVO ou PRÓXIMO DUELO */}
+        {liveMatch ? (
+          <>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 10 }}>Ao vivo</p>
+            <LiveScoreCard data={liveMatch} />
+          </>
+        ) : (
+          <>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 10 }}>Próximo duelo</p>
+            <NextDuelCard match={dm} player={dp} />
+          </>
+        )}
 
+        {/* 2. WIN PROB + PLAYER BLOCK */}
+        <WinProbBar winProb={winProb} />
+        <PlayerBlock
+          lastMatch={dl}
+          matchStats={matchStats}
+          recentForm={recentForm}
+          prizeMoney={prizeMoney}
+        />
         {/* 5. NOTÍCIAS — FIX 2: spacing reduzido */}
         <section style={{ paddingTop: 4 }}>
           <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Notícias</p>
