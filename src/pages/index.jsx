@@ -604,7 +604,7 @@ var PlayerBlock = function(props) {
         var isWin = matchStats.result === "V";
         return (
           <div>
-            <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Última partida</p>
+            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 20 }}>Última partida</p>
             <div style={{ background: BG_ALT, borderRadius: 14, padding: "18px 18px 14px", border: "1px solid " + BORDER }}>
             {/* Header: tournament · date · forma · badge */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 6 }}>
@@ -992,8 +992,8 @@ export default function JoaoFonsecaNews() {
 
 
         {/* 3. QUICK NAV */}
-        <section style={{ padding: "14px 0 6px" }}>
-          <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Menu</p>
+        <section style={{ padding: "20px 0 6px" }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Menu</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
             <a href="/biografia" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -1057,15 +1057,15 @@ export default function JoaoFonsecaNews() {
 
         {/* 1. AO VIVO ou PRÓXIMO DUELO */}
         {liveMatch ? (
-          <>
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 14 }}>Ao vivo</p>
+          <section style={{ padding: "20px 0 0" }}>
+            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Ao vivo</p>
             <LiveScoreCard data={liveMatch} />
-          </>
+          </section>
         ) : (
-          <>
-            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 14 }}>Próximo duelo</p>
+          <section style={{ padding: "20px 0 0" }}>
+            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
             <NextDuelCard match={dm} player={dp} />
-          </>
+          </section>
         )}
 
         {/* 2. WIN PROB + PLAYER BLOCK */}
@@ -1076,9 +1076,9 @@ export default function JoaoFonsecaNews() {
           recentForm={recentForm}
           prizeMoney={prizeMoney}
         />
-        {/* 5. NOTÍCIAS — FIX 2: spacing reduzido */}
-        <section style={{ paddingTop: 4 }}>
-          <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Notícias</p>
+        {/* 5. NOTÍCIAS */}
+        <section style={{ padding: "20px 0 0" }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Notícias</p>
           {loading && news.length === 0 && <Skeleton />}
           {dn.length > 0 && !(loading && news.length === 0) && (
             <>
