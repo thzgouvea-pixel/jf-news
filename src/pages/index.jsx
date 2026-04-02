@@ -601,27 +601,6 @@ var PlayerBlock = function(props) {
         </div>
       )}
 
-      {/* Install app banner — dismissable, appears before stats */}
-      {(function() {
-        var isDismissed = false;
-        try { isDismissed = typeof window !== "undefined" && localStorage.getItem("fn_install_dismissed"); } catch(e) {}
-        var isStandalone = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone);
-        if (isDismissed || isStandalone) return null;
-        return (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "linear-gradient(135deg, #0D1726, #132440)", borderRadius: 12, marginBottom: 12, position: "relative" }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block", lineHeight: 1.3 }}>Use como app no celular</span>
-              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Adicione a tela inicial — sem baixar nada</span>
-            </div>
-            <button onClick={function(){setShowInstallGuide(true);}} style={{ padding: "6px 12px", background: "rgba(79,195,247,0.15)", border: "1px solid rgba(79,195,247,0.25)", borderRadius: 8, color: "#4FC3F7", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>Como fazer</button>
-            <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 6, right: 6, background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 14, cursor: "pointer", padding: 4, lineHeight: 1 }}>✕</button>
-          </div>
-        );
-      })()}
-
       {/* Stats da ultima partida — card com fundo */}
       {matchStats && matchStats.fonseca && (function() {
         var f = matchStats.fonseca;
@@ -639,12 +618,13 @@ var PlayerBlock = function(props) {
         var oppShort = (matchStats.opponent_name || "Adv.").split(" ").pop();
         var isWin = matchStats.result === "V";
         return (
-          <div style={{ background: BG_ALT, borderRadius: 14, padding: "18px 18px 14px", border: "1px solid " + BORDER }}>
+          <div>
+            <p style={{ margin: "0 0 8px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Última partida</p>
+            <div style={{ background: BG_ALT, borderRadius: 14, padding: "18px 18px 14px", border: "1px solid " + BORDER }}>
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
               <div>
-                <span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", lineHeight: 1.2 }}>Ultima partida</span>
-                <span style={{ fontSize: 12, color: SUB, fontFamily: SANS, marginTop: 2, display: "block" }}>{matchStats.tournament} · {matchStats.score}</span>
+                <span style={{ fontSize: 13, color: SUB, fontFamily: SANS }}>{matchStats.tournament} · {matchStats.score}</span>
               </div>
               <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "4px 12px", borderRadius: 8 }}>{isWin ? "Vitoria" : "Derrota"}</span>
             </div>
@@ -677,6 +657,7 @@ var PlayerBlock = function(props) {
                 </div>
               );
             })}
+          </div>
           </div>
         );
       })()}
@@ -991,15 +972,36 @@ export default function JoaoFonsecaNews() {
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px" }}>
 
+        {/* INSTALL BANNER — top position, before everything */}
+        {(function() {
+          var isDismissed = false;
+          try { isDismissed = typeof window !== "undefined" && localStorage.getItem("fn_install_dismissed"); } catch(e) {}
+          var isStandalone = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone);
+          if (isDismissed || isStandalone) return null;
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "linear-gradient(135deg, #0D1726, #132440)", borderRadius: 12, marginTop: 10, marginBottom: 4, position: "relative" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block", lineHeight: 1.3 }}>Use como app no celular</span>
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Adicione a tela inicial — sem baixar nada</span>
+              </div>
+              <button onClick={function(){setShowInstallGuide(true);}} style={{ padding: "6px 12px", background: "rgba(79,195,247,0.15)", border: "1px solid rgba(79,195,247,0.25)", borderRadius: 8, color: "#4FC3F7", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>Como fazer</button>
+              <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 6, right: 6, background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 14, cursor: "pointer", padding: 4, lineHeight: 1 }}>✕</button>
+            </div>
+          );
+        })()}
+
         {/* 1. AO VIVO ou PRÓXIMO DUELO */}
         {liveMatch ? (
           <>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 6px" }}>Ao vivo</h2>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 10 }}>Ao vivo</p>
             <LiveScoreCard data={liveMatch} />
           </>
         ) : (
           <>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "10px 0 6px" }}>Próximo duelo</h2>
+            <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 10 }}>Próximo duelo</p>
             <NextDuelCard match={dm} player={dp} />
           </>
         )}
@@ -1078,7 +1080,7 @@ export default function JoaoFonsecaNews() {
 
         {/* 5. NOTÍCIAS — FIX 2: spacing reduzido */}
         <section style={{ paddingTop: 4 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em", padding: "6px 0 4px" }}>Notícias</h2>
+          <p style={{ margin: "0 0 6px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Notícias</p>
           {loading && news.length === 0 && <Skeleton />}
           {dn.length > 0 && !(loading && news.length === 0) && (
             <>
