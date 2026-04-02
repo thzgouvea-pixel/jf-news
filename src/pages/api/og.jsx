@@ -1,17 +1,13 @@
 // src/pages/api/og.jsx
 // Dynamic Open Graph image generation
 // Preview: fonsecanews.com.br/api/og
-
 import { ImageResponse } from "@vercel/og";
-
 export const config = { runtime: "edge" };
-
 export default async function handler(req) {
   var url = new URL(req.url);
   var title = url.searchParams.get("title") || "Fonseca News";
   var subtitle = url.searchParams.get("subtitle") || "Tudo sobre João Fonseca";
-  var ranking = url.searchParams.get("ranking") || "#39";
-
+  var ranking = url.searchParams.get("ranking") || "#40";
   return new ImageResponse(
     (
       <div
@@ -26,13 +22,10 @@ export default async function handler(req) {
           fontFamily: "Georgia, serif",
         }}
       >
-        {/* Top bar */}
         <div style={{ display: "flex", width: "100%", height: "6px", position: "absolute", top: 0, left: 0 }}>
           <div style={{ width: "50%", height: "6px", background: "#00A859" }} />
           <div style={{ width: "50%", height: "6px", background: "#FFCB05" }} />
         </div>
-
-        {/* Logo + Title */}
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "16px", marginBottom: "24px" }}>
             <div
@@ -57,17 +50,13 @@ export default async function handler(req) {
               <span style={{ color: "rgba(255,255,255,0.4)", fontSize: "16px", fontFamily: "sans-serif" }}>Site independente de fãs</span>
             </div>
           </div>
-
           <div style={{ fontSize: "56px", fontWeight: 800, color: "#fff", lineHeight: 1.15, maxWidth: "900px", letterSpacing: "-0.03em" }}>
             {title}
           </div>
-
           <div style={{ fontSize: "24px", color: "rgba(255,255,255,0.5)", marginTop: "16px", fontFamily: "sans-serif" }}>
             {subtitle}
           </div>
         </div>
-
-        {/* Bottom */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <span style={{ fontSize: "16px", color: "rgba(255,255,255,0.3)", fontFamily: "sans-serif" }}>fonsecanews.com.br</span>
