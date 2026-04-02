@@ -606,11 +606,23 @@ var PlayerBlock = function(props) {
           <div>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 20 }}>Última partida</p>
             <div style={{ background: BG_ALT, borderRadius: 14, padding: "18px 18px 14px", border: "1px solid " + BORDER }}>
-            {/* Header line 1: tournament · date · score */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+            {/* Header line 1: tournament · date · score · forma */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{matchStats.tournament}</span>
               <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : ""}</span>
               <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{matchStats.score}</span>
+              {recentForm && recentForm.length > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
+                  {recentForm.slice().reverse().map(function(m, i) {
+                    var w = m.result === "V";
+                    return (
+                      <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 16, height: 16, borderRadius: 4, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <span style={{ fontSize: 8, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             {/* Header line 2: Fonseca [V/D] Flag Opponent */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, padding: "0 2px" }}>
@@ -618,20 +630,6 @@ var PlayerBlock = function(props) {
               <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "4px 12px", borderRadius: 8 }}>{isWin ? "Vitoria" : "Derrota"}</span>
               <span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS }}>{(function() { var cc = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳" }; var c = matchStats.opponent_country || ""; return cc[c] ? cc[c] + " " : ""; })()} {oppShort}</span>
             </div>
-            {/* Header line 3: Forma pills */}
-            {recentForm && recentForm.length > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 3, marginBottom: 14 }}>
-                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em", marginRight: 2 }}>Forma</span>
-                {recentForm.slice().reverse().map(function(m, i) {
-                  var w = m.result === "V";
-                  return (
-                    <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 16, height: 16, borderRadius: 4, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: 8, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
             {/* Stat rows */}
             {statRows.map(function(row, i) {
               var fMax = Math.max(row.fVal, row.oVal, 1);
@@ -1035,7 +1033,7 @@ export default function JoaoFonsecaNews() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px" }}>
+      <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
 
         {/* INSTALL BANNER — top position, before everything */}
         {(function() {
