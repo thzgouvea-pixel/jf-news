@@ -1,51 +1,42 @@
-// ===== API: Unified Stats (single request for everything) =====
+// ===== API: Unified Stats v2 =====
+// OPTIMIZATION: Removed kv.scan() loop. Uses "likes:all" index instead.
+// s-maxage=300 (5 min edge cache).
+// Before: N+4 reads per request (scan loop). Now: 4 reads max.
+
 import { kv } from "@vercel/kv";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Cache-Control", "s-maxage=30, stale-while-revalidate=60");
+  res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
+
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    // Get poll date (Brasilia time)
     var now = new Date();
     var brasilia = new Date(now.getTime() - 3 * 60 * 60 * 1000);
     var today = brasilia.toISOString().split("T")[0];
 
-    // Fetch all data in parallel
-    var [visitors, feedback, poll, likeKeys] = await Promise.all([
-      kv.get("visitors:total").catch(function() { return 0; }),
-      kv.get("site:feedback").catch(function() { return { up: 0, down: 0 }; }),
-      kv.get("poll:" + today).catch(function() { return { a: 0, b: 0, total: 0 }; }),
-      (async function() {
-        var keys = [];
-        var cursor = 0;
-        do {
-          var [newCursor, foundKeys] = await kv.scan(cursor, { match: "likes:*", count: 100 });
-          cursor = newCursor;
-          keys.push(...foundKeys);
-        } while (cursor !== 0);
-        return keys;
-      })().catch(function() { return []; })
-    ]);
+    // 4 reads max — no scan loop
+    var values = await kv.mget(
+      "visitors:total",
+      "site:feedback",
+      "poll:" + today,
+      "likes:all"
+    );
 
-    // Fetch all like values in one batch
-    var likes = {};
-    if (likeKeys.length > 0) {
-      var values = await kv.mget(...likeKeys);
-      likeKeys.forEach(function(key, i) {
-        var id = key.replace("likes:", "");
-        likes[id] = values[i] || { likes: 0, dislikes: 0 };
-      });
-    }
+    var parse = function(val) {
+      if (!val) return null;
+      if (typeof val === "string") { try { return JSON.parse(val); } catch(e) { return val; } }
+      return val;
+    };
 
     return res.status(200).json({
-      visitors: visitors || 0,
-      feedback: feedback || { up: 0, down: 0 },
-      poll: poll || { a: 0, b: 0, total: 0 },
-      likes: likes
+      visitors: parse(values[0]) || 0,
+      feedback: parse(values[1]) || { up: 0, down: 0 },
+      poll: parse(values[2]) || { a: 0, b: 0, total: 0 },
+      likes: parse(values[3]) || {}
     });
   } catch (error) {
     console.error("[stats] Error:", error);
