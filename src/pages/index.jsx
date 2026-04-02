@@ -1184,7 +1184,6 @@ export default function JoaoFonsecaNews() {
         </Modal>
       )}
 
-      <PixDonation />
     </div>
   );
 }
