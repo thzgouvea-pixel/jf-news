@@ -1026,10 +1026,6 @@ export default function JoaoFonsecaNews() {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
             <a href="/raquetes" style={{ fontSize: 10, fontWeight: 600, color: "#b8860b", fontFamily: SANS, textDecoration: "none", padding: "5px 8px", borderRadius: 8, background: YELLOW + "0A", border: "1px solid " + YELLOW + "20", whiteSpace: "nowrap" }}>Venda sua raquete</a>
-            <button onClick={handlePushSubscribe} disabled={pushEnabled || pushLoading} title={pushEnabled ? "Notificacoes ativadas" : "Ativar notificacoes"} style={{ width: 30, height: 30, borderRadius: 8, background: pushEnabled ? GREEN + "10" : "transparent", border: "1px solid " + (pushEnabled ? GREEN + "30" : BORDER), color: pushEnabled ? GREEN : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: pushEnabled ? "default" : "pointer", flexShrink: 0, position: "relative" }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill={pushEnabled ? GREEN : "none"} stroke={pushEnabled ? GREEN : "currentColor"} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              {pushLoading && <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2.5" style={{ animation: "spin 1s linear infinite" }}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg></span>}
-            </button>
             <button onClick={handleRefresh} disabled={loading} style={{ width: 30, height: 30, borderRadius: 8, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
             </button>
@@ -1056,6 +1052,26 @@ export default function JoaoFonsecaNews() {
               </div>
               <button onClick={function(){setShowInstallGuide(true);}} style={{ padding: "6px 12px", background: "rgba(79,195,247,0.15)", border: "1px solid rgba(79,195,247,0.25)", borderRadius: 8, color: "#4FC3F7", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>Como fazer</button>
               <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 6, right: 6, background: "none", border: "none", color: "rgba(255,255,255,0.3)", fontSize: 14, cursor: "pointer", padding: 4, lineHeight: 1 }}>✕</button>
+            </div>
+          );
+        })()}
+
+        {/* NOTIFICATION BANNER — shows if not subscribed */}
+        {!pushEnabled && (function() {
+          var isDismissed = false;
+          try { isDismissed = typeof window !== "undefined" && localStorage.getItem("fn_push_dismissed"); } catch(e) {}
+          if (isDismissed) return null;
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: GREEN + "08", borderRadius: 12, marginTop: 6, marginBottom: 4, border: "1px solid " + GREEN + "20", position: "relative" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", lineHeight: 1.3 }}>Ative as notificacoes</span>
+                <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Saiba na hora quando o Joao entra em quadra</span>
+              </div>
+              <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>{pushLoading ? "..." : "Ativar"}</button>
+              <button onClick={function(){ try { localStorage.setItem("fn_push_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 6, right: 6, background: "none", border: "none", color: DIM, fontSize: 14, cursor: "pointer", padding: 4, lineHeight: 1 }}>✕</button>
             </div>
           );
         })()}
@@ -1103,7 +1119,11 @@ export default function JoaoFonsecaNews() {
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
                 </button>
               </div>
-              <div style={{ paddingTop: 8, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+              <div style={{ paddingTop: 8, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                <button onClick={function(){handlePushSubscribe();setShowMenu(false);}} style={{ padding: "10px 6px", background: pushEnabled ? GREEN + "08" : BG_ALT, border: "1px solid " + (pushEnabled ? GREEN + "25" : BORDER), borderRadius: 10, cursor: pushEnabled ? "default" : "pointer", textAlign: "center" }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill={pushEnabled ? GREEN : "none"} stroke={pushEnabled ? GREEN : SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: pushEnabled ? GREEN : TEXT, fontFamily: SANS }}>{pushEnabled ? "Ativo" : "Alertas"}</span>
+                </button>
                 <a href="/regras" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Regras</span>
@@ -1135,6 +1155,12 @@ export default function JoaoFonsecaNews() {
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
             <NextDuelCard match={dm} player={dp} />
+            {!pushEnabled && (
+              <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ width: "100%", marginTop: 10, padding: "10px 16px", background: "transparent", border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span style={{ fontSize: 11, fontWeight: 600, color: SUB, fontFamily: SANS }}>{pushLoading ? "Ativando..." : "Avise-me quando o jogo comecar"}</span>
+              </button>
+            )}
           </section>
         )}
 
