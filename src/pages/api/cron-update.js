@@ -162,7 +162,7 @@ async function findFonsecaMatches(date, apiKey) {
 
 async function findLastMatch(apiKey) {
   var today = new Date();
-  for (var i = 0; i < 14; i++) {
+  for (var i = 0; i < 7; i++) {
     var d = new Date(today);
     d.setDate(d.getDate() - i);
     var matches = await findFonsecaMatches(d, apiKey);
@@ -173,12 +173,12 @@ async function findLastMatch(apiKey) {
       if (finished.length > 0) return { match: finished[0], daysAgo: i, requestsUsed: i + 1 };
     }
   }
-  return { match: null, daysAgo: -1, requestsUsed: 14 };
+  return { match: null, daysAgo: -1, requestsUsed: 7 };
 }
 
 async function findNextMatch(apiKey) {
   var today = new Date();
-  for (var i = 0; i <= 14; i++) {
+  for (var i = 0; i <= 7; i++) {
     var d = new Date(today);
     d.setDate(d.getDate() + i);
     var matches = await findFonsecaMatches(d, apiKey);
@@ -190,7 +190,7 @@ async function findNextMatch(apiKey) {
       if (i === 0) continue;
     }
   }
-  return { match: null, requestsUsed: 14 };
+  return { match: null, requestsUsed: 7 };
 }
 
 async function fetchMatchStats(matchId, apiKey) {
@@ -431,7 +431,7 @@ export default async function handler(req, res) {
         log.push("stats: already fetched");
       }
 
-      // Form — scan last 30 days for complete history
+      // Form — scan last 14 days (reduced from 30 to save CPU)
       try {
         var existingForm = await kv.get("fn:recentForm");
         var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
@@ -440,7 +440,7 @@ export default async function handler(req, res) {
         if (!lastAlreadyInForm || form.length < 5) {
           var allFinished = [];
           var today = new Date();
-          for (var fd = 0; fd < 30; fd++) {
+          for (var fd = 0; fd < 14; fd++) {
             var scanDate = new Date(today);
             scanDate.setDate(scanDate.getDate() - fd);
             var dayMatches = await findFonsecaMatches(scanDate, apiKey);
@@ -449,7 +449,7 @@ export default async function handler(req, res) {
               return m.status && (m.status.type === "finished" || m.status.isFinished);
             });
             allFinished = allFinished.concat(finished);
-            if (allFinished.length >= 10) break;
+            if (allFinished.length >= 5) break;
           }
           allFinished.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
           // Deduplicate by event id (same match can appear on multiple date scans)
@@ -472,7 +472,7 @@ export default async function handler(req, res) {
         log.push("form: error " + e.message);
       }
     } else {
-      log.push("lastMatch: none in last 14 days");
+      log.push("lastMatch: none in last 7 days");
     }
 
     // 4. Next match
@@ -485,7 +485,7 @@ export default async function handler(req, res) {
       await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 });
       log.push("nextMatch: vs " + nextMatch.opponent_name + " @ " + nextMatch.tournament_name);
     } else {
-      log.push("nextMatch: none in next 14 days");
+      log.push("nextMatch: none in next 7 days");
     }
 
     // 5. Odds
