@@ -1,4 +1,6 @@
-// ===== API: Unique Visitors Counter (Vercel KV) =====
+// ===== API: Visitors v2 =====
+// OPTIMIZATION: s-maxage=300 on GET (5 min edge cache)
+
 import { kv } from "@vercel/kv";
 
 export default async function handler(req, res) {
@@ -8,18 +10,17 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
 
   try {
-    const key = "visitors:total";
+    var key = "visitors:total";
 
     if (req.method === "GET") {
-      // Just read the current count
-      const count = (await kv.get(key)) || 0;
+      res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
+      var count = (await kv.get(key)) || 0;
       return res.status(200).json({ visitors: count });
     }
 
     if (req.method === "POST") {
-      // Increment unique visitor count (client checks localStorage first)
-      const count = (await kv.get(key)) || 0;
-      const newCount = count + 1;
+      var count = (await kv.get(key)) || 0;
+      var newCount = count + 1;
       await kv.set(key, newCount);
       return res.status(200).json({ visitors: newCount });
     }
