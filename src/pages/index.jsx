@@ -669,15 +669,6 @@ var PlayerBlock = function(props) {
                 );
               })}
 
-              {/* Prize Money footer */}
-              {prizeMoney && (
-                <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid " + BORDER, textAlign: "center" }}>
-                  <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.05em", textTransform: "uppercase" }}>Prize Money Acumulado</span>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: GREEN, fontFamily: SANS, display: "block", marginTop: 2 }}>
-                    {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000).toLocaleString() + "K"}
-                  </span>
-                </div>
-              )}
             </div>
           </div>
         );
@@ -1229,18 +1220,22 @@ export default function JoaoFonsecaNews() {
           <div style={{ background: BG_ALT, borderRadius: 16, padding: "18px", border: "1px solid " + BORDER }}>
 
             {/* Row 1: Record + Aproveitamento + Top 10 */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
               <div style={{ textAlign: "center" }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SANS, display: "block" }}>{cW}-{cL}</span>
-                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Carreira W-L</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SANS, display: "block" }}>{cW}-{cL}</span>
+                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Carreira</span>
               </div>
               <div style={{ textAlign: "center" }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: GREEN, fontFamily: SANS, display: "block" }}>{cPct}%</span>
-                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Aproveitamento</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: GREEN, fontFamily: SANS, display: "block" }}>{cPct}%</span>
+                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Aprov.</span>
               </div>
               <div style={{ textAlign: "center" }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SANS, display: "block" }}>1-4</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SANS, display: "block" }}>1-4</span>
                 <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>vs Top 10</span>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <span style={{ fontSize: 18, fontWeight: 800, color: GREEN, fontFamily: SANS, display: "block" }}>{prizeMoney ? (prizeMoney >= 1000000 ? "$" + (prizeMoney / 1000000).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "$2.9M"}</span>
+                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Prize</span>
               </div>
             </div>
 
