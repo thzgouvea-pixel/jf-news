@@ -21,7 +21,7 @@ export default async function handler(req, res) {
 
     if (!name) return res.status(400).json({ error: "name required. Use ?name=Gabriel+Diallo&ranking=36&country=Canada&id=280151" });
 
-    // Get existing nextMatch from KV
+    // Get existing nextMatch from KV or create with tournament defaults
     var existing = await kv.get("fn:nextMatch");
     var nextMatch = existing ? (typeof existing === "string" ? JSON.parse(existing) : existing) : {};
 
@@ -30,6 +30,18 @@ export default async function handler(req, res) {
     nextMatch.opponent_ranking = ranking;
     nextMatch.opponent_country = country;
     nextMatch.opponent_id = opponentId;
+
+    // Ensure tournament fields exist (use query params or keep existing)
+    var tournament = req.query.tournament || (req.body && req.body.tournament);
+    var date = req.query.date || (req.body && req.body.date);
+    if (tournament) nextMatch.tournament_name = tournament;
+    if (date) nextMatch.date = date;
+
+    // Defaults if no tournament data exists
+    if (!nextMatch.tournament_name) nextMatch.tournament_name = "Monte Carlo Masters";
+    if (!nextMatch.date) nextMatch.date = "2026-04-05T12:00:00Z";
+    if (!nextMatch.tournament_category) nextMatch.tournament_category = "Masters 1000";
+    if (!nextMatch.surface) nextMatch.surface = "Clay";
 
     await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 * 7 });
 
