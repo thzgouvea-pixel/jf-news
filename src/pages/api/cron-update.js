@@ -87,6 +87,48 @@ async function fetchRanking(apiKey, log) {
     var prizeMoney = prizeMatch ? parseInt(prizeMatch[1].replace(/,/g, ""), 10) : null;
 
     log.push("ranking: #" + ranking + " (via Wikipedia API)");
+
+    // ===== CAREER STATS from wikitext =====
+    // |wonloss_singles = 42–28
+    var wlMatch = wikitext.match(/wonloss_singles\s*=\s*(\d+)[–\-](\d+)/i);
+    var careerWins = wlMatch ? parseInt(wlMatch[1], 10) : null;
+    var careerLosses = wlMatch ? parseInt(wlMatch[2], 10) : null;
+
+    // Surface records from wikitext tables — look for patterns like:
+    // |Hard = 16–11
+    // |Clay = 14–12  
+    // |Grass = 3–4
+    var hardMatch = wikitext.match(/\|\s*Hard\s*(?:courts?)?\s*(?:\|[^|]*){0,2}\|\s*(\d+)[–\-](\d+)/i);
+    var clayMatch = wikitext.match(/\|\s*Clay\s*(?:\|[^|]*){0,2}\|\s*(\d+)[–\-](\d+)/i);
+    var grassMatch = wikitext.match(/\|\s*Grass\s*(?:\|[^|]*){0,2}\|\s*(\d+)[–\-](\d+)/i);
+
+    // Also try simpler patterns
+    if (!hardMatch) hardMatch = wikitext.match(/Hard[^|]*?(\d+)[–\-](\d+)/i);
+    if (!clayMatch) clayMatch = wikitext.match(/Clay[^|]*?(\d+)[–\-](\d+)/i);
+    if (!grassMatch) grassMatch = wikitext.match(/Grass[^|]*?(\d+)[–\-](\d+)/i);
+
+    var surfaceStats = {
+      hard: hardMatch ? { w: parseInt(hardMatch[1], 10), l: parseInt(hardMatch[2], 10) } : null,
+      clay: clayMatch ? { w: parseInt(clayMatch[1], 10), l: parseInt(clayMatch[2], 10) } : null,
+      grass: grassMatch ? { w: parseInt(grassMatch[1], 10), l: parseInt(grassMatch[2], 10) } : null,
+    };
+
+    // Titles count
+    var titlesMatch = wikitext.match(/singlesrecord\s*=.*?(\d+)\s*title/i) || wikitext.match(/titles\s*=\s*(\d+)/i);
+    var titlesCount = titlesMatch ? parseInt(titlesMatch[1], 10) : 2;
+
+    // Save career stats to KV
+    var careerData = {
+      wins: careerWins,
+      losses: careerLosses,
+      winPct: (careerWins && careerLosses) ? Math.round((careerWins / (careerWins + careerLosses)) * 100) : null,
+      surface: surfaceStats,
+      titles: titlesCount,
+      updatedAt: new Date().toISOString()
+    };
+    await kv.set("fn:careerStats", JSON.stringify(careerData), { ex: 86400 * 7 });
+    log.push("career: " + (careerWins || "?") + "-" + (careerLosses || "?") + " (" + (careerData.winPct || "?") + "%)");
+
     return {
       ranking: ranking,
       points: null,
