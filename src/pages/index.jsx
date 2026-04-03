@@ -1072,14 +1072,14 @@ export default function JoaoFonsecaNews() {
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
 
-        {/* INSTALL BANNER — top position, before everything */}
+        {/* INSTALL BANNER */}
         {(function() {
           var isDismissed = false;
           try { isDismissed = typeof window !== "undefined" && localStorage.getItem("fn_install_dismissed"); } catch(e) {}
           var isStandalone = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone);
           if (isDismissed || isStandalone) return null;
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#fff", borderRadius: 12, marginTop: 10, marginBottom: 4, border: "1px solid " + BORDER, position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#fff", borderRadius: 12, marginTop: 8, marginBottom: 4, border: "1px solid " + BORDER, position: "relative" }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "#0D172610", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D1726" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
               </div>
@@ -1093,7 +1093,7 @@ export default function JoaoFonsecaNews() {
           );
         })()}
 
-        {/* NOTIFICATION BANNER — shows if not subscribed */}
+        {/* NOTIFICATION BANNER */}
         {!pushEnabled && (function() {
           var isDismissed = false;
           try { isDismissed = typeof window !== "undefined" && localStorage.getItem("fn_push_dismissed"); } catch(e) {}
@@ -1112,6 +1112,32 @@ export default function JoaoFonsecaNews() {
             </div>
           );
         })()}
+
+        {/* QUICK NAV — below banners, flush */}
+        <section style={{ padding: "8px 0 4px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            <a href="/biografia" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Biografia</span>
+            </a>
+            <button onClick={function(){setShowRanking(true);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+              <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Ranking</span>
+            </button>
+            <button onClick={function(){setShowCalendar(true);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Calendário</span>
+            </button>
+          </div>
+        </section>
+
+        {/* MORE MENU toggle */}
+        <section style={{ borderBottom: "1px solid " + BORDER }}>
+          <button onClick={function() { setShowMenu(!showMenu); }} style={{ width: "100%", padding: "6px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>Mais</span>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points={showMenu ? "18 15 12 9 6 15" : "6 9 12 15 18 9"} /></svg>
+          </button>
+        </section>
 
 
         {/* MAIS MENU — expanded content (controlled from header) */}
