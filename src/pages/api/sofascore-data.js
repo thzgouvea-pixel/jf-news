@@ -17,7 +17,8 @@ export default async function handler(req, res) {
       "fn:recentForm",
       "fn:winProb",
       "fn:cronLastRun",
-      "fn:prizeMoney"
+      "fn:prizeMoney",
+      "fn:careerStats"
     );
 
     var parse = function(val) {
@@ -36,6 +37,7 @@ export default async function handler(req, res) {
     var winProb = parse(values[7]);
     var cronLastRun = parse(values[8]);
     var prizeMoney = parse(values[9]);
+    var careerStats = parse(values[10]);
 
     var result = {
       ranking: ranking ? ranking.ranking : null,
@@ -48,6 +50,7 @@ export default async function handler(req, res) {
       winProb: winProb,
       cronLastRun: cronLastRun,
       prizeMoney: prizeMoney ? prizeMoney.amount : null,
+      careerStats: careerStats,
     };
 
     // Cache for 5 minutes at Vercel edge — prevents KV reads from crawlers/bots
