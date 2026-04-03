@@ -366,6 +366,7 @@ var NextDuelCard = function(props) {
   if (!match) return null;
   var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   var oppImg = match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null;
+  var oppImgAtp = match.opponent_atp_slug ? ("https://www.atptour.com/-/media/alias/player-headshot/" + match.opponent_atp_slug) : null;
   var oppName = match.opponent_name || "A definir";
   var oppRanking = match.opponent_ranking;
   var oppCountry = match.opponent_country || "";
@@ -401,7 +402,7 @@ var NextDuelCard = function(props) {
         </div>
         <div style={{ textAlign: "center" }}>
           <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>{oppName.charAt(0)}</span>}
+            {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgAtp && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgAtp; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>{oppName.charAt(0)}</span>}
           </div>
           <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{oppName}</span>
           {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>chave pendente</span>}
