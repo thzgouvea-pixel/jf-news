@@ -574,87 +574,110 @@ var PlayerBlock = function(props) {
   return (
     <div style={{ margin: "12px 0 4px" }}>
 
-      {/* Metric pills row: Prize Money only (Forma moved inside stats card) */}
-      {prizeMoney && (
-        <div style={{ display: "flex", gap: 6, marginBottom: 12, justifyContent: "center", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "5px 10px", background: BG_ALT, borderRadius: 8, border: "1px solid " + BORDER }}>
-            <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em" }}>Prize</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS }}>
-              {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000) + "K"}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Stats da ultima partida — card com fundo */}
+      {/* Stats da ultima partida — REDESIGN premium */}
       {matchStats && matchStats.fonseca && (function() {
         var f = matchStats.fonseca;
         var o = matchStats.opponent;
         var statRows = [
-          { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0 },
-          { label: "Duplas faltas", fVal: f.doublefaults || 0, oVal: o.doublefaults || 0, invert: true },
-          { label: "1o saque", fVal: f.firstserveaccuracy || 0, oVal: o.firstserveaccuracy || 0, pct: true },
-          { label: "Pts no 1o saque", fVal: f.firstservepointsaccuracy || 0, oVal: o.firstservepointsaccuracy || 0, pct: true },
-          { label: "Pts no 2o saque", fVal: f.secondservepointsaccuracy || 0, oVal: o.secondservepointsaccuracy || 0, pct: true },
-          { label: "Breaks salvos", fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0 },
-          { label: "Total de pontos", fVal: f.pointstotal || 0, oVal: o.pointstotal || 0 },
+          { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0, icon: "A" },
+          { label: "Duplas faltas", fVal: f.doublefaults || 0, oVal: o.doublefaults || 0, invert: true, icon: "DF" },
+          { label: "1o saque", fVal: f.firstserveaccuracy || 0, oVal: o.firstserveaccuracy || 0, pct: true, icon: "1S" },
+          { label: "Pts no 1o saque", fVal: f.firstservepointsaccuracy || 0, oVal: o.firstservepointsaccuracy || 0, pct: true, icon: "P1" },
+          { label: "Pts no 2o saque", fVal: f.secondservepointsaccuracy || 0, oVal: o.secondservepointsaccuracy || 0, pct: true, icon: "P2" },
+          { label: "Breaks salvos", fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0, icon: "BP" },
+          { label: "Total de pontos", fVal: f.pointstotal || 0, oVal: o.pointstotal || 0, icon: "TP" },
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
         if (statRows.length === 0) return null;
         var oppShort = (matchStats.opponent_name || "Adv.").split(" ").pop();
         var isWin = matchStats.result === "V";
+        var countryFlags = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳" };
+        var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
         return (
           <div>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 20 }}>Última partida</p>
-            <div style={{ background: BG_ALT, borderRadius: 14, padding: "18px 18px 14px", border: "1px solid " + BORDER }}>
-            {/* Header line 1: tournament · date · score · forma */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10, flexWrap: "wrap" }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{matchStats.tournament}</span>
-              <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>{matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : ""}</span>
-              <span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{matchStats.score}</span>
-              {recentForm && recentForm.length > 0 && (
-                <div style={{ display: "flex", alignItems: "center", gap: 3, marginLeft: "auto" }}>
-                  {recentForm.slice().reverse().map(function(m, i) {
-                    var w = m.result === "V";
-                    return (
-                      <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 16, height: 16, borderRadius: 4, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <span style={{ fontSize: 8, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span>
+            <div style={{ background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 16, padding: "20px", overflow: "hidden" }}>
+              {/* Top row: tournament + date + forma */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{matchStats.tournament}</span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : ""}</span>
+                </div>
+                {recentForm && recentForm.length > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                    {recentForm.slice().reverse().map(function(m, i) {
+                      var w = m.result === "V";
+                      return (
+                        <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 18, height: 18, borderRadius: 4, background: w ? "rgba(0,168,89,0.2)" : "rgba(220,38,38,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: w ? "#4ADE80" : "#F87171", fontFamily: SANS }}>{w ? "V" : "D"}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Players + score + result badge */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <div style={{ textAlign: "center", flex: 1 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", margin: "0 auto 6px", border: "2px solid " + GREEN + "40" }}>
+                    <img src="https://www.atptour.com/-/media/alias/player-headshot/f0fv" alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block" }}>Fonseca</span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>🇧🇷 #40</span>
+                </div>
+
+                <div style={{ textAlign: "center", padding: "0 8px" }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.05em", display: "block", marginBottom: 4 }}>{matchStats.score}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: isWin ? "#4ADE80" : "#F87171", fontFamily: SANS, background: isWin ? "rgba(0,168,89,0.15)" : "rgba(220,38,38,0.15)", padding: "3px 10px", borderRadius: 6 }}>{isWin ? "VITORIA" : "DERROTA"}</span>
+                </div>
+
+                <div style={{ textAlign: "center", flex: 1 }}>
+                  <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,255,255,0.08)", margin: "0 auto 6px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255,255,255,0.1)" }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{oppShort.charAt(0)}</span>
+                  </div>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block" }}>{oppShort}</span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{oppFlag} {matchStats.opponent_ranking ? "#" + matchStats.opponent_ranking : ""}</span>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div style={{ height: 1, background: "rgba(255,255,255,0.08)", marginBottom: 16 }} />
+
+              {/* Stat rows — clean dark style */}
+              {statRows.map(function(row, i) {
+                var fMax = Math.max(row.fVal, row.oVal, 1);
+                var fPct = row.pct ? row.fVal : Math.round((row.fVal / fMax) * 100);
+                var oPct = row.pct ? row.oVal : Math.round((row.oVal / fMax) * 100);
+                var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
+                return (
+                  <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 14 : 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? "#4ADE80" : "rgba(255,255,255,0.4)", fontFamily: SANS, minWidth: 36 }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
+                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: SANS, textAlign: "center", flex: 1 }}>{row.label}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? "#F87171" : "rgba(255,255,255,0.4)", fontFamily: SANS, minWidth: 36, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                    </div>
+                    <div style={{ display: "flex", height: 4, gap: 4, borderRadius: 2 }}>
+                      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", background: "rgba(255,255,255,0.06)", borderRadius: "2px 0 0 2px" }}>
+                        <div style={{ height: 4, background: fBetter ? "#4ADE80" : "rgba(255,255,255,0.15)", borderRadius: "2px 0 0 2px", width: Math.max(fPct, 8) + "%", transition: "width 0.8s ease" }} />
                       </div>
-                    );
-                  })}
+                      <div style={{ flex: 1, background: "rgba(255,255,255,0.06)", borderRadius: "0 2px 2px 0" }}>
+                        <div style={{ height: 4, background: !fBetter ? "#F87171" : "rgba(255,255,255,0.15)", borderRadius: "0 2px 2px 0", width: Math.max(oPct, 8) + "%", transition: "width 0.8s ease" }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Prize Money footer */}
+              {prizeMoney && (
+                <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.35)", fontFamily: SANS, letterSpacing: "0.05em", textTransform: "uppercase" }}>Prize Money Acumulado</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: "#4ADE80", fontFamily: SANS, display: "block", marginTop: 2 }}>
+                    {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000).toLocaleString() + "K"}
+                  </span>
                 </div>
               )}
             </div>
-            {/* Header line 2: Fonseca [V/D] Flag Opponent */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, padding: "0 2px" }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: GREEN, fontFamily: SANS }}>Fonseca</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "4px 12px", borderRadius: 8 }}>{isWin ? "Vitoria" : "Derrota"}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS }}>{(function() { var cc = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳" }; var c = matchStats.opponent_country || ""; return cc[c] ? cc[c] + " " : ""; })()} {oppShort}</span>
-            </div>
-            {/* Stat rows */}
-            {statRows.map(function(row, i) {
-              var fMax = Math.max(row.fVal, row.oVal, 1);
-              var fPct = row.pct ? row.fVal : Math.round((row.fVal / fMax) * 100);
-              var oPct = row.pct ? row.oVal : Math.round((row.oVal / fMax) * 100);
-              var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
-              return (
-                <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 12 : 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: fBetter ? GREEN : DIM, fontFamily: SANS }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
-                    <span style={{ fontSize: 11, color: SUB, fontFamily: SANS, textAlign: "center", flex: 1, padding: "0 8px" }}>{row.label}</span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
-                  </div>
-                  <div style={{ display: "flex", height: 5, gap: 3, borderRadius: 3 }}>
-                    <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", background: "#e8e8e8", borderRadius: "3px 0 0 3px" }}>
-                      <div style={{ height: 5, background: fBetter ? GREEN : "#ccc", borderRadius: "3px 0 0 3px", width: Math.max(fPct, 6) + "%", transition: "width 0.6s ease" }} />
-                    </div>
-                    <div style={{ flex: 1, background: "#e8e8e8", borderRadius: "0 3px 3px 0" }}>
-                      <div style={{ height: 5, background: !fBetter ? RED : "#ccc", borderRadius: "0 3px 3px 0", width: Math.max(oPct, 6) + "%", transition: "width 0.6s ease" }} />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
           </div>
         );
       })()}
