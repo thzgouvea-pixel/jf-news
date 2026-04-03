@@ -595,20 +595,21 @@ var PlayerBlock = function(props) {
         return (
           <div>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 20 }}>Última partida</p>
-            <div style={{ background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 16, padding: "20px", overflow: "hidden" }}>
-              {/* Top row: tournament + date + forma */}
+            <div style={{ background: BG_ALT, borderRadius: 16, padding: "20px", overflow: "hidden", border: "1px solid " + BORDER }}>
+              {/* Top row: tournament + date + "Forma atual" + forma pills */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{matchStats.tournament}</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : ""}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{matchStats.tournament}</span>
+                  <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : ""}</span>
                 </div>
                 {recentForm && recentForm.length > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em" }}>Forma atual</span>
                     {recentForm.slice().reverse().map(function(m, i) {
                       var w = m.result === "V";
                       return (
-                        <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 18, height: 18, borderRadius: 4, background: w ? "rgba(0,168,89,0.2)" : "rgba(220,38,38,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: w ? "#4ADE80" : "#F87171", fontFamily: SANS }}>{w ? "V" : "D"}</span>
+                        <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 18, height: 18, borderRadius: 4, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span>
                         </div>
                       );
                     })}
@@ -622,28 +623,28 @@ var PlayerBlock = function(props) {
                   <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", margin: "0 auto 6px", border: "2px solid " + GREEN + "40" }}>
                     <img src="https://www.atptour.com/-/media/alias/player-headshot/f0fv" alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block" }}>Fonseca</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>🇧🇷 #40</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Fonseca</span>
+                  <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>🇧🇷 #40</span>
                 </div>
 
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.05em", display: "block", marginBottom: 4 }}>{matchStats.score}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: isWin ? "#4ADE80" : "#F87171", fontFamily: SANS, background: isWin ? "rgba(0,168,89,0.15)" : "rgba(220,38,38,0.15)", padding: "3px 10px", borderRadius: 6 }}>{isWin ? "VITORIA" : "DERROTA"}</span>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "0.05em", display: "block", marginBottom: 4 }}>{matchStats.score}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "3px 10px", borderRadius: 6 }}>{isWin ? "VITORIA" : "DERROTA"}</span>
                 </div>
 
                 <div style={{ textAlign: "center", flex: 1 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: "50%", background: "rgba(255,255,255,0.08)", margin: "0 auto 6px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid rgba(255,255,255,0.1)" }}>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{oppShort.charAt(0)}</span>
+                  <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", margin: "0 auto 6px", border: "2px solid " + BORDER, background: BG_ALT }}>
+                    <img src={matchStats.opponent_id ? "https://www.sofascore.com/api/v1/player/" + matchStats.opponent_id + "/image" : "https://www.atptour.com/-/media/alias/player-headshot/" + (matchStats.opponent_slug || "unknown")} alt={oppShort} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:16px;font-weight:700;color:" + DIM + ";display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppShort.charAt(0) + "</span>"; }} />
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block" }}>{oppShort}</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{oppFlag} {matchStats.opponent_ranking ? "#" + matchStats.opponent_ranking : ""}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{oppShort}</span>
+                  <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{oppFlag} {matchStats.opponent_ranking ? "#" + matchStats.opponent_ranking : ""}</span>
                 </div>
               </div>
 
               {/* Divider */}
-              <div style={{ height: 1, background: "rgba(255,255,255,0.08)", marginBottom: 16 }} />
+              <div style={{ height: 1, background: BORDER, marginBottom: 16 }} />
 
-              {/* Stat rows — clean dark style */}
+              {/* Stat rows */}
               {statRows.map(function(row, i) {
                 var fMax = Math.max(row.fVal, row.oVal, 1);
                 var fPct = row.pct ? row.fVal : Math.round((row.fVal / fMax) * 100);
@@ -652,16 +653,16 @@ var PlayerBlock = function(props) {
                 return (
                   <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 14 : 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? "#4ADE80" : "rgba(255,255,255,0.4)", fontFamily: SANS, minWidth: 36 }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
-                      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: SANS, textAlign: "center", flex: 1 }}>{row.label}</span>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? "#F87171" : "rgba(255,255,255,0.4)", fontFamily: SANS, minWidth: 36, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? GREEN : DIM, fontFamily: SANS, minWidth: 36 }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
+                      <span style={{ fontSize: 11, color: SUB, fontFamily: SANS, textAlign: "center", flex: 1 }}>{row.label}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS, minWidth: 36, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                     </div>
                     <div style={{ display: "flex", height: 4, gap: 4, borderRadius: 2 }}>
-                      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", background: "rgba(255,255,255,0.06)", borderRadius: "2px 0 0 2px" }}>
-                        <div style={{ height: 4, background: fBetter ? "#4ADE80" : "rgba(255,255,255,0.15)", borderRadius: "2px 0 0 2px", width: Math.max(fPct, 8) + "%", transition: "width 0.8s ease" }} />
+                      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", background: "#e8e8e8", borderRadius: "2px 0 0 2px" }}>
+                        <div style={{ height: 4, background: fBetter ? GREEN : "#ccc", borderRadius: "2px 0 0 2px", width: Math.max(fPct, 8) + "%", transition: "width 0.8s ease" }} />
                       </div>
-                      <div style={{ flex: 1, background: "rgba(255,255,255,0.06)", borderRadius: "0 2px 2px 0" }}>
-                        <div style={{ height: 4, background: !fBetter ? "#F87171" : "rgba(255,255,255,0.15)", borderRadius: "0 2px 2px 0", width: Math.max(oPct, 8) + "%", transition: "width 0.8s ease" }} />
+                      <div style={{ flex: 1, background: "#e8e8e8", borderRadius: "0 2px 2px 0" }}>
+                        <div style={{ height: 4, background: !fBetter ? RED : "#ccc", borderRadius: "0 2px 2px 0", width: Math.max(oPct, 8) + "%", transition: "width 0.8s ease" }} />
                       </div>
                     </div>
                   </div>
@@ -670,9 +671,9 @@ var PlayerBlock = function(props) {
 
               {/* Prize Money footer */}
               {prizeMoney && (
-                <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.08)", textAlign: "center" }}>
-                  <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.35)", fontFamily: SANS, letterSpacing: "0.05em", textTransform: "uppercase" }}>Prize Money Acumulado</span>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: "#4ADE80", fontFamily: SANS, display: "block", marginTop: 2 }}>
+                <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid " + BORDER, textAlign: "center" }}>
+                  <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.05em", textTransform: "uppercase" }}>Prize Money Acumulado</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: GREEN, fontFamily: SANS, display: "block", marginTop: 2 }}>
                     {prizeMoney >= 1000000 ? "US$ " + (prizeMoney / 1000000).toFixed(1) + "M" : "US$ " + Math.round(prizeMoney / 1000).toLocaleString() + "K"}
                   </span>
                 </div>
