@@ -1132,17 +1132,18 @@ export default function JoaoFonsecaNews() {
         </section>
 
         {/* MORE MENU toggle */}
-        <section style={{ borderBottom: "1px solid " + BORDER }}>
-          <button onClick={function() { setShowMenu(!showMenu); }} style={{ width: "100%", padding: "6px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>Mais</span>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points={showMenu ? "18 15 12 9 6 15" : "6 9 12 15 18 9"} /></svg>
-          </button>
-        </section>
+        {!showMenu && (
+          <section style={{ borderBottom: "1px solid " + BORDER }}>
+            <button onClick={function() { setShowMenu(true); }} style={{ width: "100%", padding: "6px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+              <span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>Mais</span>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
+            </button>
+          </section>
+        )}
 
-
-        {/* MAIS MENU — expanded content (controlled from header) */}
+        {/* MAIS MENU — expanded content */}
         {showMenu && (
-          <section style={{ paddingTop: 8, paddingBottom: 8, borderBottom: "1px solid " + BORDER, animation: "fadeIn 0.2s ease" }}>
+          <section style={{ paddingTop: 8, paddingBottom: 0, borderBottom: "1px solid " + BORDER, animation: "fadeIn 0.2s ease" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 <button onClick={function(){setShowTitles(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
@@ -1157,14 +1158,10 @@ export default function JoaoFonsecaNews() {
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Timeline</span>
                 </button>
               </div>
-              <div style={{ paddingTop: 8, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-                <button onClick={function(){handlePushSubscribe();setShowMenu(false);}} style={{ padding: "10px 6px", background: pushEnabled ? GREEN + "08" : BG_ALT, border: "1px solid " + (pushEnabled ? GREEN + "25" : BORDER), borderRadius: 10, cursor: pushEnabled ? "default" : "pointer", textAlign: "center" }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill={pushEnabled ? GREEN : "none"} stroke={pushEnabled ? GREEN : SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: pushEnabled ? GREEN : TEXT, fontFamily: SANS }}>{pushEnabled ? "Ativo" : "Alertas"}</span>
-                </button>
+              <div style={{ paddingTop: 8, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 <a href="/regras" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Regras</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Regras do Tênis</span>
                 </a>
                 <button onClick={function(){setShowFeedback(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
@@ -1175,6 +1172,10 @@ export default function JoaoFonsecaNews() {
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Apoiar</span>
                 </button>
               </div>
+              <button onClick={function() { setShowMenu(false); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>Menos</span>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="18 15 12 9 6 15" /></svg>
+              </button>
           </section>
         )}
 
