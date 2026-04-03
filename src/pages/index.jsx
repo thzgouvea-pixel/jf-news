@@ -1048,7 +1048,7 @@ export default function JoaoFonsecaNews() {
 
       {/* HEADER */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "12px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" }}>
               <span style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
@@ -1114,35 +1114,10 @@ export default function JoaoFonsecaNews() {
         })()}
 
 
-        {/* 3. QUICK NAV */}
-        <section style={{ padding: "20px 0 6px" }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Menu</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            <a href="/biografia" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Biografia</span>
-            </a>
-            <button onClick={function(){setShowRanking(true);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-              <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Ranking</span>
-            </button>
-            <button onClick={function(){setShowCalendar(true);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Calendário</span>
-            </button>
-          </div>
-        </section>
-
-        {/* 4. MORE MENU */}
-        <section style={{ borderBottom: "1px solid " + BORDER }}>
-          {!showMenu ? (
-            <button onClick={function() { setShowMenu(true); }} style={{ width: "100%", padding: "6px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-              <span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>Mais</span>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="6 9 12 15 18 9" /></svg>
-            </button>
-          ) : (
-            <>
-              <div style={{ padding: "8px 0 0", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, animation: "fadeIn 0.2s ease" }}>
+        {/* MAIS MENU — expanded content (controlled from header) */}
+        {showMenu && (
+          <section style={{ paddingTop: 8, paddingBottom: 8, borderBottom: "1px solid " + BORDER, animation: "fadeIn 0.2s ease" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 <button onClick={function(){setShowTitles(true);setShowMenu(false);}} style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center" }}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: "block", margin: "0 auto 4px" }}><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Conquistas</span>
@@ -1174,13 +1149,8 @@ export default function JoaoFonsecaNews() {
                   <span style={{ fontSize: 10, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Apoiar</span>
                 </button>
               </div>
-              <button onClick={function() { setShowMenu(false); }} style={{ width: "100%", padding: "10px 0", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: DIM, fontFamily: SANS }}>Menos</span>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5"><polyline points="18 15 12 9 6 15" /></svg>
-              </button>
-            </>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* 1. AO VIVO ou PRÓXIMO DUELO */}
         {liveMatch ? (
@@ -1371,7 +1341,7 @@ export default function JoaoFonsecaNews() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
                   </div>
                 ); }},
-                { num: "2", title: "Adicionar a Tela de Início", desc: "Role as opções e toque nesse botao", visual: function() { return (
+                { num: "2", title: "Adicionar a Tela de Início", desc: "Role as opções e toque nesse botão", visual: function() { return (
                   <div style={{ width: "100%", height: 80, background: BG_ALT, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#fff", borderRadius: 10, border: "1px solid " + BORDER }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
