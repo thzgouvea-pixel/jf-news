@@ -1206,6 +1206,87 @@ export default function JoaoFonsecaNews() {
           recentForm={recentForm}
           prizeMoney={prizeMoney}
         />
+
+        {/* JOÃO EM NÚMEROS */}
+        <section style={{ padding: "20px 0 0" }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>João em números</p>
+          <div style={{ background: BG_ALT, borderRadius: 16, padding: "18px", border: "1px solid " + BORDER }}>
+
+            {/* Row 1: Record + Aproveitamento + Top 10 */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
+              <div style={{ textAlign: "center" }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SANS, display: "block" }}>42-28</span>
+                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Carreira W-L</span>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: GREEN, fontFamily: SANS, display: "block" }}>60%</span>
+                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Aproveitamento</span>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SANS, display: "block" }}>1-4</span>
+                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>vs Top 10</span>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: BORDER, marginBottom: 14 }} />
+
+            {/* Row 2: Desempenho por superfície */}
+            <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Por superfície</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+              {[
+                { surface: "Hard court", emoji: "🔵", wins: 16, losses: 11, color: "#3B82F6" },
+                { surface: "Saibro", emoji: "🟠", wins: 14, losses: 12, color: "#D97706" },
+                { surface: "Grama", emoji: "🟢", wins: 3, losses: 4, color: "#16A34A" }
+              ].map(function(s) {
+                var total = s.wins + s.losses;
+                var pct = total > 0 ? Math.round((s.wins / total) * 100) : 0;
+                return (
+                  <div key={s.surface} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <span style={{ fontSize: 12, width: 80, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{s.surface}</span>
+                    <div style={{ flex: 1, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ height: 6, background: s.color, borderRadius: 3, width: pct + "%", transition: "width 0.8s ease" }} />
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: TEXT, fontFamily: SANS, minWidth: 44, textAlign: "right" }}>{s.wins}-{s.losses}</span>
+                    <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, minWidth: 28 }}>{pct}%</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: BORDER, marginBottom: 14 }} />
+
+            {/* Row 3: Recordes */}
+            <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Recordes</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {[
+                "Mais jovem brasileiro no top 100 da história",
+                "1º brasileiro a vencer um ATP 500",
+                "1º sul-americano campeão do NextGen Finals",
+                "Mais jovem sul-americano campeão ATP desde 1987",
+                "Mais jovem a bater top 10 no Australian Open (desde 1973)",
+                "1º brasileiro nº1 do ranking juvenil",
+                "Record juvenil ITF: 92-27"
+              ].map(function(r, i) {
+                return (
+                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                    <span style={{ color: GREEN, fontSize: 11, fontWeight: 700, fontFamily: SANS, flexShrink: 0, marginTop: 1 }}>•</span>
+                    <span style={{ fontSize: 12, color: TEXT, fontFamily: SANS, lineHeight: 1.5 }}>{r}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Instagram followers */}
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill={SUB} stroke="none"/></svg>
+              <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>1.1M seguidores no Instagram</span>
+            </div>
+
+          </div>
+        </section>
+
         {/* 5. NOTÍCIAS */}
         <section style={{ padding: "20px 0 0" }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Notícias</p>
