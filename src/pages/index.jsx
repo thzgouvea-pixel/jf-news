@@ -969,8 +969,18 @@ export default function JoaoFonsecaNews() {
 
   useEffect(function() {
     fetch("/api/stats").then(function(r) { return r.json(); }).then(function(d) { if (d.likes) setAllLikes(d.likes); if (d.visitors) { var el = document.getElementById("fn-visitors"); var wrap = document.getElementById("fn-visitors-wrap"); if (el) el.textContent = d.visitors; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
+    fetch("/api/visitors").then(function(r) { return r.json(); }).then(function(d) { if (d.standalone) { var el = document.getElementById("fn-standalone"); var wrap = document.getElementById("fn-standalone-wrap"); if (el) el.textContent = d.standalone; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
     var isNew = !localStorage.getItem("fn_visited");
     if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
+    // Track standalone (installed as app) users
+    try {
+      var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+      var alreadyTracked = localStorage.getItem("fn_standalone_tracked");
+      if (isStandalone && !alreadyTracked) {
+        fetch("/api/visitors?action=standalone", { method: "POST" }).catch(function() {});
+        localStorage.setItem("fn_standalone_tracked", "1");
+      }
+    } catch(e) {}
     fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
@@ -1356,8 +1366,9 @@ export default function JoaoFonsecaNews() {
               return (<a key={i} href={s.href} target={s.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>{s.icon}</a>);
             })}
           </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 16 }}>
             <span id="fn-visitors-wrap" style={{ fontSize: 11, color: DIM, fontFamily: SANS, display: "none" }}><span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}></span> visitantes</span>
+            <span id="fn-standalone-wrap" style={{ fontSize: 11, color: DIM, fontFamily: SANS, display: "none" }}><span id="fn-standalone" style={{ fontWeight: 700, color: GREEN }}></span> instalaram o app</span>
           </div>
           <p style={{ fontSize: 9, color: DIM, fontFamily: SANS, lineHeight: 1.6, maxWidth: 340, margin: "0 auto", textAlign: "center" }}>Site independente de fãs · Sem vínculo com João Fonseca ou ATP · © 2026 Fonseca News</p>
         </footer>
