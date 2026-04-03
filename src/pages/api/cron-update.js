@@ -89,8 +89,10 @@ async function fetchRanking(apiKey, log) {
     log.push("ranking: #" + ranking + " (via Wikipedia API)");
 
     // ===== CAREER STATS from wikitext =====
-    // |wonloss_singles = 42–28
-    var wlMatch = wikitext.match(/wonloss_singles\s*=\s*(\d+)[–\-](\d+)/i);
+    // Try multiple field names: wonloss_singles, singlesrecord, etc.
+    var wlMatch = wikitext.match(/(?:wonloss_singles|singlesrecord|singles_record|win_loss_singles)\s*=\s*(\d+)[–\-](\d+)/i);
+    // Also try from body text: "a 42–28 singles" or similar
+    if (!wlMatch) wlMatch = wikitext.match(/(\d{2,3})[–\-](\d{2,3})\s*(?:singles|record)/i);
     var careerWins = wlMatch ? parseInt(wlMatch[1], 10) : null;
     var careerLosses = wlMatch ? parseInt(wlMatch[2], 10) : null;
 
@@ -530,7 +532,18 @@ export default async function handler(req, res) {
       await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 });
       log.push("nextMatch: vs " + nextMatch.opponent_name + " @ " + nextMatch.tournament_name);
     } else {
-      log.push("nextMatch: none in next 7 days");
+      // Fallback: if no nextMatch from SofaScore, check if we have a manual override in KV
+      var manualNext = await kv.get("fn:nextMatch");
+      if (manualNext) {
+        var parsed = typeof manualNext === "string" ? JSON.parse(manualNext) : manualNext;
+        if (parsed && parsed.opponent_name) {
+          log.push("nextMatch: manual override active (" + parsed.opponent_name + ")");
+        } else {
+          log.push("nextMatch: none in next 7 days");
+        }
+      } else {
+        log.push("nextMatch: none in next 7 days");
+      }
     }
 
     // 5. Odds
