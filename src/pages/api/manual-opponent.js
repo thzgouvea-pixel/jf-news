@@ -18,6 +18,7 @@ export default async function handler(req, res) {
     var ranking = parseInt(req.query.ranking || (req.body && req.body.ranking)) || null;
     var country = req.query.country || (req.body && req.body.country) || "";
     var opponentId = parseInt(req.query.id || (req.body && req.body.sofascore_id)) || null;
+    var atpSlug = req.query.atp || (req.body && req.body.atp_slug) || null;
 
     if (!name) return res.status(400).json({ error: "name required. Use ?name=Gabriel+Diallo&ranking=36&country=Canada&id=280151" });
 
@@ -30,6 +31,7 @@ export default async function handler(req, res) {
     nextMatch.opponent_ranking = ranking;
     nextMatch.opponent_country = country;
     nextMatch.opponent_id = opponentId;
+    if (atpSlug) nextMatch.opponent_atp_slug = atpSlug;
 
     // Ensure tournament fields exist (use query params or keep existing)
     var tournament = req.query.tournament || (req.body && req.body.tournament);
