@@ -1092,7 +1092,7 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Adicione à tela inicial — sem baixar nada</span>
               </div>
               <button onClick={function(){setShowInstallGuide(true);}} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>Como fazer</button>
-              <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 6, right: 6, background: "none", border: "none", color: DIM, fontSize: 14, cursor: "pointer", padding: 4, lineHeight: 1 }}>✕</button>
+              <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 8, right: 14, background: "none", border: "none", color: DIM, fontSize: 12, cursor: "pointer", padding: 6, lineHeight: 1 }}>✕</button>
             </div>
           );
         })()}
@@ -1112,7 +1112,7 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Receba notificações de ranking, partidas e mais</span>
               </div>
               <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>{pushLoading ? "..." : "Ativar"}</button>
-              <button onClick={function(){ try { localStorage.setItem("fn_push_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 6, right: 6, background: "none", border: "none", color: DIM, fontSize: 14, cursor: "pointer", padding: 4, lineHeight: 1 }}>✕</button>
+              <button onClick={function(){ try { localStorage.setItem("fn_push_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 8, right: 14, background: "none", border: "none", color: DIM, fontSize: 12, cursor: "pointer", padding: 6, lineHeight: 1 }}>✕</button>
             </div>
           );
         })()}
