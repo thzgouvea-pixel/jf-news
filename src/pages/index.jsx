@@ -369,6 +369,8 @@ var NextDuelCard = function(props) {
   var oppName = match.opponent_name || "A definir";
   var oppRanking = match.opponent_ranking;
   var oppCountry = match.opponent_country || "";
+  var flagMap = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳" };
+  var oppFlag = flagMap[oppCountry] || "";
   var sc = surfaceColorMap[match.surface] || "#999";
   return (
     <section style={{ margin: "4px 0 0", padding: "24px 24px 20px", background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
@@ -399,10 +401,10 @@ var NextDuelCard = function(props) {
         </div>
         <div style={{ textAlign: "center" }}>
           <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; }} /> : <span style={{ fontSize: 12, color: "rgba(255,255,255,0.25)" }}>?</span>}
+            {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>{oppName.charAt(0)}</span>}
           </div>
           <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{oppName}</span>
-          {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{oppCountry}{oppRanking ? " #" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>chave pendente</span>}
+          {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>chave pendente</span>}
         </div>
       </div>
       {!countdown.expired && (
