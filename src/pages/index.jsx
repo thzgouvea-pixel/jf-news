@@ -362,16 +362,19 @@ var MatchPrediction = function(props) {
   );
 };
 
-// ===== NEXT DUEL CARD (CORRIGIDO) =====
+// ===== NEXT DUEL CARD — v2 Premium =====
 var NextDuelCard = function(props) {
   var match = props.match; var player = props.player;
   var onOppClick = props.onOppClick;
+  var winProb = props.winProb;
+  var onPushClick = props.onPushClick;
+  var pushEnabled = props.pushEnabled;
+  var pushLoading = props.pushLoading;
   var countdown = useCountdown(match ? match.date : null);
   if (!match) return null;
   var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   var atpSlugs = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je", "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Fonseca": "f0fv" };
 
-  // ===== FIX 2: oppName declarado ANTES de ser usado =====
   var oppName = match.opponent_name || "A definir";
   var oppRanking = match.opponent_ranking;
   var oppCountry = match.opponent_country || "";
@@ -381,60 +384,124 @@ var NextDuelCard = function(props) {
   var oppImg = oppAtpSlug ? ("https://www.atptour.com/-/media/alias/player-headshot/" + oppAtpSlug) : (match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null);
   var oppImgFallback = match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null;
   var sc = surfaceColorMap[match.surface] || "#999";
+
+  // Win probability
+  var fPct = winProb && winProb.fonseca ? Math.round(winProb.fonseca) : null;
+  var oPct = winProb && winProb.opponent ? Math.round(winProb.opponent) : null;
+
+  // Date formatting
+  var dateInfo = match.date ? (function() {
+    var d = new Date(match.date);
+    var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+    var dia = d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
+    return { full: dia.charAt(0).toUpperCase() + dia.slice(1), time: h };
+  })() : null;
+
   return (
-    <section style={{ margin: "4px 0 0", padding: "24px 24px 20px", background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "15 0%, transparent 70%)", pointerEvents: "none" }} />
-      <div style={{ textAlign: "center", marginBottom: 16 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: SANS }}>{match.surface}</span>
-          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)" }}>·</span>
-          <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{match.city}</span>
+    <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(155deg, #0D1726 0%, #132440 50%, #0f1d35 100%)", borderRadius: 22, position: "relative", overflow: "hidden" }}>
+      {/* Decorative surface glow */}
+      <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "12 0%, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: -30, left: -30, width: 100, height: 100, borderRadius: "50%", background: "radial-gradient(circle, " + GREEN + "08 0%, transparent 70%)", pointerEvents: "none" }} />
+
+      {/* === BLOCK 1: Tournament header === */}
+      <div style={{ padding: "18px 22px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", fontFamily: SANS, background: sc + "30", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em", border: "1px solid " + sc + "25" }}>{match.surface}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{match.tournament_category || ""}</span>
+          {match.round && <span style={{ fontSize: 9, fontWeight: 700, color: YELLOW, fontFamily: SANS, background: YELLOW + "15", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{match.round}</span>}
+        </div>
+        {/* Bell icon */}
+        {!pushEnabled && onPushClick && (
+          <button onClick={onPushClick} disabled={pushLoading} style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.2s" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={pushLoading ? "rgba(255,255,255,0.2)" : YELLOW} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </button>
+        )}
+        {pushEnabled && (
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: GREEN + "15", border: "1px solid " + GREEN + "25", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill={GREEN} stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          </div>
+        )}
+      </div>
+
+      {/* Tournament name + city */}
+      <div style={{ textAlign: "center", padding: "14px 22px 0" }}>
+        <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.15, letterSpacing: "-0.03em", margin: "0 0 4px" }}>{match.tournament_name || "Próxima Partida"}</h2>
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontFamily: SANS, margin: 0 }}>{match.city}{match.country ? ", " + match.country : ""}</p>
+      </div>
+
+      {/* === BLOCK 2: Players confrontation === */}
+      <div style={{ padding: "20px 16px 0" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 10, alignItems: "center" }}>
+          {/* João */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2.5px solid " + GREEN + "40", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img src={joaoImg} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:18px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
+            </div>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontFamily: SANS, display: "block", marginTop: 2 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
+          </div>
+
+          {/* VS */}
+          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.2)", fontFamily: SANS, letterSpacing: "0.05em" }}>VS</span>
+            </div>
+          </div>
+
+          {/* Opponent */}
+          <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2.5px solid rgba(255,255,255,0.12)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default", position: "relative" }}>
+              {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:20px;font-weight:700;color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>{oppName.charAt(0)}</span>}
+              {onOppClick && <div style={{ position: "absolute", bottom: -1, right: -1, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #132440", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="10" height="10" viewBox="0 0 24 24" fill="#fff" stroke="none"><circle cx="12" cy="5" r="2"/><rect x="10" y="10" width="4" height="10" rx="1"/></svg></div>}
+            </div>
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppName}</span>
+            {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontFamily: SANS, display: "block", marginTop: 2 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", fontFamily: SANS, display: "block", marginTop: 2 }}>chave pendente</span>}
+          </div>
         </div>
       </div>
-      <div style={{ textAlign: "center", marginBottom: 20 }}>
-        <h2 style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 800, color: "#fff", lineHeight: 1.1, letterSpacing: "-0.03em", margin: "0 0 4px" }}>{match.tournament_category || "Próxima Partida"}</h2>
-        {match.tournament_name && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: SANS, margin: 0 }}>{match.tournament_name} · {formatMatchDate(match.date)}</p>}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 16, alignItems: "center", marginBottom: 24 }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2px solid " + GREEN + "35", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <img src={joaoImg} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:16px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
+
+      {/* === BLOCK 3: Win probability bar === */}
+      {fPct !== null && oPct !== null && (
+        <div style={{ padding: "16px 22px 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.35)", fontFamily: SANS }}>{fPct}%</span>
+            <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Probabilidade</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.35)", fontFamily: SANS }}>{oPct}%</span>
           </div>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>J. Fonseca</span>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 32, height: 32, borderRadius: "50%", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>VS</span>
-          </div>
-        </div>
-        <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
-          <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default", position: "relative" }}>
-            {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>{oppName.charAt(0)}</span>}
-            {onOppClick && <div style={{ position: "absolute", bottom: -2, right: -2, width: 20, height: 20, borderRadius: "50%", background: "#4FC3F7", border: "2px solid #132440", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>}
-          </div>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{oppName}</span>
-          {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>chave pendente</span>}
-        </div>
-      </div>
-      {!countdown.expired && (
-        <div style={{ textAlign: "center", marginBottom: 16 }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#4FC3F7", fontFamily: SANS, display: "block", marginBottom: 10 }}>
-            {match.date ? (function() {
-              var d = new Date(match.date);
-              var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-              var dia = d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
-              return dia.charAt(0).toUpperCase() + dia.slice(1) + " · " + h + " (BRT)";
-            })() : ""}
-          </span>
-          <div style={{ display: "inline-flex", gap: 14 }}>
-            {[[countdown.days,"dias"],[countdown.hours,"hrs"],[countdown.minutes,"min"],[countdown.seconds,"seg"]].map(function(p,i) { return (<div key={i} style={{ textAlign: "center", minWidth: 36 }}><span style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block", lineHeight: 1 }}>{String(p[0]).padStart(2, "0")}</span><span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>{p[1]}</span></div>); })}
+          <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden", gap: 3 }}>
+            <div style={{ width: fPct + "%", background: GREEN, borderRadius: 3, transition: "width 0.8s ease" }} />
+            <div style={{ width: oPct + "%", background: "#ef4444", borderRadius: 3, transition: "width 0.8s ease" }} />
           </div>
         </div>
       )}
-      <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>ESPN 2 · Disney+</span>
-        <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, textDecoration: "none", padding: "6px 14px", borderRadius: 8, background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.15)" }}>Assistir ao vivo →</a>
+
+      {/* === BLOCK 4: Date, time, countdown === */}
+      {!countdown.expired && (
+        <div style={{ padding: "18px 22px 0", textAlign: "center" }}>
+          {dateInfo && (
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, display: "block", marginBottom: 12 }}>
+              {dateInfo.full} · {dateInfo.time} <span style={{ fontSize: 10, color: "rgba(79,195,247,0.5)" }}>(BRT)</span>
+            </span>
+          )}
+          <div style={{ display: "inline-flex", gap: 8 }}>
+            {[[countdown.days,"dias"],[countdown.hours,"hrs"],[countdown.minutes,"min"],[countdown.seconds,"seg"]].map(function(p,i) {
+              return (
+                <div key={i} style={{ textAlign: "center", minWidth: 44, padding: "6px 4px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block", lineHeight: 1 }}>{String(p[0]).padStart(2, "0")}</span>
+                  <span style={{ fontSize: 8, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 2, display: "block" }}>{p[1]}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* === BLOCK 5: Where to watch === */}
+      <div style={{ padding: "16px 22px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>Transmissão:</span>
+        <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>ESPN 2</span>
+        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)" }}>·</span>
+        <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, textDecoration: "none" }}>Disney+ →</a>
       </div>
     </section>
   );
@@ -1170,7 +1237,7 @@ export default function JoaoFonsecaNews() {
         ) : (
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
-            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} />
+            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} />
             {/* TOURNAMENT FACTS CARD */}
             {tournamentFacts && (
               <div style={{ marginTop: 10, padding: "16px 18px", background: BG_ALT, borderRadius: 14, border: "1px solid " + BORDER }}>
@@ -1191,17 +1258,10 @@ export default function JoaoFonsecaNews() {
                 {tournamentFacts.source && <p style={{ margin: "10px 0 0", fontSize: 9, color: DIM, fontFamily: SANS, textAlign: "right" }}>Fonte: Wikipedia</p>}
               </div>
             )}
-            {!pushEnabled && (
-              <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ width: "100%", marginTop: 8, padding: "8px 16px", background: "transparent", border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                <span style={{ fontSize: 11, fontWeight: 600, color: SUB, fontFamily: SANS }}>{pushLoading ? "Ativando..." : "Avise-me quando o jogo começar"}</span>
-              </button>
-            )}
           </section>
         )}
 
-        {/* 2. WIN PROB + PLAYER BLOCK */}
-        <WinProbBar winProb={winProb} />
+        {/* 2. PLAYER BLOCK */}
         <PlayerBlock
           lastMatch={dl}
           matchStats={matchStats}
