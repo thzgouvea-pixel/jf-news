@@ -362,7 +362,7 @@ var MatchPrediction = function(props) {
   );
 };
 
-// ===== NEXT DUEL CARD — v2 Premium =====
+// ===== NEXT DUEL CARD — v3 Definitivo =====
 var NextDuelCard = function(props) {
   var match = props.match; var player = props.player;
   var onOppClick = props.onOppClick;
@@ -385,88 +385,85 @@ var NextDuelCard = function(props) {
   var oppImgFallback = match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null;
   var sc = surfaceColorMap[match.surface] || "#999";
 
-  // Win probability
   var fPct = winProb && winProb.fonseca ? Math.round(winProb.fonseca) : null;
   var oPct = winProb && winProb.opponent ? Math.round(winProb.opponent) : null;
 
-  // Date formatting
   var dateInfo = match.date ? (function() {
     var d = new Date(match.date);
     var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-    var dia = d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
-    return { full: dia.charAt(0).toUpperCase() + dia.slice(1), time: h };
+    var diaSemana = d.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" });
+    var diaNum = d.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
+    return { weekday: diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1), date: diaNum, time: h };
   })() : null;
 
   return (
-    <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(155deg, #0D1726 0%, #132440 50%, #0f1d35 100%)", borderRadius: 22, position: "relative", overflow: "hidden" }}>
-      {/* Decorative surface glow */}
-      <div style={{ position: "absolute", top: -40, right: -40, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "12 0%, transparent 70%)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: -30, left: -30, width: 100, height: 100, borderRadius: "50%", background: "radial-gradient(circle, " + GREEN + "08 0%, transparent 70%)", pointerEvents: "none" }} />
+    <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden" }}>
+      {/* Decorative glows */}
+      <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "10 0%, transparent 65%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: -40, left: -40, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, " + GREEN + "06 0%, transparent 65%)", pointerEvents: "none" }} />
 
-      {/* === BLOCK 1: Tournament header === */}
-      <div style={{ padding: "18px 22px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", fontFamily: SANS, background: sc + "30", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em", border: "1px solid " + sc + "25" }}>{match.surface}</span>
-          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.06)", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{match.tournament_category || ""}</span>
-          {match.round && <span style={{ fontSize: 9, fontWeight: 700, color: YELLOW, fontFamily: SANS, background: YELLOW + "15", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{match.round}</span>}
+      {/* ── 1. TOURNAMENT HEADER ── */}
+      <div style={{ padding: "16px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{match.surface}</span>
+          <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.45)", fontFamily: SANS, background: "rgba(255,255,255,0.05)", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{match.tournament_category || ""}</span>
+          {match.round && <span style={{ fontSize: 9, fontWeight: 700, color: YELLOW, fontFamily: SANS, background: YELLOW + "12", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{match.round}</span>}
         </div>
-        {/* Bell icon */}
+        {/* Bell */}
         {!pushEnabled && onPushClick && (
-          <button onClick={onPushClick} disabled={pushLoading} style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, transition: "all 0.2s" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={pushLoading ? "rgba(255,255,255,0.2)" : YELLOW} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <button onClick={onPushClick} disabled={pushLoading} title="Ativar notificações" style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={pushLoading ? "rgba(255,255,255,0.15)" : YELLOW} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </button>
         )}
         {pushEnabled && (
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: GREEN + "15", border: "1px solid " + GREEN + "25", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={GREEN} stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <div title="Notificações ativas" style={{ width: 34, height: 34, borderRadius: 10, background: GREEN + "12", border: "1px solid " + GREEN + "25", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill={GREEN} stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </div>
         )}
       </div>
 
-      {/* Tournament name + city */}
-      <div style={{ textAlign: "center", padding: "14px 22px 0" }}>
-        <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.15, letterSpacing: "-0.03em", margin: "0 0 4px" }}>{match.tournament_name || "Próxima Partida"}</h2>
-        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", fontFamily: SANS, margin: 0 }}>{match.city}{match.country ? ", " + match.country : ""}</p>
+      {/* Tournament name */}
+      <div style={{ textAlign: "center", padding: "12px 20px 0" }}>
+        <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.15, letterSpacing: "-0.02em", margin: "0 0 3px" }}>{match.tournament_name || "Próxima Partida"}</h2>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS, margin: 0 }}>{match.city}{match.country ? ", " + match.country : ""}</p>
       </div>
 
-      {/* === BLOCK 2: Players confrontation === */}
-      <div style={{ padding: "20px 16px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 10, alignItems: "center" }}>
+      {/* ── 2. PLAYERS ── */}
+      <div style={{ padding: "18px 14px 0" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center" }}>
           {/* João */}
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2.5px solid " + GREEN + "40", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid " + GREEN + "35", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img src={joaoImg} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:18px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
             </div>
             <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontFamily: SANS, display: "block", marginTop: 2 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
           </div>
-
           {/* VS */}
-          <div style={{ textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.2)", fontFamily: SANS, letterSpacing: "0.05em" }}>VS</span>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.18)", fontFamily: SANS, letterSpacing: "0.05em" }}>VS</span>
             </div>
           </div>
-
           {/* Opponent */}
           <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2.5px solid rgba(255,255,255,0.12)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default", position: "relative" }}>
-              {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:20px;font-weight:700;color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>{oppName.charAt(0)}</span>}
-              {onOppClick && <div style={{ position: "absolute", bottom: -1, right: -1, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #132440", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="10" height="10" viewBox="0 0 24 24" fill="#fff" stroke="none"><circle cx="12" cy="5" r="2"/><rect x="10" y="10" width="4" height="10" rx="1"/></svg></div>}
+            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default", position: "relative" }}>
+              {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:20px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
+              {onOppClick && <div style={{ position: "absolute", bottom: -1, right: -1, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="10" height="10" viewBox="0 0 24 24" fill="#fff" stroke="none"><circle cx="12" cy="5" r="2"/><rect x="10" y="10" width="4" height="10" rx="1"/></svg></div>}
             </div>
             <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppName}</span>
-            {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", fontFamily: SANS, display: "block", marginTop: 2 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.2)", fontFamily: SANS, display: "block", marginTop: 2 }}>chave pendente</span>}
+            {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: SANS, display: "block", marginTop: 3 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.18)", fontFamily: SANS, display: "block", marginTop: 3 }}>chave pendente</span>}
           </div>
         </div>
       </div>
 
-      {/* === BLOCK 3: Win probability bar === */}
+      {/* ── 3. WIN PROBABILITY ── */}
       {fPct !== null && oPct !== null && (
-        <div style={{ padding: "16px 22px 0" }}>
+        <div style={{ padding: "16px 20px 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.35)", fontFamily: SANS }}>{fPct}%</span>
-            <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Probabilidade</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.35)", fontFamily: SANS }}>{oPct}%</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.3)", fontFamily: SANS }}>{fPct}%</span>
+            <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Probabilidade</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.3)", fontFamily: SANS }}>{oPct}%</span>
           </div>
           <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden", gap: 3 }}>
             <div style={{ width: fPct + "%", background: GREEN, borderRadius: 3, transition: "width 0.8s ease" }} />
@@ -475,33 +472,48 @@ var NextDuelCard = function(props) {
         </div>
       )}
 
-      {/* === BLOCK 4: Date, time, countdown === */}
-      {!countdown.expired && (
-        <div style={{ padding: "18px 22px 0", textAlign: "center" }}>
-          {dateInfo && (
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, display: "block", marginBottom: 12 }}>
-              {dateInfo.full} · {dateInfo.time} <span style={{ fontSize: 10, color: "rgba(79,195,247,0.5)" }}>(BRT)</span>
-            </span>
-          )}
-          <div style={{ display: "inline-flex", gap: 8 }}>
-            {[[countdown.days,"dias"],[countdown.hours,"hrs"],[countdown.minutes,"min"],[countdown.seconds,"seg"]].map(function(p,i) {
-              return (
-                <div key={i} style={{ textAlign: "center", minWidth: 44, padding: "6px 4px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block", lineHeight: 1 }}>{String(p[0]).padStart(2, "0")}</span>
-                  <span style={{ fontSize: 8, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginTop: 2, display: "block" }}>{p[1]}</span>
-                </div>
-              );
-            })}
+      {/* ── 4. DATE & TIME — HERO BLOCK ── */}
+      {dateInfo && (
+        <div style={{ padding: "20px 20px 0", textAlign: "center" }}>
+          <div style={{ background: "rgba(79,195,247,0.06)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(79,195,247,0.1)" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(79,195,247,0.6)", fontFamily: SANS, display: "block", marginBottom: 2, textTransform: "capitalize" }}>{dateInfo.weekday}</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2, letterSpacing: "-0.01em" }}>{dateInfo.date}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span style={{ fontSize: 18, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.02em" }}>{dateInfo.time}</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(79,195,247,0.45)", fontFamily: SANS }}>BRT</span>
+            </div>
+            {/* Compact countdown inline */}
+            {!countdown.expired && (
+              <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>Faltam</span>
+                {[[countdown.days,"d"],[countdown.hours,"h"],[countdown.minutes,"m"],[countdown.seconds,"s"]].map(function(p,i) {
+                  return (
+                    <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>
+                      {String(p[0]).padStart(2, "0")}<span style={{ fontSize: 9, fontWeight: 500, color: "rgba(255,255,255,0.2)" }}>{p[1]}</span>
+                      {i < 3 ? <span style={{ color: "rgba(255,255,255,0.12)", margin: "0 1px" }}>:</span> : ""}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* === BLOCK 5: Where to watch === */}
-      <div style={{ padding: "16px 22px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>Transmissão:</span>
-        <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>ESPN 2</span>
-        <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)" }}>·</span>
-        <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, textDecoration: "none" }}>Disney+ →</a>
+      {/* ── 5. WHERE TO WATCH ── */}
+      <div style={{ padding: "14px 20px 18px" }}>
+        <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center" }}>Assista em</p>
+        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>ESPN 2</span>
+          </div>
+          <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "rgba(79,195,247,0.08)", borderRadius: 10, border: "1px solid rgba(79,195,247,0.15)", textDecoration: "none" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS }}>Disney+</span>
+          </a>
+        </div>
       </div>
     </section>
   );
