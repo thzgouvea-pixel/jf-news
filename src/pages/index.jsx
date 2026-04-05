@@ -1290,41 +1290,59 @@ export default function JoaoFonsecaNews() {
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
             <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} />
-            {/* TOURNAMENT FACTS CARD — dark premium */}
-            {tournamentFacts && (
-              <div style={{ marginTop: 8, background: "linear-gradient(160deg, #0a1220 0%, #111d33 100%)", borderRadius: 18, overflow: "hidden", position: "relative" }}>
-                {/* Surface accent line at top */}
-                <div style={{ height: 3, background: "linear-gradient(to right, " + (surfaceColorMap[dm.surface] || "#999") + ", " + (surfaceColorMap[dm.surface] || "#999") + "40)" }} />
+          </section>
+        )}
 
-                <div style={{ padding: "18px 22px 20px" }}>
-                  {/* Header */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 9, fontWeight: 700, color: surfaceColorMap[dm.surface] || "#999", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Sobre o torneio</span>
-                    </div>
-                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", fontFamily: SANS }}>Wikipedia</span>
-                  </div>
+        {/* SOBRE O TORNEIO */}
+        {tournamentFacts && (
+          <section style={{ padding: "20px 0 0" }}>
+            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Sobre o torneio</p>
+            <div style={{ background: "linear-gradient(160deg, #0a1220 0%, #111d33 100%)", borderRadius: 18, overflow: "hidden", position: "relative" }}>
+              {/* Surface accent line */}
+              <div style={{ height: 3, background: "linear-gradient(to right, " + (surfaceColorMap[dm.surface] || "#999") + ", " + (surfaceColorMap[dm.surface] || "#999") + "40)" }} />
 
-                  {/* Tournament name */}
-                  <h3 style={{ margin: "0 0 16px", fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: SERIF, letterSpacing: "-0.01em" }}>{tournamentFacts.name || dm.tournament_name}</h3>
+              <div style={{ padding: "20px 22px 22px" }}>
+                {/* Tournament name + source */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: SERIF, letterSpacing: "-0.01em" }}>{tournamentFacts.name || dm.tournament_name}</h3>
+                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, flexShrink: 0, marginLeft: 12 }}>Wikipedia</span>
+                </div>
 
-                  {/* Facts as elegant rows */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                    {(tournamentFacts.facts || []).map(function(fact, i) {
-                      var isLast = i === (tournamentFacts.facts || []).length - 1;
-                      return (
-                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.05)" }}>
-                          <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                            <span style={{ fontSize: 15 }}>{fact.icon || "🎾"}</span>
-                          </div>
-                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: SANS, lineHeight: 1.5, letterSpacing: "0.01em" }}>{fact.text}</span>
+                {/* Facts — clean wiki markup + bold values */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                  {(tournamentFacts.facts || []).map(function(fact, i) {
+                    var isLast = i === (tournamentFacts.facts || []).length - 1;
+                    // Clean wiki markup from text
+                    var cleanText = (fact.text || "")
+                      .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2")
+                      .replace(/\{\{[^}]*\}\}/g, "")
+                      .replace(/'{2,}/g, "")
+                      .trim();
+                    // Translate surface names
+                    cleanText = cleanText.replace(/Clay court/gi, "Saibro").replace(/Hard court/gi, "Piso duro").replace(/Grass court/gi, "Grama");
+                    // Capitalize "atp" -> "ATP Tour"
+                    cleanText = cleanText.replace(/^Categoria:\s*atp$/i, "Categoria: ATP Masters 1000");
+                    // Split label:value for bold formatting
+                    var parts = cleanText.split(/:\s*/);
+                    var hasLabel = parts.length >= 2 && parts[0].length < 30;
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.05)" }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                          <span style={{ fontSize: 16 }}>{fact.icon || "🎾"}</span>
                         </div>
-                      );
-                    })}
-                  </div>
+                        {hasLabel ? (
+                          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", fontFamily: SANS, lineHeight: 1.5, letterSpacing: "0.01em" }}>
+                            {parts[0]}: <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{parts.slice(1).join(": ")}</span>
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontFamily: SANS, lineHeight: 1.5, letterSpacing: "0.01em", fontWeight: 600 }}>{cleanText}</span>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
-            )}
+            </div>
           </section>
         )}
 
