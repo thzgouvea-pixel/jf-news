@@ -558,6 +558,104 @@ export default async function handler(req, res) {
     // Timestamp
     await kv.set("fn:cronLastRun", now.toISOString());
 
+    // ===== AUTO PUSH NOTIFICATIONS =====
+    try {
+      var pushSecret = process.env.PUSH_SECRET;
+      var baseUrl = "https://fonsecanews.com.br";
+      var notifications = [];
+
+      // 1. Ranking changed
+      if (ranking && ranking.ranking) {
+        var prevRank = await kv.get("fn:prevRanking");
+        var prevRankNum = prevRank ? parseInt(prevRank) : null;
+        if (prevRankNum && prevRankNum !== ranking.ranking) {
+          var direction = ranking.ranking < prevRankNum ? "subiu" : "caiu";
+          var arrow = ranking.ranking < prevRankNum ? "📈" : "📉";
+          notifications.push({
+            title: arrow + " Ranking ATP: #" + ranking.ranking,
+            body: "João Fonseca " + direction + " de #" + prevRankNum + " para #" + ranking.ranking
+          });
+        }
+        await kv.set("fn:prevRanking", String(ranking.ranking));
+      }
+
+      // 2. New match result (only if we already tracked a previous match)
+      if (lastMatch && lastMatch.result && lastMatch.event_id) {
+        var prevLastMatchId = await kv.get("fn:prevLastMatchId");
+        if (prevLastMatchId === null) {
+          // First run: just save the current match ID, don't notify
+          await kv.set("fn:prevLastMatchId", String(lastMatch.event_id));
+          log.push("push: first run, saved match ID " + lastMatch.event_id);
+        } else if (prevLastMatchId !== String(lastMatch.event_id)) {
+          var isWin = lastMatch.result === "V";
+          notifications.push({
+            title: isWin ? "🏆 Vitória! " + lastMatch.score : "Derrota: " + lastMatch.score,
+            body: (isWin ? "João Fonseca venceu " : "João Fonseca perdeu para ") + lastMatch.opponent_name + " no " + lastMatch.tournament_name
+          });
+          await kv.set("fn:prevLastMatchId", String(lastMatch.event_id));
+        }
+      }
+
+      // 3. Next match opponent defined or changed
+      if (nextMatch && nextMatch.opponent_name) {
+        var prevOpponent = await kv.get("fn:prevOpponent");
+        if (prevOpponent === null) {
+          // First run: just save, don't notify
+          await kv.set("fn:prevOpponent", nextMatch.opponent_name);
+          log.push("push: first run, saved opponent " + nextMatch.opponent_name);
+        } else if (prevOpponent !== nextMatch.opponent_name) {
+          var matchDate = nextMatch.date ? new Date(nextMatch.date) : null;
+          var dateStr = matchDate ? matchDate.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }) : "";
+          var timeStr = matchDate ? matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "";
+          notifications.push({
+            title: "🎾 Próximo adversário: " + nextMatch.opponent_name,
+            body: (nextMatch.tournament_name || "ATP") + (nextMatch.opponent_ranking ? " · #" + nextMatch.opponent_ranking + " do mundo" : "") + (dateStr ? " · " + dateStr : "") + (timeStr ? " às " + timeStr : "")
+          });
+          await kv.set("fn:prevOpponent", nextMatch.opponent_name);
+        }
+      }
+
+      // 4. Match starting soon (within 30 min)
+      if (nextMatch && nextMatch.date) {
+        var matchTime = new Date(nextMatch.date).getTime();
+        var nowTime = Date.now();
+        var diffMin = (matchTime - nowTime) / 60000;
+        var pushKey30 = "fn:pushSent30:" + nextMatch.date;
+        var alreadySent30 = await kv.get(pushKey30);
+        if (diffMin > 0 && diffMin <= 30 && !alreadySent30) {
+          notifications.push({
+            title: "⏰ João Fonseca entra em quadra em breve!",
+            body: "Jogo contra " + (nextMatch.opponent_name || "adversário") + " começa em " + Math.round(diffMin) + " min · ESPN 2 e Disney+"
+          });
+          await kv.set(pushKey30, "1", { ex: 86400 });
+        }
+      }
+
+      // Send all notifications
+      for (var ni = 0; ni < notifications.length; ni++) {
+        try {
+          await fetch(baseUrl + "/api/push-send", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-push-secret": pushSecret
+            },
+            body: JSON.stringify({
+              title: notifications[ni].title,
+              body: notifications[ni].body,
+              url: baseUrl
+            })
+          });
+          log.push("push: enviado '" + notifications[ni].title + "'");
+        } catch (pe) {
+          log.push("push: erro " + pe.message);
+        }
+      }
+      if (notifications.length === 0) log.push("push: sem mudanças");
+    } catch (pushErr) {
+      log.push("push: erro " + pushErr.message);
+    }
+
     console.log("[cron-v5] Done. Requests: " + totalRequests + ". " + log.join(" | "));
     return res.status(200).json({ ok: true, requests: totalRequests, log, timestamp: now.toISOString() });
 
