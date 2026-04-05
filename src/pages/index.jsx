@@ -14,7 +14,7 @@ const SERIF = "'Source Serif 4', Georgia, serif";
 const SANS = "'Inter', -apple-system, sans-serif";
 
 const CACHE_DURATION_MS = 30 * 60 * 1000;
-const surfaceColorMap = { "Saibro": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E" };
+const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
 
 var SAMPLE_PLAYER = { ranking: 40, rankingChange: "+4" };
 var SAMPLE_SEASON = { wins: 14, losses: 5, titles: 3, year: 2026 };
