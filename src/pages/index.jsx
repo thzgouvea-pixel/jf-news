@@ -410,6 +410,14 @@ var NextDuelCard = function(props) {
       </div>
       {!countdown.expired && (
         <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#4FC3F7", fontFamily: SANS, display: "block", marginBottom: 10 }}>
+            {match.date ? (function() {
+              var d = new Date(match.date);
+              var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+              var dia = d.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
+              return dia.charAt(0).toUpperCase() + dia.slice(1) + " · " + h + " (BRT)";
+            })() : ""}
+          </span>
           <div style={{ display: "inline-flex", gap: 14 }}>
             {[[countdown.days,"dias"],[countdown.hours,"hrs"],[countdown.minutes,"min"],[countdown.seconds,"seg"]].map(function(p,i) { return (<div key={i} style={{ textAlign: "center", minWidth: 36 }}><span style={{ fontSize: 20, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block", lineHeight: 1 }}>{String(p[0]).padStart(2, "0")}</span><span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>{p[1]}</span></div>); })}
           </div>
