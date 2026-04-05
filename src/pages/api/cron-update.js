@@ -439,11 +439,30 @@ function parseMatch(m, isNext) {
   var isFonsecaHome = (homeTeam.slug || "").toLowerCase().includes(FONSECA_SLUG);
   var opponent = isFonsecaHome ? awayTeam : homeTeam;
 
+  // Detect surface from match data or infer from tournament name
+  var detectedSurface = "";
+  if (m.groundType) detectedSurface = m.groundType;
+  else if (tournament.groundType) detectedSurface = tournament.groundType;
+  else if (season.groundType) detectedSurface = season.groundType;
+  // Fallback: infer from tournament name
+  if (!detectedSurface) {
+    var tName = (tournament.name || "").toLowerCase();
+    var clayTournaments = ["monte carlo", "madrid", "roma", "roland garros", "french open", "buenos aires", "rio open", "barcelona", "hamburg", "kitzbuhel", "bastad", "umag", "gstaad"];
+    var grassTournaments = ["wimbledon", "halle", "queen", "s-hertogenbosch", "eastbourne", "mallorca", "newport", "stuttgart"];
+    for (var ci = 0; ci < clayTournaments.length; ci++) { if (tName.includes(clayTournaments[ci])) { detectedSurface = "Saibro"; break; } }
+    if (!detectedSurface) { for (var gi = 0; gi < grassTournaments.length; gi++) { if (tName.includes(grassTournaments[gi])) { detectedSurface = "Grama"; break; } } }
+    if (!detectedSurface && tName) detectedSurface = "Duro"; // Default to hard court
+  }
+  // Translate English surface names
+  if (detectedSurface.toLowerCase() === "clay") detectedSurface = "Saibro";
+  else if (detectedSurface.toLowerCase() === "grass") detectedSurface = "Grama";
+  else if (detectedSurface.toLowerCase() === "hard" || detectedSurface.toLowerCase() === "hardcourt") detectedSurface = "Duro";
+
   var result = {
     event_id: m.id,
     tournament_name: tournament.name || "",
     tournament_category: season.name || tournament.name || "",
-    surface: "",
+    surface: detectedSurface,
     city: (tournament.name || "").split(",")[0] || "",
     round: roundInfo.name || "",
     date: m.timestamp ? new Date(m.timestamp * 1000).toISOString() : null,
@@ -651,15 +670,24 @@ var TOURNAMENT_WIKI_MAP = {
 async function fetchTournamentFacts(tournamentName, log) {
   if (!tournamentName) { log.push("tournament: no name"); return; }
 
-  // Check if tournament changed
+  // Check if tournament changed or data is broken
   try {
     var cached = await kv.get("fn:tournamentFacts");
     if (cached) {
       var parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
-      if (parsed.name && tournamentName.toLowerCase().includes(parsed.name.toLowerCase().split(" ")[0])) {
+      var sameTournament = parsed.name && tournamentName.toLowerCase().includes(parsed.name.toLowerCase().split(" ")[0]);
+      // Check data quality — if any fact contains [[ or {{ it's broken
+      var dataClean = true;
+      if (parsed.facts) {
+        for (var fi = 0; fi < parsed.facts.length; fi++) {
+          if ((parsed.facts[fi].text || "").indexOf("[[") !== -1 || (parsed.facts[fi].text || "").indexOf("{{") !== -1) { dataClean = false; break; }
+        }
+      }
+      if (sameTournament && dataClean) {
         log.push("tournament: cache ok (" + parsed.name + ")");
         return;
       }
+      if (!dataClean) log.push("tournament: cache has broken markup, refetching");
     }
   } catch (e) {}
 
@@ -697,21 +725,36 @@ async function fetchTournamentFacts(tournamentName, log) {
     // Surface
     var surfMatch = wikitext.match(/surface\s*=\s*([^\n|]+)/i);
     if (surfMatch) {
-      var surf = surfMatch[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").trim();
-      facts.push({ icon: "🏟️", text: "Superfície: " + surf });
+      var surf = surfMatch[1]
+        .replace(/\[\[([^\]|]*\|)?([^\]]*)\]?\]?/g, "$2") // handle incomplete [[ ]]
+        .replace(/\{\{[^}]*\}\}/g, "")
+        .replace(/clay\s*court/gi, "Saibro")
+        .replace(/hard\s*court/gi, "Piso duro")
+        .replace(/grass\s*court/gi, "Grama")
+        .replace(/^clay$/gi, "Saibro")
+        .replace(/^hard$/gi, "Piso duro")
+        .replace(/^grass$/gi, "Grama")
+        .trim();
+      if (surf) facts.push({ icon: "🏟️", text: "Superfície: " + surf });
     }
 
     // Location/venue
     var venueMatch = wikitext.match(/(?:venue|location)\s*=\s*([^\n|]+)/i);
     if (venueMatch) {
-      var venue = venueMatch[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").trim();
+      var venue = venueMatch[1]
+        .replace(/\[\[([^\]|]*\|)?([^\]]*)\]?\]?/g, "$2")
+        .replace(/\{\{[^}]*\}\}/g, "")
+        .trim();
       if (venue.length > 5 && venue.length < 80) facts.push({ icon: "📍", text: venue });
     }
 
     // Prize money
     var prizeMatch = wikitext.match(/prize.?money\s*=\s*([^\n|]+)/i);
     if (prizeMatch) {
-      var prize = prizeMatch[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").trim();
+      var prize = prizeMatch[1]
+        .replace(/\[\[([^\]|]*\|)?([^\]]*)\]?\]?/g, "$2")
+        .replace(/\{\{[^}]*\}\}/g, "")
+        .trim();
       if (prize.length > 2 && prize.length < 50) facts.push({ icon: "💰", text: "Premiação: " + prize });
     }
 
@@ -727,10 +770,18 @@ async function fetchTournamentFacts(tournamentName, log) {
       if (mostMatch) facts.push({ icon: "👑", text: "Maior campeão: " + mostMatch[1].split("|").pop() });
     }
 
-    // Category
+    // Category — translate and clean
     var catMatch = wikitext.match(/(?:category|series|type)\s*=\s*([^\n|]+)/i);
     if (catMatch) {
-      var cat = catMatch[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").trim();
+      var cat = catMatch[1]
+        .replace(/\[\[([^\]|]*\|)?([^\]]*)\]?\]?/g, "$2")
+        .replace(/\{\{[^}]*\}\}/g, "")
+        .trim();
+      // Translate common values
+      if (cat.toLowerCase() === "atp" || cat.toLowerCase() === "atp tour masters 1000") cat = "ATP Masters 1000";
+      else if (cat.toLowerCase().includes("grand slam")) cat = "Grand Slam";
+      else if (cat.toLowerCase().includes("500")) cat = "ATP 500";
+      else if (cat.toLowerCase().includes("250")) cat = "ATP 250";
       if (cat.length > 2 && cat.length < 40) facts.push({ icon: "🏆", text: "Categoria: " + cat });
     }
 
@@ -972,9 +1023,10 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
 // ===== ENRICH MATCH — adds ranking, country, atp_slug from opponent details =====
 function enrichMatch(match, oppDetails) {
   if (!match || !oppDetails) return match;
-  if (oppDetails.ranking && !match.opponent_ranking) match.opponent_ranking = oppDetails.ranking;
-  if (oppDetails.country && !match.opponent_country) match.opponent_country = oppDetails.country;
-  if (oppDetails.atp_slug && !match.opponent_atp_slug) match.opponent_atp_slug = oppDetails.atp_slug;
+  // Always overwrite with better data — oppDetails comes from SofaScore team details or cache
+  if (oppDetails.ranking) match.opponent_ranking = oppDetails.ranking;
+  if (oppDetails.country) match.opponent_country = oppDetails.country;
+  if (oppDetails.atp_slug) match.opponent_atp_slug = oppDetails.atp_slug;
   return match;
 }
 
