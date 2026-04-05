@@ -385,6 +385,9 @@ var NextDuelCard = function(props) {
   var oppImgFallback = match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null;
   var sc = surfaceColorMap[match.surface] || "#999";
 
+  var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
+  var surfaceLabel = surfaceTranslate[match.surface] || match.surface || "";
+
   var fPct = winProb && winProb.fonseca ? Math.round(winProb.fonseca) : null;
   var oPct = winProb && winProb.opponent ? Math.round(winProb.opponent) : null;
 
@@ -405,7 +408,7 @@ var NextDuelCard = function(props) {
       {/* ── 1. TOURNAMENT HEADER ── */}
       <div style={{ padding: "16px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{match.surface}</span>
+          <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{surfaceLabel}</span>
           <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.45)", fontFamily: SANS, background: "rgba(255,255,255,0.05)", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{match.tournament_category || ""}</span>
           {match.round && <span style={{ fontSize: 9, fontWeight: 700, color: YELLOW, fontFamily: SANS, background: YELLOW + "12", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{match.round}</span>}
         </div>
