@@ -1,9 +1,10 @@
-// ===== CRON: SofaScore Update v6 =====
-// CHANGES FROM v5:
-//   - Added automatic opponent ranking/country enrichment via /v1/team/details
-//   - Only fetches when opponent changes (0 extra requests when cached)
-//   - Also enriches lastMatch opponent details
-//   - surfaceColorMap: Clay/Saibro, Hard/Dura, Grass/Grama all accepted
+// ===== CRON: SofaScore Update v7 =====
+// CHANGES FROM v6:
+//   - Added fetchBiography: parses João's Wikipedia for sponsors, equipment, coach, bio
+//   - Added fetchTournamentFacts: parses tournament Wikipedia for history, facts, curiosities
+//   - Added fetchOpponentProfile: parses opponent Wikipedia for style, height, hand, titles
+//   - All 3 are free (Wikipedia API), cached in KV, auto-update when data changes
+//   - Biography cached 3 days, tournament facts until tournament changes, opponent until opponent changes
 // TESTED ENDPOINTS:
 //   GET /v1/match/list?sport_slug=tennis&date=YYYY-MM-DD
 //   GET /v1/match/statistics?match_id=XXXXX
@@ -152,7 +153,7 @@ async function fetchRanking(apiKey, log) {
   try {
     var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&section=0&format=json";
     var res = await fetch(apiUrl, {
-      headers: { "User-Agent": "FonsecaNews/6.0 (fan site; contact: thzgouvea@gmail.com)" },
+      headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
     });
     if (!res.ok) { log.push("ranking: Wikipedia API HTTP " + res.status); return null; }
     var data = await res.json();
@@ -486,6 +487,488 @@ function parseMatch(m, isNext) {
   return result;
 }
 
+// ===== BIOGRAPHY — from João Fonseca's Wikipedia page =====
+// Parses sponsors, equipment, coach, bio text. Cached 3 days.
+async function fetchBiography(log) {
+  try {
+    var cached = await kv.get("fn:biography");
+    if (cached) {
+      var parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+      var age = parsed.updatedAt ? (Date.now() - new Date(parsed.updatedAt).getTime()) / 86400000 : 999;
+      if (age < 3 && parsed.paragraphs && parsed.paragraphs.length > 0) {
+        log.push("bio: cache ok (" + Math.round(age) + "d old)");
+        return;
+      }
+    }
+  } catch (e) {}
+
+  try {
+    // Fetch full article wikitext (section 0 = infobox + intro)
+    var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json";
+    var res = await fetch(apiUrl, {
+      headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
+    });
+    if (!res.ok) { log.push("bio: Wikipedia HTTP " + res.status); return; }
+    var data = await res.json();
+    var wikitext = (data && data.parse && data.parse.wikitext) ? (data.parse.wikitext["*"] || "") : "";
+    if (!wikitext) { log.push("bio: empty wikitext"); return; }
+
+    // === Parse infobox fields ===
+    var getField = function(field) {
+      var m = wikitext.match(new RegExp("\\|\\s*" + field + "\\s*=\\s*([^\\n|]+)", "i"));
+      return m ? m[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").trim() : null;
+    };
+
+    var birthDate = getField("birth_date") || getField("date_of_birth");
+    // Clean birth date: extract from {{birth date and age|2006|8|21}}
+    var bdMatch = wikitext.match(/birth.date.*?\|(\d{4})\|(\d{1,2})\|(\d{1,2})/i);
+    var birthDateClean = bdMatch ? (bdMatch[3].padStart(2, "0") + "/" + bdMatch[2].padStart(2, "0") + "/" + bdMatch[1]) : (birthDate || "21/08/2006");
+
+    var birthPlace = getField("birth_place") || "Ipanema, Rio de Janeiro";
+    var height = getField("height");
+    // Clean height: {{height|m=1.83}} or {{convert|1.83|m}}
+    var hMatch = wikitext.match(/height.*?(\d\.\d{2})/i);
+    var heightClean = hMatch ? hMatch[1] + "m" : (height || "1,83m");
+
+    var hand = getField("plays");
+    var handClean = hand ? (hand.toLowerCase().includes("right") ? "Destro" : "Canhoto") : "Destro";
+
+    var coach = getField("coach") || getField("trainer");
+
+    var highRank = getField("highestsinglesranking");
+    var highRankNum = highRank ? (highRank.match(/(\d+)/) || [])[1] : "24";
+
+    var proYear = getField("turned_pro") || getField("turnedpro") || "2024";
+
+    // === Sponsors/Equipment ===
+    // Look for "Equipment" or "Endorsements" sections
+    var sponsors = [];
+    // Common patterns: "He is sponsored by [[Nike]]" / "wears Nike" / "uses a [[Head (company)|Head]] racket"
+    var sponsorPatterns = [
+      /(?:sponsored|endorsed|sponsorship|deal|contract|partnership)\s+(?:by|with)\s+\[\[([^\]|]+)/gi,
+      /(?:wears|wearing|clothing)\s+\[\[([^\]|]+)/gi,
+      /(?:racket|racquet)\s+(?:is\s+)?(?:a\s+)?\[\[([^\]|]+)/gi,
+    ];
+    for (var sp = 0; sp < sponsorPatterns.length; sp++) {
+      var m;
+      while ((m = sponsorPatterns[sp].exec(wikitext)) !== null) {
+        var brand = m[1].split("|").pop().trim();
+        if (brand && sponsors.indexOf(brand) === -1) sponsors.push(brand);
+      }
+    }
+    // Also look for explicit brand names
+    var brandNames = ["Nike", "Head", "Adidas", "Wilson", "Babolat", "Yonex", "Lacoste", "Rolex", "TAG Heuer", "Uniqlo"];
+    for (var bi = 0; bi < brandNames.length; bi++) {
+      if (wikitext.indexOf(brandNames[bi]) !== -1 && sponsors.indexOf(brandNames[bi]) === -1) {
+        // Verify it's in the context of sponsorship, not just mentioned
+        var brandContext = wikitext.match(new RegExp("(" + brandNames[bi] + ")[^.]{0,50}(sponsor|endors|wear|equip|racket|shoe|cloth|apparel|deal|contract)", "i"));
+        var brandContext2 = wikitext.match(new RegExp("(sponsor|endors|wear|equip|racket|shoe|cloth|apparel|deal|contract)[^.]{0,50}(" + brandNames[bi] + ")", "i"));
+        if (brandContext || brandContext2) sponsors.push(brandNames[bi]);
+      }
+    }
+
+    // Racket model
+    var racketMatch = wikitext.match(/(?:racket|racquet)[^.]*?(Head\s+[A-Za-z]+\s*\d*|Wilson\s+[A-Za-z]+\s*\d*|Babolat\s+[A-Za-z]+\s*\d*|Yonex\s+[A-Za-z]+\s*\d*)/i);
+    var racket = racketMatch ? racketMatch[1].trim() : null;
+
+    // === Bio paragraphs from intro ===
+    // Get the intro text (before first ==Section==)
+    var introEnd = wikitext.indexOf("\n==");
+    var intro = introEnd > 0 ? wikitext.substring(0, introEnd) : wikitext.substring(0, 3000);
+    // Remove infobox
+    var infoboxEnd = intro.lastIndexOf("}}");
+    if (infoboxEnd > 0) intro = intro.substring(infoboxEnd + 2);
+    // Clean wikitext markup
+    intro = intro
+      .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2") // [[link|text]] -> text
+      .replace(/\{\{[^}]*\}\}/g, "") // remove templates
+      .replace(/'{2,}/g, "") // remove bold/italic
+      .replace(/<ref[^>]*>.*?<\/ref>/gs, "") // remove refs
+      .replace(/<ref[^/]*\/>/g, "") // remove self-closing refs
+      .replace(/<[^>]+>/g, "") // remove HTML tags
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+    var paragraphs = intro.split(/\n\n+/).filter(function(p) { return p.trim().length > 40; }).slice(0, 4);
+    // Translate key phrases to Portuguese
+    var ptParagraphs = paragraphs.map(function(p) {
+      return p
+        .replace(/is a Brazilian professional tennis player/gi, "é um tenista profissional brasileiro")
+        .replace(/born (\w+ \d+, \d{4})/gi, "nascido em $1")
+        .replace(/He has a career.high.*?No\.\s*(\d+)/gi, "Seu melhor ranking é o #$1")
+        .replace(/He is currently/gi, "Atualmente é")
+        .replace(/right.handed/gi, "destro")
+        .replace(/left.handed/gi, "canhoto")
+        .trim();
+    });
+
+    var biography = {
+      birthDate: birthDateClean,
+      birthPlace: birthPlace.replace(/,?\s*Brazil$/i, ""),
+      height: heightClean,
+      hand: handClean,
+      coach: coach,
+      proSince: "Profissional desde " + proYear,
+      bestRanking: highRankNum,
+      sponsors: sponsors.length > 0 ? sponsors : null,
+      racket: racket,
+      paragraphs: ptParagraphs.length > 0 ? ptParagraphs : null,
+      updatedAt: new Date().toISOString()
+    };
+
+    await kv.set("fn:biography", JSON.stringify(biography), { ex: 86400 * 3 });
+    log.push("bio: parsed (" + (sponsors.length || 0) + " sponsors, " + (ptParagraphs.length || 0) + " paragraphs)");
+  } catch (e) {
+    log.push("bio: error " + e.message);
+  }
+}
+
+// ===== TOURNAMENT FACTS — from Wikipedia page of current tournament =====
+// Maps tournament names to Wikipedia page titles
+var TOURNAMENT_WIKI_MAP = {
+  "monte carlo": "Monte-Carlo_Masters",
+  "madrid": "Madrid_Open_(tennis)",
+  "roma": "Italian_Open_(tennis)",
+  "roland garros": "French_Open",
+  "french open": "French_Open",
+  "wimbledon": "The_Championships,_Wimbledon",
+  "us open": "US_Open_(tennis)",
+  "australian open": "Australian_Open",
+  "indian wells": "Indian_Wells_Masters",
+  "miami": "Miami_Open",
+  "canadian open": "Canadian_Open_(tennis)",
+  "cincinnati": "Cincinnati_Masters",
+  "shanghai": "Shanghai_Masters_(tennis)",
+  "paris": "Paris_Masters",
+  "barcelona": "Barcelona_Open_Banc_Sabadell",
+  "basel": "Swiss_Indoors",
+  "vienna": "Vienna_Open",
+  "hamburg": "Hamburg_European_Open",
+  "rio open": "Rio_Open",
+  "buenos aires": "Argentina_Open",
+};
+
+async function fetchTournamentFacts(tournamentName, log) {
+  if (!tournamentName) { log.push("tournament: no name"); return; }
+
+  // Check if tournament changed
+  try {
+    var cached = await kv.get("fn:tournamentFacts");
+    if (cached) {
+      var parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+      if (parsed.name && tournamentName.toLowerCase().includes(parsed.name.toLowerCase().split(" ")[0])) {
+        log.push("tournament: cache ok (" + parsed.name + ")");
+        return;
+      }
+    }
+  } catch (e) {}
+
+  // Find Wikipedia page
+  var wikiPage = null;
+  var tLower = tournamentName.toLowerCase();
+  for (var key in TOURNAMENT_WIKI_MAP) {
+    if (tLower.includes(key)) {
+      wikiPage = TOURNAMENT_WIKI_MAP[key];
+      break;
+    }
+  }
+  if (!wikiPage) { log.push("tournament: no wiki page for " + tournamentName); return; }
+
+  try {
+    var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=" + encodeURIComponent(wikiPage) + "&prop=wikitext&section=0&format=json";
+    var res = await fetch(apiUrl, {
+      headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
+    });
+    if (!res.ok) { log.push("tournament: Wikipedia HTTP " + res.status); return; }
+    var data = await res.json();
+    var wikitext = (data && data.parse && data.parse.wikitext) ? (data.parse.wikitext["*"] || "") : "";
+    if (!wikitext) { log.push("tournament: empty wikitext"); return; }
+
+    var facts = [];
+
+    // First edition year
+    var firstMatch = wikitext.match(/(?:first.*?|inaugurated.*?|established.*?|founded.*?)(\d{4})/i);
+    if (!firstMatch) firstMatch = wikitext.match(/(?:held\s+since|since)\s+(\d{4})/i);
+    if (firstMatch) {
+      var yearsAgo = new Date().getFullYear() - parseInt(firstMatch[1], 10);
+      facts.push({ icon: "📅", text: "Disputado desde " + firstMatch[1] + " — " + yearsAgo + " anos de história" });
+    }
+
+    // Surface
+    var surfMatch = wikitext.match(/surface\s*=\s*([^\n|]+)/i);
+    if (surfMatch) {
+      var surf = surfMatch[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").trim();
+      facts.push({ icon: "🏟️", text: "Superfície: " + surf });
+    }
+
+    // Location/venue
+    var venueMatch = wikitext.match(/(?:venue|location)\s*=\s*([^\n|]+)/i);
+    if (venueMatch) {
+      var venue = venueMatch[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").trim();
+      if (venue.length > 5 && venue.length < 80) facts.push({ icon: "📍", text: venue });
+    }
+
+    // Prize money
+    var prizeMatch = wikitext.match(/prize.?money\s*=\s*([^\n|]+)/i);
+    if (prizeMatch) {
+      var prize = prizeMatch[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").trim();
+      if (prize.length > 2 && prize.length < 50) facts.push({ icon: "💰", text: "Premiação: " + prize });
+    }
+
+    // Most titles / notable champions from intro text
+    var nadalMatch = wikitext.match(/(?:Nadal|Rafael Nadal).*?(\d+)\s*(?:titles|times|wins)/i);
+    var djokovicMatch = wikitext.match(/(?:Djokovic|Novak Djokovic).*?(\d+)\s*(?:titles|times|wins)/i);
+    if (nadalMatch) facts.push({ icon: "👑", text: "Rafael Nadal é o maior campeão com " + nadalMatch[1] + " títulos" });
+    else if (djokovicMatch) facts.push({ icon: "👑", text: "Novak Djokovic é o maior campeão com " + djokovicMatch[1] + " títulos" });
+
+    // Most successful player (generic)
+    if (!nadalMatch && !djokovicMatch) {
+      var mostMatch = wikitext.match(/most\s+(?:successful|titles|wins).*?\[\[([^\]|]+)/i);
+      if (mostMatch) facts.push({ icon: "👑", text: "Maior campeão: " + mostMatch[1].split("|").pop() });
+    }
+
+    // Category
+    var catMatch = wikitext.match(/(?:category|series|type)\s*=\s*([^\n|]+)/i);
+    if (catMatch) {
+      var cat = catMatch[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").trim();
+      if (cat.length > 2 && cat.length < 40) facts.push({ icon: "🏆", text: "Categoria: " + cat });
+    }
+
+    // Brazilian players history (special for our audience)
+    var brMatch = wikitext.match(/(?:Brazil|Brazilian|Kuerten|Guga|Bellucci|Fonseca)[^.]{0,100}\./i);
+    if (brMatch) {
+      var brFact = brMatch[0].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").trim();
+      if (brFact.length > 20 && brFact.length < 120) facts.push({ icon: "🇧🇷", text: brFact });
+    }
+
+    if (facts.length === 0) {
+      log.push("tournament: no facts found for " + wikiPage);
+      return;
+    }
+
+    var payload = {
+      name: tournamentName,
+      facts: facts.slice(0, 5), // max 5 facts
+      source: "Wikipedia",
+      updatedAt: new Date().toISOString()
+    };
+
+    await kv.set("fn:tournamentFacts", JSON.stringify(payload), { ex: 86400 * 14 });
+    log.push("tournament: " + facts.length + " facts for " + tournamentName);
+  } catch (e) {
+    log.push("tournament: error " + e.message);
+  }
+}
+
+// ===== OPPONENT PROFILE — from Wikipedia page =====
+// Fetches style of play, height, hand, titles for the next opponent
+async function fetchOpponentProfile(opponentName, opponentId, log) {
+  if (!opponentName || opponentName === "A definir") { log.push("oppProfile: no opponent"); return; }
+
+  // Check if same opponent is already cached
+  try {
+    var cached = await kv.get("fn:opponentProfile");
+    if (cached) {
+      var parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+      if (parsed.name === opponentName && parsed.style) {
+        log.push("oppProfile: cache ok (" + parsed.name + ")");
+        return;
+      }
+    }
+  } catch (e) {}
+
+  try {
+    // Build Wikipedia search — try full name first, then last name
+    var fullName = opponentName.replace(/^[A-Z]\.\s*/, ""); // "G. Diallo" -> "Diallo"
+    var searchTerms = [
+      opponentName.replace(/\./g, "").trim() + " tennis",
+      fullName + " tennis player",
+      fullName + " tennis",
+    ];
+
+    var wikitext = "";
+    for (var si = 0; si < searchTerms.length; si++) {
+      // Use Wikipedia search API to find the right page
+      var searchUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" + encodeURIComponent(searchTerms[si]) + "&srlimit=3&format=json";
+      var searchRes = await fetch(searchUrl, {
+        headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
+      });
+      if (!searchRes.ok) continue;
+      var searchData = await searchRes.json();
+      var results = (searchData.query && searchData.query.search) || [];
+
+      // Find the tennis player page
+      var pageTitle = null;
+      for (var ri = 0; ri < results.length; ri++) {
+        var title = results[ri].title || "";
+        var snippet = (results[ri].snippet || "").toLowerCase();
+        if (snippet.includes("tennis") || title.toLowerCase().includes("tennis")) {
+          pageTitle = title;
+          break;
+        }
+      }
+      if (!pageTitle && results.length > 0) pageTitle = results[0].title;
+
+      if (pageTitle) {
+        var pageUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=" + encodeURIComponent(pageTitle) + "&prop=wikitext&format=json";
+        var pageRes = await fetch(pageUrl, {
+          headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
+        });
+        if (pageRes.ok) {
+          var pageData = await pageRes.json();
+          wikitext = (pageData && pageData.parse && pageData.parse.wikitext) ? (pageData.parse.wikitext["*"] || "") : "";
+          if (wikitext.length > 200) break;
+        }
+      }
+    }
+
+    if (!wikitext || wikitext.length < 200) {
+      log.push("oppProfile: no Wikipedia page for " + opponentName);
+      return;
+    }
+
+    // === Parse infobox ===
+    var getField = function(field) {
+      var m = wikitext.match(new RegExp("\\|\\s*" + field + "\\s*=\\s*([^\\n|]+)", "i"));
+      return m ? m[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").trim() : null;
+    };
+
+    // Height
+    var height = getField("height");
+    var hMatch = wikitext.match(/height.*?(\d\.\d{2})/i);
+    var heightVal = hMatch ? hMatch[1] + "m" : (height || null);
+
+    // Hand
+    var plays = getField("plays");
+    var hand = plays ? (plays.toLowerCase().includes("right") ? "Destro" : plays.toLowerCase().includes("left") ? "Canhoto" : plays) : null;
+
+    // Birth date / age
+    var bdMatch = wikitext.match(/birth.date.*?\|(\d{4})\|(\d{1,2})\|(\d{1,2})/i);
+    var age = null;
+    if (bdMatch) {
+      var birthYear = parseInt(bdMatch[1], 10);
+      age = new Date().getFullYear() - birthYear;
+      // Adjust if birthday hasn't happened yet this year
+      var birthMonth = parseInt(bdMatch[2], 10);
+      var birthDay = parseInt(bdMatch[3], 10);
+      var now = new Date();
+      if (now.getMonth() + 1 < birthMonth || (now.getMonth() + 1 === birthMonth && now.getDate() < birthDay)) age--;
+    }
+
+    // Country
+    var country = getField("birth_place") || getField("country") || "";
+    // Extract country from birth_place (last part after comma)
+    var countryParts = country.split(",");
+    var countryClean = countryParts.length > 1 ? countryParts[countryParts.length - 1].trim() : country;
+
+    // Career high
+    var careerHighMatch = wikitext.match(/(?:highest|career.high).*?singles.*?No\.\s*(\d+)/i);
+    var careerHigh = careerHighMatch ? parseInt(careerHighMatch[1], 10) : null;
+
+    // Current ranking
+    var currentRankMatch = wikitext.match(/currentsinglesranking\s*=\s*No\.\s*(\d+)/i);
+    var currentRanking = currentRankMatch ? parseInt(currentRankMatch[1], 10) : null;
+
+    // Titles
+    var titlesMatch = wikitext.match(/(?:wonloss_singles|singlesrecord).*?(\d+)\s*title/i);
+    var titles = titlesMatch ? parseInt(titlesMatch[1], 10) : null;
+    // Alternative: count title mentions
+    if (titles === null) {
+      var titleMatches = wikitext.match(/won\s+(?:his|her|the)\s+(?:first|second|third|maiden|fourth|fifth)?\s*(?:ATP)?\s*title/gi);
+      if (titleMatches) titles = titleMatches.length;
+    }
+
+    // Best surface (from W/L records)
+    var bestSurface = null;
+    var surfaceWins = {};
+    var surfacePatterns = [
+      { name: "Grama", regex: /(?:grass|grama)[^.]*?(\d+)[–\-](\d+)/i },
+      { name: "Saibro", regex: /(?:clay|saibro)[^.]*?(\d+)[–\-](\d+)/i },
+      { name: "Hard court", regex: /(?:hard)[^.]*?(\d+)[–\-](\d+)/i },
+    ];
+    for (var spi = 0; spi < surfacePatterns.length; spi++) {
+      var sm = surfacePatterns[spi].regex.exec(wikitext);
+      if (sm) {
+        var w = parseInt(sm[1], 10);
+        var l = parseInt(sm[2], 10);
+        var pct = w / (w + l);
+        surfaceWins[surfacePatterns[spi].name] = pct;
+      }
+    }
+    var bestPct = 0;
+    for (var sk in surfaceWins) {
+      if (surfaceWins[sk] > bestPct) { bestPct = surfaceWins[sk]; bestSurface = sk; }
+    }
+
+    // === Style of play ===
+    // Try to find a "Playing style" or "Style of play" section
+    var styleSection = "";
+    var styleSectionMatch = wikitext.match(/==\s*(?:Playing style|Style of play|Game style)\s*==\s*\n([\s\S]*?)(?:\n==|$)/i);
+    if (styleSectionMatch) {
+      styleSection = styleSectionMatch[1];
+    }
+
+    var styleText = "";
+    if (styleSection) {
+      // Clean wikitext
+      styleText = styleSection
+        .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2")
+        .replace(/\{\{[^}]*\}\}/g, "")
+        .replace(/'{2,}/g, "")
+        .replace(/<ref[^>]*>.*?<\/ref>/gs, "")
+        .replace(/<ref[^/]*\/>/g, "")
+        .replace(/<[^>]+>/g, "")
+        .replace(/\n+/g, " ")
+        .trim();
+      // Take first 2 sentences
+      var sentences = styleText.match(/[^.!?]+[.!?]+/g) || [];
+      styleText = sentences.slice(0, 3).join(" ").trim();
+    }
+
+    // If no style section, build from attributes
+    if (!styleText) {
+      var attrs = [];
+      if (heightVal) {
+        var hNum = parseFloat(heightVal);
+        if (hNum >= 1.90) attrs.push("Com " + heightVal + " de altura, tem grande vantagem no saque");
+        else if (hNum >= 1.85) attrs.push("Com " + heightVal + ", combina potência e mobilidade");
+        else attrs.push("Com " + heightVal + ", destaca-se pela agilidade na quadra");
+      }
+      if (hand) attrs.push(hand === "Canhoto" ? "Joga com a mão esquerda, criando ângulos incomuns" : "Destro, com jogo sólido de fundo de quadra");
+      if (bestSurface) attrs.push("Melhor desempenho em " + bestSurface + " (" + Math.round(bestPct * 100) + "% de aproveitamento)");
+      if (careerHigh) attrs.push("Já foi #" + careerHigh + " do mundo");
+      if (titles && titles > 0) attrs.push(titles + " título" + (titles > 1 ? "s" : "") + " ATP na carreira");
+      styleText = attrs.join(". ") + ".";
+    }
+
+    // Resolve ATP slug
+    var atpSlug = null;
+    for (var k in ATP_SLUGS) {
+      if (opponentName.indexOf(k) !== -1) { atpSlug = ATP_SLUGS[k]; break; }
+    }
+
+    var profile = {
+      name: opponentName,
+      ranking: currentRanking,
+      country: countryClean,
+      age: age,
+      height: heightVal,
+      hand: hand,
+      style: styleText || null,
+      titles: titles,
+      careerHigh: careerHigh,
+      surface: bestSurface,
+      atp_slug: atpSlug,
+      updatedAt: new Date().toISOString()
+    };
+
+    await kv.set("fn:opponentProfile", JSON.stringify(profile), { ex: 86400 * 7 });
+    log.push("oppProfile: " + opponentName + " — " + (heightVal || "?") + " " + (hand || "?") + " #" + (currentRanking || "?"));
+  } catch (e) {
+    log.push("oppProfile: error " + e.message);
+  }
+}
+
 // ===== ENRICH MATCH — adds ranking, country, atp_slug from opponent details =====
 function enrichMatch(match, oppDetails) {
   if (!match || !oppDetails) return match;
@@ -672,6 +1155,19 @@ export default async function handler(req, res) {
       await kv.set("fn:season", JSON.stringify(seasonData), { ex: 86400 });
     }
 
+    // 7. Biography (from Wikipedia — free, cached 3 days)
+    await fetchBiography(log);
+
+    // 8. Tournament facts (from Wikipedia — free, cached until tournament changes)
+    if (nextMatch && nextMatch.tournament_name) {
+      await fetchTournamentFacts(nextMatch.tournament_name, log);
+    }
+
+    // 9. Opponent profile (from Wikipedia — free, cached until opponent changes)
+    if (nextMatch && nextMatch.opponent_name) {
+      await fetchOpponentProfile(nextMatch.opponent_name, nextMatch.opponent_id, log);
+    }
+
     // Timestamp
     await kv.set("fn:cronLastRun", now.toISOString());
 
@@ -773,11 +1269,11 @@ export default async function handler(req, res) {
       log.push("push: erro " + pushErr.message);
     }
 
-    console.log("[cron-v6] Done. Requests: " + totalRequests + ". " + log.join(" | "));
+    console.log("[cron-v7] Done. Requests: " + totalRequests + ". " + log.join(" | "));
     return res.status(200).json({ ok: true, requests: totalRequests, log, timestamp: now.toISOString() });
 
   } catch (error) {
-    console.error("[cron-v6] Error:", error);
+    console.error("[cron-v7] Error:", error);
     return res.status(500).json({ ok: false, error: error.message });
   }
 }
