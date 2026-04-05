@@ -474,44 +474,81 @@ var NextDuelCard = function(props) {
 
       {/* ── 4. DATE & TIME — HERO BLOCK ── */}
       {dateInfo && (
-        <div style={{ padding: "20px 20px 0", textAlign: "center" }}>
-          <div style={{ background: "rgba(79,195,247,0.06)", borderRadius: 14, padding: "14px 16px", border: "1px solid rgba(79,195,247,0.1)" }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(79,195,247,0.6)", fontFamily: SANS, display: "block", marginBottom: 2, textTransform: "capitalize" }}>{dateInfo.weekday}</span>
-            <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2, letterSpacing: "-0.01em" }}>{dateInfo.date}</span>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <span style={{ fontSize: 18, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.02em" }}>{dateInfo.time}</span>
-              <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(79,195,247,0.45)", fontFamily: SANS }}>BRT</span>
+        <div style={{ padding: "22px 20px 0", textAlign: "center" }}>
+          <div style={{ background: "rgba(79,195,247,0.06)", borderRadius: 16, padding: "18px 24px", border: "1px solid rgba(79,195,247,0.1)" }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(79,195,247,0.6)", fontFamily: SANS, display: "block", marginBottom: 4, textTransform: "capitalize", letterSpacing: "0.02em" }}>{dateInfo.weekday}</span>
+            <span style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2, letterSpacing: "-0.01em" }}>{dateInfo.date}</span>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span style={{ fontSize: 20, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.04em" }}>{dateInfo.time}</span>
+              <span style={{ fontSize: 11, fontWeight: 500, color: "rgba(79,195,247,0.45)", fontFamily: SANS, marginLeft: 2 }}>BRT</span>
             </div>
             {/* Compact countdown inline */}
             {!countdown.expired && (
-              <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>Faltam</span>
+              <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: SANS, letterSpacing: "0.02em" }}>Faltam</span>
                 {[[countdown.days,"d"],[countdown.hours,"h"],[countdown.minutes,"m"],[countdown.seconds,"s"]].map(function(p,i) {
                   return (
-                    <span key={i} style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>
-                      {String(p[0]).padStart(2, "0")}<span style={{ fontSize: 9, fontWeight: 500, color: "rgba(255,255,255,0.2)" }}>{p[1]}</span>
-                      {i < 3 ? <span style={{ color: "rgba(255,255,255,0.12)", margin: "0 1px" }}>:</span> : ""}
+                    <span key={i} style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, letterSpacing: "0.03em" }}>
+                      {String(p[0]).padStart(2, "0")}<span style={{ fontSize: 9, fontWeight: 500, color: "rgba(255,255,255,0.2)", marginLeft: 1 }}>{p[1]}</span>
+                      {i < 3 ? <span style={{ color: "rgba(255,255,255,0.12)", margin: "0 3px" }}>:</span> : ""}
                     </span>
                   );
                 })}
               </div>
             )}
+            {/* Add to calendar button */}
+            <button onClick={function() {
+              var d = new Date(match.date);
+              var pad = function(n) { return String(n).padStart(2, "0"); };
+              var formatICS = function(dt) { return dt.getUTCFullYear() + pad(dt.getUTCMonth()+1) + pad(dt.getUTCDate()) + "T" + pad(dt.getUTCHours()) + pad(dt.getUTCMinutes()) + "00Z"; };
+              var endDate = new Date(d.getTime() + 3 * 60 * 60 * 1000);
+              var title = "J. Fonseca vs " + oppName + " — " + (match.tournament_name || "ATP");
+              var location = (match.tournament_name || "") + (match.city ? ", " + match.city : "");
+              var description = (match.tournament_category || "") + (match.round ? " · " + match.round : "") + "\\nESPN 2 · Disney+\\nfonsecanews.com.br";
+              var ics = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//FonsecaNews//PT",
+                "BEGIN:VEVENT",
+                "DTSTART:" + formatICS(d),
+                "DTEND:" + formatICS(endDate),
+                "SUMMARY:" + title,
+                "LOCATION:" + location,
+                "DESCRIPTION:" + description,
+                "BEGIN:VALARM",
+                "TRIGGER:-PT30M",
+                "ACTION:DISPLAY",
+                "DESCRIPTION:Jogo do João Fonseca em 30 minutos!",
+                "END:VALARM",
+                "END:VEVENT",
+                "END:VCALENDAR"
+              ].join("\r\n");
+              var blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+              var url = URL.createObjectURL(blob);
+              var a = document.createElement("a");
+              a.href = url; a.download = "fonseca-vs-" + oppName.replace(/[^a-zA-Z]/g, "").toLowerCase() + ".ics";
+              document.body.appendChild(a); a.click(); document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+            }} style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 18px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, fontFamily: SANS, letterSpacing: "0.02em", transition: "all 0.15s" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+              Adicionar ao calendário
+            </button>
           </div>
         </div>
       )}
 
       {/* ── 5. WHERE TO WATCH ── */}
-      <div style={{ padding: "14px 20px 18px" }}>
-        <p style={{ margin: "0 0 8px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center" }}>Assista em</p>
-        <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.07)" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>ESPN 2</span>
+      <div style={{ padding: "18px 24px 22px" }}>
+        <p style={{ margin: "0 0 12px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center" }}>Assista em</p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.07)" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.6)", fontFamily: SANS, letterSpacing: "0.02em" }}>ESPN 2</span>
           </div>
-          <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "rgba(79,195,247,0.08)", borderRadius: 10, border: "1px solid rgba(79,195,247,0.15)", textDecoration: "none" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS }}>Disney+</span>
+          <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 20px", background: "rgba(79,195,247,0.08)", borderRadius: 12, border: "1px solid rgba(79,195,247,0.15)", textDecoration: "none" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.02em" }}>Disney+</span>
           </a>
         </div>
       </div>
