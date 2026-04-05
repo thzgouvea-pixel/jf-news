@@ -391,6 +391,18 @@ var NextDuelCard = function(props) {
   var fPct = winProb && winProb.fonseca ? Math.round(winProb.fonseca) : null;
   var oPct = winProb && winProb.opponent ? Math.round(winProb.opponent) : null;
 
+  // Fallback: estimate from rankings when no odds available
+  if (fPct === null && player && player.ranking && oppRanking) {
+    var fRank = player.ranking;
+    var oRank = oppRanking;
+    // Simple Elo-like estimation from rankings
+    var fStrength = 1 / Math.log(fRank + 1);
+    var oStrength = 1 / Math.log(oRank + 1);
+    var total = fStrength + oStrength;
+    fPct = Math.round((fStrength / total) * 100);
+    oPct = 100 - fPct;
+  }
+
   var dateInfo = match.date ? (function() {
     var d = new Date(match.date);
     var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
@@ -465,7 +477,7 @@ var NextDuelCard = function(props) {
         <div style={{ padding: "16px 20px 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.3)", fontFamily: SANS }}>{fPct}%</span>
-            <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Probabilidade</span>
+            <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>{winProb && winProb.fonseca ? "Probabilidade" : "Estimativa"}</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.3)", fontFamily: SANS }}>{oPct}%</span>
           </div>
           <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden", gap: 3 }}>
@@ -1194,15 +1206,15 @@ export default function JoaoFonsecaNews() {
               <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
-                {dp && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS, background: GREEN + "0A", padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0, border: "1px solid " + GREEN + "18" }}>#{dp.ranking} ATP</span>}
+              <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap", display: "block" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+                {dp && <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, fontFamily: SANS, background: GREEN + "0A", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", border: "1px solid " + GREEN + "18" }}>#{dp.ranking} ATP</span>}
+                <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>Site de fãs{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}</span>
               </div>
-              <p style={{ margin: "3px 0 0", fontSize: 11, color: DIM, fontFamily: SANS, whiteSpace: "nowrap", letterSpacing: "0.01em" }}>Site de fãs{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}</p>
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <a href="/raquetes" style={{ fontSize: 9, fontWeight: 700, color: "#b8860b", fontFamily: SANS, textDecoration: "none", padding: "6px 10px", borderRadius: 8, background: YELLOW + "0A", border: "1px solid " + YELLOW + "20", whiteSpace: "nowrap", letterSpacing: "0.02em", textTransform: "uppercase" }}>Venda sua raquete</a>
+            <a href="/raquetes" style={{ fontSize: 8, fontWeight: 700, color: "#b8860b", fontFamily: SANS, textDecoration: "none", padding: "5px 8px", borderRadius: 6, background: YELLOW + "0A", border: "1px solid " + YELLOW + "20", whiteSpace: "nowrap", letterSpacing: "0.03em", textTransform: "uppercase" }}>Venda sua raquete</a>
             <button onClick={handleRefresh} disabled={loading} style={{ width: 34, height: 34, borderRadius: 10, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
             </button>
@@ -1670,7 +1682,7 @@ export default function JoaoFonsecaNews() {
               <button onClick={function() {
                 if (!fbMsg.trim() || fbMsg.trim().length < 3) return;
                 fetch("/api/feedback", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: fbName || "Anônimo", message: fbMsg, rating: fbRating }) }).then(function() { setFbSent(true); }).catch(function() { setFbSent(true); });
-              }} disabled={fbMsg.trim().length < 3} style={{ width: "100%", padding: "12px", background: fbMsg.trim().length >= 3 ? GREEN : DIM, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: fbMsg.trim().length >= 3 ? "pointer" : "default", fontFamily: SANS, opacity: fbMsg.trim().length >= 3 ? 1 : 0.5 }}>Enviar</button>
+              }} disabled={fbMsg.length < 3} style={{ width: "100%", padding: "12px", background: fbMsg.length >= 3 ? GREEN : DIM, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: fbMsg.length >= 3 ? "pointer" : "default", fontFamily: SANS, opacity: fbMsg.length >= 3 ? 1 : 0.5 }}>Enviar</button>
             </div>
           ) : (
             <div style={{ textAlign: "center", padding: "16px 0" }}>
