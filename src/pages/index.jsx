@@ -1187,32 +1187,32 @@ export default function JoaoFonsecaNews() {
       {/* HEADER — Editorial Premium */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
         {/* Row 1: Brand + Actions */}
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "14px 12px 6px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 10px rgba(0,0,0,0.15)" }}>
-              <span style={{ fontFamily: SERIF, fontSize: 17, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
+              <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
-                {dp && <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, fontFamily: SANS, background: GREEN + "0A", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0, border: "1px solid " + GREEN + "18" }}>#{dp.ranking} ATP</span>}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
+                {dp && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS, background: GREEN + "0A", padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0, border: "1px solid " + GREEN + "18" }}>#{dp.ranking} ATP</span>}
               </div>
-              <p style={{ margin: "2px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap", letterSpacing: "0.01em" }}>Site de fãs{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}</p>
+              <p style={{ margin: "3px 0 0", fontSize: 11, color: DIM, fontFamily: SANS, whiteSpace: "nowrap", letterSpacing: "0.01em" }}>Site de fãs{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}</p>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <a href="/raquetes" style={{ fontSize: 9, fontWeight: 700, color: "#b8860b", fontFamily: SANS, textDecoration: "none", padding: "5px 8px", borderRadius: 6, background: YELLOW + "0A", border: "1px solid " + YELLOW + "20", whiteSpace: "nowrap", letterSpacing: "0.02em", textTransform: "uppercase" }}>Venda sua raquete</a>
-            <button onClick={handleRefresh} disabled={loading} style={{ width: 30, height: 30, borderRadius: 8, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+            <a href="/raquetes" style={{ fontSize: 9, fontWeight: 700, color: "#b8860b", fontFamily: SANS, textDecoration: "none", padding: "6px 10px", borderRadius: 8, background: YELLOW + "0A", border: "1px solid " + YELLOW + "20", whiteSpace: "nowrap", letterSpacing: "0.02em", textTransform: "uppercase" }}>Venda sua raquete</a>
+            <button onClick={handleRefresh} disabled={loading} style={{ width: 34, height: 34, borderRadius: 10, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
             </button>
           </div>
         </div>
 
         {/* Row 2: Horizontal scrollable navigation — pill-style tabs */}
         <div style={{ position: "relative" }}>
-          <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 12, background: "linear-gradient(to right, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
-          <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 24, background: "linear-gradient(to left, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
-          <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "6px 12px 12px", display: "flex", gap: 6 }}>
+          <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 16, background: "linear-gradient(to right, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 28, background: "linear-gradient(to left, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
+          <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "4px 16px 14px", display: "flex", gap: 8 }}>
             <style>{"nav::-webkit-scrollbar{display:none}"}</style>
             {[
               { label: "Biografia", href: "/biografia" },
@@ -1229,7 +1229,7 @@ export default function JoaoFonsecaNews() {
               var props = isLink ? { href: item.href } : { onClick: item.action };
               var isGreen = !!item.green;
               return (
-                <Tag key={i} {...props} style={{ fontSize: 11, fontWeight: isGreen ? 700 : 600, color: isGreen ? "#fff" : TEXT, fontFamily: SANS, whiteSpace: "nowrap", padding: "6px 14px", borderRadius: 999, background: isGreen ? GREEN : BG_ALT, border: "1px solid " + (isGreen ? GREEN : BORDER), cursor: "pointer", textDecoration: "none", display: "block", letterSpacing: "0.01em", transition: "all 0.15s", flexShrink: 0 }} onMouseEnter={function(e){ if (!isGreen) { e.target.style.color=GREEN;e.target.style.borderColor=GREEN+"40";e.target.style.background=GREEN+"08"; } else { e.target.style.background="#009A50"; }}} onMouseLeave={function(e){ if (!isGreen) { e.target.style.color=TEXT;e.target.style.borderColor=BORDER;e.target.style.background=BG_ALT; } else { e.target.style.background=GREEN; }}}>{item.label}</Tag>
+                <Tag key={i} {...props} style={{ fontSize: 13, fontWeight: isGreen ? 700 : 600, color: isGreen ? "#fff" : TEXT, fontFamily: SANS, whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, background: isGreen ? GREEN : BG_ALT, border: "1px solid " + (isGreen ? GREEN : BORDER), cursor: "pointer", textDecoration: "none", display: "block", letterSpacing: "0.01em", transition: "all 0.15s", flexShrink: 0 }} onMouseEnter={function(e){ if (!isGreen) { e.target.style.color=GREEN;e.target.style.borderColor=GREEN+"40";e.target.style.background=GREEN+"08"; } else { e.target.style.background="#009A50"; }}} onMouseLeave={function(e){ if (!isGreen) { e.target.style.color=TEXT;e.target.style.borderColor=BORDER;e.target.style.background=BG_ALT; } else { e.target.style.background=GREEN; }}}>{item.label}</Tag>
               );
             })}
           </nav>
