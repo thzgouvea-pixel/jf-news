@@ -1290,24 +1290,39 @@ export default function JoaoFonsecaNews() {
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
             <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} />
-            {/* TOURNAMENT FACTS CARD */}
+            {/* TOURNAMENT FACTS CARD — dark premium */}
             {tournamentFacts && (
-              <div style={{ marginTop: 10, padding: "16px 18px", background: BG_ALT, borderRadius: 14, border: "1px solid " + BORDER }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                  <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", fontFamily: SANS, background: surfaceColorMap[dm.surface] || "#999", padding: "2px 6px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>Curiosidades</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>{tournamentFacts.name || dm.tournament_name}</span>
+              <div style={{ marginTop: 8, background: "linear-gradient(160deg, #0a1220 0%, #111d33 100%)", borderRadius: 18, overflow: "hidden", position: "relative" }}>
+                {/* Surface accent line at top */}
+                <div style={{ height: 3, background: "linear-gradient(to right, " + (surfaceColorMap[dm.surface] || "#999") + ", " + (surfaceColorMap[dm.surface] || "#999") + "40)" }} />
+
+                <div style={{ padding: "18px 22px 20px" }}>
+                  {/* Header */}
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: surfaceColorMap[dm.surface] || "#999", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Sobre o torneio</span>
+                    </div>
+                    <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", fontFamily: SANS }}>Wikipedia</span>
+                  </div>
+
+                  {/* Tournament name */}
+                  <h3 style={{ margin: "0 0 16px", fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: SERIF, letterSpacing: "-0.01em" }}>{tournamentFacts.name || dm.tournament_name}</h3>
+
+                  {/* Facts as elegant rows */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+                    {(tournamentFacts.facts || []).map(function(fact, i) {
+                      var isLast = i === (tournamentFacts.facts || []).length - 1;
+                      return (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "11px 0", borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.05)" }}>
+                          <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            <span style={{ fontSize: 15 }}>{fact.icon || "🎾"}</span>
+                          </div>
+                          <span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", fontFamily: SANS, lineHeight: 1.5, letterSpacing: "0.01em" }}>{fact.text}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {(tournamentFacts.facts || []).map(function(fact, i) {
-                    return (
-                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                        <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>{fact.icon || "🎾"}</span>
-                        <span style={{ fontSize: 12, color: SUB, fontFamily: SANS, lineHeight: 1.5 }}>{fact.text}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                {tournamentFacts.source && <p style={{ margin: "10px 0 0", fontSize: 9, color: DIM, fontFamily: SANS, textAlign: "right" }}>Fonte: Wikipedia</p>}
               </div>
             )}
           </section>
