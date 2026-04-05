@@ -317,7 +317,7 @@ var MatchPrediction = function(props) {
   var matchDate = new Date(match.date); var now = new Date();
   var daysDiff = Math.ceil((matchDate - now) / (1000 * 60 * 60 * 24));
   if (daysDiff > 7 && now <= matchDate) return null;
-  var oppName = match.opponent_name || "Adversário";
+  var oppName = match.opponent_name || "A definir";
   var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
   var matchKey = (match.tournament_name || "match").replace(/[^a-zA-Z0-9]/g, "_") + "_" + match.date;
   var _p = useState(function() { try { return JSON.parse(localStorage.getItem("fn_pred_" + matchKey)); } catch(e) { return null; } });
@@ -366,8 +366,6 @@ var NextDuelCard = function(props) {
   if (!match) return null;
   var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   var atpSlugs = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je", "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Fonseca": "f0fv" };
-  var oppName = match.opponent_name || "A definir";
-  var oppShort = oppName.split(" ").pop();
   var oppRanking = match.opponent_ranking;
   var oppCountry = match.opponent_country || "";
   var oppFlag = countryFlags[oppCountry] || "";
@@ -375,9 +373,6 @@ var NextDuelCard = function(props) {
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
   var oppImg = oppAtpSlug ? ("https://www.atptour.com/-/media/alias/player-headshot/" + oppAtpSlug) : (match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null);
   var oppImgFallback = match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null;
-  var oppCountry = match.opponent_country || "";
-  var flagMap = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳" };
-  var oppFlag = flagMap[oppCountry] || "";
   var sc = surfaceColorMap[match.surface] || "#999";
   return (
     <section style={{ margin: "4px 0 0", padding: "24px 24px 20px", background: "linear-gradient(145deg, #0D1726 0%, #132440 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
