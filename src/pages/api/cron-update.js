@@ -602,7 +602,7 @@ async function fetchBiography(log) {
       .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2") // [[link|text]] -> text
       .replace(/\{\{[^}]*\}\}/g, "") // remove templates
       .replace(/'{2,}/g, "") // remove bold/italic
-      .replace(/<ref[^>]*>.*?<\/ref>/gs, "") // remove refs
+      .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, "") // remove refs
       .replace(/<ref[^/]*\/>/g, "") // remove self-closing refs
       .replace(/<[^>]+>/g, "") // remove HTML tags
       .replace(/\n{3,}/g, "\n\n")
@@ -966,7 +966,7 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
         .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2")
         .replace(/\{\{[^}]*\}\}/g, "")
         .replace(/'{2,}/g, "")
-        .replace(/<ref[^>]*>.*?<\/ref>/gs, "")
+        .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, "")
         .replace(/<ref[^/]*\/>/g, "")
         .replace(/<[^>]+>/g, "")
         .replace(/\n+/g, " ")
