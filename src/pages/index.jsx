@@ -39,6 +39,9 @@ var catColors = {
   "Resultado": "#2563EB", "Ranking": "#6D35D0", "Notícia": "#6b6b6b",
 };
 
+// ===== FIX 1: countryFlags movido para escopo do módulo =====
+var countryFlags = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳", "Monaco": "🇲🇨", "Monaco": "🇲🇨" };
+
 var generateShareCard = function(opts) {
   var canvas = document.createElement("canvas");
   canvas.width = 1080; canvas.height = 1920;
@@ -359,13 +362,16 @@ var MatchPrediction = function(props) {
   );
 };
 
-// ===== NEXT DUEL CARD =====
+// ===== NEXT DUEL CARD (CORRIGIDO) =====
 var NextDuelCard = function(props) {
   var match = props.match; var player = props.player;
   var countdown = useCountdown(match ? match.date : null);
   if (!match) return null;
   var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   var atpSlugs = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je", "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Fonseca": "f0fv" };
+
+  // ===== FIX 2: oppName declarado ANTES de ser usado =====
+  var oppName = match.opponent_name || "A definir";
   var oppRanking = match.opponent_ranking;
   var oppCountry = match.opponent_country || "";
   var oppFlag = countryFlags[oppCountry] || "";
@@ -445,7 +451,6 @@ var LiveScoreCard = function(props) {
   var awayScore = match.awayScore || {};
   var status = match.status || {};
 
-  // Determine which side is Fonseca
   var homeName = (homeTeam.name || homeTeam.slug || "").toLowerCase();
   var isFonsecaHome = homeName.includes("fonseca");
   var fTeam = isFonsecaHome ? homeTeam : awayTeam;
@@ -453,25 +458,21 @@ var LiveScoreCard = function(props) {
   var fScore = isFonsecaHome ? homeScore : awayScore;
   var oScore = isFonsecaHome ? awayScore : homeScore;
 
-  // Set scores
   var fSets = fScore.period1 !== undefined ? [fScore.period1, fScore.period2, fScore.period3].filter(function(s) { return s !== undefined; }) : [];
   var oSets = oScore.period1 !== undefined ? [oScore.period1, oScore.period2, oScore.period3].filter(function(s) { return s !== undefined; }) : [];
 
   var fName = (fTeam.name || "J. Fonseca").split(" ").pop();
   var oName = (oTeam.name || "Oponente").split(" ").pop();
 
-  // Current game score
   var fGame = fScore.point || "";
   var oGame = oScore.point || "";
 
-  // Tournament info
   var tournament = match.tournament || {};
   var tourneyName = tournament.name || data.tournament || "";
   var surface = data.surface || "";
   var sc = surfaceColorMap[surface] || "#999";
   var statusText = status.description || "Ao vivo";
 
-  // Live stats (if available from the same fetch)
   var fStats = isFonsecaHome ? (stats.home || {}) : (stats.away || {});
   var oStats = isFonsecaHome ? (stats.away || {}) : (stats.home || {});
 
@@ -485,28 +486,23 @@ var LiveScoreCard = function(props) {
 
   return (
     <section style={{ margin: "4px 0 0", padding: "20px 24px", background: "linear-gradient(145deg, #0D1726 0%, #1a3050 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
-      {/* Pulsing live dot */}
       <div style={{ position: "absolute", top: 16, right: 20, display: "flex", alignItems: "center", gap: 6 }}>
         <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
         <span style={{ fontSize: 10, fontWeight: 700, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ao vivo</span>
       </div>
 
-      {/* Tournament info */}
       <div style={{ textAlign: "center", marginBottom: 16 }}>
         {surface && <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: SANS }}>{surface}</span>}
         {tourneyName && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}> · {tourneyName}</span>}
         <div style={{ marginTop: 4 }}><span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{statusText}</span></div>
       </div>
 
-      {/* Scoreboard */}
       <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 12, padding: "16px 20px", marginBottom: liveStatRows.length > 0 ? 16 : 0 }}>
-        {/* Player names row */}
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
           <span style={{ fontSize: 15, fontWeight: 700, color: GREEN, fontFamily: SERIF }}>J. Fonseca</span>
           <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>{oName}</span>
         </div>
 
-        {/* Sets */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", gap: 10 }}>
             {fSets.map(function(s, i) {
@@ -526,7 +522,6 @@ var LiveScoreCard = function(props) {
         </div>
       </div>
 
-      {/* Live stats */}
       {liveStatRows.length > 0 && (
         <div style={{ padding: "0 4px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
@@ -603,7 +598,7 @@ var PlayerBlock = function(props) {
         if (statRows.length === 0) return null;
         var oppShort = (matchStats.opponent_name || "Adv.").split(" ").pop();
         var isWin = matchStats.result === "V";
-        var countryFlags = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳" };
+        // ===== FIX 3: countryFlags removido daqui — agora usa o do escopo do módulo =====
         var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
         return (
           <div>
@@ -864,7 +859,6 @@ export default function JoaoFonsecaNews() {
       if (permission !== "granted") { setPushLoading(false); return; }
 
       navigator.serviceWorker.register("/firebase-messaging-sw.js").then(function(registration) {
-        // Load Firebase via script tags (SSR-safe)
         var loadScript = function(src) {
           return new Promise(function(resolve, reject) {
             if (document.querySelector('script[src="' + src + '"]')) { resolve(); return; }
@@ -918,7 +912,6 @@ export default function JoaoFonsecaNews() {
     });
   };
 
-  // Live score polling — every 60s, only when page visible
   useEffect(function() {
     var pollLive = function() {
       fetch("/api/live").then(function(r) { return r.json(); }).then(function(d) {
@@ -929,7 +922,7 @@ export default function JoaoFonsecaNews() {
         }
       }).catch(function() {});
     };
-    pollLive(); // initial
+    pollLive();
     var iv = setInterval(function() {
       if (!document.hidden) pollLive();
     }, 60000);
@@ -985,7 +978,6 @@ export default function JoaoFonsecaNews() {
     fetch("/api/visitors").then(function(r) { return r.json(); }).then(function(d) { if (d.standalone) { var el = document.getElementById("fn-standalone"); var wrap = document.getElementById("fn-standalone-wrap"); if (el) el.textContent = d.standalone; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
     var isNew = !localStorage.getItem("fn_visited");
     if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
-    // Track standalone (installed as app) users
     try {
       var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
       var alreadyTracked = localStorage.getItem("fn_standalone_tracked");
@@ -1007,7 +999,6 @@ export default function JoaoFonsecaNews() {
     }).catch(function() {});
   }, []);
 
-  // Auto-show install guide after 15 seconds (once per session)
   useEffect(function() {
     try {
       var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
@@ -1019,7 +1010,6 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
-  // When no nextMatch in KV, use next upcoming tournament from calendar as fallback
   var dm = nextMatch || (function() {
     var calendarEvents = [
       { tournament_category: "Masters 1000", tournament_name: "Monte Carlo Masters", surface: "Saibro", city: "Monte Carlo", country: "Mônaco", date: "2026-04-05T12:00:00Z" },
@@ -1130,7 +1120,7 @@ export default function JoaoFonsecaNews() {
           );
         })()}
 
-        {/* QUICK NAV — below banners, flush */}
+        {/* QUICK NAV */}
         <section style={{ padding: "8px 0 4px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
             <a href="/biografia" style={{ padding: "10px 6px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", textAlign: "center", textDecoration: "none", display: "block" }}>
@@ -1158,7 +1148,7 @@ export default function JoaoFonsecaNews() {
           </section>
         )}
 
-        {/* MAIS MENU — expanded content */}
+        {/* MAIS MENU */}
         {showMenu && (
           <section style={{ paddingTop: 8, paddingBottom: 0, borderBottom: "1px solid " + BORDER, animation: "fadeIn 0.2s ease" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
@@ -1242,7 +1232,6 @@ export default function JoaoFonsecaNews() {
             return (
           <div style={{ background: BG_ALT, borderRadius: 16, padding: "18px", border: "1px solid " + BORDER }}>
 
-            {/* Row 1: Record + Aproveitamento + Top 10 */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
               <div style={{ textAlign: "center" }}>
                 <span style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SANS, display: "block" }}>{cW}-{cL}</span>
@@ -1449,18 +1438,15 @@ export default function JoaoFonsecaNews() {
         </Modal>
       )}
 
-      {/* AUTO INSTALL POPUP — premium step-by-step */}
+      {/* AUTO INSTALL POPUP */}
       {showAutoInstall && (
         <div onClick={function(){ try { localStorage.setItem("fn_autoinstall_dismissed", "1"); } catch(e){} setShowAutoInstall(false); }} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 0, animation: "fadeInO 0.3s ease" }}>
           <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, maxHeight: "85vh", overflowY: "auto", animation: "slideU 0.4s ease", padding: "28px 24px 20px", position: "relative" }}>
 
-            {/* Close button */}
             <button onClick={function(){ try { localStorage.setItem("fn_autoinstall_dismissed", "1"); } catch(e){} setShowAutoInstall(false); }} style={{ position: "absolute", top: 16, right: 16, background: BG_ALT, border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: DIM, fontSize: 14 }}>✕</button>
 
-            {/* Drag indicator */}
             <div style={{ width: 36, height: 4, borderRadius: 2, background: "#ddd", margin: "0 auto 20px" }} />
 
-            {/* Hero */}
             <div style={{ textAlign: "center", marginBottom: 24 }}>
               <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
                 <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
@@ -1469,7 +1455,6 @@ export default function JoaoFonsecaNews() {
               <p style={{ margin: 0, fontSize: 13, color: SUB, fontFamily: SANS }}>Acesso rápido. Tela cheia. Sem baixar nada.</p>
             </div>
 
-            {/* Steps carousel */}
             {(function() {
               var isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
               var steps = isIOS ? [
@@ -1525,14 +1510,12 @@ export default function JoaoFonsecaNews() {
 
               return (
                 <div>
-                  {/* Step indicator dots */}
                   <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 20 }}>
                     {steps.map(function(_, i) {
                       return <div key={i} onClick={function(){ setAutoInstallStep(i); }} style={{ width: autoInstallStep === i ? 20 : 8, height: 8, borderRadius: 4, background: autoInstallStep === i ? GREEN : "#ddd", transition: "all 0.3s", cursor: "pointer" }} />;
                     })}
                   </div>
 
-                  {/* Current step */}
                   <div style={{ marginBottom: 20 }}>
                     {steps[autoInstallStep].visual()}
                     <div style={{ textAlign: "center", marginTop: 14 }}>
@@ -1544,7 +1527,6 @@ export default function JoaoFonsecaNews() {
                     </div>
                   </div>
 
-                  {/* Navigation */}
                   <div style={{ display: "flex", gap: 8 }}>
                     {autoInstallStep > 0 && (
                       <button onClick={function(){ setAutoInstallStep(function(s){ return s - 1; }); }} style={{ flex: 1, padding: "12px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, fontSize: 13, fontWeight: 600, color: SUB, cursor: "pointer", fontFamily: SANS }}>Voltar</button>
