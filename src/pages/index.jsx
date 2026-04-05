@@ -365,6 +365,7 @@ var MatchPrediction = function(props) {
 // ===== NEXT DUEL CARD (CORRIGIDO) =====
 var NextDuelCard = function(props) {
   var match = props.match; var player = props.player;
+  var onOppClick = props.onOppClick;
   var countdown = useCountdown(match ? match.date : null);
   if (!match) return null;
   var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
@@ -407,9 +408,10 @@ var NextDuelCard = function(props) {
             <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>VS</span>
           </div>
         </div>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
+          <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#1a2a3a", border: "2px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default", position: "relative" }}>
             {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.4);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.4)" }}>{oppName.charAt(0)}</span>}
+            {onOppClick && <div style={{ position: "absolute", bottom: -2, right: -2, width: 20, height: 20, borderRadius: "50%", background: "#4FC3F7", border: "2px solid #132440", display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>}
           </div>
           <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{oppName}</span>
           {oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: SANS }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>chave pendente</span>}
@@ -847,6 +849,10 @@ export default function JoaoFonsecaNews() {
   var _fbMsg = useState(""); var fbMsg = _fbMsg[0]; var setFbMsg = _fbMsg[1];
   var _fbRating = useState(null); var fbRating = _fbRating[0]; var setFbRating = _fbRating[1];
   var _fbSent = useState(false); var fbSent = _fbSent[0]; var setFbSent = _fbSent[1];
+  var _biography = useState(null); var biography = _biography[0]; var setBiography = _biography[1];
+  var _tournamentFacts = useState(null); var tournamentFacts = _tournamentFacts[0]; var setTournamentFacts = _tournamentFacts[1];
+  var _opponentProfile = useState(null); var opponentProfile = _opponentProfile[0]; var setOpponentProfile = _opponentProfile[1];
+  var _showOppPopup = useState(false); var showOppPopup = _showOppPopup[0]; var setShowOppPopup = _showOppPopup[1];
 
   var initDone = useRef(false);
 
@@ -965,6 +971,9 @@ export default function JoaoFonsecaNews() {
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
       if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
       if (d.winProb) setWinProb(d.winProb);
+      if (d.biography) setBiography(d.biography);
+      if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
+      if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
     }).catch(function() {});
   };
 
@@ -996,6 +1005,9 @@ export default function JoaoFonsecaNews() {
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
       if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
       if (d.winProb) setWinProb(d.winProb);
+      if (d.biography) setBiography(d.biography);
+      if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
+      if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
     }).catch(function() {});
   }, []);
 
@@ -1089,7 +1101,6 @@ export default function JoaoFonsecaNews() {
               { label: "Calendário", action: function(){setShowCalendar(true);} },
               { label: "Conquistas", action: function(){setShowTitles(true);} },
               { label: "Next Gen", action: function(){setShowNextGen(true);} },
-              { label: "Timeline", action: function(){setShowTimeline(true);} },
               { label: "Regras do Tênis", href: "/regras" },
               { label: "Feedback", action: function(){setShowFeedback(true);} },
               { label: "Apoiar", action: function(){setShowPixModal(true);}, green: true },
@@ -1159,7 +1170,27 @@ export default function JoaoFonsecaNews() {
         ) : (
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
-            <NextDuelCard match={dm} player={dp} />
+            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} />
+            {/* TOURNAMENT FACTS CARD */}
+            {tournamentFacts && (
+              <div style={{ marginTop: 10, padding: "16px 18px", background: BG_ALT, borderRadius: 14, border: "1px solid " + BORDER }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", fontFamily: SANS, background: surfaceColorMap[dm.surface] || "#999", padding: "2px 6px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>Curiosidades</span>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>{tournamentFacts.name || dm.tournament_name}</span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {(tournamentFacts.facts || []).map(function(fact, i) {
+                    return (
+                      <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
+                        <span style={{ fontSize: 13, flexShrink: 0, marginTop: 1 }}>{fact.icon || "🎾"}</span>
+                        <span style={{ fontSize: 12, color: SUB, fontFamily: SANS, lineHeight: 1.5 }}>{fact.text}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                {tournamentFacts.source && <p style={{ margin: "10px 0 0", fontSize: 9, color: DIM, fontFamily: SANS, textAlign: "right" }}>Fonte: Wikipedia</p>}
+              </div>
+            )}
             {!pushEnabled && (
               <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ width: "100%", marginTop: 8, padding: "8px 16px", background: "transparent", border: "1px solid " + BORDER, borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -1341,12 +1372,124 @@ export default function JoaoFonsecaNews() {
       </main>
 
       {/* MODALS */}
-      {showBio && (<Modal title="João Fonseca" subtitle="Tenista profissional 🇧🇷" onClose={function(){setShowBio(false);}}><div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>{[["🎂","21/08/2006"],["📍","Ipanema, Rio"],["📏","1,83m"],["🎾","Destro"],["👟","Profissional desde 2024"],["🏆","Melhor: #24"]].map(function(p,i){return(<span key={i} style={{fontSize:11,color:SUB,fontFamily:SANS,background:BG_ALT,padding:"4px 10px",borderRadius:8}}>{p[0]} {p[1]}</span>);})}</div><div style={{fontSize:14,color:SUB,fontFamily:SANS,lineHeight:1.75}}><p style={{marginBottom:12}}>Nascido em Ipanema, filho de Roberta e Christiano. Começou no tênis aos 4 anos no Country Club do Rio.</p><p style={{marginBottom:12}}>Em 2023, conquistou o US Open Juvenil e se tornou o primeiro brasileiro nº1 do ranking juvenil.</p><p style={{marginBottom:12}}>Profissional em 2024. Em janeiro de 2025, derrotou Rublev (top 10) na estreia do Australian Open.</p><p>Conquistou o ATP 250 de Buenos Aires e o ATP 500 de Basel — primeiro brasileiro a ganhar um ATP 500.</p></div></Modal>)}
+      {showBio && (<Modal title="João Fonseca" subtitle="Tenista profissional 🇧🇷" onClose={function(){setShowBio(false);}} maxWidth={480}>
+        {(function() {
+          var bio = biography || {};
+          var infoTags = [
+            ["🎂", bio.birthDate || "21/08/2006"],
+            ["📍", bio.birthPlace || "Ipanema, Rio"],
+            ["📏", bio.height || "1,83m"],
+            ["🎾", bio.hand || "Destro"],
+            ["👟", bio.proSince || "Profissional desde 2024"],
+            ["🏆", bio.bestRanking ? "Melhor: #" + bio.bestRanking : "Melhor: #24"],
+          ];
+          if (bio.coach) infoTags.push(["🧑‍🏫", bio.coach]);
+          return (
+            <div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+                {infoTags.map(function(p, i) { return (<span key={i} style={{ fontSize: 11, color: SUB, fontFamily: SANS, background: BG_ALT, padding: "4px 10px", borderRadius: 8 }}>{p[0]} {p[1]}</span>); })}
+              </div>
+              {bio.sponsors && (
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Patrocínios e equipamento</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {(Array.isArray(bio.sponsors) ? bio.sponsors : []).map(function(s, i) { return (<span key={i} style={{ fontSize: 11, color: TEXT, fontFamily: SANS, background: BG_ALT, padding: "5px 10px", borderRadius: 8, border: "1px solid " + BORDER, fontWeight: 600 }}>{s}</span>); })}
+                  </div>
+                </div>
+              )}
+              {bio.racket && (
+                <div style={{ marginBottom: 16 }}>
+                  <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Raquete</p>
+                  <span style={{ fontSize: 12, color: TEXT, fontFamily: SANS }}>{bio.racket}</span>
+                </div>
+              )}
+              <div style={{ fontSize: 14, color: SUB, fontFamily: SANS, lineHeight: 1.75 }}>
+                {(bio.paragraphs && bio.paragraphs.length > 0) ? bio.paragraphs.map(function(p, i) { return <p key={i} style={{ marginBottom: 12 }}>{p}</p>; }) : (
+                  <>
+                    <p style={{ marginBottom: 12 }}>Nascido em Ipanema, filho de Roberta e Christiano. Começou no tênis aos 4 anos no Country Club do Rio.</p>
+                    <p style={{ marginBottom: 12 }}>Em 2023, conquistou o US Open Juvenil e se tornou o primeiro brasileiro nº1 do ranking juvenil.</p>
+                    <p style={{ marginBottom: 12 }}>Profissional em 2024. Em janeiro de 2025, derrotou Rublev (top 10) na estreia do Australian Open.</p>
+                    <p>Conquistou o ATP 250 de Buenos Aires e o ATP 500 de Basel — primeiro brasileiro a ganhar um ATP 500.</p>
+                  </>
+                )}
+              </div>
+              {bio.updatedAt && <p style={{ margin: "12px 0 0", fontSize: 9, color: DIM, fontFamily: SANS, textAlign: "right" }}>Atualizado: {new Date(bio.updatedAt).toLocaleDateString("pt-BR")}</p>}
+            </div>
+          );
+        })()}
+      </Modal>)}
       {showTitles && (<Modal title="🏆 Conquistas" onClose={function(){setShowTitles(false);}} maxWidth={460}><div style={{marginBottom:16}}><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour</p>{[{t:"ATP 500 Basel",d:"Out 2025",det:"vs Davidovich Fokina · 6-3 6-4",note:"1º brasileiro a ganhar ATP 500"},{t:"ATP 250 Buenos Aires",d:"Fev 2025",det:"vs Cerúndolo · 6-4 7-6(1)",note:"Brasileiro mais jovem a ganhar ATP"}].map(function(t,i){return(<div key={i} style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>{t.det}</p>{t.note&&<p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>{t.note}</p>}</div>);})}</div></Modal>)}
       {showRanking && (<Modal title="📈 Evolução no Ranking" onClose={function(){setShowRanking(false);}} maxWidth={650}><RankingChart currentRanking={dp ? dp.ranking : 40} /></Modal>)}
-      {showTimeline && (<Modal title="📅 Timeline" subtitle="De Ipanema ao Top 40" onClose={function(){setShowTimeline(false);}} maxWidth={500}><CareerTimeline /></Modal>)}
       {showNextGen && (<Modal title="⚡ Next Gen" subtitle="Os 4 maiores talentos sub-21" onClose={function(){setShowNextGen(false);}} maxWidth={650}><NextGenComparator /></Modal>)}
       {showCalendar && (<Modal title="🗓️ Calendário ATP 2026" onClose={function(){setShowCalendar(false);}} maxWidth={520}><ATPCalendar /></Modal>)}
+
+      {/* OPPONENT PROFILE POPUP */}
+      {showOppPopup && opponentProfile && (
+        <div onClick={function(){ setShowOppPopup(false); }} style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInO 0.2s ease" }}>
+          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #0D1726 0%, #1a3050 100%)", borderRadius: 20, padding: "24px 22px", maxWidth: 380, width: "100%", animation: "slideU 0.35s ease", position: "relative" }}>
+            <button onClick={function(){ setShowOppPopup(false); }} style={{ position: "absolute", top: 12, right: 14, background: "rgba(255,255,255,0.08)", border: "none", width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>✕</button>
+
+            {/* Player header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,0.15)", flexShrink: 0, background: "#1a2a3a" }}>
+                {(function() {
+                  var slug = opponentProfile.atp_slug;
+                  var atpMap = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Munar": "mf53", "Mensik": "m0ij" };
+                  if (!slug) { for (var k in atpMap) { if ((opponentProfile.name || "").indexOf(k) !== -1) { slug = atpMap[k]; break; } } }
+                  var src = slug ? "https://www.atptour.com/-/media/alias/player-headshot/" + slug : "";
+                  return src ? <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e){ e.target.style.display="none"; }} /> : null;
+                })()}
+              </div>
+              <div>
+                <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{opponentProfile.name || "Oponente"}</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                  {opponentProfile.country && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{countryFlags[opponentProfile.country] || ""} {opponentProfile.country}</span>}
+                  {opponentProfile.ranking && <span style={{ fontSize: 11, fontWeight: 700, color: "#4FC3F7", fontFamily: SANS }}>#{opponentProfile.ranking} ATP</span>}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick stats grid */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 16 }}>
+              {[
+                { label: "Idade", value: opponentProfile.age || "—" },
+                { label: "Altura", value: opponentProfile.height || "—" },
+                { label: "Mão", value: opponentProfile.hand || "—" },
+              ].map(function(s, i) {
+                return (
+                  <div key={i} style={{ textAlign: "center", padding: "8px 4px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block" }}>{s.value}</span>
+                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Style description */}
+            {opponentProfile.style && (
+              <div style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 14 }}>
+                <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Estilo de jogo</p>
+                <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.8)", fontFamily: SANS, lineHeight: 1.6 }}>{opponentProfile.style}</p>
+              </div>
+            )}
+
+            {/* Career highlights */}
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {opponentProfile.titles !== undefined && opponentProfile.titles !== null && (
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.04)", padding: "4px 10px", borderRadius: 8 }}>🏆 {opponentProfile.titles} título{opponentProfile.titles !== 1 ? "s" : ""}</span>
+              )}
+              {opponentProfile.careerHigh && (
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.04)", padding: "4px 10px", borderRadius: 8 }}>📈 Melhor: #{opponentProfile.careerHigh}</span>
+              )}
+              {opponentProfile.surface && (
+                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.04)", padding: "4px 10px", borderRadius: 8 }}>🎯 Melhor em: {opponentProfile.surface}</span>
+              )}
+            </div>
+
+            <p style={{ margin: "14px 0 0", fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textAlign: "center" }}>Fonte: Wikipedia</p>
+          </div>
+        </div>
+      )}
 
       {showInstallGuide && (
         <Modal title="Instale o Fonseca News" subtitle="3 passos simples" onClose={function(){setShowInstallGuide(false);}} maxWidth={400}>
