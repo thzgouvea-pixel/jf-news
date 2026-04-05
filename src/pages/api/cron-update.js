@@ -1,14 +1,16 @@
-// ===== CRON: SofaScore Update v5 =====
-// CHANGES FROM v4:
-//   - Ranking: tries 3 endpoints (rankings, details, direct) instead of 2
-//   - Added Block 6: Season stats via /v1/team/results (W/L count for current year)
+// ===== CRON: SofaScore Update v6 =====
+// CHANGES FROM v5:
+//   - Added automatic opponent ranking/country enrichment via /v1/team/details
+//   - Only fetches when opponent changes (0 extra requests when cached)
+//   - Also enriches lastMatch opponent details
+//   - surfaceColorMap: Clay/Saibro, Hard/Dura, Grass/Grama all accepted
 // TESTED ENDPOINTS:
 //   GET /v1/match/list?sport_slug=tennis&date=YYYY-MM-DD
 //   GET /v1/match/statistics?match_id=XXXXX
 //   GET /v1/team/details?team_id=403869
 //   GET /v1/team/rankings?team_id=403869
 //   GET /v1/team/results?team_id=403869
-// Runs 3x/day via cron-job.org POST to /api/cron-update
+// Runs 4x/day via cron-job.org POST to /api/cron-update
 // Host: sofascore6.p.rapidapi.com
 
 import { kv } from "@vercel/kv";
@@ -36,6 +38,22 @@ var ODDS_TOURNAMENT_MAP = {
   "miami open": "tennis_atp_miami_open",
 };
 
+// ATP slug map for player headshot photos
+var ATP_SLUGS = {
+  "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58",
+  "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51",
+  "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29",
+  "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi",
+  "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq",
+  "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58",
+  "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je",
+  "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Fonseca": "f0fv",
+  "Nakashima": "n0ae", "Baez": "b0dc", "Etcheverry": "e0ar", "Jarry": "j0ab",
+  "Norrie": "nb73", "Dimitrov": "dg88", "Bublik": "ba32", "Thompson": "tc94",
+  "Humbert": "h0bj", "Giron": "g0bi", "Korda": "k0bh", "Popyrin": "p0bh",
+  "Safiullin": "s0bf", "Nishikori": "n358", "Wawrinka": "wa48",
+};
+
 async function sofaFetch(path, apiKey) {
   var url = "https://" + RAPIDAPI_HOST + "/api/sofascore" + path;
   console.log("[cron] Fetching:", path);
@@ -52,13 +70,89 @@ async function sofaFetch(path, apiKey) {
   return res.json();
 }
 
+// ===== OPPONENT ENRICHMENT — ranking + country via SofaScore =====
+// Fetches opponent details ONLY when opponent changes (cached in KV 7 days)
+// Cost: 1 request per new opponent, 0 when cached
+async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
+  if (!opponentId) { log.push("opp: no opponent_id"); return null; }
+
+  // Check cache first
+  var cacheKey = "fn:oppCache:" + opponentId;
+  try {
+    var cached = await kv.get(cacheKey);
+    if (cached) {
+      var parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+      if (parsed && parsed.ranking) {
+        log.push("opp: cache hit #" + parsed.ranking + " " + (parsed.country || ""));
+        return parsed;
+      }
+    }
+  } catch (e) {}
+
+  // Fetch from SofaScore /v1/team/details — returns ranking + country
+  var data = await sofaFetch("/v1/team/details?team_id=" + opponentId, apiKey);
+
+  if (!data) { log.push("opp: details 404 for " + opponentId); return null; }
+
+  // The response structure varies — try multiple paths
+  var team = data.team || data;
+  var ranking = team.ranking || (team.rankings && team.rankings.singlesRanking) || null;
+  var country = "";
+
+  // Country can be in team.country.name or team.nationality
+  if (team.country && team.country.name) {
+    country = team.country.name;
+  } else if (team.nationality) {
+    country = team.nationality;
+  }
+
+  // If no ranking in details, try /v1/team/rankings
+  if (!ranking) {
+    var rankData = await sofaFetch("/v1/team/rankings?team_id=" + opponentId, apiKey);
+    if (rankData) {
+      // Try different response shapes
+      if (rankData.ranking) ranking = rankData.ranking;
+      else if (rankData.rankings && rankData.rankings.ranking) ranking = rankData.rankings.ranking;
+      else if (Array.isArray(rankData) && rankData.length > 0) {
+        var singles = rankData.find(function(r) { return (r.type || "").toLowerCase().includes("singles"); });
+        if (singles) ranking = singles.ranking || singles.position;
+        else ranking = rankData[0].ranking || rankData[0].position;
+      }
+      log.push("opp: rankings endpoint gave #" + ranking);
+    }
+  }
+
+  // Resolve ATP headshot slug
+  var atpSlug = null;
+  var nameToCheck = opponentName || team.name || "";
+  for (var k in ATP_SLUGS) {
+    if (nameToCheck.indexOf(k) !== -1) {
+      atpSlug = ATP_SLUGS[k];
+      break;
+    }
+  }
+
+  var result = {
+    ranking: ranking ? parseInt(ranking, 10) : null,
+    country: country,
+    atp_slug: atpSlug,
+    name: opponentName || team.shortName || team.name || "",
+    updatedAt: new Date().toISOString()
+  };
+
+  // Cache for 7 days (ranking changes weekly, this is good enough)
+  await kv.set(cacheKey, JSON.stringify(result), { ex: 86400 * 7 });
+  log.push("opp: fetched #" + (result.ranking || "?") + " " + result.country + (atpSlug ? " (atp:" + atpSlug + ")" : ""));
+
+  return result;
+}
+
 // ===== RANKING — from Wikipedia API (wikitext, public, free) =====
 async function fetchRanking(apiKey, log) {
   try {
-    // Use Wikipedia API to get the infobox wikitext — more reliable than HTML scrape
     var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&section=0&format=json";
     var res = await fetch(apiUrl, {
-      headers: { "User-Agent": "FonsecaNews/5.0 (fan site; contact: thzgouvea@gmail.com)" },
+      headers: { "User-Agent": "FonsecaNews/6.0 (fan site; contact: thzgouvea@gmail.com)" },
     });
     if (!res.ok) { log.push("ranking: Wikipedia API HTTP " + res.status); return null; }
     var data = await res.json();
@@ -66,45 +160,30 @@ async function fetchRanking(apiKey, log) {
 
     if (!wikitext) { log.push("ranking: empty wikitext"); return null; }
 
-    // Extract from infobox fields (actual format from Wikipedia):
-    // |currentsinglesranking             = No. 40 (30 March 2026)
     var rankMatch = wikitext.match(/currentsinglesranking\s*=\s*No\.\s*(\d{1,4})/i);
-
-    if (!rankMatch) {
-      log.push("ranking: field not found in wikitext");
-      return null;
-    }
+    if (!rankMatch) { log.push("ranking: field not found in wikitext"); return null; }
 
     var ranking = parseInt(rankMatch[1], 10);
     if (ranking <= 0 || ranking > 2000) { log.push("ranking: invalid value " + ranking); return null; }
 
-    // Career high: |highestsinglesranking             = No. 24
     var highMatch = wikitext.match(/highestsinglesranking\s*=\s*No\.\s*(\d{1,4})/i);
     var bestRanking = highMatch ? parseInt(highMatch[1], 10) : 24;
 
-    // Prize money: |careerprizemoney                  = US $2,932,555
     var prizeMatch = wikitext.match(/careerprizemoney\s*=\s*(?:US\s*)?\$\s*([\d,]+)/i);
     var prizeMoney = prizeMatch ? parseInt(prizeMatch[1].replace(/,/g, ""), 10) : null;
 
     log.push("ranking: #" + ranking + " (via Wikipedia API)");
 
     // ===== CAREER STATS from wikitext =====
-    // Try multiple field names: wonloss_singles, singlesrecord, etc.
     var wlMatch = wikitext.match(/(?:wonloss_singles|singlesrecord|singles_record|win_loss_singles)\s*=\s*(\d+)[–\-](\d+)/i);
-    // Also try from body text: "a 42–28 singles" or similar
     if (!wlMatch) wlMatch = wikitext.match(/(\d{2,3})[–\-](\d{2,3})\s*(?:singles|record)/i);
     var careerWins = wlMatch ? parseInt(wlMatch[1], 10) : null;
     var careerLosses = wlMatch ? parseInt(wlMatch[2], 10) : null;
 
-    // Surface records from wikitext tables — look for patterns like:
-    // |Hard = 16–11
-    // |Clay = 14–12  
-    // |Grass = 3–4
     var hardMatch = wikitext.match(/\|\s*Hard\s*(?:courts?)?\s*(?:\|[^|]*){0,2}\|\s*(\d+)[–\-](\d+)/i);
     var clayMatch = wikitext.match(/\|\s*Clay\s*(?:\|[^|]*){0,2}\|\s*(\d+)[–\-](\d+)/i);
     var grassMatch = wikitext.match(/\|\s*Grass\s*(?:\|[^|]*){0,2}\|\s*(\d+)[–\-](\d+)/i);
 
-    // Also try simpler patterns
     if (!hardMatch) hardMatch = wikitext.match(/Hard[^|]*?(\d+)[–\-](\d+)/i);
     if (!clayMatch) clayMatch = wikitext.match(/Clay[^|]*?(\d+)[–\-](\d+)/i);
     if (!grassMatch) grassMatch = wikitext.match(/Grass[^|]*?(\d+)[–\-](\d+)/i);
@@ -115,11 +194,9 @@ async function fetchRanking(apiKey, log) {
       grass: grassMatch ? { w: parseInt(grassMatch[1], 10), l: parseInt(grassMatch[2], 10) } : null,
     };
 
-    // Titles count
     var titlesMatch = wikitext.match(/singlesrecord\s*=.*?(\d+)\s*title/i) || wikitext.match(/titles\s*=\s*(\d+)/i);
     var titlesCount = titlesMatch ? parseInt(titlesMatch[1], 10) : 2;
 
-    // Save career stats to KV
     var careerData = {
       wins: careerWins,
       losses: careerLosses,
@@ -147,8 +224,6 @@ async function fetchRanking(apiKey, log) {
 
 // ===== SEASON STATS — compute from recentForm in KV =====
 async function fetchSeasonStats(apiKey, log) {
-  // The SofaScore RapidAPI /v1/team/results endpoint returns 404.
-  // Instead, compute W/L from the recentForm already stored in KV.
   try {
     var existingForm = await kv.get("fn:recentForm");
     var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
@@ -389,7 +464,6 @@ function parseMatch(m, isNext) {
       }
     }
     var wonMatch = false;
-    // Calculate result from sets won (winnerCode is unreliable/missing)
     var fSetsWon = 0;
     var oSetsWon = 0;
     for (var si = 1; si <= 5; si++) {
@@ -400,7 +474,6 @@ function parseMatch(m, isNext) {
       }
     }
     wonMatch = fSetsWon > oSetsWon;
-    // Fallback to winnerCode if sets are tied (shouldn't happen in finished matches)
     if (fSetsWon === oSetsWon && m.winnerCode) {
       wonMatch = (m.winnerCode === 1 && isFonsecaHome) || (m.winnerCode === 2 && !isFonsecaHome);
     }
@@ -413,6 +486,15 @@ function parseMatch(m, isNext) {
   return result;
 }
 
+// ===== ENRICH MATCH — adds ranking, country, atp_slug from opponent details =====
+function enrichMatch(match, oppDetails) {
+  if (!match || !oppDetails) return match;
+  if (oppDetails.ranking && !match.opponent_ranking) match.opponent_ranking = oppDetails.ranking;
+  if (oppDetails.country && !match.opponent_country) match.opponent_country = oppDetails.country;
+  if (oppDetails.atp_slug && !match.opponent_atp_slug) match.opponent_atp_slug = oppDetails.atp_slug;
+  return match;
+}
+
 // ===== MAIN HANDLER =====
 export default async function handler(req, res) {
   var apiKey = process.env.RAPIDAPI_KEY;
@@ -423,13 +505,13 @@ export default async function handler(req, res) {
     var totalRequests = 0;
     var now = new Date();
 
-    // 1. Ranking (via ATP Tour / ESPN scrape — no RapidAPI cost)
+    // 1. Ranking (via Wikipedia API — free, no RapidAPI cost)
     var ranking = await fetchRanking(apiKey, log);
     if (ranking && ranking.ranking) {
       await kv.set("fn:ranking", JSON.stringify(ranking), { ex: 86400 });
     }
 
-    // 1b. Prize money (from Wikipedia ranking data, or SofaScore Mondays 9-12h BRT)
+    // 1b. Prize money (from Wikipedia ranking data)
     if (ranking && ranking.prizeMoney) {
       await kv.set("fn:prizeMoney", JSON.stringify({ amount: ranking.prizeMoney, currency: "USD", updatedAt: now.toISOString() }), { ex: 86400 * 8 });
       log.push("prizeMoney: $" + ranking.prizeMoney + " (Wikipedia)");
@@ -438,9 +520,20 @@ export default async function handler(req, res) {
     // 2. Last match
     var lastResult = await findLastMatch(apiKey);
     totalRequests += lastResult.requestsUsed;
+    var lastMatch = null;
 
     if (lastResult.match) {
-      var lastMatch = parseMatch(lastResult.match, false);
+      lastMatch = parseMatch(lastResult.match, false);
+
+      // Enrich last match opponent (cached, 0 cost if same opponent)
+      if (lastMatch.opponent_id && (!lastMatch.opponent_ranking || !lastMatch.opponent_country)) {
+        var lastOppDetails = await fetchOpponentDetails(lastMatch.opponent_id, lastMatch.opponent_name, apiKey, log);
+        if (lastOppDetails) {
+          lastMatch = enrichMatch(lastMatch, lastOppDetails);
+          totalRequests++; // only if cache miss
+        }
+      }
+
       await kv.set("fn:lastMatch", JSON.stringify(lastMatch), { ex: 86400 * 3 });
       log.push("lastMatch: " + lastMatch.result + " vs " + lastMatch.opponent_name + " (" + lastResult.daysAgo + "d ago)");
 
@@ -478,7 +571,7 @@ export default async function handler(req, res) {
         log.push("stats: already fetched");
       }
 
-      // Form — scan last 14 days (reduced from 30 to save CPU)
+      // Form — scan last 14 days
       try {
         var existingForm = await kv.get("fn:recentForm");
         var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
@@ -499,7 +592,6 @@ export default async function handler(req, res) {
             if (allFinished.length >= 5) break;
           }
           allFinished.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
-          // Deduplicate by event id (same match can appear on multiple date scans)
           var seenIds = {};
           var uniqueFinished = [];
           for (var ui = 0; ui < allFinished.length; ui++) {
@@ -529,15 +621,40 @@ export default async function handler(req, res) {
 
     if (nextResult.match) {
       nextMatch = parseMatch(nextResult.match, true);
+
+      // ===== ENRICH NEXT MATCH OPPONENT (the main new feature) =====
+      // Only fetches from SofaScore when opponent_id changes (cached 7 days)
+      if (nextMatch.opponent_id) {
+        var prevOppId = null;
+        try { prevOppId = await kv.get("fn:prevOpponentId"); } catch (e) {}
+
+        var oppDetails = await fetchOpponentDetails(nextMatch.opponent_id, nextMatch.opponent_name, apiKey, log);
+        if (oppDetails) {
+          nextMatch = enrichMatch(nextMatch, oppDetails);
+          // Only count as extra request if it was a cache miss (new opponent)
+          if (String(nextMatch.opponent_id) !== String(prevOppId)) totalRequests++;
+        }
+        await kv.set("fn:prevOpponentId", String(nextMatch.opponent_id));
+      }
+
       await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 });
-      log.push("nextMatch: vs " + nextMatch.opponent_name + " @ " + nextMatch.tournament_name);
+      log.push("nextMatch: vs " + nextMatch.opponent_name + (nextMatch.opponent_ranking ? " #" + nextMatch.opponent_ranking : "") + (nextMatch.opponent_country ? " (" + nextMatch.opponent_country + ")" : "") + " @ " + nextMatch.tournament_name);
     } else {
-      // Fallback: if no nextMatch from SofaScore, check if we have a manual override in KV
       var manualNext = await kv.get("fn:nextMatch");
       if (manualNext) {
         var parsed = typeof manualNext === "string" ? JSON.parse(manualNext) : manualNext;
         if (parsed && parsed.opponent_name) {
-          log.push("nextMatch: manual override active (" + parsed.opponent_name + ")");
+          // Keep manual override, but still try to enrich if missing data
+          if (parsed.opponent_id && (!parsed.opponent_ranking || !parsed.opponent_country)) {
+            var manualOppDetails = await fetchOpponentDetails(parsed.opponent_id, parsed.opponent_name, apiKey, log);
+            if (manualOppDetails) {
+              parsed = enrichMatch(parsed, manualOppDetails);
+              await kv.set("fn:nextMatch", JSON.stringify(parsed), { ex: 86400 * 7 });
+              totalRequests++;
+            }
+          }
+          log.push("nextMatch: manual override active (" + parsed.opponent_name + (parsed.opponent_ranking ? " #" + parsed.opponent_ranking : "") + ")");
+          nextMatch = parsed; // use for odds fetch
         } else {
           log.push("nextMatch: none in next 7 days");
         }
@@ -579,11 +696,10 @@ export default async function handler(req, res) {
         await kv.set("fn:prevRanking", String(ranking.ranking));
       }
 
-      // 2. New match result (only if we already tracked a previous match)
+      // 2. New match result
       if (lastMatch && lastMatch.result && lastMatch.event_id) {
         var prevLastMatchId = await kv.get("fn:prevLastMatchId");
         if (prevLastMatchId === null) {
-          // First run: just save the current match ID, don't notify
           await kv.set("fn:prevLastMatchId", String(lastMatch.event_id));
           log.push("push: first run, saved match ID " + lastMatch.event_id);
         } else if (prevLastMatchId !== String(lastMatch.event_id)) {
@@ -600,16 +716,17 @@ export default async function handler(req, res) {
       if (nextMatch && nextMatch.opponent_name) {
         var prevOpponent = await kv.get("fn:prevOpponent");
         if (prevOpponent === null) {
-          // First run: just save, don't notify
           await kv.set("fn:prevOpponent", nextMatch.opponent_name);
           log.push("push: first run, saved opponent " + nextMatch.opponent_name);
         } else if (prevOpponent !== nextMatch.opponent_name) {
           var matchDate = nextMatch.date ? new Date(nextMatch.date) : null;
           var dateStr = matchDate ? matchDate.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }) : "";
           var timeStr = matchDate ? matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "";
+          // Include ranking in push notification if available
+          var oppRankText = nextMatch.opponent_ranking ? " · #" + nextMatch.opponent_ranking + " do mundo" : "";
           notifications.push({
             title: "🎾 Próximo adversário: " + nextMatch.opponent_name,
-            body: (nextMatch.tournament_name || "ATP") + (nextMatch.opponent_ranking ? " · #" + nextMatch.opponent_ranking + " do mundo" : "") + (dateStr ? " · " + dateStr : "") + (timeStr ? " às " + timeStr : "")
+            body: (nextMatch.tournament_name || "ATP") + oppRankText + (dateStr ? " · " + dateStr : "") + (timeStr ? " às " + timeStr : "")
           });
           await kv.set("fn:prevOpponent", nextMatch.opponent_name);
         }
@@ -656,11 +773,11 @@ export default async function handler(req, res) {
       log.push("push: erro " + pushErr.message);
     }
 
-    console.log("[cron-v5] Done. Requests: " + totalRequests + ". " + log.join(" | "));
+    console.log("[cron-v6] Done. Requests: " + totalRequests + ". " + log.join(" | "));
     return res.status(200).json({ ok: true, requests: totalRequests, log, timestamp: now.toISOString() });
 
   } catch (error) {
-    console.error("[cron-v5] Error:", error);
+    console.error("[cron-v6] Error:", error);
     return res.status(500).json({ ok: false, error: error.message });
   }
 }
