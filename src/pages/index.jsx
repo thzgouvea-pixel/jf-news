@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 
 const GREEN = "#00A859";
 const YELLOW = "#FFCB05";
-const BG = "#FFFFFF";
 const BG_ALT = "#F7F8F9";
 const TEXT = "#1a1a1a";
 const SUB = "#6b6b6b";
@@ -105,7 +104,6 @@ var getSofaScoreImage = function(name, sofascoreId) {
 };
 
 var SAMPLE_PLAYER = { ranking: 40, rankingChange: "+4" };
-var SAMPLE_SEASON = { wins: 14, losses: 5, titles: 3, year: 2026 };
 var SAMPLE_LAST_MATCH = { result: "V", score: "6-3 6-4", opponent: "T. Nakashima", opponent_name: "T. Nakashima", tournament: "Indian Wells", tournament_name: "Indian Wells", round: "R2" };
 var SAMPLE_NEXT_MATCH = { tournament_category: "Masters 1000", tournament_name: "Monte Carlo Masters", surface: "Saibro", city: "Monte Carlo", country: "Mônaco", date: "2026-04-04T12:00:00Z", round: "" };
 var SAMPLE_NEWS = [
@@ -128,34 +126,6 @@ var catColors = {
 };
 
 var countryFlags = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳", "Monaco": "🇲🇨", "Mônaco": "🇲🇨" };
-
-var generateShareCard = function(opts) {
-  var canvas = document.createElement("canvas");
-  canvas.width = 1080; canvas.height = 1920;
-  var ctx = canvas.getContext("2d");
-  var bg = ctx.createLinearGradient(0, 0, 1080, 1920);
-  bg.addColorStop(0, "#0D1726"); bg.addColorStop(0.5, "#132440"); bg.addColorStop(1, "#0a1628");
-  ctx.fillStyle = bg; ctx.fillRect(0, 0, 1080, 1920);
-  ctx.font = "800 120px Georgia, serif"; ctx.fillStyle = "#00A859"; ctx.fillText("F", 420, 500);
-  ctx.fillStyle = "#FFCB05"; ctx.fillText("N", 520, 500);
-  ctx.font = "600 36px Inter, sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.textAlign = "center"; ctx.fillText("FONSECA NEWS", 540, 570);
-  ctx.font = "120px sans-serif"; ctx.fillText(opts.emoji || "🎾", 540, 780);
-  ctx.font = "800 64px Georgia, serif"; ctx.fillStyle = "#fff"; ctx.fillText(opts.title || "", 540, 920);
-  ctx.font = "800 140px Inter, sans-serif"; ctx.fillStyle = "#00A859"; ctx.fillText(opts.value || "", 540, 1120);
-  ctx.font = "600 40px Inter, sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.fillText(opts.subtitle || "", 540, 1210);
-  if (opts.matchInfo) { ctx.font = "600 32px Inter, sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.3)"; ctx.fillText(opts.matchInfo, 540, 1300); }
-  ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.beginPath(); ctx.roundRect(240, 1640, 600, 80, 20); ctx.fill();
-  ctx.font = "700 30px Inter, sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.5)"; ctx.fillText("fonsecanews.com.br", 540, 1692);
-  ctx.fillStyle = "#00A859"; ctx.fillRect(0, 0, 540, 6); ctx.fillStyle = "#FFCB05"; ctx.fillRect(540, 0, 540, 6);
-  return canvas;
-};
-
-var shareCard = function(canvas, text) {
-  canvas.toBlob(function(blob) {
-    if (navigator.share && navigator.canShare) { var file = new File([blob], "fonseca-news.png", { type: "image/png" }); var shareData = { text: text, files: [file] }; if (navigator.canShare(shareData)) { navigator.share(shareData); return; } }
-    var url = URL.createObjectURL(blob); var a = document.createElement("a"); a.href = url; a.download = "fonseca-news.png"; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-  }, "image/png");
-};
 
 function useCountdown(targetDate) {
   var _s = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
@@ -1401,12 +1371,16 @@ export default function JoaoFonsecaNews() {
             return (
           <div style={{ background: BG_ALT, borderRadius: 16, padding: "18px", border: "1px solid " + BORDER }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
-              {[{v:cW+"V "+cL+"D",l:"Carreira",c:TEXT},{v:cPct+"%",l:"Aprov.",c:GREEN},{v:"1V 4D",l:"vs Top 10",c:TEXT},{v:prizeMoney ? (prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "$2.9M",l:"Prize Money",c:GREEN}].map(function(s,i){return(<div key={i} style={{textAlign:"center"}}><span style={{fontSize:17,fontWeight:800,color:s.c,fontFamily:SANS,display:"block",lineHeight:1}}>{s.v}</span><span style={{fontSize:9,fontWeight:600,color:DIM,fontFamily:SANS,textTransform:"uppercase",letterSpacing:"0.04em",marginTop:2,display:"block"}}>{s.l}</span></div>);})}
+              {(function() {
+                var t10 = cs.vsTop10 || { w: 1, l: 4 };
+                var t10w = t10.w || 1; var t10l = t10.l || 4;
+                return [{v:cW+"V "+cL+"D",l:"Carreira",c:TEXT},{v:cPct+"%",l:"Aprov.",c:GREEN},{v:t10w+"V "+t10l+"D",l:"vs Top 10",c:TEXT},{v:prizeMoney ? (prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "$2.9M",l:"Prize Money",c:GREEN}];
+              })().map(function(s,i){return(<div key={i} style={{textAlign:"center"}}><span style={{fontSize:17,fontWeight:800,color:s.c,fontFamily:SANS,display:"block",lineHeight:1}}>{s.v}</span><span style={{fontSize:9,fontWeight:600,color:DIM,fontFamily:SANS,textTransform:"uppercase",letterSpacing:"0.04em",marginTop:2,display:"block"}}>{s.l}</span></div>);})}
             </div>
             <div style={{ height: 1, background: BORDER, marginBottom: 14 }} />
             <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Por superfície</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-              {[{ surface: "Hard court", wins: hardW, losses: hardL, color: "#3B82F6" },{ surface: "Saibro", wins: clayW, losses: clayL, color: "#D97706" },{ surface: "Grama", wins: grassW, losses: grassL, color: "#16A34A" }].map(function(s) {
+              {[{ surface: "Piso duro", wins: hardW, losses: hardL, color: "#3B82F6" },{ surface: "Saibro", wins: clayW, losses: clayL, color: "#D97706" },{ surface: "Grama", wins: grassW, losses: grassL, color: "#16A34A" }].map(function(s) {
                 var total = s.wins + s.losses; var pct = total > 0 ? Math.round((s.wins / total) * 100) : 0;
                 return (<div key={s.surface} style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 12, width: 80, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{s.surface}</span><div style={{ flex: 1, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}><div style={{ height: 6, background: s.color, borderRadius: 3, width: pct + "%", transition: "width 0.8s ease" }} /></div><span style={{ fontSize: 11, fontWeight: 700, color: TEXT, fontFamily: SANS, minWidth: 44, textAlign: "right" }}>{s.wins}-{s.losses}</span><span style={{ fontSize: 10, color: DIM, fontFamily: SANS, minWidth: 28 }}>{pct}%</span></div>);
               })}
@@ -1417,10 +1391,6 @@ export default function JoaoFonsecaNews() {
               {["Mais jovem brasileiro no top 100 da história","1º brasileiro a vencer um ATP 500","1º sul-americano campeão do NextGen Finals","Mais jovem sul-americano campeão ATP desde 1987","Mais jovem a bater top 10 no Australian Open (desde 1973)","1º brasileiro nº1 do ranking juvenil","Record juvenil ITF: 92-27"].map(function(r, i) {
                 return (<div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}><span style={{ color: GREEN, fontSize: 11, fontWeight: 700, fontFamily: SANS, flexShrink: 0, marginTop: 1 }}>•</span><span style={{ fontSize: 12, color: TEXT, fontFamily: SANS, lineHeight: 1.5 }}>{r}</span></div>);
               })}
-            </div>
-            <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill={SUB} stroke="none"/></svg>
-              <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>1.1M seguidores no Instagram</span>
             </div>
           </div>
             );
