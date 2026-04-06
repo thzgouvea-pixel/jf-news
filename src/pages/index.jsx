@@ -167,6 +167,44 @@ var RankingChart = function(props) {
   );
 };
 
+// ===== ATP RANKING LIST — Top 50 live =====
+var ATPRankingList = function(props) {
+  var currentRanking = props.currentRanking || 40;
+  var _r = useState(null); var rankings = _r[0]; var setRankings = _r[1];
+  var _l = useState(true); var loading = _l[0]; var setLoading = _l[1];
+  useEffect(function() {
+    fetch("/api/rankings").then(function(r) { return r.json(); }).then(function(d) {
+      if (d && d.rankings && d.rankings.length > 0) setRankings(d);
+      setLoading(false);
+    }).catch(function() { setLoading(false); });
+  }, []);
+  if (loading) return <div style={{ padding: "40px 0", textAlign: "center" }}><span style={{ fontSize: 12, color: DIM, fontFamily: SANS }}>Carregando ranking...</span></div>;
+  if (!rankings || !rankings.rankings || rankings.rankings.length === 0) return <div style={{ padding: "20px 0", textAlign: "center" }}><span style={{ fontSize: 12, color: DIM, fontFamily: SANS }}>Ranking indisponível. Aguarde a próxima atualização.</span></div>;
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, padding: "0 4px" }}>
+        <span style={{ fontSize: 11, color: DIM, fontFamily: SANS }}>Top 50 · ATP Singles</span>
+        {rankings.updatedAt && <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{formatTimeAgo(rankings.updatedAt)}</span>}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {rankings.rankings.map(function(r, i) {
+          var isFonseca = (r.name || "").toLowerCase().includes("fonseca") || r.rank === currentRanking;
+          var flag = "";
+          for (var ck in countryFlags) { if (r.country && (r.country.toLowerCase() === ck.toLowerCase())) { flag = countryFlags[ck]; break; } }
+          return (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: isFonseca ? GREEN + "0A" : (i % 2 === 0 ? "transparent" : BG_ALT), borderRadius: isFonseca ? 10 : 0, border: isFonseca ? "1.5px solid " + GREEN + "30" : "none", borderBottom: isFonseca ? "none" : "1px solid " + BORDER + "80" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: isFonseca ? GREEN : DIM, fontFamily: SANS, width: 28, textAlign: "right", flexShrink: 0 }}>{r.rank}</span>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>{flag || "🏳️"}</span>
+              <span style={{ fontSize: 13, fontWeight: isFonseca ? 700 : 500, color: isFonseca ? GREEN : TEXT, fontFamily: SANS, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}{isFonseca ? " 🇧🇷" : ""}</span>
+              {r.points && <span style={{ fontSize: 11, color: DIM, fontFamily: SANS, flexShrink: 0 }}>{r.points} pts</span>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 // ===== DAILY POLL =====
 var DailyPoll = function() {
   var now = new Date();
@@ -1090,6 +1128,7 @@ export default function JoaoFonsecaNews() {
   var _st = useState(false); var showTitles = _st[0]; var setShowTitles = _st[1];
   var _sm = useState(false); var showMenu = _sm[0]; var setShowMenu = _sm[1];
   var _sr = useState(false); var showRanking = _sr[0]; var setShowRanking = _sr[1];
+  var _src = useState(false); var showRankingChart = _src[0]; var setShowRankingChart = _src[1];
   var _sng = useState(false); var showNextGen = _sng[0]; var setShowNextGen = _sng[1];
   var _stl = useState(false); var showTimeline = _stl[0]; var setShowTimeline = _stl[1];
   var _scal = useState(false); var showCalendar = _scal[0]; var setShowCalendar = _scal[1];
@@ -1475,12 +1514,16 @@ export default function JoaoFonsecaNews() {
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Explore também</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[
+              { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, bg: GREEN + "10", title: "Evolução no Ranking", sub: "De #145 ao Top 40 — a ascensão do João", action: function(){setShowRankingChart(true);} },
               { href: "/raquetes", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>, bg: YELLOW + "10", title: "Venda sua raquete", sub: "Anuncie grátis na comunidade do Telegram" },
               { href: "/game", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/></svg>, bg: "#7C3AED10", title: "Tennis Career 26", sub: "Simulador de carreira profissional" },
               { href: "/regras", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, bg: "#2563EB10", title: "Regras do Tênis", sub: "Aprenda como funciona o esporte" },
               { href: "https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights", target: "_blank", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>, bg: RED + "10", title: "Momentos do João", sub: "Highlights e jogadas no YouTube" },
             ].map(function(item, i) {
-              return (<a key={i} href={item.href} target={item.target} rel={item.target ? "noopener noreferrer" : undefined} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}><div style={{ width: 32, height: 32, borderRadius: 8, background: item.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</div><div><span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{item.title}</span><span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{item.sub}</span></div></a>);
+              var inner = <><div style={{ width: 32, height: 32, borderRadius: 8, background: item.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</div><div><span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{item.title}</span><span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{item.sub}</span></div></>;
+              var style = { display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER, cursor: "pointer", width: "100%" };
+              if (item.action) return <button key={i} onClick={item.action} style={Object.assign({}, style, { textAlign: "left" })}>{inner}</button>;
+              return (<a key={i} href={item.href} target={item.target} rel={item.target ? "noopener noreferrer" : undefined} style={style}>{inner}</a>);
             })}
           </div>
         </section>
@@ -1503,7 +1546,8 @@ export default function JoaoFonsecaNews() {
         </footer>
       </main>
 
-      {showRanking && (<Modal title="📈 Evolução no Ranking" onClose={function(){setShowRanking(false);}} maxWidth={650}><RankingChart currentRanking={dp ? dp.ranking : 40} /></Modal>)}
+      {showRanking && (<Modal title="🏆 Ranking ATP Singles" onClose={function(){setShowRanking(false);}} maxWidth={480}><ATPRankingList currentRanking={dp ? dp.ranking : 40} /></Modal>)}
+      {showRankingChart && (<Modal title="📈 Evolução no Ranking" onClose={function(){setShowRankingChart(false);}} maxWidth={650}><RankingChart currentRanking={dp ? dp.ranking : 40} /></Modal>)}
       {showCalendar && (<Modal title="🗓️ Calendário ATP 2026" onClose={function(){setShowCalendar(false);}} maxWidth={520}><ATPCalendar /></Modal>)}
       {showTitles && (<Modal title="🏆 Conquistas" onClose={function(){setShowTitles(false);}} maxWidth={460}><div style={{marginBottom:16}}><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour</p>{[{t:"ATP 500 Basel",d:"Out 2025",det:"vs Davidovich Fokina · 6-3 6-4",note:"1º brasileiro a ganhar ATP 500"},{t:"ATP 250 Buenos Aires",d:"Fev 2025",det:"vs Cerúndolo · 6-4 7-6(1)",note:"Brasileiro mais jovem a ganhar ATP"}].map(function(t,i){return(<div key={i} style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>{t.det}</p>{t.note&&<p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>{t.note}</p>}</div>);})}</div></Modal>)}
 
