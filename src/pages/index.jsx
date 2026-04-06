@@ -1,4 +1,4 @@
-// Fonseca News — Clean Redesign v2 (corrigido)
+// Fonseca News — Clean Redesign v2 (corrigido + 5 fixes)
 import { useState, useEffect, useRef } from "react";
 
 const GREEN = "#00A859";
@@ -15,6 +15,39 @@ const SANS = "'Inter', -apple-system, sans-serif";
 
 const CACHE_DURATION_MS = 30 * 60 * 1000;
 const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
+
+// ===== FIX 1: Constante padronizada da foto do Fonseca via ESPN =====
+const FONSECA_ESPN_ID = "11745";
+const FONSECA_IMG = "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + FONSECA_ESPN_ID + ".png&w=200&h=145";
+
+// ===== FIX 2: Mapa ESPN centralizado (usado em NextDuelCard + PlayerBlock) =====
+var ESPN_ID_MAP = {
+  "Alcaraz": "4686", "Sinner": "4375", "Djokovic": "777", "Medvedev": "3367",
+  "Zverev": "3098", "Rublev": "3523", "Ruud": "3536", "Tsitsipas": "3293",
+  "Fritz": "2981", "Rune": "4685", "Draper": "4580", "Tiafoe": "3263",
+  "Musetti": "4228", "Fils": "11716", "Shelton": "11712", "Berrettini": "3316",
+  "Hurkacz": "3264", "de Minaur": "3313", "Paul": "3117", "Khachanov": "3112",
+  "Rinderknech": "3511", "Mensik": "11746", "Machac": "11709",
+  "Cerundolo": "11689", "Shapovalov": "3086", "Auger-Aliassime": "3270",
+  "Munar": "4229", "Fonseca": FONSECA_ESPN_ID, "Diallo": "11718",
+  "Nakashima": "4581", "Tabilo": "4684", "Mpetshi Perricard": "11747",
+  "Davidovich Fokina": "4579", "Baez": "11690", "Etcheverry": "11700",
+  "Jarry": "3539", "Kotov": "11706", "Safiullin": "11714",
+  "Nishikori": "1058", "Bublik": "3540", "Kokkinakis": "3124",
+  "Thompson": "3099", "Popyrin": "3541", "Korda": "4578",
+  "Norrie": "3266", "Dimitrov": "1629", "Monfils": "716",
+  "Wawrinka": "536", "Giron": "3116", "Coric": "2435",
+};
+
+var getESPNImage = function(name) {
+  if (!name) return null;
+  for (var k in ESPN_ID_MAP) {
+    if (name.indexOf(k) !== -1) {
+      return "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + ESPN_ID_MAP[k] + ".png&w=200&h=145";
+    }
+  }
+  return null;
+};
 
 var SAMPLE_PLAYER = { ranking: 40, rankingChange: "+4" };
 var SAMPLE_SEASON = { wins: 14, losses: 5, titles: 3, year: 2026 };
@@ -39,7 +72,7 @@ var catColors = {
   "Resultado": "#2563EB", "Ranking": "#6D35D0", "Notícia": "#6b6b6b",
 };
 
-var countryFlags = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳", "Monaco": "🇲🇨" };
+var countryFlags = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳", "Monaco": "🇲🇨", "Mônaco": "🇲🇨" };
 
 var generateShareCard = function(opts) {
   var canvas = document.createElement("canvas");
@@ -361,7 +394,7 @@ var MatchPrediction = function(props) {
   );
 };
 
-// ===== NEXT DUEL CARD — v3 Definitivo =====
+// ===== NEXT DUEL CARD — v3 (usando FONSECA_IMG e ESPN_ID_MAP centralizados) =====
 var NextDuelCard = function(props) {
   var match = props.match; var player = props.player;
   var onOppClick = props.onOppClick;
@@ -372,7 +405,7 @@ var NextDuelCard = function(props) {
   var oppProfile = props.oppProfile;
   var countdown = useCountdown(match ? match.date : null);
   if (!match) return null;
-  var joaoImg = "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/11745.png&w=200&h=145";
+
   var atpSlugs = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je", "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Rinderknech": "rc91", "Fonseca": "f0fv" };
 
   var oppName = match.opponent_name || "A definir";
@@ -381,11 +414,13 @@ var NextDuelCard = function(props) {
   var oppFlag = countryFlags[oppCountry] || "";
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
-  var espnIds = { "Alcaraz": "4686", "Sinner": "4375", "Djokovic": "777", "Medvedev": "3367", "Zverev": "3098", "Rublev": "3523", "Ruud": "3536", "Tsitsipas": "3293", "Fritz": "2981", "Rune": "4685", "Draper": "4580", "Tiafoe": "3263", "Musetti": "4228", "Fils": "11716", "Shelton": "11712", "Berrettini": "3316", "Hurkacz": "3264", "de Minaur": "3313", "Paul": "3117", "Khachanov": "3112", "Diallo": "4686", "Rinderknech": "3511", "Mensik": "11746", "Machac": "11709", "Cerundolo": "11689", "Shapovalov": "3086", "Auger-Aliassime": "3270", "Fonseca": "11745" };
-      var espnId = null; for (var ek in espnIds) { if (oppName.indexOf(ek) !== -1) { espnId = espnIds[ek]; break; } }
-      var oppImg = espnId ? ("https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + espnId + ".png&w=200&h=145") : (match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null);
-      var oppImgFallback = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null;
-var sc = surfaceColorMap[match.surface] || "#999";
+
+  // FIX 2: Usa getESPNImage centralizado
+  var oppImg = getESPNImage(oppName);
+  var oppImgFallback = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null;
+  if (!oppImg && oppImgFallback) oppImg = oppImgFallback;
+
+  var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
   var surfaceLabel = surfaceTranslate[match.surface] || match.surface || "";
 
@@ -440,7 +475,7 @@ var sc = surfaceColorMap[match.surface] || "#999";
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center" }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid " + GREEN + "35", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <img src={joaoImg} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:18px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
+              <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:18px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
             </div>
             <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
@@ -534,7 +569,7 @@ var sc = surfaceColorMap[match.surface] || "#999";
   );
 };
 
-// ===== LIVE SCORE CARD — reads from /api/live format =====
+// ===== LIVE SCORE CARD =====
 var LiveScoreCard = function(props) {
   var data = props.data;
   if (!data || !data.live) return null;
@@ -665,13 +700,14 @@ var WinProbBar = function(props) {
   );
 };
 
-// ===== PLAYER BLOCK (REDESIGN) =====
+// ===== PLAYER BLOCK (REDESIGN — FIX 1,2,3,4,5) =====
 var PlayerBlock = function(props) {
   var lastMatch = props.lastMatch;
   var matchStats = props.matchStats;
   var recentForm = props.recentForm;
   var season = props.season;
   var prizeMoney = props.prizeMoney;
+  var playerRanking = props.playerRanking;
 
   var hasAnyData = (matchStats && matchStats.fonseca) || (recentForm && recentForm.length > 0) || season || prizeMoney;
   if (!hasAnyData) return null;
@@ -692,26 +728,42 @@ var PlayerBlock = function(props) {
           { label: "Total de pontos", fVal: f.pointstotal || 0, oVal: o.pointstotal || 0, icon: "TP" },
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
         if (statRows.length === 0) return null;
-        var oppShort = (matchStats.opponent_name || "Adv.").split(" ").pop();
+        var oppName = matchStats.opponent_name || "Adv.";
+        var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
         var isWin = matchStats.result === "V";
         var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
+
+        // FIX 2: Foto do oponente via ESPN centralizado
+        var oppImg = getESPNImage(oppName);
+        var oppImgFallback = matchStats.opponent_id ? ("/api/player-image?id=" + matchStats.opponent_id) : null;
+        if (!oppImg && oppImgFallback) oppImg = oppImgFallback;
+
+        // FIX 3: Ranking do oponente
+        var oppRanking = matchStats.opponent_ranking || null;
+
+        // FIX 4: Forma atual — até 10 jogos
+        var formMatches = recentForm ? recentForm.slice(-10) : [];
+
         return (
           <div>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 20 }}>Última partida</p>
             <div style={{ background: BG_ALT, borderRadius: 16, padding: "20px", overflow: "hidden", border: "1px solid " + BORDER }}>
+
+              {/* Header: torneio + forma atual */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{matchStats.tournament}</span>
                   <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : ""}</span>
                 </div>
-                {recentForm && recentForm.length > 0 && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em" }}>Forma atual</span>
-                    {recentForm.slice().reverse().map(function(m, i) {
+                {/* FIX 4: Forma atual com até 10 jogos */}
+                {formMatches.length > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                    <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, letterSpacing: "0.03em", marginRight: 2 }}>Forma</span>
+                    {formMatches.slice().reverse().map(function(m, i) {
                       var w = m.result === "V";
                       return (
-                        <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 18, height: 18, borderRadius: 4, background: w ? GREEN + "12" : RED + "12", border: "1px solid " + (w ? GREEN + "30" : RED + "30"), display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <span style={{ fontSize: 9, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span>
+                        <div key={i} title={m.opponent_name + " " + m.score} style={{ width: 16, height: 16, borderRadius: 3, background: w ? GREEN + "15" : RED + "15", border: "1px solid " + (w ? GREEN + "35" : RED + "35"), display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ fontSize: 8, fontWeight: 700, color: w ? GREEN : RED, fontFamily: SANS }}>{w ? "V" : "D"}</span>
                         </div>
                       );
                     })}
@@ -719,47 +771,66 @@ var PlayerBlock = function(props) {
                 )}
               </div>
 
+              {/* Jogadores: fotos + placar */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                {/* Fonseca — FIX 1: usa FONSECA_IMG */}
                 <div style={{ textAlign: "center", flex: 1 }}>
                   <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", margin: "0 auto 6px", border: "2px solid " + GREEN + "40" }}>
-                    <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/11745.png&w=200&h=145" alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src={FONSECA_IMG} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:16px;font-weight:700;color:" + GREEN + ";display:flex;align-items:center;justify-content:center;width:100%;height:100%'>JF</span>"; }} />
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Fonseca</span>
-                  <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>🇧🇷 #40</span>
+                  <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>🇧🇷 #{playerRanking || 40}</span>
                 </div>
 
+                {/* Placar */}
                 <div style={{ textAlign: "center", padding: "0 8px" }}>
                   <span style={{ fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "0.05em", display: "block", marginBottom: 4 }}>{matchStats.score}</span>
                   <span style={{ fontSize: 10, fontWeight: 700, color: isWin ? GREEN : RED, fontFamily: SANS, background: isWin ? GREEN + "12" : RED + "12", padding: "3px 10px", borderRadius: 6 }}>{isWin ? "VITÓRIA" : "DERROTA"}</span>
                 </div>
 
+                {/* Oponente — FIX 2: foto ESPN + FIX 3: ranking */}
                 <div style={{ textAlign: "center", flex: 1 }}>
                   <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", margin: "0 auto 6px", border: "2px solid " + BORDER, background: BG_ALT }}>
-                    <img src={(function() { var espnMap = { "Alcaraz": "4686", "Sinner": "4375", "Djokovic": "777", "Medvedev": "3367", "Zverev": "3098", "Rublev": "3523", "Ruud": "3536", "Tsitsipas": "3293", "Fritz": "2981", "Rune": "4685", "Draper": "4580", "Tiafoe": "3263", "Musetti": "4228", "Fils": "11716", "Shelton": "11712", "Berrettini": "3316", "Hurkacz": "3264", "de Minaur": "3313", "Paul": "3117", "Khachanov": "3112", "Diallo": "4686", "Rinderknech": "3511", "Mensik": "11746", "Machac": "11709", "Cerundolo": "11689", "Shapovalov": "3086", "Auger-Aliassime": "3270", "Munar": "4229", "Fonseca": "11745" }; var oName = matchStats.opponent_name || ""; var eid = null; for (var k in espnMap) { if (oName.indexOf(k) !== -1) { eid = espnMap[k]; break; } } if (eid) return "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + eid + ".png&w=200&h=145"; return ""; })()} alt={oppShort} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:16px;font-weight:700;color:" + DIM + ";display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppShort.charAt(0) + "</span>"; }} />
+                    {oppImg ? (
+                      <img src={oppImg} alt={oppShort} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:16px;font-weight:700;color:" + DIM + ";display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppShort.charAt(0) + "</span>"; } }} />
+                    ) : (
+                      <span style={{ fontSize: 16, fontWeight: 700, color: DIM, display: "flex", alignItems: "center", justifyContent: "center", width: "100%", height: "100%" }}>{oppShort.charAt(0)}</span>
+                    )}
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{oppShort}</span>
-                  <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{oppFlag} {matchStats.opponent_ranking ? "#" + matchStats.opponent_ranking : ""}</span>
+                  <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span>
                 </div>
               </div>
 
               <div style={{ height: 1, background: BORDER, marginBottom: 16 }} />
 
+              {/* FIX 5: Barras de stats redesenhadas — visual dual-bar limpo */}
               {statRows.map(function(row, i) {
-                var fMax = Math.max(row.fVal, row.oVal, 1);
-                var fPct = row.pct ? row.fVal : Math.round((row.fVal / fMax) * 100);
-                var oPct = row.pct ? row.oVal : Math.round((row.oVal / fMax) * 100);
                 var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
+                // Para percentuais, usar diretamente; para absolutos, calcular proporção
+                var total = row.pct ? 100 : Math.max(row.fVal + row.oVal, 1);
+                var fWidth = row.pct ? row.fVal : Math.round((row.fVal / total) * 100);
+                var oWidth = row.pct ? row.oVal : Math.round((row.oVal / total) * 100);
+
                 return (
-                  <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 14 : 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? GREEN : DIM, fontFamily: SANS, minWidth: 36 }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
-                      <span style={{ fontSize: 11, color: SUB, fontFamily: SANS, textAlign: "center", flex: 1 }}>{row.label}</span>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS, minWidth: 36, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                  <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 16 : 0 }}>
+                    {/* Label centrado */}
+                    <div style={{ textAlign: "center", marginBottom: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: SUB, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>{row.label}</span>
                     </div>
-                  <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden", background: "#e8e8e8" }}>
-                      <div style={{ width: (row.pct ? row.fVal : Math.round((row.fVal / Math.max(row.fVal + row.oVal, 1)) * 100)) + "%", height: 5, background: fBetter ? GREEN : "#ccc", transition: "width 0.8s ease" }} />
-                      <div style={{ width: (row.pct ? row.oVal : Math.round((row.oVal / Math.max(row.fVal + row.oVal, 1)) * 100)) + "%", height: 5, background: !fBetter ? "#e74c3c" : "#ccc", transition: "width 0.8s ease", marginLeft: "auto" }} />
+                    {/* Valores + barras */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {/* Valor Fonseca */}
+                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? GREEN : DIM, fontFamily: SANS, minWidth: 40, textAlign: "right" }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
+                      {/* Dual bar */}
+                      <div style={{ flex: 1, display: "flex", height: 6, borderRadius: 3, overflow: "hidden", gap: 2 }}>
+                        <div style={{ width: fWidth + "%", height: 6, background: fBetter ? GREEN : "#d0d0d0", borderRadius: "3px 0 0 3px", transition: "width 0.8s ease", minWidth: fWidth > 0 ? 4 : 0 }} />
+                        <div style={{ width: oWidth + "%", height: 6, background: !fBetter ? "#e74c3c" : "#d0d0d0", borderRadius: "0 3px 3px 0", transition: "width 0.8s ease", marginLeft: "auto", minWidth: oWidth > 0 ? 4 : 0 }} />
+                      </div>
+                      {/* Valor Oponente */}
+                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS, minWidth: 40, textAlign: "left" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                     </div>
+                  </div>
                 );
               })}
 
@@ -1236,7 +1307,8 @@ export default function JoaoFonsecaNews() {
           </section>
         )}
 
-        <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} />
+        {/* FIX: Passa playerRanking para o PlayerBlock */}
+        <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} />
 
         <section style={{ padding: "20px 0 0" }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>João em números</p>
