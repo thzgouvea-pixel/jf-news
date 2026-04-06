@@ -381,7 +381,9 @@ var NextDuelCard = function(props) {
   var oppFlag = countryFlags[oppCountry] || "";
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
-  var oppImg = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : (oppAtpSlug ? ("https://www.atptour.com/-/media/alias/player-headshot/" + oppAtpSlug) : null);
+  var espnIds = { "Alcaraz": "4686", "Sinner": "4375", "Djokovic": "777", "Medvedev": "3367", "Zverev": "3098", "Rublev": "3523", "Ruud": "3536", "Tsitsipas": "3293", "Fritz": "2981", "Rune": "4685", "Draper": "4580", "Tiafoe": "3263", "Musetti": "4228", "Fils": "11716", "Shelton": "11712", "Berrettini": "3316", "Hurkacz": "3264", "de Minaur": "3313", "Paul": "3117", "Khachanov": "3112", "Diallo": "4686", "Rinderknech": "3511", "Mensik": "11746", "Machac": "11709", "Cerundolo": "11689", "Shapovalov": "3086", "Auger-Aliassime": "3270", "Fonseca": "11745" };
+      var espnId = null; for (var ek in espnIds) { if (oppName.indexOf(ek) !== -1) { espnId = espnIds[ek]; break; } }
+      var oppImg = espnId ? ("https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + espnId + ".png&w=200&h=145") : (match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null);
       var oppImgFallback = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null;
 var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
