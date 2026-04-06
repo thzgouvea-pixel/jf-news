@@ -1,10 +1,9 @@
-// ===== CRON: SofaScore Update v9 =====
-// CHANGES FROM v8:
-//   - Added fetchRankingFromESPN: automatic ranking lookup via ESPN page scraping
-//     No API key needed, works for any ATP player automatically
-//   - Ranking priority: SofaScore -> ESPN -> Wikipedia (fallback chain)
-//   - Added "Rinderknech": "rc91" to ATP_SLUGS
-//   - User-Agent bumped to 9.0
+// ===== CRON: SofaScore Update v10 =====
+// CHANGES FROM v9:
+//   - FIX: matchStats opponent_ranking now updated even when stats are cached
+//   - FIX: recentForm scans 30 days, stores up to 10 matches (was 14d/5)
+//   - FIX: season stats calculated from recentForm after update
+//   - User-Agent bumped to 10.0
 // Runs 4x/day via cron-job.org POST to /api/cron-update
 
 import { kv } from "@vercel/kv";
@@ -68,10 +67,9 @@ async function fetchRankingFromESPN(opponentName, log) {
     if (!espnId) {
       var searchName = opponentName.replace(/^[A-Z]\.\s*/, "").trim();
       var lastName = searchName.split(" ").pop().toLowerCase();
-      // Method A: ESPN search API
       try {
         var searchUrl = "https://site.web.api.espn.com/apis/common/v3/search?query=" + encodeURIComponent(searchName) + "&limit=5&type=player&sport=tennis";
-        var searchRes = await fetch(searchUrl, { headers: { "User-Agent": "FonsecaNews/9.0" } });
+        var searchRes = await fetch(searchUrl, { headers: { "User-Agent": "FonsecaNews/10.0" } });
         if (searchRes.ok) {
           var searchData = await searchRes.json();
           var items = searchData.results || [];
@@ -91,11 +89,10 @@ async function fetchRankingFromESPN(opponentName, log) {
           }
         }
       } catch (e) { log.push("espn-search: error " + e.message); }
-      // Method B: ESPN name-based URL
       if (!espnId) {
         try {
           var nameSlug = searchName.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-          var guessRes = await fetch("https://www.espn.com/tennis/player/_/name/" + encodeURIComponent(nameSlug), { headers: { "User-Agent": "FonsecaNews/9.0" }, redirect: "follow" });
+          var guessRes = await fetch("https://www.espn.com/tennis/player/_/name/" + encodeURIComponent(nameSlug), { headers: { "User-Agent": "FonsecaNews/10.0" }, redirect: "follow" });
           if (guessRes.ok) {
             var gh = await guessRes.text();
             var gm = gh.match(/\/tennis\/player\/_\/id\/(\d+)/);
@@ -105,12 +102,12 @@ async function fetchRankingFromESPN(opponentName, log) {
       }
     }
     if (!espnId) { log.push("espn-ranking: no ESPN ID for " + opponentName); return null; }
-    var playerRes = await fetch("https://www.espn.com/tennis/player/_/id/" + espnId, { headers: { "User-Agent": "FonsecaNews/9.0" } });
+    var playerRes = await fetch("https://www.espn.com/tennis/player/_/id/" + espnId, { headers: { "User-Agent": "FonsecaNews/10.0" } });
     if (!playerRes.ok) { log.push("espn-ranking: HTTP " + playerRes.status); return null; }
     var html = await playerRes.text();
-    var rm = html.match(/ATP\s*Rank\s*#(\d+)/i);
+    var rm = html.match(/ATP\s*(?:World\s*)?Rank(?:ing)?[:\s]*#?(\d+)/i);
     if (!rm) rm = html.match(/World\s*Ranking[:\s]*#?(\d+)/i);
-    if (!rm) rm = html.match(/Rank\s*#(\d+)/i);
+    if (!rm) rm = html.match(/Rank(?:ing)?[:\s]*#(\d+)/i);
     if (!rm) { log.push("espn-ranking: not found in page for " + opponentName); return null; }
     var ranking = parseInt(rm[1], 10);
     if (ranking <= 0 || ranking > 2000) return null;
@@ -155,18 +152,16 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
     }
   }
 
-  // ESPN fallback (NEW in v9)
   if (!ranking || ranking === "?" || ranking === "#?") {
     var espnRank = await fetchRankingFromESPN(opponentName, log);
     if (espnRank) ranking = espnRank;
   }
 
-  // Wikipedia fallback
   if (!ranking || ranking === "?" || ranking === "#?") {
     try {
       var fullName = (opponentName || "").replace(/^[A-Z]\.\s*/, "").trim();
       var wikiSearchUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" + encodeURIComponent(fullName + " tennis") + "&srlimit=3&format=json";
-      var wikiSearchRes = await fetch(wikiSearchUrl, { headers: { "User-Agent": "FonsecaNews/9.0" } });
+      var wikiSearchRes = await fetch(wikiSearchUrl, { headers: { "User-Agent": "FonsecaNews/10.0" } });
       if (wikiSearchRes.ok) {
         var wikiSearchData = await wikiSearchRes.json();
         var wikiResults = (wikiSearchData.query && wikiSearchData.query.search) || [];
@@ -177,7 +172,7 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
         }
         if (!wikiPageTitle && wikiResults.length > 0) wikiPageTitle = wikiResults[0].title;
         if (wikiPageTitle) {
-          var wikiPageRes = await fetch("https://en.wikipedia.org/w/api.php?action=parse&page=" + encodeURIComponent(wikiPageTitle) + "&prop=wikitext&section=0&format=json", { headers: { "User-Agent": "FonsecaNews/9.0" } });
+          var wikiPageRes = await fetch("https://en.wikipedia.org/w/api.php?action=parse&page=" + encodeURIComponent(wikiPageTitle) + "&prop=wikitext&section=0&format=json", { headers: { "User-Agent": "FonsecaNews/10.0" } });
           if (wikiPageRes.ok) {
             var wpd = await wikiPageRes.json();
             var wt = (wpd && wpd.parse && wpd.parse.wikitext) ? (wpd.parse.wikitext["*"] || "") : "";
@@ -203,7 +198,7 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
 async function fetchRanking(apiKey, log) {
   try {
     var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&section=0&format=json";
-    var res = await fetch(apiUrl, { headers: { "User-Agent": "FonsecaNews/9.0 (fan site; contact: thzgouvea@gmail.com)" } });
+    var res = await fetch(apiUrl, { headers: { "User-Agent": "FonsecaNews/10.0 (fan site; contact: thzgouvea@gmail.com)" } });
     if (!res.ok) { log.push("ranking: Wikipedia API HTTP " + res.status); return null; }
     var data = await res.json();
     var wikitext = (data && data.parse && data.parse.wikitext) ? (data.parse.wikitext["*"] || "") : "";
@@ -216,7 +211,7 @@ async function fetchRanking(apiKey, log) {
     var bestRanking = highMatch ? parseInt(highMatch[1], 10) : 24;
     var prizeMatch = wikitext.match(/careerprizemoney\s*=\s*(?:US\s*)?\$\s*([\d,]+)/i);
     var prizeMoney = prizeMatch ? parseInt(prizeMatch[1].replace(/,/g, ""), 10) : null;
-    log.push("ranking: #" + ranking + " (via Wikipedia API)");
+    log.push("ranking: #" + ranking + " (via Wikipedia API)" + (prizeMoney ? " prize: $" + prizeMoney : ""));
 
     var wlMatch = wikitext.match(/(?:wonloss_singles|singlesrecord|singles_record|win_loss_singles)\s*=\s*(\d+)[–\-](\d+)/i);
     if (!wlMatch) wlMatch = wikitext.match(/(\d{2,3})[–\-](\d{2,3})\s*(?:singles|record)/i);
@@ -382,7 +377,7 @@ function parseMatch(m, isNext) {
 async function fetchBiography(log) {
   try { var cached=await kv.get("fn:biography"); if(cached){var p=typeof cached==="string"?JSON.parse(cached):cached;var age=p.updatedAt?(Date.now()-new Date(p.updatedAt).getTime())/86400000:999;if(age<3&&p.paragraphs&&p.paragraphs.length>0){log.push("bio: cache ok ("+Math.round(age)+"d old)");return;}} } catch(e){}
   try {
-    var res=await fetch("https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json",{headers:{"User-Agent":"FonsecaNews/9.0"}});
+    var res=await fetch("https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json",{headers:{"User-Agent":"FonsecaNews/10.0"}});
     if(!res.ok){log.push("bio: HTTP "+res.status);return;}
     var data=await res.json(); var wikitext=(data&&data.parse&&data.parse.wikitext)?(data.parse.wikitext["*"]||""):"";
     if(!wikitext){log.push("bio: empty");return;}
@@ -417,7 +412,7 @@ async function fetchTournamentFacts(tournamentName,log){
   var wikiPage=null;var tL=tournamentName.toLowerCase();for(var key in TOURNAMENT_WIKI_MAP){if(tL.includes(key)){wikiPage=TOURNAMENT_WIKI_MAP[key];break;}}
   if(!wikiPage){log.push("tournament: no wiki for "+tournamentName);return;}
   try{
-    var res=await fetch("https://en.wikipedia.org/w/api.php?action=parse&page="+encodeURIComponent(wikiPage)+"&prop=wikitext&section=0&format=json",{headers:{"User-Agent":"FonsecaNews/9.0"}});
+    var res=await fetch("https://en.wikipedia.org/w/api.php?action=parse&page="+encodeURIComponent(wikiPage)+"&prop=wikitext&section=0&format=json",{headers:{"User-Agent":"FonsecaNews/10.0"}});
     if(!res.ok){log.push("tournament: HTTP "+res.status);return;}
     var data=await res.json();var wt=(data&&data.parse&&data.parse.wikitext)?(data.parse.wikitext["*"]||""):"";if(!wt){log.push("tournament: empty");return;}
     var facts=[];
@@ -443,11 +438,11 @@ async function fetchOpponentProfile(opponentName,opponentId,log){
     var searchTerms=[opponentName.replace(/\./g,"").trim()+" tennis",fullName+" tennis player"];
     var wikitext="";
     for(var si=0;si<searchTerms.length;si++){
-      var sr=await fetch("https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch="+encodeURIComponent(searchTerms[si])+"&srlimit=3&format=json",{headers:{"User-Agent":"FonsecaNews/9.0"}});
+      var sr=await fetch("https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch="+encodeURIComponent(searchTerms[si])+"&srlimit=3&format=json",{headers:{"User-Agent":"FonsecaNews/10.0"}});
       if(!sr.ok)continue;var sd=await sr.json();var results=(sd.query&&sd.query.search)||[];
       var pageTitle=null;for(var ri=0;ri<results.length;ri++){var sn=(results[ri].snippet||"").toLowerCase();if(sn.includes("tennis")||results[ri].title.toLowerCase().includes("tennis")){pageTitle=results[ri].title;break;}}
       if(!pageTitle&&results.length>0)pageTitle=results[0].title;
-      if(pageTitle){var pr=await fetch("https://en.wikipedia.org/w/api.php?action=parse&page="+encodeURIComponent(pageTitle)+"&prop=wikitext&format=json",{headers:{"User-Agent":"FonsecaNews/9.0"}});if(pr.ok){var pd=await pr.json();wikitext=(pd&&pd.parse&&pd.parse.wikitext)?(pd.parse.wikitext["*"]||""):"";if(wikitext.length>200)break;}}
+      if(pageTitle){var pr=await fetch("https://en.wikipedia.org/w/api.php?action=parse&page="+encodeURIComponent(pageTitle)+"&prop=wikitext&format=json",{headers:{"User-Agent":"FonsecaNews/10.0"}});if(pr.ok){var pd=await pr.json();wikitext=(pd&&pd.parse&&pd.parse.wikitext)?(pd.parse.wikitext["*"]||""):"";if(wikitext.length>200)break;}}
     }
     if(!wikitext||wikitext.length<200){log.push("oppProfile: no Wikipedia for "+opponentName);return;}
     var getField=function(f){var m=wikitext.match(new RegExp("\\|\\s*"+f+"\\s*=\\s*([^\\n|]+)","i"));return m?m[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g,"$2").replace(/\{\{[^}]*\}\}/g,"").trim():null;};
@@ -489,7 +484,7 @@ export default async function handler(req,res){
       lastMatch=parseMatch(lastResult.match,false);
       if(lastMatch.opponent_id&&(!lastMatch.opponent_ranking||!lastMatch.opponent_country)){var lod=await fetchOpponentDetails(lastMatch.opponent_id,lastMatch.opponent_name,apiKey,log);if(lod){lastMatch=enrichMatch(lastMatch,lod);totalRequests++;}}
       await kv.set("fn:lastMatch",JSON.stringify(lastMatch),{ex:86400*3});
-      log.push("lastMatch: "+lastMatch.result+" vs "+lastMatch.opponent_name+" ("+lastResult.daysAgo+"d ago)");
+      log.push("lastMatch: "+lastMatch.result+" vs "+lastMatch.opponent_name+" #"+(lastMatch.opponent_ranking||"?")+" ("+lastResult.daysAgo+"d ago)");
       var prevStatsId=null;try{prevStatsId=await kv.get("fn:lastStatsEventId");}catch(e){}
       if(String(lastResult.match.id)!==String(prevStatsId)){
         var rawStats=await fetchMatchStats(lastResult.match.id,apiKey);totalRequests++;
@@ -497,19 +492,35 @@ export default async function handler(req,res){
           await kv.set("fn:matchStats",JSON.stringify({event_id:lastResult.match.id,fonseca:fS,opponent:oS,opponent_name:lastMatch.opponent_name,opponent_id:lastMatch.opponent_id,opponent_ranking:lastMatch.opponent_ranking,opponent_country:lastMatch.opponent_country,tournament:lastMatch.tournament_name,date:lastMatch.date,result:lastMatch.result,score:lastMatch.score}),{ex:86400*7});
           await kv.set("fn:lastStatsEventId",String(lastResult.match.id));log.push("stats: "+Object.keys(fS).length+" metrics");
         }else{log.push("stats: not available");}
-      }else{log.push("stats: already fetched");}
+      }else{
+        // FIX v10: Even if stats are cached, update opponent_ranking if missing
+        try{
+          var existingStats=await kv.get("fn:matchStats");
+          if(existingStats){
+            var es=typeof existingStats==="string"?JSON.parse(existingStats):existingStats;
+            if(es&&(!es.opponent_ranking)&&lastMatch.opponent_ranking){
+              es.opponent_ranking=lastMatch.opponent_ranking;
+              es.opponent_country=lastMatch.opponent_country||es.opponent_country;
+              await kv.set("fn:matchStats",JSON.stringify(es),{ex:86400*7});
+              log.push("stats: patched opponent_ranking #"+lastMatch.opponent_ranking);
+            }else{log.push("stats: already fetched (ranking: #"+(es.opponent_ranking||"?")+")");}
+          }
+        }catch(e){log.push("stats: patch error "+e.message);}
+      }
+
+      // FIX v10: recentForm — scan 30 days, store up to 10 matches
       try{
         var existingForm=await kv.get("fn:recentForm");var form=existingForm?(typeof existingForm==="string"?JSON.parse(existingForm):existingForm):[];
         var inForm=form.some(function(f){return f.event_id===lastMatch.event_id;});
-        if(!inForm||form.length<5){
+        if(!inForm||form.length<10){
           var allF=[];var td=new Date();
-          for(var fd=0;fd<14;fd++){var sd=new Date(td);sd.setDate(sd.getDate()-fd);var dm=await findFonsecaMatches(sd,apiKey);totalRequests++;var fin=dm.filter(function(m){return m.status&&(m.status.type==="finished"||m.status.isFinished);});allF=allF.concat(fin);if(allF.length>=5)break;}
+          for(var fd=0;fd<30;fd++){var sd=new Date(td);sd.setDate(sd.getDate()-fd);var dm=await findFonsecaMatches(sd,apiKey);totalRequests++;var fin=dm.filter(function(m){return m.status&&(m.status.type==="finished"||m.status.isFinished);});allF=allF.concat(fin);if(allF.length>=10)break;}
           allF.sort(function(a,b){return(b.timestamp||0)-(a.timestamp||0);});
           var seen={},uniq=[];for(var ui=0;ui<allF.length;ui++){var mid=allF[ui].id;if(!seen[mid]){seen[mid]=true;uniq.push(allF[ui]);}}
           form=uniq.slice(0,10).map(function(m){return parseMatch(m,false);});
           await kv.set("fn:recentForm",JSON.stringify(form),{ex:86400*7});
-          log.push("form: "+form.map(function(m){return m.result;}).join("")+" ("+form.length+")");
-        }else{log.push("form: cache ok");}
+          log.push("form: "+form.map(function(m){return m.result;}).join("")+" ("+form.length+" matches, scanned "+Math.min(fd+1,30)+"d)");
+        }else{log.push("form: cache ok ("+form.length+" matches)");}
       }catch(e){log.push("form: error "+e.message);}
     }else{log.push("lastMatch: none in 7 days");}
     var nextResult=await findNextMatch(apiKey);totalRequests+=nextResult.requestsUsed;var nextMatch=null;
@@ -543,7 +554,7 @@ export default async function handler(req,res){
       for(var ni=0;ni<notifs.length;ni++){try{await fetch(baseUrl+"/api/push-send",{method:"POST",headers:{"Content-Type":"application/json","x-push-secret":pushSecret},body:JSON.stringify({title:notifs[ni].title,body:notifs[ni].body,url:baseUrl})});log.push("push: '"+notifs[ni].title+"'");}catch(pe){log.push("push: erro "+pe.message);}}
       if(notifs.length===0)log.push("push: sem mudanças");
     }catch(pushErr){log.push("push: erro "+pushErr.message);}
-    console.log("[cron-v9] Done. Requests: "+totalRequests+". "+log.join(" | "));
+    console.log("[cron-v10] Done. Requests: "+totalRequests+". "+log.join(" | "));
     return res.status(200).json({ok:true,requests:totalRequests,log,timestamp:now.toISOString()});
-  }catch(error){console.error("[cron-v9] Error:",error);return res.status(500).json({ok:false,error:error.message});}
+  }catch(error){console.error("[cron-v10] Error:",error);return res.status(500).json({ok:false,error:error.message});}
 }
