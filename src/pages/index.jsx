@@ -16,10 +16,35 @@ const SANS = "'Inter', -apple-system, sans-serif";
 const CACHE_DURATION_MS = 30 * 60 * 1000;
 const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
 
-// ===== FIX 1: Foto do Fonseca — ATP headshot (funciona) + SofaScore fallback =====
-const FONSECA_ESPN_ID = "11745";
+// ===== FIX 1: Foto via ATP Tour headshot (funciona pra todos) =====
+var ATP_SLUG_MAP = {
+  "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58",
+  "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51",
+  "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29",
+  "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi",
+  "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq",
+  "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58",
+  "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je",
+  "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Rinderknech": "rc91",
+  "Fonseca": "f0fv", "Nakashima": "n0ae", "Baez": "b0dx", "Etcheverry": "e0gd",
+  "Jarry": "j0ag", "Bublik": "b0bk", "Kokkinakis": "k0ad", "Korda": "k0ah",
+  "Norrie": "n0ab", "Dimitrov": "d875", "Monfils": "m788", "Wawrinka": "w367",
+  "Nishikori": "n552", "Coric": "c0ag", "Popyrin": "p0dj", "Thompson": "t0aj",
+  "Giron": "g0ah",
+};
+
+var getATPImage = function(name) {
+  if (!name) return null;
+  for (var k in ATP_SLUG_MAP) {
+    if (name.indexOf(k) !== -1) {
+      return "https://www.atptour.com/-/media/alias/player-headshot/" + ATP_SLUG_MAP[k];
+    }
+  }
+  return null;
+};
+
 const FONSECA_IMG = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
-const FONSECA_IMG_FALLBACK = "https://api.sofascore.app/api/v1/player/403869/image";
+const FONSECA_IMG_FALLBACK = "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/11745.png&w=200&h=145";
 
 // ===== FIX 2: Mapa ESPN centralizado (usado em NextDuelCard + PlayerBlock) =====
 var ESPN_ID_MAP = {
@@ -445,13 +470,9 @@ var NextDuelCard = function(props) {
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
 
-  // FIX 2: /api/player-image como primário (proxy que funciona no browser)
-  var oppSofascoreId = null;
-  for (var sk in SOFASCORE_ID_MAP) { if (oppName.indexOf(sk) !== -1) { oppSofascoreId = SOFASCORE_ID_MAP[sk]; break; } }
-  var oppApiImg = oppSofascoreId ? ("/api/player-image?id=" + oppSofascoreId) : (match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null);
-  var oppEspnImg = getESPNImage(oppName);
-  var oppImg = oppApiImg || oppEspnImg;
-  var oppImgFallback = oppImg === oppApiImg ? oppEspnImg : oppApiImg;
+  // FIX 2: Foto do oponente via ATP Tour (funciona pra todos)
+  var oppImg = getATPImage(oppName);
+  var oppImgFallback = getESPNImage(oppName);
 
   var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
@@ -766,13 +787,9 @@ var PlayerBlock = function(props) {
         var isWin = matchStats.result === "V";
         var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
 
-        // FIX 2: Foto do oponente — /api/player-image funciona (proxy interno), ESPN/SofaScore como fallback
-        var oppSofascoreId = null;
-        for (var sk in SOFASCORE_ID_MAP) { if (oppName.indexOf(sk) !== -1) { oppSofascoreId = SOFASCORE_ID_MAP[sk]; break; } }
-        var oppApiImg = oppSofascoreId ? ("/api/player-image?id=" + oppSofascoreId) : (matchStats.opponent_id ? ("/api/player-image?id=" + matchStats.opponent_id) : null);
-        var oppEspnImg = getESPNImage(oppName);
-        var oppImg = oppApiImg || oppEspnImg;
-        var oppImgFallback = oppImg === oppApiImg ? oppEspnImg : oppApiImg;
+        // FIX 2: Foto do oponente via ATP Tour (funciona pra todos)
+        var oppImg = getATPImage(oppName);
+        var oppImgFallback = getESPNImage(oppName);
 
         // FIX 3: Ranking do oponente
         var oppRanking = matchStats.opponent_ranking || null;
