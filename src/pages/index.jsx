@@ -39,8 +39,7 @@ var catColors = {
   "Resultado": "#2563EB", "Ranking": "#6D35D0", "Notícia": "#6b6b6b",
 };
 
-// ===== FIX 1: countryFlags movido para escopo do módulo =====
-var countryFlags = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳", "Monaco": "🇲🇨", "Monaco": "🇲🇨" };
+var countryFlags = { "Spain": "🇪🇸", "France": "🇫🇷", "Italy": "🇮🇹", "USA": "🇺🇸", "United States": "🇺🇸", "Germany": "🇩🇪", "UK": "🇬🇧", "United Kingdom": "🇬🇧", "Australia": "🇦🇺", "Argentina": "🇦🇷", "Serbia": "🇷🇸", "Russia": "🇷🇺", "Greece": "🇬🇷", "Canada": "🇨🇦", "Norway": "🇳🇴", "Denmark": "🇩🇰", "Poland": "🇵🇱", "Chile": "🇨🇱", "Japan": "🇯🇵", "China": "🇨🇳", "Czech Republic": "🇨🇿", "Czechia": "🇨🇿", "Bulgaria": "🇧🇬", "Belgium": "🇧🇪", "Netherlands": "🇳🇱", "Switzerland": "🇨🇭", "Croatia": "🇭🇷", "Brazil": "🇧🇷", "Portugal": "🇵🇹", "Colombia": "🇨🇴", "Mexico": "🇲🇽", "Peru": "🇵🇪", "South Korea": "🇰🇷", "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴", "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪", "Tunisia": "🇹🇳", "Monaco": "🇲🇨" };
 
 var generateShareCard = function(opts) {
   var canvas = document.createElement("canvas");
@@ -392,18 +391,12 @@ var NextDuelCard = function(props) {
   var fPct = winProb && winProb.fonseca ? Math.round(winProb.fonseca) : null;
   var oPct = winProb && winProb.opponent ? Math.round(winProb.opponent) : null;
 
-  // Fallback: estimate from rankings when no odds available
   if (fPct === null && player && player.ranking && oppRanking) {
     var fRank = player.ranking;
     var oRank = oppRanking;
-    // Tennis probability model: exponential decay based on ranking difference
-    // Lower rank = stronger. Advantage scales with gap.
-    var rankDiff = oRank - fRank; // positive = Fonseca is lower (better)
-    // Sigmoid function: P = 1 / (1 + 10^(-diff/16))
-    // diff=0 → 50%, diff=10 → 64%, diff=20 → 76%, diff=-10 → 36%
+    var rankDiff = oRank - fRank;
     var exponent = -rankDiff / 16;
     var fProb = 1 / (1 + Math.pow(10, exponent));
-    // Home advantage / form bonus: slight boost for the featured player
     fProb = Math.min(0.92, Math.max(0.08, fProb + 0.03));
     fPct = Math.round(fProb * 100);
     oPct = 100 - fPct;
@@ -419,18 +412,14 @@ var NextDuelCard = function(props) {
 
   return (
     <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden" }}>
-      {/* Decorative glows */}
       <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "10 0%, transparent 65%)", pointerEvents: "none" }} />
       <div style={{ position: "absolute", bottom: -40, left: -40, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, " + GREEN + "06 0%, transparent 65%)", pointerEvents: "none" }} />
-
-      {/* ── 1. TOURNAMENT HEADER ── */}
       <div style={{ padding: "16px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", flex: 1, minWidth: 0 }}>
           <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{surfaceLabel}</span>
           <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.45)", fontFamily: SANS, background: "rgba(255,255,255,0.05)", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{match.tournament_category || ""}</span>
           {match.round && <span style={{ fontSize: 9, fontWeight: 700, color: YELLOW, fontFamily: SANS, background: YELLOW + "12", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em", whiteSpace: "nowrap", flexShrink: 0 }}>{match.round}</span>}
         </div>
-        {/* Bell */}
         {!pushEnabled && onPushClick && (
           <button onClick={onPushClick} disabled={pushLoading} title="Ativar notificações" style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={pushLoading ? "rgba(255,255,255,0.15)" : YELLOW} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -442,17 +431,12 @@ var NextDuelCard = function(props) {
           </div>
         )}
       </div>
-
-      {/* Tournament name */}
       <div style={{ textAlign: "center", padding: "12px 20px 0" }}>
         <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.15, letterSpacing: "-0.02em", margin: "0 0 3px" }}>{match.tournament_name || "Próxima Partida"}</h2>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS, margin: 0 }}>{match.city}{match.country ? ", " + match.country : ""}</p>
       </div>
-
-      {/* ── 2. PLAYERS ── */}
       <div style={{ padding: "18px 14px 0" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center" }}>
-          {/* João */}
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid " + GREEN + "35", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img src={joaoImg} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:18px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
@@ -460,13 +444,11 @@ var NextDuelCard = function(props) {
             <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
           </div>
-          {/* VS */}
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 34, height: 34, borderRadius: "50%", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.18)", fontFamily: SANS, letterSpacing: "0.05em" }}>VS</span>
             </div>
           </div>
-          {/* Opponent */}
           <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
             <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default", position: "relative" }}>
               {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:20px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 20, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
@@ -477,8 +459,6 @@ var NextDuelCard = function(props) {
           </div>
         </div>
       </div>
-
-      {/* ── 3. WIN PROBABILITY ── */}
       {fPct !== null && oPct !== null && (
         <div style={{ padding: "16px 20px 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -492,8 +472,6 @@ var NextDuelCard = function(props) {
           </div>
         </div>
       )}
-
-      {/* ── 4. DATE & TIME — HERO BLOCK ── */}
       {dateInfo && (
         <div style={{ padding: "22px 20px 0", textAlign: "center" }}>
           <div style={{ background: "rgba(79,195,247,0.06)", borderRadius: 16, padding: "18px 24px", border: "1px solid rgba(79,195,247,0.1)" }}>
@@ -503,7 +481,6 @@ var NextDuelCard = function(props) {
               <span style={{ fontSize: 28, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.04em" }}>{dateInfo.time}</span>
               <span style={{ fontSize: 12, fontWeight: 500, color: "rgba(79,195,247,0.45)", fontFamily: SANS, marginLeft: 2 }}>BRT</span>
             </div>
-            {/* Compact countdown inline */}
             {!countdown.expired && (
               <div style={{ marginTop: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 <span style={{ fontSize: 10, color: "rgba(255,255,255,0.25)", fontFamily: SANS, letterSpacing: "0.02em" }}>Faltam</span>
@@ -517,7 +494,6 @@ var NextDuelCard = function(props) {
                 })}
               </div>
             )}
-            {/* Add to calendar button */}
             <button onClick={function() {
               var d = new Date(match.date);
               var pad = function(n) { return String(n).padStart(2, "0"); };
@@ -526,24 +502,7 @@ var NextDuelCard = function(props) {
               var title = "J. Fonseca vs " + oppName + " — " + (match.tournament_name || "ATP");
               var location = (match.tournament_name || "") + (match.city ? ", " + match.city : "");
               var description = (match.tournament_category || "") + (match.round ? " · " + match.round : "") + "\\nESPN 2 · Disney+\\nfonsecanews.com.br";
-              var ics = [
-                "BEGIN:VCALENDAR",
-                "VERSION:2.0",
-                "PRODID:-//FonsecaNews//PT",
-                "BEGIN:VEVENT",
-                "DTSTART:" + formatICS(d),
-                "DTEND:" + formatICS(endDate),
-                "SUMMARY:" + title,
-                "LOCATION:" + location,
-                "DESCRIPTION:" + description,
-                "BEGIN:VALARM",
-                "TRIGGER:-PT30M",
-                "ACTION:DISPLAY",
-                "DESCRIPTION:Jogo do João Fonseca em 30 minutos!",
-                "END:VALARM",
-                "END:VEVENT",
-                "END:VCALENDAR"
-              ].join("\r\n");
+              var ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//FonsecaNews//PT","BEGIN:VEVENT","DTSTART:" + formatICS(d),"DTEND:" + formatICS(endDate),"SUMMARY:" + title,"LOCATION:" + location,"DESCRIPTION:" + description,"BEGIN:VALARM","TRIGGER:-PT30M","ACTION:DISPLAY","DESCRIPTION:Jogo do João Fonseca em 30 minutos!","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
               var blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
               var url = URL.createObjectURL(blob);
               var a = document.createElement("a");
@@ -557,8 +516,6 @@ var NextDuelCard = function(props) {
           </div>
         </div>
       )}
-
-      {/* ── 5. WHERE TO WATCH ── */}
       <div style={{ padding: "18px 24px 22px" }}>
         <p style={{ margin: "0 0 12px", fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", textAlign: "center" }}>Assista em</p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
@@ -575,6 +532,7 @@ var NextDuelCard = function(props) {
     </section>
   );
 };
+
 // ===== LIVE SCORE CARD — reads from /api/live format =====
 var LiveScoreCard = function(props) {
   var data = props.data;
@@ -607,7 +565,81 @@ var LiveScoreCard = function(props) {
     { label: "1o Saque %", f: fStats.firstserveaccuracy || 0, o: oStats.firstserveaccuracy || 0, pct: true },
     { label: "Winners", f: fStats.winners || 0, o: oStats.winners || 0 },
     { label: "Break Points", f: fStats.breakpointsscored || 0, o: oStats.breakpointsscored || 0 },
-    { label: "Pontos", f: fStats.pointstotal || 0, o: o
+    { label: "Pontos", f: fStats.pointstotal || 0, o: oStats.pointstotal || 0 },
+  ].filter(function(r) { return r.f > 0 || r.o > 0; });
+
+  return (
+    <section style={{ margin: "4px 0 0", padding: "20px 24px", background: "linear-gradient(145deg, #0D1726 0%, #1a3050 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 16, right: 20, display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
+        <span style={{ fontSize: 10, fontWeight: 700, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ao vivo</span>
+      </div>
+
+      <div style={{ textAlign: "center", marginBottom: 16 }}>
+        {surface && <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: SANS }}>{surface}</span>}
+        {tourneyName && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{surface ? " · " : ""}{tourneyName}</span>}
+        {roundText && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}> · {roundText}</span>}
+        <div style={{ marginTop: 4 }}><span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{statusText}</span></div>
+      </div>
+
+      <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 12, padding: "16px 20px", marginBottom: liveStatRows.length > 0 ? 16 : 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 15, fontWeight: 700, color: GREEN, fontFamily: SERIF }}>J. Fonseca</span>
+            {serving === "fonseca" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {serving === "opponent" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>{oppShort}</span>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            {fSets.map(function(s, i) {
+              var won = (oSets[i] !== undefined) ? s > oSets[i] : false;
+              var isCurrentSet = i === fSets.length - 1 && !((setsWon.fonseca || 0) + (setsWon.opponent || 0) >= 2);
+              return (<span key={i} style={{ fontSize: 22, fontWeight: 800, color: won ? GREEN : (isCurrentSet ? "#fff" : "rgba(255,255,255,0.5)"), fontFamily: SANS }}>{s}</span>);
+            })}
+            {currentGame.fonseca !== undefined && currentGame.fonseca !== "" && <span style={{ fontSize: 16, fontWeight: 600, color: YELLOW, fontFamily: SANS, marginLeft: 6 }}>{currentGame.fonseca}</span>}
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS }}>SETS</span>
+            <div style={{ fontSize: 14, fontWeight: 800, color: "rgba(255,255,255,0.3)", fontFamily: SANS, marginTop: 2 }}>{(setsWon.fonseca || 0)} - {(setsWon.opponent || 0)}</div>
+          </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            {currentGame.opponent !== undefined && currentGame.opponent !== "" && <span style={{ fontSize: 16, fontWeight: 600, color: YELLOW, fontFamily: SANS, marginRight: 6 }}>{currentGame.opponent}</span>}
+            {oSets.map(function(s, i) {
+              var won = (fSets[i] !== undefined) ? s > fSets[i] : false;
+              var isCurrentSet = i === oSets.length - 1 && !((setsWon.fonseca || 0) + (setsWon.opponent || 0) >= 2);
+              return (<span key={i} style={{ fontSize: 22, fontWeight: 800, color: won ? "#ef4444" : (isCurrentSet ? "#fff" : "rgba(255,255,255,0.5)"), fontFamily: SANS }}>{s}</span>);
+            })}
+          </div>
+        </div>
+      </div>
+
+      {liveStatRows.length > 0 && (
+        <div style={{ padding: "0 4px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: SANS }}>Fonseca</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{oppShort}</span>
+          </div>
+          {liveStatRows.map(function(row, i) {
+            var fBetter = row.invert ? row.f < row.o : row.f >= row.o;
+            return (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: fBetter ? GREEN : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 30 }}>{row.pct ? row.f + "%" : row.f}</span>
+                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textAlign: "center", flex: 1 }}>{row.label}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: !fBetter ? "#ef4444" : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 30, textAlign: "right" }}>{row.pct ? row.o + "%" : row.o}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+};
+
 // ===== WIN PROBABILITY BAR =====
 var WinProbBar = function(props) {
   var winProb = props.winProb;
@@ -631,6 +663,7 @@ var WinProbBar = function(props) {
     </div>
   );
 };
+
 // ===== PLAYER BLOCK (REDESIGN) =====
 var PlayerBlock = function(props) {
   var lastMatch = props.lastMatch;
@@ -645,7 +678,6 @@ var PlayerBlock = function(props) {
   return (
     <div style={{ margin: "12px 0 4px" }}>
 
-      {/* Stats da ultima partida — REDESIGN premium */}
       {matchStats && matchStats.fonseca && (function() {
         var f = matchStats.fonseca;
         var o = matchStats.opponent;
@@ -661,13 +693,11 @@ var PlayerBlock = function(props) {
         if (statRows.length === 0) return null;
         var oppShort = (matchStats.opponent_name || "Adv.").split(" ").pop();
         var isWin = matchStats.result === "V";
-        // ===== FIX 3: countryFlags removido daqui — agora usa o do escopo do módulo =====
         var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
         return (
           <div>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 20 }}>Última partida</p>
             <div style={{ background: BG_ALT, borderRadius: 16, padding: "20px", overflow: "hidden", border: "1px solid " + BORDER }}>
-              {/* Top row: tournament + date + "Forma atual" + forma pills */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span style={{ fontSize: 12, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{matchStats.tournament}</span>
@@ -688,7 +718,6 @@ var PlayerBlock = function(props) {
                 )}
               </div>
 
-              {/* Players + score + result badge */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
                 <div style={{ textAlign: "center", flex: 1 }}>
                   <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", margin: "0 auto 6px", border: "2px solid " + GREEN + "40" }}>
@@ -712,10 +741,8 @@ var PlayerBlock = function(props) {
                 </div>
               </div>
 
-              {/* Divider */}
               <div style={{ height: 1, background: BORDER, marginBottom: 16 }} />
 
-              {/* Stat rows */}
               {statRows.map(function(row, i) {
                 var fMax = Math.max(row.fVal, row.oVal, 1);
                 var fPct = row.pct ? row.fVal : Math.round((row.fVal / fMax) * 100);
@@ -1005,23 +1032,22 @@ export default function JoaoFonsecaNews() {
     return function() { window.removeEventListener("beforeinstallprompt", handler); };
   }, []);
 
-  var handleInstall = async function() { if (!deferredPrompt) return; deferredPrompt.prompt(); var r = await deferredPrompt.userChoice; if (r.outcome === "accepted") setShowInstallBanner(false); setDeferredPrompt(null); };
+  var handleInstall = function() { if (!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt.userChoice.then(function(r) { if (r.outcome === "accepted") setShowInstallBanner(false); setDeferredPrompt(null); }); };
   var dismissPopup = function() { setShowInstallPopup(false); setPopupDismissed(true); };
 
-  var loadCache = async function() {
+  var loadCache = function() {
     try { var raw = localStorage.getItem("jf-news-v4"); if (raw) { var c = JSON.parse(raw); if (Date.now() - c.timestamp < CACHE_DURATION_MS && c.news && c.news.length) { setNews(c.news); setNextMatch(c.nextMatch||null); setLastMatch(c.lastMatch||null); setPlayer(c.player||null); setSeason(c.season||null); setLastUpdate(new Date(c.timestamp).toISOString()); return true; } } } catch(e) {}
     return false;
   };
-  var saveCache = async function(d) { try { localStorage.setItem("jf-news-v4", JSON.stringify(Object.assign({}, d, { timestamp: Date.now() }))); } catch(e) {} };
+  var saveCache = function(d) { try { localStorage.setItem("jf-news-v4", JSON.stringify(Object.assign({}, d, { timestamp: Date.now() }))); } catch(e) {} };
 
-  var fetchNews = async function() {
+  var fetchNews = function() {
     setLoading(true);
-    try { var res = await fetch("/api/news"); if (!res.ok) throw new Error("" + res.status); var p = await res.json(); if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); await saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } else throw new Error("No data"); } catch(e) {}
-    finally { setLoading(false); }
+    fetch("/api/news").then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
   };
 
-  var handleRefresh = async function() {
-    await fetchNews();
+  var handleRefresh = function() {
+    fetchNews();
     fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
@@ -1040,7 +1066,7 @@ export default function JoaoFonsecaNews() {
 
   useEffect(function() {
     if (initDone.current) return; initDone.current = true;
-    (async function() { if (!(await loadCache())) await fetchNews(); })();
+    if (!loadCache()) fetchNews();
   }, []);
 
   useEffect(function() {
@@ -1083,19 +1109,7 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
-  var dm = nextMatch || (function() {
-    var calendarEvents = [
-      { tournament_category: "Masters 1000", tournament_name: "Monte Carlo Masters", surface: "Saibro", city: "Monte Carlo", country: "Mônaco", date: "2026-04-05T12:00:00Z" },
-      { tournament_category: "Masters 1000", tournament_name: "Madrid Open", surface: "Saibro", city: "Madri", country: "Espanha", date: "2026-04-22T12:00:00Z" },
-      { tournament_category: "Masters 1000", tournament_name: "Roma Masters", surface: "Saibro", city: "Roma", country: "Itália", date: "2026-05-06T12:00:00Z" },
-      { tournament_category: "Grand Slam", tournament_name: "Roland Garros", surface: "Saibro", city: "Paris", country: "França", date: "2026-05-24T12:00:00Z" },
-      { tournament_category: "Grand Slam", tournament_name: "Wimbledon", surface: "Grama", city: "Londres", country: "Reino Unido", date: "2026-06-29T12:00:00Z" },
-      { tournament_category: "Grand Slam", tournament_name: "US Open", surface: "Duro", city: "Nova York", country: "EUA", date: "2026-08-31T12:00:00Z" },
-    ];
-    var now = new Date();
-    var next = calendarEvents.find(function(e) { return new Date(e.date) > now; });
-    return next || calendarEvents[0];
-  })();
+  var dm = nextMatch || SAMPLE_NEXT_MATCH;
   var dl = lastMatch || null;
   var dp = player || (news.length === 0 ? SAMPLE_PLAYER : null);
   var ds = season || null;
@@ -1127,9 +1141,7 @@ export default function JoaoFonsecaNews() {
         "@keyframes fadeInO{from{opacity:0}to{opacity:1}}"
       }</style>
 
-      {/* HEADER — Editorial Premium */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
-        {/* Row 1: Brand + Refresh */}
         <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
             <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
@@ -1148,7 +1160,6 @@ export default function JoaoFonsecaNews() {
           </button>
         </div>
 
-        {/* Row 2: Horizontal scrollable navigation */}
         <div style={{ position: "relative" }}>
           <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 16, background: "linear-gradient(to right, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
           <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 28, background: "linear-gradient(to left, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
@@ -1170,12 +1181,8 @@ export default function JoaoFonsecaNews() {
               var navBg = isGreen ? GREEN : (isGold ? YELLOW + "0A" : BG_ALT);
               var navBorder = isGreen ? GREEN : (isGold ? YELLOW + "30" : BORDER);
               var navStyle = { fontSize: 13, fontWeight: (isGreen || isGold) ? 700 : 600, color: navColor, fontFamily: SANS, whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, background: navBg, border: "1px solid " + navBorder, cursor: "pointer", textDecoration: "none", display: "block", letterSpacing: "0.01em", transition: "all 0.15s", flexShrink: 0 };
-              var hoverIn = function(e){ if (!isGreen && !isGold) { e.target.style.color=GREEN;e.target.style.borderColor=GREEN+"40";e.target.style.background=GREEN+"08"; } else if (isGreen) { e.target.style.background="#009A50"; }};
-              var hoverOut = function(e){ if (!isGreen && !isGold) { e.target.style.color="#555";e.target.style.borderColor=BORDER;e.target.style.background=BG_ALT; } else if (isGreen) { e.target.style.background=GREEN; }};
-              if (isLink) {
-                return <a key={i} href={item.href} style={navStyle} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>{item.label}</a>;
-              }
-              return <button key={i} onClick={item.action} style={navStyle} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>{item.label}</button>;
+              if (isLink) return <a key={i} href={item.href} style={navStyle}>{item.label}</a>;
+              return <button key={i} onClick={item.action} style={navStyle}>{item.label}</button>;
             })}
           </nav>
         </div>
@@ -1183,49 +1190,6 @@ export default function JoaoFonsecaNews() {
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
 
-        {/* INSTALL BANNER */}
-        {(function() {
-          var isDismissed = false;
-          try { isDismissed = typeof window !== "undefined" && localStorage.getItem("fn_install_dismissed"); } catch(e) {}
-          var isStandalone = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone);
-          if (isDismissed || isStandalone) return null;
-          return (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#fff", borderRadius: 12, marginTop: 8, marginBottom: 4, border: "1px solid " + BORDER }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "#0D172610", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D1726" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", lineHeight: 1.3 }}>Use como app no celular</span>
-                <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Adicione à tela inicial — sem baixar nada</span>
-              </div>
-              <button onClick={function(){setShowInstallGuide(true);}} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap", flexShrink: 0 }}>Como fazer</button>
-              <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} window.location.reload(); }} style={{ width: 28, height: 28, borderRadius: "50%", background: BG_ALT, border: "1px solid " + BORDER, color: SUB, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
-            </div>
-          );
-        })()}
-
-        {/* NOTIFICATION BANNER */}
-        {!pushEnabled && (function() {
-          var isDismissed = false;
-          try { isDismissed = typeof window !== "undefined" && localStorage.getItem("fn_push_dismissed"); } catch(e) {}
-          if (isDismissed) return null;
-          return (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: GREEN + "08", borderRadius: 12, marginTop: 6, marginBottom: 4, border: "1px solid " + GREEN + "20" }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", lineHeight: 1.3 }}>Ative as notificações</span>
-                <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Receba notificações de ranking, partidas e mais</span>
-              </div>
-              <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap", flexShrink: 0 }}>{pushLoading ? "..." : "Ativar"}</button>
-              <button onClick={function(){ try { localStorage.setItem("fn_push_dismissed", "1"); } catch(e){} window.location.reload(); }} style={{ width: 28, height: 28, borderRadius: "50%", background: GREEN + "10", border: "1px solid " + GREEN + "25", color: GREEN, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
-            </div>
-          );
-        })()}
-
-
-        {/* 1. AO VIVO ou PRÓXIMO DUELO */}
         {liveMatch ? (
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Ao vivo</p>
@@ -1238,36 +1202,21 @@ export default function JoaoFonsecaNews() {
           </section>
         )}
 
-        {/* SOBRE O TORNEIO */}
         {tournamentFacts && (
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Sobre o torneio</p>
             <div style={{ background: "linear-gradient(160deg, #0a1220 0%, #111d33 100%)", borderRadius: 18, overflow: "hidden", position: "relative" }}>
-              {/* Surface accent line */}
               <div style={{ height: 3, background: "linear-gradient(to right, " + (surfaceColorMap[dm.surface] || "#999") + ", " + (surfaceColorMap[dm.surface] || "#999") + "40)" }} />
-
               <div style={{ padding: "20px 22px 22px" }}>
-                {/* Tournament name + source */}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
                   <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: SERIF, letterSpacing: "-0.01em" }}>{tournamentFacts.name || dm.tournament_name}</h3>
                   <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, flexShrink: 0, marginLeft: 12 }}>Wikipedia</span>
                 </div>
-
-                {/* Facts — clean wiki markup + bold values */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                   {(tournamentFacts.facts || []).map(function(fact, i) {
                     var isLast = i === (tournamentFacts.facts || []).length - 1;
-                    // Clean wiki markup from text
-                    var cleanText = (fact.text || "")
-                      .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2")
-                      .replace(/\{\{[^}]*\}\}/g, "")
-                      .replace(/'{2,}/g, "")
-                      .trim();
-                    // Translate surface names
+                    var cleanText = (fact.text || "").replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").replace(/'{2,}/g, "").trim();
                     cleanText = cleanText.replace(/Clay court/gi, "Saibro").replace(/Hard court/gi, "Piso duro").replace(/Grass court/gi, "Grama");
-                    // Capitalize "atp" -> "ATP Tour"
-                    cleanText = cleanText.replace(/^Categoria:\s*atp$/i, "Categoria: ATP Masters 1000");
-                    // Split label:value for bold formatting
                     var parts = cleanText.split(/:\s*/);
                     var hasLabel = parts.length >= 2 && parts[0].length < 30;
                     return (
@@ -1291,108 +1240,47 @@ export default function JoaoFonsecaNews() {
           </section>
         )}
 
-        {/* 2. PLAYER BLOCK */}
-        <PlayerBlock
-          lastMatch={dl}
-          matchStats={matchStats}
-          recentForm={recentForm}
-          prizeMoney={prizeMoney}
-        />
+        <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} />
 
-        {/* JOÃO EM NÚMEROS */}
         <section style={{ padding: "20px 0 0" }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>João em números</p>
           {(function() {
             var cs = careerStats || {};
-            var cW = cs.wins || 42;
-            var cL = cs.losses || 28;
+            var cW = cs.wins || 42; var cL = cs.losses || 28;
             var cPct = cs.winPct || Math.round((cW / (cW + cL)) * 100);
             var surf = cs.surface || {};
-            var hardW = surf.hard ? surf.hard.w : 16;
-            var hardL = surf.hard ? surf.hard.l : 11;
-            var clayW = surf.clay ? surf.clay.w : 14;
-            var clayL = surf.clay ? surf.clay.l : 12;
-            var grassW = surf.grass ? surf.grass.w : 3;
-            var grassL = surf.grass ? surf.grass.l : 4;
+            var hardW = surf.hard ? surf.hard.w : 16; var hardL = surf.hard ? surf.hard.l : 11;
+            var clayW = surf.clay ? surf.clay.w : 14; var clayL = surf.clay ? surf.clay.l : 12;
+            var grassW = surf.grass ? surf.grass.w : 3; var grassL = surf.grass ? surf.grass.l : 4;
             return (
           <div style={{ background: BG_ALT, borderRadius: 16, padding: "18px", border: "1px solid " + BORDER }}>
-
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
-              <div style={{ textAlign: "center" }}>
-                <span style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SANS, display: "block" }}>{cW}-{cL}</span>
-                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Carreira</span>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <span style={{ fontSize: 18, fontWeight: 800, color: GREEN, fontFamily: SANS, display: "block" }}>{cPct}%</span>
-                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Aprov.</span>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <span style={{ fontSize: 18, fontWeight: 800, color: TEXT, fontFamily: SANS, display: "block" }}>1-4</span>
-                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>vs Top 10</span>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <span style={{ fontSize: 18, fontWeight: 800, color: GREEN, fontFamily: SANS, display: "block" }}>{prizeMoney ? (prizeMoney >= 1000000 ? "$" + (prizeMoney / 1000000).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "$2.9M"}</span>
-                <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Prize</span>
-              </div>
+              {[{v:cW+"-"+cL,l:"Carreira",c:TEXT},{v:cPct+"%",l:"Aprov.",c:GREEN},{v:"1-4",l:"vs Top 10",c:TEXT},{v:prizeMoney ? (prizeMoney >= 1000000 ? "$" + (prizeMoney / 1000000).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "$2.9M",l:"Prize",c:GREEN}].map(function(s,i){return(<div key={i} style={{textAlign:"center"}}><span style={{fontSize:18,fontWeight:800,color:s.c,fontFamily:SANS,display:"block"}}>{s.v}</span><span style={{fontSize:9,fontWeight:600,color:DIM,fontFamily:SANS,textTransform:"uppercase",letterSpacing:"0.04em"}}>{s.l}</span></div>);})}
             </div>
-
             <div style={{ height: 1, background: BORDER, marginBottom: 14 }} />
-
             <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Por superfície</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-              {[
-                { surface: "Hard court", wins: hardW, losses: hardL, color: "#3B82F6" },
-                { surface: "Saibro", wins: clayW, losses: clayL, color: "#D97706" },
-                { surface: "Grama", wins: grassW, losses: grassL, color: "#16A34A" }
-              ].map(function(s) {
-                var total = s.wins + s.losses;
-                var pct = total > 0 ? Math.round((s.wins / total) * 100) : 0;
-                return (
-                  <div key={s.surface} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 12, width: 80, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{s.surface}</span>
-                    <div style={{ flex: 1, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ height: 6, background: s.color, borderRadius: 3, width: pct + "%", transition: "width 0.8s ease" }} />
-                    </div>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: TEXT, fontFamily: SANS, minWidth: 44, textAlign: "right" }}>{s.wins}-{s.losses}</span>
-                    <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, minWidth: 28 }}>{pct}%</span>
-                  </div>
-                );
+              {[{ surface: "Hard court", wins: hardW, losses: hardL, color: "#3B82F6" },{ surface: "Saibro", wins: clayW, losses: clayL, color: "#D97706" },{ surface: "Grama", wins: grassW, losses: grassL, color: "#16A34A" }].map(function(s) {
+                var total = s.wins + s.losses; var pct = total > 0 ? Math.round((s.wins / total) * 100) : 0;
+                return (<div key={s.surface} style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 12, width: 80, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{s.surface}</span><div style={{ flex: 1, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}><div style={{ height: 6, background: s.color, borderRadius: 3, width: pct + "%", transition: "width 0.8s ease" }} /></div><span style={{ fontSize: 11, fontWeight: 700, color: TEXT, fontFamily: SANS, minWidth: 44, textAlign: "right" }}>{s.wins}-{s.losses}</span><span style={{ fontSize: 10, color: DIM, fontFamily: SANS, minWidth: 28 }}>{pct}%</span></div>);
               })}
             </div>
-
             <div style={{ height: 1, background: BORDER, marginBottom: 14 }} />
-
             <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Recordes</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {[
-                "Mais jovem brasileiro no top 100 da história",
-                "1º brasileiro a vencer um ATP 500",
-                "1º sul-americano campeão do NextGen Finals",
-                "Mais jovem sul-americano campeão ATP desde 1987",
-                "Mais jovem a bater top 10 no Australian Open (desde 1973)",
-                "1º brasileiro nº1 do ranking juvenil",
-                "Record juvenil ITF: 92-27"
-              ].map(function(r, i) {
-                return (
-                  <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-                    <span style={{ color: GREEN, fontSize: 11, fontWeight: 700, fontFamily: SANS, flexShrink: 0, marginTop: 1 }}>•</span>
-                    <span style={{ fontSize: 12, color: TEXT, fontFamily: SANS, lineHeight: 1.5 }}>{r}</span>
-                  </div>
-                );
+              {["Mais jovem brasileiro no top 100 da história","1º brasileiro a vencer um ATP 500","1º sul-americano campeão do NextGen Finals","Mais jovem sul-americano campeão ATP desde 1987","Mais jovem a bater top 10 no Australian Open (desde 1973)","1º brasileiro nº1 do ranking juvenil","Record juvenil ITF: 92-27"].map(function(r, i) {
+                return (<div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8 }}><span style={{ color: GREEN, fontSize: 11, fontWeight: 700, fontFamily: SANS, flexShrink: 0, marginTop: 1 }}>•</span><span style={{ fontSize: 12, color: TEXT, fontFamily: SANS, lineHeight: 1.5 }}>{r}</span></div>);
               })}
             </div>
-
             <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill={SUB} stroke="none"/></svg>
               <span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>1.1M seguidores no Instagram</span>
             </div>
-
           </div>
             );
           })()}
         </section>
 
-        {/* 5. NOTÍCIAS */}
         <section style={{ padding: "20px 0 0" }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Notícias</p>
           {loading && news.length === 0 && <Skeleton />}
@@ -1408,7 +1296,6 @@ export default function JoaoFonsecaNews() {
           )}
         </section>
 
-        {/* PARTNERS */}
         <section style={{ padding: "20px 0" }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Parceiros</p>
           <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ display: "block", borderRadius: 16, overflow: "hidden", border: "1px solid " + BORDER, textDecoration: "none", background: "#0D1726" }}>
@@ -1417,7 +1304,6 @@ export default function JoaoFonsecaNews() {
           <p style={{ margin: "10px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>Quer ser parceiro? <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ color: GREEN, textDecoration: "none", fontWeight: 600 }}>Entre em contato</a></p>
         </section>
 
-        {/* EXPLORE */}
         <section style={{ padding: "20px 0", borderTop: "1px solid " + BORDER }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Explore também</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1426,23 +1312,11 @@ export default function JoaoFonsecaNews() {
               { href: "/game", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/></svg>, bg: "#7C3AED10", title: "Tennis Career 26", sub: "Simulador de carreira profissional" },
               { href: "https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights", target: "_blank", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>, bg: RED + "10", title: "Momentos do João", sub: "Highlights e jogadas no YouTube" },
             ].map(function(item, i) {
-              return (
-                <a key={i} href={item.href} target={item.target} rel={item.target ? "noopener noreferrer" : undefined} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 8, background: item.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</div>
-                  <div><span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{item.title}</span><span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{item.sub}</span></div>
-                </a>
-              );
+              return (<a key={i} href={item.href} target={item.target} rel={item.target ? "noopener noreferrer" : undefined} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}><div style={{ width: 32, height: 32, borderRadius: 8, background: item.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</div><div><span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{item.title}</span><span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{item.sub}</span></div></a>);
             })}
-            <div onClick={function(){setShowInstallGuide(true);}} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, border: "1px solid " + BORDER, cursor: "pointer" }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: "#0D172610", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0D1726" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
-              </div>
-              <div><span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Transforme o FN em app</span><span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>Adicione à tela inicial — sem baixar nada</span></div>
-            </div>
           </div>
         </section>
 
-        {/* FOOTER */}
         <footer style={{ padding: "28px 0", borderTop: "1px solid " + BORDER, marginTop: 8 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 }}>
             {[
@@ -1461,75 +1335,16 @@ export default function JoaoFonsecaNews() {
         </footer>
       </main>
 
-      {/* MODALS */}
-      {showBio && (<Modal title="João Fonseca" subtitle="Tenista profissional 🇧🇷" onClose={function(){setShowBio(false);}} maxWidth={480}>
-        {(function() {
-          var bio = biography || {};
-          var infoTags = [
-            ["🎂", bio.birthDate || "21/08/2006"],
-            ["📍", bio.birthPlace || "Ipanema, Rio"],
-            ["📏", bio.height || "1,83m"],
-            ["🎾", bio.hand || "Destro"],
-            ["👟", bio.proSince || "Profissional desde 2024"],
-            ["🏆", bio.bestRanking ? "Melhor: #" + bio.bestRanking : "Melhor: #24"],
-          ];
-          if (bio.coach) infoTags.push(["🧑‍🏫", bio.coach]);
-          return (
-            <div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
-                {infoTags.map(function(p, i) { return (<span key={i} style={{ fontSize: 11, color: SUB, fontFamily: SANS, background: BG_ALT, padding: "4px 10px", borderRadius: 8 }}>{p[0]} {p[1]}</span>); })}
-              </div>
-              {bio.sponsors && (
-                <div style={{ marginBottom: 16 }}>
-                  <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Patrocínios e equipamento</p>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {(Array.isArray(bio.sponsors) ? bio.sponsors : []).map(function(s, i) { return (<span key={i} style={{ fontSize: 11, color: TEXT, fontFamily: SANS, background: BG_ALT, padding: "5px 10px", borderRadius: 8, border: "1px solid " + BORDER, fontWeight: 600 }}>{s}</span>); })}
-                  </div>
-                </div>
-              )}
-              {bio.racket && (
-                <div style={{ marginBottom: 16 }}>
-                  <p style={{ margin: "0 0 6px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Raquete</p>
-                  <span style={{ fontSize: 12, color: TEXT, fontFamily: SANS }}>{bio.racket}</span>
-                </div>
-              )}
-              <div style={{ fontSize: 14, color: SUB, fontFamily: SANS, lineHeight: 1.75 }}>
-                {(bio.paragraphs && bio.paragraphs.length > 0) ? bio.paragraphs.map(function(p, i) { return <p key={i} style={{ marginBottom: 12 }}>{p}</p>; }) : (
-                  <>
-                    <p style={{ marginBottom: 12 }}>Nascido em Ipanema, filho de Roberta e Christiano. Começou no tênis aos 4 anos no Country Club do Rio.</p>
-                    <p style={{ marginBottom: 12 }}>Em 2023, conquistou o US Open Juvenil e se tornou o primeiro brasileiro nº1 do ranking juvenil.</p>
-                    <p style={{ marginBottom: 12 }}>Profissional em 2024. Em janeiro de 2025, derrotou Rublev (top 10) na estreia do Australian Open.</p>
-                    <p>Conquistou o ATP 250 de Buenos Aires e o ATP 500 de Basel — primeiro brasileiro a ganhar um ATP 500.</p>
-                  </>
-                )}
-              </div>
-              {bio.updatedAt && <p style={{ margin: "12px 0 0", fontSize: 9, color: DIM, fontFamily: SANS, textAlign: "right" }}>Atualizado: {new Date(bio.updatedAt).toLocaleDateString("pt-BR")}</p>}
-            </div>
-          );
-        })()}
-      </Modal>)}
-      {showTitles && (<Modal title="🏆 Conquistas" onClose={function(){setShowTitles(false);}} maxWidth={460}><div style={{marginBottom:16}}><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour</p>{[{t:"ATP 500 Basel",d:"Out 2025",det:"vs Davidovich Fokina · 6-3 6-4",note:"1º brasileiro a ganhar ATP 500"},{t:"ATP 250 Buenos Aires",d:"Fev 2025",det:"vs Cerúndolo · 6-4 7-6(1)",note:"Brasileiro mais jovem a ganhar ATP"}].map(function(t,i){return(<div key={i} style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>{t.det}</p>{t.note&&<p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>{t.note}</p>}</div>);})}</div></Modal>)}
       {showRanking && (<Modal title="📈 Evolução no Ranking" onClose={function(){setShowRanking(false);}} maxWidth={650}><RankingChart currentRanking={dp ? dp.ranking : 40} /></Modal>)}
-      {showNextGen && (<Modal title="⚡ Next Gen" subtitle="Os 4 maiores talentos sub-21" onClose={function(){setShowNextGen(false);}} maxWidth={650}><NextGenComparator /></Modal>)}
       {showCalendar && (<Modal title="🗓️ Calendário ATP 2026" onClose={function(){setShowCalendar(false);}} maxWidth={520}><ATPCalendar /></Modal>)}
+      {showTitles && (<Modal title="🏆 Conquistas" onClose={function(){setShowTitles(false);}} maxWidth={460}><div style={{marginBottom:16}}><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour</p>{[{t:"ATP 500 Basel",d:"Out 2025",det:"vs Davidovich Fokina · 6-3 6-4",note:"1º brasileiro a ganhar ATP 500"},{t:"ATP 250 Buenos Aires",d:"Fev 2025",det:"vs Cerúndolo · 6-4 7-6(1)",note:"Brasileiro mais jovem a ganhar ATP"}].map(function(t,i){return(<div key={i} style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>{t.det}</p>{t.note&&<p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>{t.note}</p>}</div>);})}</div></Modal>)}
 
-      {/* OPPONENT PROFILE POPUP */}
       {showOppPopup && opponentProfile && (
         <div onClick={function(){ setShowOppPopup(false); }} style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, animation: "fadeInO 0.2s ease" }}>
           <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "linear-gradient(160deg, #0D1726 0%, #1a3050 100%)", borderRadius: 20, padding: "24px 22px", maxWidth: 380, width: "100%", animation: "slideU 0.35s ease", position: "relative" }}>
             <button onClick={function(){ setShowOppPopup(false); }} style={{ position: "absolute", top: 12, right: 14, background: "rgba(255,255,255,0.08)", border: "none", width: 26, height: 26, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>✕</button>
-
-            {/* Player header */}
             <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 18 }}>
-              <div style={{ width: 56, height: 56, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,0.15)", flexShrink: 0, background: "#1a2a3a" }}>
-                {(function() {
-                  var slug = opponentProfile.atp_slug;
-                  var atpMap = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Munar": "mf53", "Mensik": "m0ij" };
-                  if (!slug) { for (var k in atpMap) { if ((opponentProfile.name || "").indexOf(k) !== -1) { slug = atpMap[k]; break; } } }
-                  var src = slug ? "https://www.atptour.com/-/media/alias/player-headshot/" + slug : "";
-                  return src ? <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e){ e.target.style.display="none"; }} /> : null;
-                })()}
-              </div>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", overflow: "hidden", border: "2px solid rgba(255,255,255,0.15)", flexShrink: 0, background: "#1a2a3a" }}></div>
               <div>
                 <span style={{ fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{opponentProfile.name || "Oponente"}</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
@@ -1538,57 +1353,19 @@ export default function JoaoFonsecaNews() {
                 </div>
               </div>
             </div>
-
-            {/* Quick stats grid */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 16 }}>
-              {[
-                { label: "Idade", value: opponentProfile.age || "—" },
-                { label: "Altura", value: opponentProfile.height || "—" },
-                { label: "Mão", value: opponentProfile.hand || "—" },
-              ].map(function(s, i) {
-                return (
-                  <div key={i} style={{ textAlign: "center", padding: "8px 4px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block" }}>{s.value}</span>
-                    <span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</span>
-                  </div>
-                );
+              {[{ label: "Idade", value: opponentProfile.age || "—" },{ label: "Altura", value: opponentProfile.height || "—" },{ label: "Mão", value: opponentProfile.hand || "—" }].map(function(s, i) {
+                return (<div key={i} style={{ textAlign: "center", padding: "8px 4px", background: "rgba(255,255,255,0.04)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.06)" }}><span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block" }}>{s.value}</span><span style={{ fontSize: 9, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</span></div>);
               })}
             </div>
-
-            {/* Style description */}
-            {opponentProfile.style && (
-              <div style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 14 }}>
-                <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Estilo de jogo</p>
-                <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.8)", fontFamily: SANS, lineHeight: 1.6 }}>{opponentProfile.style}</p>
-              </div>
-            )}
-
-            {/* Career highlights */}
+            {opponentProfile.style && (<div style={{ padding: "12px 14px", background: "rgba(255,255,255,0.04)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)", marginBottom: 14 }}><p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Estilo de jogo</p><p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.8)", fontFamily: SANS, lineHeight: 1.6 }}>{opponentProfile.style}</p></div>)}
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {opponentProfile.titles !== undefined && opponentProfile.titles !== null && (
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.04)", padding: "4px 10px", borderRadius: 8 }}>🏆 {opponentProfile.titles} título{opponentProfile.titles !== 1 ? "s" : ""}</span>
-              )}
-              {opponentProfile.careerHigh && (
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.04)", padding: "4px 10px", borderRadius: 8 }}>📈 Melhor: #{opponentProfile.careerHigh}</span>
-              )}
-              {opponentProfile.surface && (
-                <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.04)", padding: "4px 10px", borderRadius: 8 }}>🎯 Melhor em: {opponentProfile.surface}</span>
-              )}
+              {opponentProfile.titles !== undefined && opponentProfile.titles !== null && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.04)", padding: "4px 10px", borderRadius: 8 }}>🏆 {opponentProfile.titles} título{opponentProfile.titles !== 1 ? "s" : ""}</span>}
+              {opponentProfile.careerHigh && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: SANS, background: "rgba(255,255,255,0.04)", padding: "4px 10px", borderRadius: 8 }}>📈 Melhor: #{opponentProfile.careerHigh}</span>}
             </div>
-
             <p style={{ margin: "14px 0 0", fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textAlign: "center" }}>Fonte: Wikipedia</p>
           </div>
         </div>
-      )}
-
-      {showInstallGuide && (
-        <Modal title="Instale o Fonseca News" subtitle="3 passos simples" onClose={function(){setShowInstallGuide(false);}} maxWidth={400}>
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            {[["1","Abra o menu do navegador","No Safari (iPhone): ícone de compartilhar (↑) · No Chrome (Android): três pontos (⋮)"],["2","Adicionar à Tela de Início","Role as opções até encontrar e toque"],["3","Confirme","Toque em Adicionar — pronto!"]].map(function(step, i) {
-              return (<div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12 }}><div style={{ width: 28, height: 28, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, flexShrink: 0, fontFamily: SANS }}>{step[0]}</div><div><p style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS }}>{step[1]}</p><p style={{ margin: 0, fontSize: 12, color: SUB, fontFamily: SANS, lineHeight: 1.5 }}>{step[2]}</p></div></div>);
-            })}
-          </div>
-        </Modal>
       )}
 
       {showFeedback && (
@@ -1633,112 +1410,6 @@ export default function JoaoFonsecaNews() {
             <button onClick={function() { if (navigator.clipboard) navigator.clipboard.writeText("SUA-CHAVE-PIX-AQUI"); }} style={{ display: "block", margin: "12px auto 0", padding: "10px 20px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Copiar chave PIX</button>
           </div>
         </Modal>
-      )}
-
-      {/* AUTO INSTALL POPUP */}
-      {showAutoInstall && (
-        <div onClick={function(){ try { localStorage.setItem("fn_autoinstall_dismissed", "1"); } catch(e){} setShowAutoInstall(false); }} style={{ position: "fixed", inset: 0, zIndex: 400, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 0, animation: "fadeInO 0.3s ease" }}>
-          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: "24px 24px 0 0", width: "100%", maxWidth: 480, maxHeight: "85vh", overflowY: "auto", animation: "slideU 0.4s ease", padding: "28px 24px 20px", position: "relative" }}>
-
-            <button onClick={function(){ try { localStorage.setItem("fn_autoinstall_dismissed", "1"); } catch(e){} setShowAutoInstall(false); }} style={{ position: "absolute", top: 16, right: 16, background: BG_ALT, border: "none", width: 28, height: 28, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: DIM, fontSize: 14 }}>✕</button>
-
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: "#ddd", margin: "0 auto 20px" }} />
-
-            <div style={{ textAlign: "center", marginBottom: 24 }}>
-              <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
-                <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
-              </div>
-              <h2 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 800, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.02em" }}>Use como app</h2>
-              <p style={{ margin: 0, fontSize: 13, color: SUB, fontFamily: SANS }}>Acesso rápido. Tela cheia. Sem baixar nada.</p>
-            </div>
-
-            {(function() {
-              var isIOS = typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
-              var steps = isIOS ? [
-                { num: "1", title: "Toque em Compartilhar", desc: "O ícone com seta pra cima na barra do Safari", visual: function() { return (
-                  <div style={{ width: "100%", height: 80, background: BG_ALT, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 8, background: "#007AFF15", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#007AFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-                    </div>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>
-                  </div>
-                ); }},
-                { num: "2", title: "Adicionar a Tela de Início", desc: "Role as opções e toque nesse botão", visual: function() { return (
-                  <div style={{ width: "100%", height: 80, background: BG_ALT, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#fff", borderRadius: 10, border: "1px solid " + BORDER }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Tela de Início</span>
-                    </div>
-                  </div>
-                ); }},
-                { num: "3", title: "Pronto!", desc: "O Fonseca News aparece na sua tela inicial", visual: function() { return (
-                  <div style={{ width: "100%", height: 80, background: BG_ALT, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 800 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: GREEN, fontFamily: SANS }}>Instalado com sucesso</span>
-                  </div>
-                ); }}
-              ] : [
-                { num: "1", title: "Toque nos 3 pontos", desc: "No canto superior direito do Chrome", visual: function() { return (
-                  <div style={{ width: "100%", height: 80, background: BG_ALT, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(0,0,0,0.06)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 3 }}>
-                      <span style={{ width: 4, height: 4, borderRadius: "50%", background: TEXT }} /><span style={{ width: 4, height: 4, borderRadius: "50%", background: TEXT }} /><span style={{ width: 4, height: 4, borderRadius: "50%", background: TEXT }} />
-                    </div>
-                  </div>
-                ); }},
-                { num: "2", title: "Instalar aplicativo", desc: "Toque na opção 'Instalar' ou 'Adicionar'", visual: function() { return (
-                  <div style={{ width: "100%", height: 80, background: BG_ALT, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px", background: "#fff", borderRadius: 10, border: "1px solid " + BORDER }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={TEXT} strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: TEXT, fontFamily: SANS }}>Instalar app</span>
-                    </div>
-                  </div>
-                ); }},
-                { num: "3", title: "Pronto!", desc: "O Fonseca News aparece na sua tela inicial", visual: function() { return (
-                  <div style={{ width: "100%", height: 80, background: BG_ALT, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 12, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 800 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: GREEN, fontFamily: SANS }}>Instalado com sucesso</span>
-                  </div>
-                ); }}
-              ];
-
-              return (
-                <div>
-                  <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 20 }}>
-                    {steps.map(function(_, i) {
-                      return <div key={i} onClick={function(){ setAutoInstallStep(i); }} style={{ width: autoInstallStep === i ? 20 : 8, height: 8, borderRadius: 4, background: autoInstallStep === i ? GREEN : "#ddd", transition: "all 0.3s", cursor: "pointer" }} />;
-                    })}
-                  </div>
-
-                  <div style={{ marginBottom: 20 }}>
-                    {steps[autoInstallStep].visual()}
-                    <div style={{ textAlign: "center", marginTop: 14 }}>
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                        <span style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, fontFamily: SANS }}>{steps[autoInstallStep].num}</span>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: TEXT, fontFamily: SANS }}>{steps[autoInstallStep].title}</span>
-                      </div>
-                      <p style={{ margin: 0, fontSize: 13, color: SUB, fontFamily: SANS }}>{steps[autoInstallStep].desc}</p>
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", gap: 8 }}>
-                    {autoInstallStep > 0 && (
-                      <button onClick={function(){ setAutoInstallStep(function(s){ return s - 1; }); }} style={{ flex: 1, padding: "12px", background: BG_ALT, border: "1px solid " + BORDER, borderRadius: 12, fontSize: 13, fontWeight: 600, color: SUB, cursor: "pointer", fontFamily: SANS }}>Voltar</button>
-                    )}
-                    {autoInstallStep < steps.length - 1 ? (
-                      <button onClick={function(){ setAutoInstallStep(function(s){ return s + 1; }); }} style={{ flex: 2, padding: "12px", background: GREEN, border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: SANS }}>Próximo</button>
-                    ) : (
-                      <button onClick={function(){ try { localStorage.setItem("fn_autoinstall_dismissed", "1"); } catch(e){} setShowAutoInstall(false); }} style={{ flex: 2, padding: "12px", background: GREEN, border: "none", borderRadius: 12, fontSize: 13, fontWeight: 700, color: "#fff", cursor: "pointer", fontFamily: SANS }}>Entendi</button>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
       )}
 
     </div>
