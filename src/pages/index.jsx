@@ -1270,21 +1270,18 @@ export default function JoaoFonsecaNews() {
       }</style>
 
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
-            <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
-              <span style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
             </div>
-            <div style={{ minWidth: 0 }}>
-              <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap", display: "block" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
-                {dp && <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, fontFamily: SANS, background: GREEN + "0A", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", border: "1px solid " + GREEN + "18" }}>#{dp.ranking} ATP</span>}
-                <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>Site de fãs{lastUpdate ? " · atualizado " + formatTimeAgo(lastUpdate) : ""}</span>
-              </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
+              <span style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
+              {dp && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS, whiteSpace: "nowrap" }}>#{dp.ranking}</span>}
             </div>
           </div>
-          <button onClick={handleRefresh} disabled={loading} style={{ width: 36, height: 36, borderRadius: 10, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
+          <button onClick={handleRefresh} disabled={loading} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, padding: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
           </button>
         </div>
 
@@ -1311,6 +1308,8 @@ export default function JoaoFonsecaNews() {
       </header>
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
+
+        <p style={{ margin: 0, padding: "14px 4px 0", fontSize: 12, color: DIM, fontFamily: SANS, letterSpacing: "0.01em" }}>Guia de bolso para fãs do João Fonseca</p>
 
         {liveMatch ? (
           <section style={{ padding: "20px 0 0" }}>
@@ -1454,7 +1453,7 @@ export default function JoaoFonsecaNews() {
             <span id="fn-visitors-wrap" style={{ fontSize: 11, color: DIM, fontFamily: SANS, display: "none" }}><span id="fn-visitors" style={{ fontWeight: 700, color: GREEN }}></span> visitantes</span>
             <span id="fn-standalone-wrap" style={{ fontSize: 11, color: DIM, fontFamily: SANS, display: "none" }}><span id="fn-standalone" style={{ fontWeight: 700, color: GREEN }}></span> instalaram o app</span>
           </div>
-          <p style={{ fontSize: 9, color: DIM, fontFamily: SANS, lineHeight: 1.6, maxWidth: 340, margin: "0 auto", textAlign: "center" }}>Site independente de fãs · Sem vínculo com João Fonseca ou ATP · © 2026 Fonseca News</p>
+          <p style={{ fontSize: 9, color: DIM, fontFamily: SANS, lineHeight: 1.6, maxWidth: 340, margin: "0 auto", textAlign: "center" }}>Guia de bolso para fãs do João Fonseca · Sem vínculo com João Fonseca ou ATP · © 2026 Fonseca News</p>
         </footer>
       </main>
 
