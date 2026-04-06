@@ -543,7 +543,7 @@ var NextDuelCard = function(props) {
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em" }}>{surfaceLabel}</span>
           <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            {(match.tournament_name || "").split(",")[0]}
+            {match.tournament_category || ""}
             {match.round ? " · " + match.round : ""}
           </span>
         </div>
@@ -557,6 +557,11 @@ var NextDuelCard = function(props) {
             <svg width="13" height="13" viewBox="0 0 24 24" fill={GREEN} stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </div>
         )}
+      </div>
+
+      {/* Tournament title */}
+      <div style={{ textAlign: "center", padding: "12px 16px 0" }}>
+        <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{(match.tournament_name || "Próxima Partida").split(",")[0]}</h2>
       </div>
 
       {/* Players — the hero */}
@@ -586,6 +591,7 @@ var NextDuelCard = function(props) {
         <div style={{ padding: "14px 16px 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{fPct}%</span>
+            <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Probabilidade de vitória</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{oPct}%</span>
           </div>
           <div style={{ display: "flex", height: 4, borderRadius: 2, overflow: "hidden", gap: 2 }}>
@@ -595,14 +601,16 @@ var NextDuelCard = function(props) {
         </div>
       )}
 
-      {/* Date · time · countdown — one line */}
+      {/* Date + time */}
       {dateInfo && (
-        <div style={{ padding: "14px 16px 0", textAlign: "center" }}>
-          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", fontFamily: SANS, fontWeight: 500 }}>
-            {shortDate} · <span style={{ fontWeight: 700, color: "#4FC3F7" }}>{dateInfo.time}</span> <span style={{ fontSize: 10, color: "rgba(79,195,247,0.5)" }}>BRT</span>
-            {countdownText ? <span style={{ color: "rgba(255,255,255,0.25)" }}> · </span> : ""}
-            {countdownText ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>{countdownText}</span> : ""}
-          </span>
+        <div style={{ padding: "16px 16px 0", textAlign: "center" }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{shortDate}</span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span style={{ fontSize: 22, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.04em" }}>{dateInfo.time}</span>
+            <span style={{ fontSize: 10, color: "rgba(79,195,247,0.45)", fontFamily: SANS }}>BRT</span>
+          </div>
+          {countdownText && <span style={{ display: "block", marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span>}
         </div>
       )}
 
