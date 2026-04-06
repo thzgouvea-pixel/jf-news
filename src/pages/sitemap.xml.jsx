@@ -1,8 +1,6 @@
 // src/pages/sitemap.xml.jsx
 // Dynamic sitemap generation for Google indexing
-
 var SITE = "https://fonsecanews.com.br";
-
 function generateSitemap() {
   var pages = [
     { url: SITE, changefreq: "hourly", priority: "1.0" },
@@ -10,10 +8,8 @@ function generateSitemap() {
     { url: SITE + "/regras", changefreq: "monthly", priority: "0.8" },
     { url: SITE + "/biografia", changefreq: "monthly", priority: "0.9" },
   ];
-
   var xml = '<?xml version="1.0" encoding="UTF-8"?>';
   xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-
   pages.forEach(function(page) {
     xml += "<url>";
     xml += "<loc>" + page.url + "</loc>";
@@ -22,11 +18,9 @@ function generateSitemap() {
     xml += "<priority>" + page.priority + "</priority>";
     xml += "</url>";
   });
-
   xml += "</urlset>";
   return xml;
 }
-
 export async function getServerSideProps({ res }) {
   var sitemap = generateSitemap();
   res.setHeader("Content-Type", "text/xml");
@@ -35,7 +29,6 @@ export async function getServerSideProps({ res }) {
   res.end();
   return { props: {} };
 }
-
 export default function Sitemap() {
   return null;
 }
