@@ -197,7 +197,8 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
 // ===== RANKING — from Wikipedia API =====
 async function fetchRanking(apiKey, log) {
   try {
-    var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&section=0&format=json";
+    // Fetch FULL article wikitext (not just section 0) to get Win-loss table
+    var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json";
     var res = await fetch(apiUrl, { headers: { "User-Agent": "FonsecaNews/10.0 (fan site; contact: thzgouvea@gmail.com)" } });
     if (!res.ok) { log.push("ranking: Wikipedia API HTTP " + res.status); return null; }
     var data = await res.json();
@@ -227,7 +228,42 @@ async function fetchRanking(apiKey, log) {
     };
     var titlesMatch = wikitext.match(/singlesrecord\s*=.*?(\d+)\s*title/i) || wikitext.match(/titles\s*=\s*(\d+)/i);
     var titlesCount = titlesMatch ? parseInt(titlesMatch[1], 10) : 2;
-    var careerData = { wins: careerWins, losses: careerLosses, winPct: (careerWins && careerLosses) ? Math.round((careerWins / (careerWins + careerLosses)) * 100) : null, surface: surfaceStats, titles: titlesCount, updatedAt: new Date().toISOString() };
+
+    // Parse vs Top 10 from Win-loss table
+    var vsTop10 = null;
+    try {
+      // Pattern 1: "No. 1–10" row in wikitable → "|| X–Y"
+      var t10m = wikitext.match(/No\.\s*1[–\-]10[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
+      if (t10m) {
+        vsTop10 = { w: parseInt(t10m[1], 10), l: parseInt(t10m[2], 10) };
+        log.push("vsTop10: " + vsTop10.w + "-" + vsTop10.l + " (from No.1-10 row)");
+      }
+      // Pattern 2: Sum v1 + v2 + v3 (No.1 + No.2-5 + No.6-10)
+      if (!vsTop10) {
+        var v1w = 0, v1l = 0, v2w = 0, v2l = 0, v3w = 0, v3l = 0;
+        var v1m = wikitext.match(/No\.\s*1\b[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
+        var v2m = wikitext.match(/No\.\s*2[–\-]5[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
+        var v3m = wikitext.match(/No\.\s*6[–\-]10[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
+        if (v1m) { v1w = parseInt(v1m[1], 10); v1l = parseInt(v1m[2], 10); }
+        if (v2m) { v2w = parseInt(v2m[1], 10); v2l = parseInt(v2m[2], 10); }
+        if (v3m) { v3w = parseInt(v3m[1], 10); v3l = parseInt(v3m[2], 10); }
+        if (v1m || v2m || v3m) {
+          vsTop10 = { w: v1w + v2w + v3w, l: v1l + v2l + v3l };
+          log.push("vsTop10: " + vsTop10.w + "-" + vsTop10.l + " (summed v1+v2+v3)");
+        }
+      }
+      // Pattern 3: "top 10" or "top-10" near a W-L record in prose
+      if (!vsTop10) {
+        var t10p = wikitext.match(/top[- ]?10.*?(\d+)[–\-](\d+)/i);
+        if (!t10p) t10p = wikitext.match(/(\d+)[–\-](\d+).*?(?:against|vs\.?|versus).*?top[- ]?10/i);
+        if (t10p) {
+          vsTop10 = { w: parseInt(t10p[1], 10), l: parseInt(t10p[2], 10) };
+          log.push("vsTop10: " + vsTop10.w + "-" + vsTop10.l + " (from prose)");
+        }
+      }
+    } catch (e) { log.push("vsTop10: parse error " + e.message); }
+
+    var careerData = { wins: careerWins, losses: careerLosses, winPct: (careerWins && careerLosses) ? Math.round((careerWins / (careerWins + careerLosses)) * 100) : null, surface: surfaceStats, titles: titlesCount, vsTop10: vsTop10, updatedAt: new Date().toISOString() };
     await kv.set("fn:careerStats", JSON.stringify(careerData), { ex: 86400 * 7 });
     log.push("career: " + (careerWins || "?") + "-" + (careerLosses || "?") + " (" + (careerData.winPct || "?") + "%)");
     return { ranking: ranking, points: null, previousRanking: null, bestRanking: bestRanking, rankingChange: 0, prizeMoney: prizeMoney };
