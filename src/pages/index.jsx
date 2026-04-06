@@ -575,113 +575,39 @@ var NextDuelCard = function(props) {
     </section>
   );
 };
-
-// ===== LIVE SCORE CARD =====
+// ===== LIVE SCORE CARD — reads from /api/live format =====
 var LiveScoreCard = function(props) {
   var data = props.data;
   if (!data || !data.live) return null;
 
-  var match = data.match || {};
+  var opponent = data.opponent || {};
+  var score = data.score || {};
   var stats = data.stats || {};
-  var homeTeam = match.homeTeam || {};
-  var awayTeam = match.awayTeam || {};
-  var homeScore = match.homeScore || {};
-  var awayScore = match.awayScore || {};
-  var status = match.status || {};
+  var fSets = score.fonseca_sets || [];
+  var oSets = score.opponent_sets || [];
+  var setsWon = score.sets_won || {};
+  var currentGame = score.current_game || {};
+  var serving = score.serving || "";
 
-  var homeName = (homeTeam.name || homeTeam.slug || "").toLowerCase();
-  var isFonsecaHome = homeName.includes("fonseca");
-  var fTeam = isFonsecaHome ? homeTeam : awayTeam;
-  var oTeam = isFonsecaHome ? awayTeam : homeTeam;
-  var fScore = isFonsecaHome ? homeScore : awayScore;
-  var oScore = isFonsecaHome ? awayScore : homeScore;
+  var oppName = opponent.name || "Oponente";
+  var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
 
-  var fSets = fScore.period1 !== undefined ? [fScore.period1, fScore.period2, fScore.period3].filter(function(s) { return s !== undefined; }) : [];
-  var oSets = oScore.period1 !== undefined ? [oScore.period1, oScore.period2, oScore.period3].filter(function(s) { return s !== undefined; }) : [];
-
-  var fName = (fTeam.name || "J. Fonseca").split(" ").pop();
-  var oName = (oTeam.name || "Oponente").split(" ").pop();
-
-  var fGame = fScore.point || "";
-  var oGame = oScore.point || "";
-
-  var tournament = match.tournament || {};
-  var tourneyName = tournament.name || data.tournament || "";
+  var tourneyName = data.tournament || "";
   var surface = data.surface || "";
   var sc = surfaceColorMap[surface] || "#999";
-  var statusText = status.description || "Ao vivo";
+  var statusText = data.status || "Ao vivo";
+  var roundText = data.round || "";
 
-  var fStats = isFonsecaHome ? (stats.home || {}) : (stats.away || {});
-  var oStats = isFonsecaHome ? (stats.away || {}) : (stats.home || {});
+  var fStats = stats.fonseca || {};
+  var oStats = stats.opponent || {};
 
   var liveStatRows = [
     { label: "Aces", f: fStats.aces || 0, o: oStats.aces || 0 },
     { label: "D. Faltas", f: fStats.doublefaults || 0, o: oStats.doublefaults || 0, invert: true },
     { label: "1o Saque %", f: fStats.firstserveaccuracy || 0, o: oStats.firstserveaccuracy || 0, pct: true },
     { label: "Winners", f: fStats.winners || 0, o: oStats.winners || 0 },
-    { label: "Pontos", f: fStats.pointstotal || 0, o: oStats.pointstotal || 0 },
-  ].filter(function(r) { return r.f > 0 || r.o > 0; });
-
-  return (
-    <section style={{ margin: "4px 0 0", padding: "20px 24px", background: "linear-gradient(145deg, #0D1726 0%, #1a3050 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: 16, right: 20, display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
-        <span style={{ fontSize: 10, fontWeight: 700, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ao vivo</span>
-      </div>
-
-      <div style={{ textAlign: "center", marginBottom: 16 }}>
-        {surface && <span style={{ fontSize: 10, fontWeight: 700, color: sc, fontFamily: SANS }}>{surface}</span>}
-        {tourneyName && <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}> · {tourneyName}</span>}
-        <div style={{ marginTop: 4 }}><span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{statusText}</span></div>
-      </div>
-
-      <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 12, padding: "16px 20px", marginBottom: liveStatRows.length > 0 ? 16 : 0 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-          <span style={{ fontSize: 15, fontWeight: 700, color: GREEN, fontFamily: SERIF }}>J. Fonseca</span>
-          <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF }}>{oName}</span>
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", gap: 10 }}>
-            {fSets.map(function(s, i) {
-              var won = s > oSets[i];
-              return (<span key={i} style={{ fontSize: 22, fontWeight: 800, color: won ? GREEN : "rgba(255,255,255,0.5)", fontFamily: SANS }}>{s}</span>);
-            })}
-            {fGame !== "" && <span style={{ fontSize: 16, fontWeight: 600, color: YELLOW, fontFamily: SANS, marginLeft: 6 }}>{fGame}</span>}
-          </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS }}>SETS</span>
-          <div style={{ display: "flex", gap: 10 }}>
-            {oGame !== "" && <span style={{ fontSize: 16, fontWeight: 600, color: YELLOW, fontFamily: SANS, marginRight: 6 }}>{oGame}</span>}
-            {oSets.map(function(s, i) {
-              var won = s > fSets[i];
-              return (<span key={i} style={{ fontSize: 22, fontWeight: 800, color: won ? "#ef4444" : "rgba(255,255,255,0.5)", fontFamily: SANS }}>{s}</span>);
-            })}
-          </div>
-        </div>
-      </div>
-
-      {liveStatRows.length > 0 && (
-        <div style={{ padding: "0 4px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: GREEN, fontFamily: SANS }}>Fonseca</span>
-            <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{oName}</span>
-          </div>
-          {liveStatRows.map(function(row, i) {
-            var fBetter = row.invert ? row.f < row.o : row.f >= row.o;
-            return (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: fBetter ? GREEN : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 30 }}>{row.pct ? row.f + "%" : row.f}</span>
-                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textAlign: "center", flex: 1 }}>{row.label}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: !fBetter ? "#ef4444" : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 30, textAlign: "right" }}>{row.pct ? row.o + "%" : row.o}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-};
-
+    { label: "Break Points", f: fStats.breakpointsscored || 0, o: oStats.breakpointsscored || 0 },
+    { label: "Pontos", f: fStats.pointstotal || 0, o: o
 // ===== WIN PROBABILITY BAR =====
 var WinProbBar = function(props) {
   var winProb = props.winProb;
@@ -705,7 +631,6 @@ var WinProbBar = function(props) {
     </div>
   );
 };
-
 // ===== PLAYER BLOCK (REDESIGN) =====
 var PlayerBlock = function(props) {
   var lastMatch = props.lastMatch;
