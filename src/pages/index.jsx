@@ -15,93 +15,84 @@ const SANS = "'Inter', -apple-system, sans-serif";
 const CACHE_DURATION_MS = 30 * 60 * 1000;
 const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
 
-// ===== FIX 1: Foto via ATP Tour headshot (funciona pra todos) =====
-var ATP_SLUG_MAP = {
-  "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58",
-  "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51",
-  "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29",
-  "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi",
-  "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq",
-  "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58",
-  "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je",
-  "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Rinderknech": "rc91",
-  "Fonseca": "f0fv", "Nakashima": "n0ae", "Baez": "b0dx", "Etcheverry": "e0gd",
-  "Jarry": "j0ag", "Bublik": "b0bk", "Kokkinakis": "k0ad", "Korda": "k0ah",
-  "Norrie": "n0ab", "Dimitrov": "d875", "Monfils": "m788", "Wawrinka": "w367",
-  "Nishikori": "n552", "Coric": "c0ag", "Popyrin": "p0dj", "Thompson": "t0aj",
-  "Giron": "g0ah",
+// ===== PLAYER DATABASE — unified map (ATP slug, ESPN ID, SofaScore ID) =====
+var PLAYER_DB = {
+  "Alcaraz": { slug: "a0e2", espn: "4686", sofa: 856498 },
+  "Sinner": { slug: "s0ag", espn: "4375", sofa: 333849 },
+  "Djokovic": { slug: "d643", espn: "777", sofa: 12708 },
+  "Medvedev": { slug: "mm58", espn: "3367", sofa: 196065 },
+  "Zverev": { slug: "z355", espn: "3098", sofa: 197075 },
+  "Rublev": { slug: "re44", espn: "3523", sofa: 197592 },
+  "Ruud": { slug: "rh16", espn: null, sofa: null },
+  "Tsitsipas": { slug: "te51", espn: null, sofa: null },
+  "Fritz": { slug: "fb98", espn: "2981", sofa: 163713 },
+  "Rune": { slug: "r0dg", espn: "4685", sofa: null },
+  "Hurkacz": { slug: "hb71", espn: "3264", sofa: 203766 },
+  "Khachanov": { slug: "ke29", espn: "3112", sofa: null },
+  "Berrettini": { slug: "bk40", espn: "3316", sofa: 205641 },
+  "Diallo": { slug: "d0f6", espn: "3885", sofa: 280151 },
+  "Shelton": { slug: "s0jy", espn: "11712", sofa: 963814 },
+  "Draper": { slug: "d0bi", espn: "4580", sofa: 366258 },
+  "Tiafoe": { slug: "td51", espn: "3263", sofa: 235141 },
+  "Musetti": { slug: "m0ej", espn: "4228", sofa: 367702 },
+  "Fils": { slug: "f0gx", espn: "11716", sofa: 963839 },
+  "Cerundolo": { slug: "c0aq", espn: "11689", sofa: 829780 },
+  "Davidovich Fokina": { slug: "d0au", espn: "4579", sofa: 367748 },
+  "Auger-Aliassime": { slug: "ag37", espn: "3270", sofa: 230882 },
+  "de Minaur": { slug: "dh58", espn: "3313", sofa: 226413 },
+  "Paul": { slug: "pl56", espn: "3117", sofa: 189458 },
+  "Tabilo": { slug: "t0ag", espn: "4684", sofa: 367700 },
+  "Machac": { slug: "m0eo", espn: "11709", sofa: 828775 },
+  "Mpetshi Perricard": { slug: "m0je", espn: "11747", sofa: null },
+  "Mensik": { slug: "m0ij", espn: "11746", sofa: 979825 },
+  "Shapovalov": { slug: "su55", espn: "3086", sofa: 202233 },
+  "Munar": { slug: "mf53", espn: "4229", sofa: 252456 },
+  "Rinderknech": { slug: "rc91", espn: "3511", sofa: 136498 },
+  "Fonseca": { slug: "f0fv", espn: "11745", sofa: null },
+  "Nakashima": { slug: "n0ae", espn: "4581", sofa: 829749 },
+  "Baez": { slug: "b0dx", espn: "11690", sofa: 830192 },
+  "Etcheverry": { slug: "e0gd", espn: "11700", sofa: 953250 },
+  "Jarry": { slug: "j0ag", espn: "3539", sofa: 135133 },
+  "Bublik": { slug: "b0bk", espn: "3540", sofa: 227296 },
+  "Kokkinakis": { slug: "k0ad", espn: "3124", sofa: null },
+  "Korda": { slug: "k0ah", espn: "4578", sofa: 367699 },
+  "Norrie": { slug: "n0ab", espn: "3266", sofa: null },
+  "Dimitrov": { slug: "d875", espn: "1629", sofa: 26696 },
+  "Monfils": { slug: "m788", espn: "716", sofa: 14640 },
+  "Wawrinka": { slug: "w367", espn: "536", sofa: null },
+  "Nishikori": { slug: "n552", espn: "1058", sofa: null },
+  "Coric": { slug: "c0ag", espn: "2435", sofa: null },
+  "Popyrin": { slug: "p0dj", espn: "3541", sofa: null },
+  "Thompson": { slug: "t0aj", espn: "3099", sofa: null },
+  "Giron": { slug: "g0ah", espn: "3116", sofa: null },
+  "Kotov": { slug: null, espn: "11706", sofa: null },
+  "Safiullin": { slug: null, espn: "11714", sofa: null },
+};
+
+var findPlayer = function(name) {
+  if (!name) return null;
+  for (var k in PLAYER_DB) { if (name.indexOf(k) !== -1) return { key: k, data: PLAYER_DB[k] }; }
+  return null;
 };
 
 var getATPImage = function(name) {
-  if (!name) return null;
-  for (var k in ATP_SLUG_MAP) {
-    if (name.indexOf(k) !== -1) {
-      return "https://www.atptour.com/-/media/alias/player-headshot/" + ATP_SLUG_MAP[k];
-    }
-  }
-  return null;
+  var p = findPlayer(name);
+  return (p && p.data.slug) ? "https://www.atptour.com/-/media/alias/player-headshot/" + p.data.slug : null;
+};
+
+var getESPNImage = function(name) {
+  var p = findPlayer(name);
+  return (p && p.data.espn) ? "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + p.data.espn + ".png&w=200&h=145" : null;
+};
+
+var getSofaScoreImage = function(name, sofascoreId) {
+  var p = findPlayer(name);
+  var id = (p && p.data.sofa) ? p.data.sofa : sofascoreId;
+  return id ? "https://api.sofascore.app/api/v1/player/" + id + "/image" : null;
 };
 
 const FONSECA_IMG = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
 const FONSECA_IMG_FALLBACK = "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/11745.png&w=200&h=145";
-
-// ===== FIX 2: Mapa ESPN centralizado (usado em NextDuelCard + PlayerBlock) =====
-var ESPN_ID_MAP = {
-  "Alcaraz": "4686", "Sinner": "4375", "Djokovic": "777", "Medvedev": "3367",
-  "Zverev": "3098", "Rublev": "3523", "Ruud": "3536", "Tsitsipas": "3293",
-  "Fritz": "2981", "Rune": "4685", "Draper": "4580", "Tiafoe": "3263",
-  "Musetti": "4228", "Fils": "11716", "Shelton": "11712", "Berrettini": "3316",
-  "Hurkacz": "3264", "de Minaur": "3313", "Paul": "3117", "Khachanov": "3112",
-  "Rinderknech": "3511", "Mensik": "11746", "Machac": "11709",
-  "Cerundolo": "11689", "Shapovalov": "3086", "Auger-Aliassime": "3270",
-  "Munar": "4229", "Fonseca": "11745", "Diallo": "3885",
-  "Nakashima": "4581", "Tabilo": "4684", "Mpetshi Perricard": "11747",
-  "Davidovich Fokina": "4579", "Baez": "11690", "Etcheverry": "11700",
-  "Jarry": "3539", "Kotov": "11706", "Safiullin": "11714",
-  "Nishikori": "1058", "Bublik": "3540", "Kokkinakis": "3124",
-  "Thompson": "3099", "Popyrin": "3541", "Korda": "4578",
-  "Norrie": "3266", "Dimitrov": "1629", "Monfils": "716",
-  "Wawrinka": "536", "Giron": "3116", "Coric": "2435",
-};
-
-var getESPNImage = function(name) {
-  if (!name) return null;
-  for (var k in ESPN_ID_MAP) {
-    if (name.indexOf(k) !== -1) {
-      return "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + ESPN_ID_MAP[k] + ".png&w=200&h=145";
-    }
-  }
-  return null;
-};
-
-// SofaScore IDs para fallback de fotos
-var SOFASCORE_ID_MAP = {
-  "Diallo": 280151, "Rinderknech": 136498, "Alcaraz": 856498, "Sinner": 333849,
-  "Djokovic": 12708, "Medvedev": 196065, "Zverev": 197075, "Rublev": 197592,
-  "Fritz": 163713, "Draper": 366258, "Tiafoe": 235141, "Musetti": 367702,
-  "Fils": 963839, "Shelton": 963814, "Mensik": 979825, "Machac": 828775,
-  "Cerundolo": 829780, "Shapovalov": 202233, "Auger-Aliassime": 230882,
-  "de Minaur": 226413, "Paul": 189458, "Berrettini": 205641, "Hurkacz": 203766,
-  "Nakashima": 829749, "Bublik": 227296, "Dimitrov": 26696, "Monfils": 14640,
-  "Munar": 252456, "Korda": 367699, "Baez": 830192, "Etcheverry": 953250,
-  "Jarry": 135133, "Tabilo": 367700, "Davidovich Fokina": 367748,
-};
-
-var getSofaScoreImage = function(name, sofascoreId) {
-  // Primeiro tenta pelo nome no mapa
-  if (name) {
-    for (var k in SOFASCORE_ID_MAP) {
-      if (name.indexOf(k) !== -1) {
-        return "https://api.sofascore.app/api/v1/player/" + SOFASCORE_ID_MAP[k] + "/image";
-      }
-    }
-  }
-  // Depois tenta pelo ID direto
-  if (sofascoreId) {
-    return "https://api.sofascore.app/api/v1/player/" + sofascoreId + "/image";
-  }
-  return null;
-};
 
 var SAMPLE_PLAYER = { ranking: 40, rankingChange: "+4" };
 var SAMPLE_LAST_MATCH = { result: "V", score: "6-3 6-4", opponent: "T. Nakashima", opponent_name: "T. Nakashima", tournament: "Indian Wells", tournament_name: "Indian Wells", round: "R2" };
@@ -445,7 +436,7 @@ var MatchPrediction = function(props) {
   );
 };
 
-// ===== NEXT DUEL CARD — v3 (usando FONSECA_IMG e ESPN_ID_MAP centralizados) =====
+// ===== NEXT DUEL CARD — v4 (usando PLAYER_DB unificado) =====
 var NextDuelCard = function(props) {
   var match = props.match; var player = props.player;
   var onOppClick = props.onOppClick;
@@ -457,14 +448,12 @@ var NextDuelCard = function(props) {
   var countdown = useCountdown(match ? match.date : null);
   if (!match) return null;
 
-  var atpSlugs = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je", "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Rinderknech": "rc91", "Fonseca": "f0fv" };
-
   var oppName = match.opponent_name || "A definir";
   var oppRanking = match.opponent_ranking || (oppProfile && oppProfile.ranking ? oppProfile.ranking : null);
   var oppCountry = match.opponent_country || (oppProfile && oppProfile.country ? oppProfile.country : "");
   var oppFlag = countryFlags[oppCountry] || "";
   var oppAtpSlug = match.opponent_atp_slug || null;
-  if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
+  if (!oppAtpSlug) { var fp = findPlayer(oppName); if (fp && fp.data.slug) oppAtpSlug = fp.data.slug; }
 
   // FIX 2: Foto do oponente via ATP Tour (funciona pra todos)
   var oppImg = getATPImage(oppName);
@@ -1179,10 +1168,10 @@ export default function JoaoFonsecaNews() {
   var dismissPopup = function() { setShowInstallPopup(false); setPopupDismissed(true); };
 
   var loadCache = function() {
-    try { var raw = localStorage.getItem("jf-news-v4"); if (raw) { var c = JSON.parse(raw); if (Date.now() - c.timestamp < CACHE_DURATION_MS && c.news && c.news.length) { setNews(c.news); setNextMatch(c.nextMatch||null); setLastMatch(c.lastMatch||null); setPlayer(c.player||null); setSeason(c.season||null); setLastUpdate(new Date(c.timestamp).toISOString()); return true; } } } catch(e) {}
+    try { var raw = localStorage.getItem("jf-news-v5"); if (raw) { var c = JSON.parse(raw); if (Date.now() - c.timestamp < CACHE_DURATION_MS && c.news && c.news.length) { setNews(c.news); setNextMatch(c.nextMatch||null); setLastMatch(c.lastMatch||null); setPlayer(c.player||null); setSeason(c.season||null); setLastUpdate(new Date(c.timestamp).toISOString()); return true; } } } catch(e) {}
     return false;
   };
-  var saveCache = function(d) { try { localStorage.setItem("jf-news-v4", JSON.stringify(Object.assign({}, d, { timestamp: Date.now() }))); } catch(e) {} };
+  var saveCache = function(d) { try { localStorage.setItem("jf-news-v5", JSON.stringify(Object.assign({}, d, { timestamp: Date.now() }))); } catch(e) {} };
 
   var fetchNews = function() {
     setLoading(true);
@@ -1336,6 +1325,13 @@ export default function JoaoFonsecaNews() {
       </header>
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
+
+        {!loading && news.length === 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#FEF3C7", borderRadius: 10, margin: "12px 0 0", border: "1px solid #F59E0B33" }}>
+            <span style={{ fontSize: 13 }}>⚠️</span>
+            <span style={{ fontSize: 11, color: "#92400E", fontFamily: SANS }}>Dados offline — mostrando informações de exemplo. Toque em atualizar.</span>
+          </div>
+        )}
 
         {liveMatch ? (
           <section style={{ padding: "20px 0 0" }}>
