@@ -1286,10 +1286,7 @@ export default function JoaoFonsecaNews() {
           </button>
         </div>
 
-        <div style={{ position: "relative" }}>
-          <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 16, background: "linear-gradient(to right, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
-          <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 28, background: "linear-gradient(to left, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
-          <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "4px 16px 14px", display: "flex", gap: 8 }}>
+        <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "6px 16px 14px", display: "flex", alignItems: "center", gap: 0, borderTop: "1px solid " + BORDER }}>
             {[
               { label: "Biografia", href: "/biografia" },
               { label: "Ranking", action: function(){setShowRanking(true);} },
@@ -1299,19 +1296,18 @@ export default function JoaoFonsecaNews() {
               { label: "Feedback", action: function(){setShowFeedback(true);} },
               { label: "Venda sua Raquete", href: "/raquetes", gold: true },
               { label: "Apoiar", action: function(){setShowPixModal(true);}, green: true },
-            ].map(function(item, i) {
+            ].map(function(item, i, arr) {
               var isLink = !!item.href;
               var isGreen = !!item.green;
               var isGold = !!item.gold;
-              var navColor = isGreen ? "#fff" : (isGold ? "#b8860b" : "#555");
-              var navBg = isGreen ? GREEN : (isGold ? YELLOW + "0A" : BG_ALT);
-              var navBorder = isGreen ? GREEN : (isGold ? YELLOW + "30" : BORDER);
-              var navStyle = { fontSize: 13, fontWeight: (isGreen || isGold) ? 700 : 600, color: navColor, fontFamily: SANS, whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, background: navBg, border: "1px solid " + navBorder, cursor: "pointer", textDecoration: "none", display: "block", letterSpacing: "0.01em", transition: "all 0.15s", flexShrink: 0 };
-              if (isLink) return <a key={i} href={item.href} style={navStyle}>{item.label}</a>;
-              return <button key={i} onClick={item.action} style={navStyle}>{item.label}</button>;
+              var navColor = isGreen ? GREEN : (isGold ? "#b8860b" : TEXT);
+              var navWeight = (isGreen || isGold) ? 700 : 500;
+              var navStyle = { fontSize: 14, fontWeight: navWeight, color: navColor, fontFamily: SANS, whiteSpace: "nowrap", padding: "8px 0", background: "none", border: "none", cursor: "pointer", textDecoration: "none", display: "inline", letterSpacing: "0.01em", transition: "color 0.15s", flexShrink: 0 };
+              var sep = i < arr.length - 1 ? <span key={"sep-"+i} style={{ fontSize: 10, color: "#d0d0d0", margin: "0 12px", flexShrink: 0, userSelect: "none" }}>·</span> : null;
+              if (isLink) return [<a key={i} href={item.href} style={navStyle}>{item.label}</a>, sep];
+              return [<button key={i} onClick={item.action} style={navStyle}>{item.label}</button>, sep];
             })}
           </nav>
-        </div>
       </header>
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
