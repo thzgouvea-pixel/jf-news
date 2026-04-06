@@ -1198,7 +1198,7 @@ export default function JoaoFonsecaNews() {
 
       {/* HEADER — Editorial Premium */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
-        {/* Row 1: Brand */}
+        {/* Row 1: Brand + Refresh */}
         <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
             <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
@@ -1209,12 +1209,12 @@ export default function JoaoFonsecaNews() {
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
                 {dp && <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, fontFamily: SANS, background: GREEN + "0A", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", border: "1px solid " + GREEN + "18" }}>#{dp.ranking} ATP</span>}
                 <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>Site de fãs{lastUpdate ? " · atualizado " + formatTimeAgo(lastUpdate) : ""}</span>
-                <button onClick={handleRefresh} disabled={loading} style={{ width: 24, height: 24, borderRadius: 6, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, marginLeft: 2 }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
-                </button>
               </div>
             </div>
           </div>
+          <button onClick={handleRefresh} disabled={loading} style={{ width: 36, height: 36, borderRadius: 10, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
+          </button>
         </div>
 
         {/* Row 2: Horizontal scrollable navigation */}
@@ -1229,7 +1229,7 @@ export default function JoaoFonsecaNews() {
               { label: "Conquistas", action: function(){setShowTitles(true);} },
               { label: "Regras do Tênis", href: "/regras" },
               { label: "Feedback", action: function(){setShowFeedback(true);} },
-              { label: "Raquetes", href: "/raquetes", gold: true },
+              { label: "Venda sua Raquete", href: "/raquetes", gold: true },
               { label: "Apoiar", action: function(){setShowPixModal(true);}, green: true },
             ].map(function(item, i) {
               var isLink = !!item.href;
@@ -1259,7 +1259,7 @@ export default function JoaoFonsecaNews() {
           var isStandalone = typeof window !== "undefined" && (window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone);
           if (isDismissed || isStandalone) return null;
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#fff", borderRadius: 12, marginTop: 8, marginBottom: 4, border: "1px solid " + BORDER, position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#fff", borderRadius: 12, marginTop: 8, marginBottom: 4, border: "1px solid " + BORDER }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "#0D172610", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0D1726" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
               </div>
@@ -1267,8 +1267,8 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", lineHeight: 1.3 }}>Use como app no celular</span>
                 <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Adicione à tela inicial — sem baixar nada</span>
               </div>
-              <button onClick={function(){setShowInstallGuide(true);}} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>Como fazer</button>
-              <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} window.location.reload(); }} style={{ position: "absolute", top: 6, right: 8, background: BG_ALT, border: "1px solid " + BORDER, width: 24, height: 24, borderRadius: "50%", color: SUB, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
+              <button onClick={function(){setShowInstallGuide(true);}} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap", flexShrink: 0 }}>Como fazer</button>
+              <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} window.location.reload(); }} style={{ width: 28, height: 28, borderRadius: "50%", background: BG_ALT, border: "1px solid " + BORDER, color: SUB, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
             </div>
           );
         })()}
@@ -1279,7 +1279,7 @@ export default function JoaoFonsecaNews() {
           try { isDismissed = typeof window !== "undefined" && localStorage.getItem("fn_push_dismissed"); } catch(e) {}
           if (isDismissed) return null;
           return (
-            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: GREEN + "08", borderRadius: 12, marginTop: 6, marginBottom: 4, border: "1px solid " + GREEN + "20", position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: GREEN + "08", borderRadius: 12, marginTop: 6, marginBottom: 4, border: "1px solid " + GREEN + "20" }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               </div>
@@ -1287,8 +1287,8 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", lineHeight: 1.3 }}>Ative as notificações</span>
                 <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Receba notificações de ranking, partidas e mais</span>
               </div>
-              <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>{pushLoading ? "..." : "Ativar"}</button>
-              <button onClick={function(){ try { localStorage.setItem("fn_push_dismissed", "1"); } catch(e){} window.location.reload(); }} style={{ position: "absolute", top: 6, right: 8, background: GREEN + "10", border: "1px solid " + GREEN + "20", width: 24, height: 24, borderRadius: "50%", color: GREEN, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
+              <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap", flexShrink: 0 }}>{pushLoading ? "..." : "Ativar"}</button>
+              <button onClick={function(){ try { localStorage.setItem("fn_push_dismissed", "1"); } catch(e){} window.location.reload(); }} style={{ width: 28, height: 28, borderRadius: "50%", background: GREEN + "10", border: "1px solid " + GREEN + "25", color: GREEN, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>✕</button>
             </div>
           );
         })()}
