@@ -529,17 +529,18 @@ async function fetchOpponentProfile(opponentName,opponentId,log){
 
 function enrichMatch(match,oppDetails){if(!match||!oppDetails)return match;if(oppDetails.ranking)match.opponent_ranking=oppDetails.ranking;if(oppDetails.country)match.opponent_country=oppDetails.country;if(oppDetails.atp_slug)match.opponent_atp_slug=oppDetails.atp_slug;return match;}
 
-// ===== ATP RANKINGS — Top 50 via SofaScore =====
+// ===== ATP RANKINGS — Top 50 (updates Mondays only) =====
 async function fetchATPRankings(apiKey, log) {
   try {
-    // Check cache (update once per day)
     var cached = await kv.get("fn:atpRankings");
     if (cached) {
       var p = typeof cached === "string" ? JSON.parse(cached) : cached;
-      if (p.updatedAt) {
+      if (p.rankings && p.rankings.length > 0) {
+        // Only refetch on Mondays (day 1) and if cache is older than 6 days
+        var isMonday = new Date().getDay() === 1;
         var age = Date.now() - new Date(p.updatedAt).getTime();
-        if (age < 86400000 && p.rankings && p.rankings.length > 0) { // 24h
-          log.push("rankings: cache ok (" + p.rankings.length + " players)");
+        if (!isMonday || age < 86400000 * 6) {
+          log.push("rankings: cache ok (" + p.rankings.length + " players, updates Mon)");
           return;
         }
       }
