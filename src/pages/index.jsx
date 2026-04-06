@@ -209,13 +209,14 @@ var DailyPoll = function() {
   var dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
   var poll = polls[dayOfYear % polls.length];
   useEffect(function() {
-    if (vote) { fetch("/api/poll").then(function(r) { return r.json(); }).then(function(d) { if (d && typeof d.a === "number" && d.total > 0) { setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total }); } }).catch(function() {}); }
+    // Load real vote results on mount
+    fetch("/api/vote").then(function(r) { return r.json(); }).then(function(d) { if (d && d.total > 0) { setResults({ a: d.pctA, b: d.pctB, total: d.total }); } }).catch(function() {});
   }, []);
   var handleVote = function(choice) {
     if (vote) return;
     setVote(choice);
     try { localStorage.setItem(pollKey, choice); } catch(e) {}
-    fetch("/api/poll?vote=" + choice, { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) { if (d && typeof d.a === "number" && d.total > 0) { setResults({ a: Math.round((d.a / d.total) * 100), b: Math.round((d.b / d.total) * 100), total: d.total }); } }).catch(function() { setResults(choice === "a" ? { a: 62, b: 38 } : { a: 45, b: 55 }); });
+    fetch("/api/vote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ option: choice }) }).then(function(r) { return r.json(); }).then(function(d) { if (d && d.total > 0) { setResults({ a: d.pctA, b: d.pctB, total: d.total }); } }).catch(function() { setResults(choice === "a" ? { a: 62, b: 38, total: 1 } : { a: 45, b: 55, total: 1 }); });
   };
   return (
     <div style={{ padding: "18px 16px", background: BG_ALT, borderRadius: 10, margin: "4px 0", border: "1px solid " + BORDER }}>
@@ -242,7 +243,7 @@ var DailyPoll = function() {
               </div>
             );
           })}
-          <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>Nova enquete amanhã</p>
+          <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>{results && results.total ? results.total + (results.total === 1 ? " voto" : " votos") + " · " : ""}Nova enquete amanhã</p>
         </div>
       )}
     </div>
@@ -323,6 +324,10 @@ var QuizGame = function() {
   var _done = useState(false); var done = _done[0]; var setDone = _done[1];
   var _started = useState(false); var started = _started[0]; var setStarted = _started[1];
   var _revealed = useState(false); var revealed = _revealed[0]; var setRevealed = _revealed[1];
+  var _qc = useState(null); var quizCount = _qc[0]; var setQuizCount = _qc[1];
+  useEffect(function() {
+    fetch("/api/quiz-count").then(function(r) { return r.json(); }).then(function(d) { if (d && typeof d.count === "number") setQuizCount(d.count); }).catch(function() {});
+  }, []);
   var allQuestions = [
     { q: "Em que bairro do Rio de Janeiro o João nasceu?", opts: ["Copacabana", "Ipanema", "Leblon", "Barra da Tijuca"], answer: 1, points: 10, fun: "Ele cresceu a 10 minutos do local do Rio Open!" },
     { q: "Qual Grand Slam juvenil o João conquistou em 2023?", opts: ["Australian Open", "Roland Garros", "Wimbledon", "US Open"], answer: 3, points: 10, fun: "Derrotou Learner Tien na final!" },
@@ -341,7 +346,14 @@ var QuizGame = function() {
   var questions = _shuf[0];
   var totalPoints = questions.reduce(function(sum, q) { return sum + q.points; }, 0);
   var handleAnswer = function(idx) { if (revealed) return; setSelected(idx); setRevealed(true); if (idx === questions[currentQ].answer) setScore(score + questions[currentQ].points); };
-  var handleNext = function() { if (currentQ < questions.length - 1) { setCurrentQ(currentQ + 1); setSelected(null); setRevealed(false); } else setDone(true); };
+  var handleNext = function() {
+    if (currentQ < questions.length - 1) { setCurrentQ(currentQ + 1); setSelected(null); setRevealed(false); }
+    else {
+      setDone(true);
+      // Register quiz completion
+      fetch("/api/quiz-count", { method: "POST" }).then(function(r) { return r.json(); }).then(function(d) { if (d && typeof d.count === "number") setQuizCount(d.count); }).catch(function() {});
+    }
+  };
   var getResultMsg = function() { var pct = Math.round((score / totalPoints) * 100); if (pct === 100) return { emoji: "🏆", msg: "Perfeito! Verdadeiro fã!" }; if (pct >= 80) return { emoji: "🔥", msg: "Impressionante!" }; if (pct >= 60) return { emoji: "🎾", msg: "Bom, você acompanha!" }; return { emoji: "📚", msg: "Continue acompanhando!" }; };
   if (!started) return (
     <div style={{ background: BG_ALT, borderRadius: 10, padding: "18px 16px", margin: "4px 0", cursor: "pointer", border: "1px solid " + BORDER }} onClick={function() { setStarted(true); }}>
@@ -349,7 +361,7 @@ var QuizGame = function() {
         <span style={{ fontSize: 8, fontWeight: 700, color: "#fff", fontFamily: SANS, background: "#b8860b", padding: "2px 6px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>Quiz</span>
       </div>
       <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Quanto você conhece o João?</p>
-      <p style={{ margin: "0 0 12px", fontSize: 11, color: SUB, fontFamily: SANS }}>{questions.length} perguntas · {totalPoints} pontos</p>
+      <p style={{ margin: "0 0 12px", fontSize: 11, color: SUB, fontFamily: SANS }}>{questions.length} perguntas · {totalPoints} pontos{quizCount ? " · " + quizCount + " já jogaram" : ""}</p>
       <div style={{ background: GREEN, padding: "9px 20px", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: SANS, textAlign: "center" }}>Jogar</div>
     </div>
   );
@@ -359,7 +371,8 @@ var QuizGame = function() {
       <div style={{ background: BG_ALT, borderRadius: 10, padding: "18px 16px", margin: "4px 0", textAlign: "center", border: "1px solid " + BORDER }}>
         <span style={{ fontSize: 40 }}>{result.emoji}</span>
         <h3 style={{ margin: "8px 0 4px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>{score}/{totalPoints} pontos</h3>
-        <p style={{ margin: "0 0 16px", fontSize: 13, color: SUB, fontFamily: SANS }}>{result.msg}</p>
+        <p style={{ margin: "0 0 4px", fontSize: 13, color: SUB, fontFamily: SANS }}>{result.msg}</p>
+        {quizCount && <p style={{ margin: "0 0 12px", fontSize: 10, color: DIM, fontFamily: SANS }}>{quizCount} pessoas já jogaram o quiz</p>}
         <button onClick={function() { setCurrentQ(0); setScore(0); setSelected(null); setDone(false); setStarted(false); setRevealed(false); }} style={{ padding: "10px 20px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Jogar de novo</button>
       </div>
     );
@@ -392,23 +405,30 @@ var MatchPrediction = function(props) {
   var match = props.match;
   if (!match || !match.date) return null;
   var matchDate = new Date(match.date); var now = new Date();
-  var daysDiff = Math.ceil((matchDate - now) / (1000 * 60 * 60 * 24));
-  if (daysDiff > 7 && now <= matchDate) return null;
+  if (now > matchDate) return null; // hide after match starts
   var oppName = match.opponent_name || "A definir";
   var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
-  var matchKey = (match.tournament_name || "match").replace(/[^a-zA-Z0-9]/g, "_") + "_" + match.date;
-  var _p = useState(function() { try { return JSON.parse(localStorage.getItem("fn_pred_" + matchKey)); } catch(e) { return null; } });
+  var matchId = (match.event_id || match.tournament_name || "match").toString().replace(/[^a-zA-Z0-9]/g, "_");
+  var _p = useState(function() { try { return localStorage.getItem("fn_pred_" + matchId); } catch(e) { return null; } });
   var prediction = _p[0]; var setPrediction = _p[1];
+  var _res = useState(null); var predResults = _res[0]; var setPredResults = _res[1];
+  useEffect(function() {
+    fetch("/api/predict?matchId=" + matchId).then(function(r) { return r.json(); }).then(function(d) { if (d && d.total > 0) setPredResults(d); }).catch(function() {});
+  }, []);
   var options = [
-    { label: "João 2x0", sets: "2-0", winner: "joao" }, { label: "João 2x1", sets: "2-1", winner: "joao" },
-    { label: oppShort + " 2x1", sets: "1-2", winner: "opp" }, { label: oppShort + " 2x0", sets: "0-2", winner: "opp" },
+    { label: "Fonseca 2x0", score: "fonseca_2x0", winner: "joao" },
+    { label: "Fonseca 2x1", score: "fonseca_2x1", winner: "joao" },
+    { label: oppShort + " 2x1", score: "opp_2x1", winner: "opp" },
+    { label: oppShort + " 2x0", score: "opp_2x0", winner: "opp" },
   ];
   var handlePredict = function(opt) {
     if (prediction) return;
-    var pred = { sets: opt.sets, winner: opt.winner, label: opt.label, timestamp: Date.now() };
-    setPrediction(pred);
-    try { localStorage.setItem("fn_pred_" + matchKey, JSON.stringify(pred)); } catch(e) {}
-    fetch("/api/prediction", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ match: matchKey, prediction: pred }) }).catch(function() {});
+    setPrediction(opt.score);
+    try { localStorage.setItem("fn_pred_" + matchId, opt.score); } catch(e) {}
+    fetch("/api/predict", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ score: opt.score, matchId: matchId }) })
+      .then(function(r) { return r.json(); })
+      .then(function(d) { if (d && d.total > 0) setPredResults(d); })
+      .catch(function() {});
   };
   return (
     <div style={{ background: BG_ALT, borderRadius: 10, padding: "18px 16px", margin: "4px 0", border: "1px solid " + BORDER }}>
@@ -418,18 +438,29 @@ var MatchPrediction = function(props) {
       {!prediction ? (
         <>
           <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Qual será o placar?</p>
-          <p style={{ margin: "0 0 10px", fontSize: 11, color: SUB, fontFamily: SANS }}>Fonseca vs {oppName}{match.round ? (" · " + match.round) : ""}</p>
+          <p style={{ margin: "0 0 10px", fontSize: 11, color: SUB, fontFamily: SANS }}>Fonseca vs {oppName}{match.round ? " · " + match.round : ""}{predResults && predResults.total ? " · " + predResults.total + " palpites" : ""}</p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-            {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.sets} onClick={function() { handlePredict(opt); }} style={{ padding: "7px 4px", background: isJ ? "rgba(0,168,89,0.08)" : "rgba(192,57,43,0.08)", border: "1px solid " + (isJ ? "rgba(0,168,89,0.2)" : "rgba(192,57,43,0.2)"), borderRadius: 8, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 13, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.sets.replace("-", "x")}</span><span style={{ fontSize: 9, color: DIM, fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
+            {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.score} onClick={function() { handlePredict(opt); }} style={{ padding: "7px 4px", background: isJ ? "rgba(0,168,89,0.08)" : "rgba(192,57,43,0.08)", border: "1px solid " + (isJ ? "rgba(0,168,89,0.2)" : "rgba(192,57,43,0.2)"), borderRadius: 8, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 13, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.score.includes("2x0") ? "2x0" : "2x1"}</span><span style={{ fontSize: 9, color: DIM, fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
           </div>
         </>
       ) : (
-        <div style={{ textAlign: "center", padding: "4px 0" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: prediction.winner === "joao" ? "rgba(0,168,89,0.06)" : "rgba(192,57,43,0.06)", borderRadius: 12, padding: "8px 16px", border: "1px solid " + (prediction.winner === "joao" ? "rgba(0,168,89,0.25)" : "rgba(192,57,43,0.25)") }}>
-            <span style={{ fontSize: 14 }}>{prediction.winner === "joao" ? "🇧🇷" : "🎾"}</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: prediction.winner === "joao" ? GREEN : RED, fontFamily: SANS }}>Palpite: {prediction.label}</span>
-          </div>
-          <p style={{ fontSize: 10, color: DIM, fontFamily: SANS, marginTop: 6 }}>Resultado após o jogo</p>
+        <div>
+          <p style={{ margin: "0 0 10px", fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Palpites da comunidade</p>
+          {options.map(function(opt) {
+            var pct = predResults && predResults.predictions && predResults.predictions[opt.score] ? predResults.predictions[opt.score].pct : 0;
+            var isSelected = prediction === opt.score;
+            var isJ = opt.winner === "joao";
+            return (
+              <div key={opt.score} style={{ marginBottom: 6 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
+                  <span style={{ fontSize: 11, fontWeight: isSelected ? 700 : 500, color: isSelected ? (isJ ? GREEN : RED) : SUB, fontFamily: SANS }}>{opt.label}{isSelected ? " ✓" : ""}</span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: DIM, fontFamily: SANS }}>{pct}%</span>
+                </div>
+                <div style={{ height: 4, background: "#e8e8e8", borderRadius: 2 }}><div style={{ height: 4, background: isJ ? GREEN : RED, borderRadius: 2, width: Math.max(pct, 2) + "%", opacity: isSelected ? 1 : 0.4, transition: "width 0.6s ease" }} /></div>
+              </div>
+            );
+          })}
+          {predResults && predResults.total && <p style={{ margin: "6px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>{predResults.total} palpites</p>}
         </div>
       )}
     </div>
