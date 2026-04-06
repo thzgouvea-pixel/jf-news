@@ -445,12 +445,13 @@ var NextDuelCard = function(props) {
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
 
-  // FIX 2: SofaScore primeiro (funciona), ESPN como fallback
-  var oppSofaImg = getSofaScoreImage(oppName, match.opponent_id);
+  // FIX 2: /api/player-image como primário (proxy que funciona no browser)
+  var oppSofascoreId = null;
+  for (var sk in SOFASCORE_ID_MAP) { if (oppName.indexOf(sk) !== -1) { oppSofascoreId = SOFASCORE_ID_MAP[sk]; break; } }
+  var oppApiImg = oppSofascoreId ? ("/api/player-image?id=" + oppSofascoreId) : (match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null);
   var oppEspnImg = getESPNImage(oppName);
-  var oppApiFallback = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null;
-  var oppImg = oppSofaImg || oppEspnImg || oppApiFallback;
-  var oppImgFallback = oppImg === oppSofaImg ? (oppEspnImg || oppApiFallback) : (oppSofaImg || oppApiFallback);
+  var oppImg = oppApiImg || oppEspnImg;
+  var oppImgFallback = oppImg === oppApiImg ? oppEspnImg : oppApiImg;
 
   var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
@@ -765,12 +766,13 @@ var PlayerBlock = function(props) {
         var isWin = matchStats.result === "V";
         var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
 
-        // FIX 2: Foto do oponente — SofaScore primeiro (funciona), ESPN como fallback
-        var oppSofaImg = getSofaScoreImage(oppName, matchStats.opponent_id);
+        // FIX 2: Foto do oponente — /api/player-image funciona (proxy interno), ESPN/SofaScore como fallback
+        var oppSofascoreId = null;
+        for (var sk in SOFASCORE_ID_MAP) { if (oppName.indexOf(sk) !== -1) { oppSofascoreId = SOFASCORE_ID_MAP[sk]; break; } }
+        var oppApiImg = oppSofascoreId ? ("/api/player-image?id=" + oppSofascoreId) : (matchStats.opponent_id ? ("/api/player-image?id=" + matchStats.opponent_id) : null);
         var oppEspnImg = getESPNImage(oppName);
-        var oppApiFallback = matchStats.opponent_id ? ("/api/player-image?id=" + matchStats.opponent_id) : null;
-        var oppImg = oppSofaImg || oppEspnImg || oppApiFallback;
-        var oppImgFallback = oppImg === oppSofaImg ? (oppEspnImg || oppApiFallback) : (oppSofaImg || oppApiFallback);
+        var oppImg = oppApiImg || oppEspnImg;
+        var oppImgFallback = oppImg === oppApiImg ? oppEspnImg : oppApiImg;
 
         // FIX 3: Ranking do oponente
         var oppRanking = matchStats.opponent_ranking || null;
@@ -862,9 +864,9 @@ var PlayerBlock = function(props) {
                 return (
                   <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 14 : 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? GREEN : DIM, fontFamily: SANS, minWidth: 40, textAlign: "left" }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? GREEN : "#8bc9a5", fontFamily: SANS, minWidth: 40, textAlign: "left" }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
                       <span style={{ fontSize: 10, fontWeight: 600, color: SUB, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: "center", flex: 1 }}>{row.label}</span>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS, minWidth: 40, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? "#e74c3c" : "#e8a9a1", fontFamily: SANS, minWidth: 40, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                     </div>
                     <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden" }}>
                       <div style={{ width: fPct + "%", height: 5, background: GREEN, transition: "width 0.8s ease" }} />
