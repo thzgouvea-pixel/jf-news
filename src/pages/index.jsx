@@ -55,7 +55,7 @@ var ESPN_ID_MAP = {
   "Hurkacz": "3264", "de Minaur": "3313", "Paul": "3117", "Khachanov": "3112",
   "Rinderknech": "3511", "Mensik": "11746", "Machac": "11709",
   "Cerundolo": "11689", "Shapovalov": "3086", "Auger-Aliassime": "3270",
-  "Munar": "4229", "Fonseca": FONSECA_ESPN_ID, "Diallo": "3885",
+  "Munar": "4229", "Fonseca": "11745", "Diallo": "3885",
   "Nakashima": "4581", "Tabilo": "4684", "Mpetshi Perricard": "11747",
   "Davidovich Fokina": "4579", "Baez": "11690", "Etcheverry": "11700",
   "Jarry": "3539", "Kotov": "11706", "Safiullin": "11714",
