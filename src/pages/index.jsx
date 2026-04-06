@@ -189,13 +189,10 @@ var ATPRankingList = function(props) {
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
         {rankings.rankings.map(function(r, i) {
           var isFonseca = (r.name || "").toLowerCase().includes("fonseca") || r.rank === currentRanking;
-          var flag = "";
-          for (var ck in countryFlags) { if (r.country && (r.country.toLowerCase() === ck.toLowerCase())) { flag = countryFlags[ck]; break; } }
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: isFonseca ? GREEN + "0A" : (i % 2 === 0 ? "transparent" : BG_ALT), borderRadius: isFonseca ? 10 : 0, border: isFonseca ? "1.5px solid " + GREEN + "30" : "none", borderBottom: isFonseca ? "none" : "1px solid " + BORDER + "80" }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: isFonseca ? GREEN : DIM, fontFamily: SANS, width: 28, textAlign: "right", flexShrink: 0 }}>{r.rank}</span>
-              <span style={{ fontSize: 16, flexShrink: 0 }}>{flag || "🏳️"}</span>
-              <span style={{ fontSize: 13, fontWeight: isFonseca ? 700 : 500, color: isFonseca ? GREEN : TEXT, fontFamily: SANS, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}{isFonseca ? " 🇧🇷" : ""}</span>
+              <span style={{ fontSize: 13, fontWeight: isFonseca ? 700 : 500, color: isFonseca ? GREEN : TEXT, fontFamily: SANS, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</span>
               {r.points && <span style={{ fontSize: 11, color: DIM, fontFamily: SANS, flexShrink: 0 }}>{r.points} pts</span>}
             </div>
           );
