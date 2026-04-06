@@ -51,7 +51,7 @@ var ATP_SLUGS = {
   "Nakashima": "n0ae", "Baez": "b0dc", "Etcheverry": "e0ar", "Jarry": "j0ab",
   "Norrie": "nb73", "Dimitrov": "dg88", "Bublik": "ba32", "Thompson": "tc94",
   "Humbert": "h0bj", "Giron": "g0bi", "Korda": "k0bh", "Popyrin": "p0bh",
-  "Safiullin": "s0bf", "Nishikori": "n358", "Wawrinka": "wa48",
+  "Safiullin": "s0bf", "Nishikori": "n358", "Wawrinka": "wa48",   "Rinderknech": "rc91",
 };
 
 async function sofaFetch(path, apiKey) {
