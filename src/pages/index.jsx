@@ -186,14 +186,34 @@ var DailyPoll = function() {
   var _r = useState(function() { try { var d = JSON.parse(localStorage.getItem(pollKey + "_r") || "null"); return d; } catch(e) { return null; } });
   var results = _r[0]; var setResults = _r[1];
   var polls = [
-    { q: "O João vai vencer o primeiro jogo em Monte Carlo?", a: "Sim!", b: "Não" },
+    { q: "O João vai vencer o próximo jogo?", a: "Sim!", b: "Não" },
     { q: "O João chega ao Top 30 até o fim de 2026?", a: "Com certeza!", b: "Difícil" },
     { q: "O João vai conquistar um Masters 1000 na carreira?", a: "Vai sim!", b: "Acho que não" },
-    { q: "Quem vai ter a melhor temporada 2026?", a: "João 🇧🇷", b: "Tien 🇺🇸" },
+    { q: "Quem vai ter a melhor carreira?", a: "João 🇧🇷", b: "Tien 🇺🇸" },
     { q: "O João chega às quartas de final em Roland Garros?", a: "Chega sim!", b: "Ainda é cedo" },
     { q: "O João entra no Top 10 até 2027?", a: "Com certeza!", b: "Precisa de tempo" },
     { q: "Quem é mais talentoso aos 19 anos?", a: "João 🇧🇷", b: "Alcaraz 🇪🇸" },
     { q: "O João chega ao Top 5 antes dos 21 anos?", a: "Sem dúvida!", b: "É muito cedo" },
+    { q: "O João vai ganhar um Grand Slam na carreira?", a: "Vai sim!", b: "Não acredito" },
+    { q: "Qual a melhor superfície do João?", a: "Saibro", b: "Piso duro" },
+    { q: "O João seria top 10 se fosse espanhol?", a: "Já seria!", b: "Não muda nada" },
+    { q: "O forehand do João é o melhor da NextGen?", a: "Sem dúvida!", b: "Tem melhores" },
+    { q: "O João vai ser nº1 do mundo algum dia?", a: "Vai sim!", b: "É sonhar demais" },
+    { q: "Quem tem o melhor saque da NextGen?", a: "João 🇧🇷", b: "Mensik 🇨🇿" },
+    { q: "O João deve jogar mais torneios de saibro?", a: "Sim, é sua força", b: "Precisa variar" },
+    { q: "O João vai superar o Guga em conquistas?", a: "Com certeza!", b: "Guga é lenda" },
+    { q: "O melhor jogo do João até agora foi vs Rublev no AO?", a: "Foi sim!", b: "Tem outros" },
+    { q: "O João deveria focar em simples ou jogar duplas também?", a: "Só simples", b: "Duplas ajuda" },
+    { q: "Quem chega primeiro ao Top 10?", a: "João 🇧🇷", b: "Fils 🇫🇷" },
+    { q: "O João faz semifinal de Grand Slam em 2026?", a: "Faz sim!", b: "Ainda não" },
+    { q: "O tênis brasileiro vive sua melhor fase?", a: "Com certeza!", b: "Guga era melhor" },
+    { q: "O João deve mudar de treinador?", a: "Não, está bem", b: "Precisa evoluir" },
+    { q: "O mental do João é seu maior diferencial?", a: "Sem dúvida!", b: "É o forehand" },
+    { q: "O João vai liderar o Brasil na Copa Davis?", a: "Já lidera!", b: "Precisa de mais" },
+    { q: "Qual Grand Slam o João vai ganhar primeiro?", a: "Roland Garros", b: "US Open" },
+    { q: "O João termina 2026 no Top 20?", a: "Com certeza!", b: "Top 30 já é bom" },
+    { q: "Quem é a maior promessa do tênis mundial?", a: "João 🇧🇷", b: "Draper 🇬🇧" },
+    { q: "O João deve jogar o Rio Open todo ano?", a: "Sempre!", b: "Só quando fizer sentido" },
   ];
   var dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
   var poll = polls[dayOfYear % polls.length];
@@ -316,9 +336,15 @@ var QuizGame = function() {
     { q: "Em que bairro do Rio de Janeiro o João nasceu?", opts: ["Copacabana", "Ipanema", "Leblon", "Barra da Tijuca"], answer: 1, points: 10, fun: "Ele cresceu a 10 minutos do local do Rio Open!" },
     { q: "Qual Grand Slam juvenil o João conquistou em 2023?", opts: ["Australian Open", "Roland Garros", "Wimbledon", "US Open"], answer: 3, points: 10, fun: "Derrotou Learner Tien na final!" },
     { q: "Quem o João derrotou na estreia do Australian Open 2025?", opts: ["Djokovic", "Alcaraz", "Rublev", "Medvedev"], answer: 2, points: 15, fun: "Primeiro adolescente a derrotar um top 10 em 1ª rodada de Grand Slam desde 2002!" },
-    { q: "Qual foi o primeiro título ATP do João?", opts: ["Basel 500", "Rio Open 500", "Buenos Aires 250", "Lexington Challenger"], answer: 2, points: 10, fun: "Brasileiro mais jovem a conquistar um título ATP!" },
+    { q: "Em qual cidade o João conquistou seu primeiro título ATP?", opts: ["Basel", "Rio de Janeiro", "Buenos Aires", "Santiago"], answer: 2, points: 10, fun: "Brasileiro mais jovem a conquistar um título ATP!" },
     { q: "Qual torneio o João venceu invicto com 5 vitórias em 2024?", opts: ["ATP Finals", "NextGen ATP Finals", "Copa Davis", "Laver Cup"], answer: 1, points: 15, fun: "Primeiro sul-americano campeão do NextGen Finals!" },
-    { q: "Qual ATP 500 o João conquistou em outubro de 2025?", opts: ["Viena", "Hamburgo", "Basel", "Barcelona"], answer: 2, points: 15, fun: "Primeiro brasileiro a ganhar um ATP 500!" },
+    { q: "Em qual cidade o João conquistou seu primeiro ATP 500?", opts: ["Viena", "Hamburgo", "Basel", "Barcelona"], answer: 2, points: 15, fun: "Primeiro brasileiro a ganhar um ATP 500!" },
+    { q: "Com que idade o João se tornou profissional?", opts: ["15 anos", "16 anos", "17 anos", "18 anos"], answer: 2, points: 10, fun: "Ele recusou uma bolsa milionária de universidade americana!" },
+    { q: "Qual o recorde de vitórias do João no circuito juvenil?", opts: ["72-27", "82-27", "92-27", "102-27"], answer: 2, points: 10, fun: "Foi o 1º brasileiro nº1 do ranking juvenil!" },
+    { q: "Em qual clube do Rio o João começou a jogar tênis?", opts: ["Flamengo", "Country Club", "Caiçaras", "Paissandu"], answer: 1, points: 10, fun: "O clube fica a poucos metros da casa onde ele cresceu!" },
+    { q: "Quem o João derrotou na final do seu primeiro título ATP?", opts: ["Baez", "Cerúndolo", "Etcheverry", "Jarry"], answer: 1, points: 15, fun: "Venceu o argentino em Buenos Aires, na casa dele!" },
+    { q: "Qual marca de raquete o João usa?", opts: ["Wilson", "Babolat", "Head", "Yonex"], answer: 3, points: 10, fun: "Ele usa a mesma marca que Djokovic!" },
+    { q: "Em que ano o João alcançou o nº1 do ranking juvenil?", opts: ["2021", "2022", "2023", "2024"], answer: 2, points: 10, fun: "Com apenas 17 anos, antes de virar profissional!" },
   ];
   var _shuf = useState(function() { var arr = allQuestions.slice(); for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp; } return arr; });
   var questions = _shuf[0];
