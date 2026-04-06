@@ -1277,7 +1277,7 @@ export default function JoaoFonsecaNews() {
             </div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
               <span style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
-              {dp && <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS, whiteSpace: "nowrap" }}>#{dp.ranking}</span>}
+              {dp && <span style={{ fontSize: 11, fontWeight: 700, color: "#132440", fontFamily: SANS, whiteSpace: "nowrap" }}>#{dp.ranking}</span>}
             </div>
           </div>
           <button onClick={handleRefresh} disabled={loading} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, padding: 0 }}>
@@ -1285,7 +1285,8 @@ export default function JoaoFonsecaNews() {
           </button>
         </div>
 
-        <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "2px 16px 12px", display: "flex", alignItems: "center", gap: 24 }}>
+        <div style={{ position: "relative" }}>
+          <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "2px 16px 12px", display: "flex", alignItems: "center", gap: 24 }}>
             {[
               { label: "Biografia", href: "/biografia" },
               { label: "Ranking", action: function(){setShowRanking(true);} },
@@ -1305,6 +1306,10 @@ export default function JoaoFonsecaNews() {
               return <button key={i} onClick={item.action} style={navStyle}>{item.label}</button>;
             })}
           </nav>
+          <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 48, background: "linear-gradient(to right, transparent, rgba(255,255,255,0.95) 60%)", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 8, pointerEvents: "none" }}>
+            <span style={{ fontSize: 14, color: DIM, fontFamily: SANS, fontWeight: 300 }}>›</span>
+          </div>
+        </div>
       </header>
 
       <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
