@@ -50,10 +50,33 @@ var getESPNImage = function(name) {
   return null;
 };
 
-// Fallback: SofaScore player image by sofascore ID (set in opponent data)
-var getSofaScoreImage = function(sofascoreId) {
-  if (!sofascoreId) return null;
-  return "https://api.sofascore.app/api/v1/player/" + sofascoreId + "/image";
+// SofaScore IDs para fallback de fotos
+var SOFASCORE_ID_MAP = {
+  "Diallo": 280151, "Rinderknech": 136498, "Alcaraz": 856498, "Sinner": 333849,
+  "Djokovic": 12708, "Medvedev": 196065, "Zverev": 197075, "Rublev": 197592,
+  "Fritz": 163713, "Draper": 366258, "Tiafoe": 235141, "Musetti": 367702,
+  "Fils": 963839, "Shelton": 963814, "Mensik": 979825, "Machac": 828775,
+  "Cerundolo": 829780, "Shapovalov": 202233, "Auger-Aliassime": 230882,
+  "de Minaur": 226413, "Paul": 189458, "Berrettini": 205641, "Hurkacz": 203766,
+  "Nakashima": 829749, "Bublik": 227296, "Dimitrov": 26696, "Monfils": 14640,
+  "Munar": 252456, "Korda": 367699, "Baez": 830192, "Etcheverry": 953250,
+  "Jarry": 135133, "Tabilo": 367700, "Davidovich Fokina": 367748,
+};
+
+var getSofaScoreImage = function(name, sofascoreId) {
+  // Primeiro tenta pelo nome no mapa
+  if (name) {
+    for (var k in SOFASCORE_ID_MAP) {
+      if (name.indexOf(k) !== -1) {
+        return "https://api.sofascore.app/api/v1/player/" + SOFASCORE_ID_MAP[k] + "/image";
+      }
+    }
+  }
+  // Depois tenta pelo ID direto
+  if (sofascoreId) {
+    return "https://api.sofascore.app/api/v1/player/" + sofascoreId + "/image";
+  }
+  return null;
 };
 
 var SAMPLE_PLAYER = { ranking: 40, rankingChange: "+4" };
@@ -422,11 +445,12 @@ var NextDuelCard = function(props) {
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
 
-  // FIX 2: Usa getESPNImage centralizado + SofaScore fallback
+  // FIX 2: ESPN primeiro, SofaScore por nome como fallback
   var oppImg = getESPNImage(oppName);
-  var oppSofaImg = match.opponent_id ? getSofaScoreImage(match.opponent_id) : null;
-  var oppImgFallback = oppSofaImg || (match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null);
-  if (!oppImg && oppImgFallback) oppImg = oppImgFallback;
+  var oppSofaImg = getSofaScoreImage(oppName, match.opponent_id);
+  var oppApiFallback = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null;
+  var oppImgFallback = oppSofaImg || oppApiFallback;
+  if (!oppImg) oppImg = oppSofaImg || oppApiFallback;
 
   var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
@@ -741,11 +765,12 @@ var PlayerBlock = function(props) {
         var isWin = matchStats.result === "V";
         var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
 
-        // FIX 2: Foto do oponente via ESPN centralizado + SofaScore fallback
+        // FIX 2: Foto do oponente — ESPN primeiro, SofaScore por nome como fallback
         var oppImg = getESPNImage(oppName);
-        var oppSofaImg = matchStats.opponent_id ? getSofaScoreImage(matchStats.opponent_id) : null;
-        var oppImgFallback = oppSofaImg || (matchStats.opponent_id ? ("/api/player-image?id=" + matchStats.opponent_id) : null);
-        if (!oppImg && oppImgFallback) oppImg = oppImgFallback;
+        var oppSofaImg = getSofaScoreImage(oppName, matchStats.opponent_id);
+        var oppApiFallback = matchStats.opponent_id ? ("/api/player-image?id=" + matchStats.opponent_id) : null;
+        var oppImgFallback = oppSofaImg || oppApiFallback;
+        if (!oppImg) oppImg = oppSofaImg || oppApiFallback;
 
         // FIX 3: Ranking do oponente
         var oppRanking = matchStats.opponent_ranking || null;
@@ -813,29 +838,37 @@ var PlayerBlock = function(props) {
 
               <div style={{ height: 1, background: BORDER, marginBottom: 16 }} />
 
-              {/* FIX 5: Barras de stats — barra contínua única */}
+              {/* FIX 5: Barras de stats — flex bar sem gaps */}
               {statRows.map(function(row, i) {
                 var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
-                // Para percentuais, usar valor direto; para absolutos, calcular proporção sobre total
-                var total = row.pct ? 100 : Math.max(row.fVal + row.oVal, 1);
-                var fWidth = row.pct ? row.fVal : Math.round((row.fVal / total) * 100);
-                var oWidth = row.pct ? row.oVal : Math.round((row.oVal / total) * 100);
-                // Garantir mínimo visual
-                if (fWidth > 0 && fWidth < 5) fWidth = 5;
-                if (oWidth > 0 && oWidth < 5) oWidth = 5;
+                // Calcular proporção: ambos sobre o total, sempre somam ~100%
+                var fNum = row.fVal || 0;
+                var oNum = row.oVal || 0;
+                var total = fNum + oNum;
+                var fPct, oPct;
+                if (row.pct) {
+                  // Para percentuais, normalizar para que somem 100
+                  var pctTotal = fNum + oNum;
+                  fPct = pctTotal > 0 ? Math.round((fNum / pctTotal) * 100) : 50;
+                  oPct = 100 - fPct;
+                } else {
+                  fPct = total > 0 ? Math.round((fNum / total) * 100) : 50;
+                  oPct = 100 - fPct;
+                }
+                // Mínimo visual de 8% para não sumir
+                if (fPct > 0 && fPct < 8) { fPct = 8; oPct = 92; }
+                if (oPct > 0 && oPct < 8) { oPct = 8; fPct = 92; }
 
                 return (
                   <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 14 : 0 }}>
-                    {/* Valores nas pontas + label centrado */}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                       <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? GREEN : DIM, fontFamily: SANS, minWidth: 40, textAlign: "left" }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
                       <span style={{ fontSize: 10, fontWeight: 600, color: SUB, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: "center", flex: 1 }}>{row.label}</span>
                       <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS, minWidth: 40, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                     </div>
-                    {/* Barra contínua: Fonseca da esquerda, oponente da direita */}
-                    <div style={{ position: "relative", height: 5, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ position: "absolute", left: 0, top: 0, height: 5, width: fWidth + "%", background: fBetter ? GREEN : "#ccc", borderRadius: "3px 0 0 3px", transition: "width 0.8s ease" }} />
-                      <div style={{ position: "absolute", right: 0, top: 0, height: 5, width: oWidth + "%", background: !fBetter ? "#e74c3c" : "#ccc", borderRadius: "0 3px 3px 0", transition: "width 0.8s ease" }} />
+                    <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ width: fPct + "%", height: 5, background: fBetter ? GREEN : "#d0d0d0", transition: "width 0.8s ease" }} />
+                      <div style={{ width: oPct + "%", height: 5, background: !fBetter ? "#e74c3c" : "#d0d0d0", transition: "width 0.8s ease" }} />
                     </div>
                   </div>
                 );
