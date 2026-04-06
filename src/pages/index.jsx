@@ -445,12 +445,12 @@ var NextDuelCard = function(props) {
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
 
-  // FIX 2: ESPN primeiro, SofaScore por nome como fallback
-  var oppImg = getESPNImage(oppName);
+  // FIX 2: SofaScore primeiro (funciona), ESPN como fallback
   var oppSofaImg = getSofaScoreImage(oppName, match.opponent_id);
+  var oppEspnImg = getESPNImage(oppName);
   var oppApiFallback = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null;
-  var oppImgFallback = oppSofaImg || oppApiFallback;
-  if (!oppImg) oppImg = oppSofaImg || oppApiFallback;
+  var oppImg = oppSofaImg || oppEspnImg || oppApiFallback;
+  var oppImgFallback = oppImg === oppSofaImg ? (oppEspnImg || oppApiFallback) : (oppSofaImg || oppApiFallback);
 
   var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
@@ -765,12 +765,12 @@ var PlayerBlock = function(props) {
         var isWin = matchStats.result === "V";
         var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
 
-        // FIX 2: Foto do oponente — ESPN primeiro, SofaScore por nome como fallback
-        var oppImg = getESPNImage(oppName);
+        // FIX 2: Foto do oponente — SofaScore primeiro (funciona), ESPN como fallback
         var oppSofaImg = getSofaScoreImage(oppName, matchStats.opponent_id);
+        var oppEspnImg = getESPNImage(oppName);
         var oppApiFallback = matchStats.opponent_id ? ("/api/player-image?id=" + matchStats.opponent_id) : null;
-        var oppImgFallback = oppSofaImg || oppApiFallback;
-        if (!oppImg) oppImg = oppSofaImg || oppApiFallback;
+        var oppImg = oppSofaImg || oppEspnImg || oppApiFallback;
+        var oppImgFallback = oppImg === oppSofaImg ? (oppEspnImg || oppApiFallback) : (oppSofaImg || oppApiFallback);
 
         // FIX 3: Ranking do oponente
         var oppRanking = matchStats.opponent_ranking || null;
@@ -867,8 +867,8 @@ var PlayerBlock = function(props) {
                       <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS, minWidth: 40, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                     </div>
                     <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ width: fPct + "%", height: 5, background: fBetter ? GREEN : "#d0d0d0", transition: "width 0.8s ease" }} />
-                      <div style={{ width: oPct + "%", height: 5, background: !fBetter ? "#e74c3c" : "#d0d0d0", transition: "width 0.8s ease" }} />
+                      <div style={{ width: fPct + "%", height: 5, background: GREEN, transition: "width 0.8s ease" }} />
+                      <div style={{ width: oPct + "%", height: 5, background: "#e74c3c", transition: "width 0.8s ease" }} />
                     </div>
                   </div>
                 );
