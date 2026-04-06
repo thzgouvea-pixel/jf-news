@@ -526,12 +526,16 @@ var NextDuelCard = function(props) {
     return dia.replace(/\.$/, "");
   })() : "";
 
-  // Countdown text: "em 1d 13h" or "em 2h 30m"
+  // Countdown text: "Faltam: 1 dia, 13 horas e 23 minutos"
   var countdownText = "";
   if (!countdown.expired) {
-    if (countdown.days > 0) countdownText = "em " + countdown.days + "d " + countdown.hours + "h";
-    else if (countdown.hours > 0) countdownText = "em " + countdown.hours + "h " + countdown.minutes + "m";
-    else countdownText = "em " + countdown.minutes + "m " + countdown.seconds + "s";
+    var parts = [];
+    if (countdown.days > 0) parts.push(countdown.days + (countdown.days === 1 ? " dia" : " dias"));
+    if (countdown.hours > 0) parts.push(countdown.hours + (countdown.hours === 1 ? " hora" : " horas"));
+    if (countdown.minutes > 0 || parts.length === 0) parts.push(countdown.minutes + (countdown.minutes === 1 ? " minuto" : " minutos"));
+    if (parts.length === 1) countdownText = "Faltam: " + parts[0];
+    else if (parts.length === 2) countdownText = "Faltam: " + parts[0] + " e " + parts[1];
+    else countdownText = "Faltam: " + parts[0] + ", " + parts[1] + " e " + parts[2];
   }
 
   return (
@@ -559,9 +563,18 @@ var NextDuelCard = function(props) {
         )}
       </div>
 
-      {/* Tournament title */}
+      {/* Tournament title with points */}
       <div style={{ textAlign: "center", padding: "12px 16px 0" }}>
-        <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{(match.tournament_name || "Próxima Partida").split(",")[0]}</h2>
+        <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{(function() {
+          var name = (match.tournament_name || "Próxima Partida").split(",")[0].trim();
+          var cat = (match.tournament_category || "").toLowerCase();
+          var pts = "";
+          if (cat.includes("grand slam") || ["australian open","roland garros","french open","wimbledon","us open"].some(function(gs) { return name.toLowerCase().includes(gs); })) pts = " 2000";
+          else if (cat.includes("masters 1000") || cat.includes("1000") || ["monte carlo","madrid","roma","indian wells","miami","canadian","cincinnati","shanghai","paris"].some(function(m) { return name.toLowerCase().includes(m); })) pts = " 1000";
+          else if (cat.includes("500") || ["rio open","basel","barcelona","vienna","hamburg","queen","halle"].some(function(m) { return name.toLowerCase().includes(m); })) pts = " 500";
+          else if (cat.includes("250")) pts = " 250";
+          return name + pts;
+        })()}</h2>
       </div>
 
       {/* Players — the hero */}
@@ -604,13 +617,13 @@ var NextDuelCard = function(props) {
       {/* Date + time */}
       {dateInfo && (
         <div style={{ padding: "16px 16px 0", textAlign: "center" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{shortDate}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{dateInfo.weekday + ", " + dateInfo.date}</span>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
             <span style={{ fontSize: 22, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.04em" }}>{dateInfo.time}</span>
             <span style={{ fontSize: 10, color: "rgba(79,195,247,0.45)", fontFamily: SANS }}>BRT</span>
           </div>
-          {countdownText && <span style={{ display: "block", marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span>}
+          {countdownText && <span style={{ display: "block", marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{countdownText}</span>}
         </div>
       )}
 
