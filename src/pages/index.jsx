@@ -762,6 +762,7 @@ var PlayerBlock = function(props) {
   var season = props.season;
   var prizeMoney = props.prizeMoney;
   var playerRanking = props.playerRanking;
+  var opponentProfile = props.opponentProfile;
 
   var hasAnyData = (matchStats && matchStats.fonseca) || (recentForm && recentForm.length > 0) || season || prizeMoney;
   if (!hasAnyData) return null;
@@ -791,8 +792,9 @@ var PlayerBlock = function(props) {
         var oppImg = getATPImage(oppName);
         var oppImgFallback = getESPNImage(oppName);
 
-        // FIX 3: Ranking do oponente
-        var oppRanking = matchStats.opponent_ranking || null;
+        // FIX 3: Ranking do oponente — tenta matchStats, depois opponentProfile (só se mesmo jogador)
+        var oppProfileMatch = opponentProfile && opponentProfile.name && oppName.indexOf(opponentProfile.name.split(" ").pop()) !== -1;
+        var oppRanking = matchStats.opponent_ranking || (oppProfileMatch ? opponentProfile.ranking : null);
 
         // FIX 4: Forma atual — até 10 jogos
         var formMatches = recentForm ? recentForm.slice(-10) : [];
@@ -1286,7 +1288,7 @@ export default function JoaoFonsecaNews() {
           </button>
         </div>
 
-        <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "6px 16px 14px", display: "flex", alignItems: "center", gap: 0, borderTop: "1px solid " + BORDER }}>
+        <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "2px 16px 12px", display: "flex", alignItems: "center", gap: 24 }}>
             {[
               { label: "Biografia", href: "/biografia" },
               { label: "Ranking", action: function(){setShowRanking(true);} },
@@ -1294,18 +1296,16 @@ export default function JoaoFonsecaNews() {
               { label: "Conquistas", action: function(){setShowTitles(true);} },
               { label: "Regras do Tênis", href: "/regras" },
               { label: "Feedback", action: function(){setShowFeedback(true);} },
-              { label: "Venda sua Raquete", href: "/raquetes", gold: true },
+              { label: "Raquetes", href: "/raquetes", gold: true },
               { label: "Apoiar", action: function(){setShowPixModal(true);}, green: true },
-            ].map(function(item, i, arr) {
+            ].map(function(item, i) {
               var isLink = !!item.href;
               var isGreen = !!item.green;
               var isGold = !!item.gold;
-              var navColor = isGreen ? GREEN : (isGold ? "#b8860b" : TEXT);
-              var navWeight = (isGreen || isGold) ? 700 : 500;
-              var navStyle = { fontSize: 14, fontWeight: navWeight, color: navColor, fontFamily: SANS, whiteSpace: "nowrap", padding: "8px 0", background: "none", border: "none", cursor: "pointer", textDecoration: "none", display: "inline", letterSpacing: "0.01em", transition: "color 0.15s", flexShrink: 0 };
-              var sep = i < arr.length - 1 ? <span key={"sep-"+i} style={{ fontSize: 10, color: "#d0d0d0", margin: "0 12px", flexShrink: 0, userSelect: "none" }}>·</span> : null;
-              if (isLink) return [<a key={i} href={item.href} style={navStyle}>{item.label}</a>, sep];
-              return [<button key={i} onClick={item.action} style={navStyle}>{item.label}</button>, sep];
+              var navColor = isGreen ? GREEN : (isGold ? "#b8860b" : SUB);
+              var navStyle = { fontSize: 13, fontWeight: 500, color: navColor, fontFamily: SANS, whiteSpace: "nowrap", padding: 0, background: "none", border: "none", cursor: "pointer", textDecoration: "none", letterSpacing: "0.01em", flexShrink: 0 };
+              if (isLink) return <a key={i} href={item.href} style={navStyle}>{item.label}</a>;
+              return <button key={i} onClick={item.action} style={navStyle}>{item.label}</button>;
             })}
           </nav>
       </header>
@@ -1363,7 +1363,7 @@ export default function JoaoFonsecaNews() {
         )}
 
         {/* FIX: Passa playerRanking para o PlayerBlock */}
-        <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} />
+        <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
 
         <section style={{ padding: "20px 0 0" }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>João em números</p>
