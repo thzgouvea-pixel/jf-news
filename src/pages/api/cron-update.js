@@ -197,8 +197,8 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
 // ===== RANKING — from Wikipedia API =====
 async function fetchRanking(apiKey, log) {
   try {
-    // Fetch FULL article wikitext (not just section 0) to get Win-loss table
-    var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json";
+    // Fetch section 0 (infobox) for ranking, career W-L, surface stats
+    var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&section=0&format=json";
     var res = await fetch(apiUrl, { headers: { "User-Agent": "FonsecaNews/10.0 (fan site; contact: thzgouvea@gmail.com)" } });
     if (!res.ok) { log.push("ranking: Wikipedia API HTTP " + res.status); return null; }
     var data = await res.json();
@@ -229,36 +229,43 @@ async function fetchRanking(apiKey, log) {
     var titlesMatch = wikitext.match(/singlesrecord\s*=.*?(\d+)\s*title/i) || wikitext.match(/titles\s*=\s*(\d+)/i);
     var titlesCount = titlesMatch ? parseInt(titlesMatch[1], 10) : 2;
 
-    // Parse vs Top 10 from Win-loss table
+    // Fetch FULL article for vs Top 10 (separate fetch)
     var vsTop10 = null;
     try {
-      // Pattern 1: "No. 1–10" row in wikitable → "|| X–Y"
-      var t10m = wikitext.match(/No\.\s*1[–\-]10[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
-      if (t10m) {
-        vsTop10 = { w: parseInt(t10m[1], 10), l: parseInt(t10m[2], 10) };
-        log.push("vsTop10: " + vsTop10.w + "-" + vsTop10.l + " (from No.1-10 row)");
-      }
-      // Pattern 2: Sum v1 + v2 + v3 (No.1 + No.2-5 + No.6-10)
-      if (!vsTop10) {
-        var v1w = 0, v1l = 0, v2w = 0, v2l = 0, v3w = 0, v3l = 0;
-        var v1m = wikitext.match(/No\.\s*1\b[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
-        var v2m = wikitext.match(/No\.\s*2[–\-]5[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
-        var v3m = wikitext.match(/No\.\s*6[–\-]10[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
-        if (v1m) { v1w = parseInt(v1m[1], 10); v1l = parseInt(v1m[2], 10); }
-        if (v2m) { v2w = parseInt(v2m[1], 10); v2l = parseInt(v2m[2], 10); }
-        if (v3m) { v3w = parseInt(v3m[1], 10); v3l = parseInt(v3m[2], 10); }
-        if (v1m || v2m || v3m) {
-          vsTop10 = { w: v1w + v2w + v3w, l: v1l + v2l + v3l };
-          log.push("vsTop10: " + vsTop10.w + "-" + vsTop10.l + " (summed v1+v2+v3)");
-        }
-      }
-      // Pattern 3: "top 10" or "top-10" near a W-L record in prose
-      if (!vsTop10) {
-        var t10p = wikitext.match(/top[- ]?10.*?(\d+)[–\-](\d+)/i);
-        if (!t10p) t10p = wikitext.match(/(\d+)[–\-](\d+).*?(?:against|vs\.?|versus).*?top[- ]?10/i);
-        if (t10p) {
-          vsTop10 = { w: parseInt(t10p[1], 10), l: parseInt(t10p[2], 10) };
-          log.push("vsTop10: " + vsTop10.w + "-" + vsTop10.l + " (from prose)");
+      var fullRes = await fetch("https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json", { headers: { "User-Agent": "FonsecaNews/10.0" } });
+      if (fullRes.ok) {
+        var fullData = await fullRes.json();
+        var fullWt = (fullData && fullData.parse && fullData.parse.wikitext) ? (fullData.parse.wikitext["*"] || "") : "";
+        if (fullWt) {
+          // Pattern 1: "No. 1–10" row in wikitable
+          var t10m = fullWt.match(/No\.\s*1[–\-]10[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
+          if (t10m) {
+            vsTop10 = { w: parseInt(t10m[1], 10), l: parseInt(t10m[2], 10) };
+            log.push("vsTop10: " + vsTop10.w + "-" + vsTop10.l + " (from No.1-10 row)");
+          }
+          // Pattern 2: Sum v1 + v2 + v3
+          if (!vsTop10) {
+            var v1w = 0, v1l = 0, v2w = 0, v2l = 0, v3w = 0, v3l = 0;
+            var v1m = fullWt.match(/No\.\s*1\b[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
+            var v2m = fullWt.match(/No\.\s*2[–\-]5[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
+            var v3m = fullWt.match(/No\.\s*6[–\-]10[^|]*?\|\|\s*(\d+)[–\-](\d+)/i);
+            if (v1m) { v1w = parseInt(v1m[1], 10); v1l = parseInt(v1m[2], 10); }
+            if (v2m) { v2w = parseInt(v2m[1], 10); v2l = parseInt(v2m[2], 10); }
+            if (v3m) { v3w = parseInt(v3m[1], 10); v3l = parseInt(v3m[2], 10); }
+            if (v1m || v2m || v3m) {
+              vsTop10 = { w: v1w + v2w + v3w, l: v1l + v2l + v3l };
+              log.push("vsTop10: " + vsTop10.w + "-" + vsTop10.l + " (summed v1+v2+v3)");
+            }
+          }
+          // Pattern 3: prose
+          if (!vsTop10) {
+            var t10p = fullWt.match(/top[- ]?10.*?(\d+)[–\-](\d+)/i);
+            if (!t10p) t10p = fullWt.match(/(\d+)[–\-](\d+).*?(?:against|vs\.?|versus).*?top[- ]?10/i);
+            if (t10p) {
+              vsTop10 = { w: parseInt(t10p[1], 10), l: parseInt(t10p[2], 10) };
+              log.push("vsTop10: " + vsTop10.w + "-" + vsTop10.l + " (from prose)");
+            }
+          }
         }
       }
     } catch (e) { log.push("vsTop10: parse error " + e.message); }
@@ -522,6 +529,75 @@ async function fetchOpponentProfile(opponentName,opponentId,log){
 
 function enrichMatch(match,oppDetails){if(!match||!oppDetails)return match;if(oppDetails.ranking)match.opponent_ranking=oppDetails.ranking;if(oppDetails.country)match.opponent_country=oppDetails.country;if(oppDetails.atp_slug)match.opponent_atp_slug=oppDetails.atp_slug;return match;}
 
+// ===== ATP RANKINGS — Top 50 via SofaScore =====
+async function fetchATPRankings(apiKey, log) {
+  try {
+    // Check cache (update once per day)
+    var cached = await kv.get("fn:atpRankings");
+    if (cached) {
+      var p = typeof cached === "string" ? JSON.parse(cached) : cached;
+      if (p.updatedAt) {
+        var age = Date.now() - new Date(p.updatedAt).getTime();
+        if (age < 86400000 && p.rankings && p.rankings.length > 0) { // 24h
+          log.push("rankings: cache ok (" + p.rankings.length + " players)");
+          return;
+        }
+      }
+    }
+  } catch (e) {}
+
+  // Try SofaScore rankings endpoints
+  var endpoints = ["/v1/rankings/type/6", "/v1/rankings/type/4", "/v1/rankings/type/14"];
+  var rankings = null;
+  for (var ei = 0; ei < endpoints.length; ei++) {
+    try {
+      var data = await sofaFetch(endpoints[ei], apiKey);
+      if (data && data.rankings && Array.isArray(data.rankings)) {
+        rankings = data.rankings.slice(0, 50).map(function(r) {
+          return {
+            rank: r.ranking || r.position || (ei + 1),
+            name: r.team ? (r.team.shortName || r.team.name) : (r.player ? r.player.name : ""),
+            country: r.team ? (r.team.country ? r.team.country.name : "") : "",
+            points: r.points || r.rowName || "",
+            slug: r.team ? r.team.slug : "",
+          };
+        });
+        log.push("rankings: " + rankings.length + " from " + endpoints[ei]);
+        break;
+      }
+    } catch (e) { continue; }
+  }
+
+  // Fallback: try fetching from ESPN rankings page
+  if (!rankings) {
+    try {
+      var espnRes = await fetch("https://site.api.espn.com/apis/site/v2/sports/tennis/atp/rankings", { headers: { "User-Agent": "FonsecaNews/10.0" } });
+      if (espnRes.ok) {
+        var espnData = await espnRes.json();
+        if (espnData && espnData.rankings && espnData.rankings[0] && espnData.rankings[0].ranks) {
+          rankings = espnData.rankings[0].ranks.slice(0, 50).map(function(r) {
+            var ath = r.athlete || {};
+            return {
+              rank: r.current || r.rank,
+              name: ath.displayName || ath.shortName || "",
+              country: ath.flag ? ath.flag.alt : "",
+              points: r.points || "",
+              prev: r.previous || null,
+            };
+          });
+          log.push("rankings: " + rankings.length + " from ESPN");
+        }
+      }
+    } catch (e) { log.push("rankings: ESPN fallback error " + e.message); }
+  }
+
+  if (rankings && rankings.length > 0) {
+    await kv.set("fn:atpRankings", JSON.stringify({ rankings: rankings, updatedAt: new Date().toISOString() }), { ex: 86400 * 7 });
+  } else {
+    log.push("rankings: no data from any source");
+  }
+}
+
 export default async function handler(req,res){
   var apiKey=process.env.RAPIDAPI_KEY;
   if(!apiKey) return res.status(200).json({ok:false,error:"No RAPIDAPI_KEY"});
@@ -592,6 +668,7 @@ export default async function handler(req,res){
     await fetchOdds(nextMatch,apiKey,log);
     var seasonData=await fetchSeasonStats(apiKey,log);if(seasonData)await kv.set("fn:season",JSON.stringify(seasonData),{ex:86400});
     await fetchBiography(log);
+    await fetchATPRankings(apiKey, log);
     if(nextMatch&&nextMatch.tournament_name)await fetchTournamentFacts(nextMatch.tournament_name,log);
     if(nextMatch&&nextMatch.opponent_name)await fetchOpponentProfile(nextMatch.opponent_name,nextMatch.opponent_id,log);
     await kv.set("fn:cronLastRun",now.toISOString());
