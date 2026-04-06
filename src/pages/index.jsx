@@ -372,7 +372,7 @@ var NextDuelCard = function(props) {
   var oppProfile = props.oppProfile;
   var countdown = useCountdown(match ? match.date : null);
   if (!match) return null;
-  var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
+  var joaoImg = "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/11745.png&w=200&h=145";
   var atpSlugs = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je", "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Rinderknech": "rc91", "Fonseca": "f0fv" };
 
   var oppName = match.opponent_name || "A definir";
@@ -722,7 +722,7 @@ var PlayerBlock = function(props) {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
                 <div style={{ textAlign: "center", flex: 1 }}>
                   <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", margin: "0 auto 6px", border: "2px solid " + GREEN + "40" }}>
-                    <img src="https://www.atptour.com/-/media/alias/player-headshot/f0fv" alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    <img src="https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/11745.png&w=200&h=145" alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Fonseca</span>
                   <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>🇧🇷 #40</span>
@@ -735,7 +735,7 @@ var PlayerBlock = function(props) {
 
                 <div style={{ textAlign: "center", flex: 1 }}>
                   <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", margin: "0 auto 6px", border: "2px solid " + BORDER, background: BG_ALT }}>
-                    <img src={(function() { var atpMap = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Munar": "mf53", "Rinderknech": "rc91" }; var oName = matchStats.opponent_name || ""; var slug = null; for (var k in atpMap) { if (oName.indexOf(k) !== -1) { slug = atpMap[k]; break; } } if (slug) return "https://www.atptour.com/-/media/alias/player-headshot/" + slug; if (matchStats.opponent_id) return "https://api.sofascore.app/api/v1/team/" + matchStats.opponent_id + "/image"; return ""; })()} alt={oppShort} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:16px;font-weight:700;color:" + DIM + ";display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppShort.charAt(0) + "</span>"; }} />
+                    <img src={(function() { var espnMap = { "Alcaraz": "4686", "Sinner": "4375", "Djokovic": "777", "Medvedev": "3367", "Zverev": "3098", "Rublev": "3523", "Ruud": "3536", "Tsitsipas": "3293", "Fritz": "2981", "Rune": "4685", "Draper": "4580", "Tiafoe": "3263", "Musetti": "4228", "Fils": "11716", "Shelton": "11712", "Berrettini": "3316", "Hurkacz": "3264", "de Minaur": "3313", "Paul": "3117", "Khachanov": "3112", "Diallo": "4686", "Rinderknech": "3511", "Mensik": "11746", "Machac": "11709", "Cerundolo": "11689", "Shapovalov": "3086", "Auger-Aliassime": "3270", "Munar": "4229", "Fonseca": "11745" }; var oName = matchStats.opponent_name || ""; var eid = null; for (var k in espnMap) { if (oName.indexOf(k) !== -1) { eid = espnMap[k]; break; } } if (eid) return "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + eid + ".png&w=200&h=145"; return ""; })()} alt={oppShort} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:16px;font-weight:700;color:" + DIM + ";display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppShort.charAt(0) + "</span>"; }} />
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{oppShort}</span>
                   <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{oppFlag} {matchStats.opponent_ranking ? "#" + matchStats.opponent_ranking : ""}</span>
@@ -756,15 +756,10 @@ var PlayerBlock = function(props) {
                       <span style={{ fontSize: 11, color: SUB, fontFamily: SANS, textAlign: "center", flex: 1 }}>{row.label}</span>
                       <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS, minWidth: 36, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                     </div>
-                    <div style={{ display: "flex", height: 4, gap: 4, borderRadius: 2 }}>
-                      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", background: "#e8e8e8", borderRadius: "2px 0 0 2px" }}>
-                        <div style={{ height: 4, background: fBetter ? GREEN : "#ccc", borderRadius: "2px 0 0 2px", width: Math.max(fPct, 8) + "%", transition: "width 0.8s ease" }} />
-                      </div>
-                      <div style={{ flex: 1, background: "#e8e8e8", borderRadius: "0 2px 2px 0" }}>
-                        <div style={{ height: 4, background: !fBetter ? RED : "#ccc", borderRadius: "0 2px 2px 0", width: Math.max(oPct, 8) + "%", transition: "width 0.8s ease" }} />
-                      </div>
+                  <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden", background: "#e8e8e8" }}>
+                      <div style={{ width: (row.pct ? row.fVal : Math.round((row.fVal / Math.max(row.fVal + row.oVal, 1)) * 100)) + "%", height: 5, background: fBetter ? GREEN : "#ccc", transition: "width 0.8s ease" }} />
+                      <div style={{ width: (row.pct ? row.oVal : Math.round((row.oVal / Math.max(row.fVal + row.oVal, 1)) * 100)) + "%", height: 5, background: !fBetter ? "#e74c3c" : "#ccc", transition: "width 0.8s ease", marginLeft: "auto" }} />
                     </div>
-                  </div>
                 );
               })}
 
