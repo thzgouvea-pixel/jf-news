@@ -16,9 +16,10 @@ const SANS = "'Inter', -apple-system, sans-serif";
 const CACHE_DURATION_MS = 30 * 60 * 1000;
 const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
 
-// ===== FIX 1: Constante padronizada da foto do Fonseca via ESPN =====
+// ===== FIX 1: Foto do Fonseca — SofaScore (funciona) + ESPN fallback =====
 const FONSECA_ESPN_ID = "11745";
-const FONSECA_IMG = "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + FONSECA_ESPN_ID + ".png&w=200&h=145";
+const FONSECA_IMG = "https://api.sofascore.app/api/v1/player/403869/image";
+const FONSECA_IMG_FALLBACK = "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + FONSECA_ESPN_ID + ".png&w=200&h=145";
 
 // ===== FIX 2: Mapa ESPN centralizado (usado em NextDuelCard + PlayerBlock) =====
 var ESPN_ID_MAP = {
@@ -29,7 +30,7 @@ var ESPN_ID_MAP = {
   "Hurkacz": "3264", "de Minaur": "3313", "Paul": "3117", "Khachanov": "3112",
   "Rinderknech": "3511", "Mensik": "11746", "Machac": "11709",
   "Cerundolo": "11689", "Shapovalov": "3086", "Auger-Aliassime": "3270",
-  "Munar": "4229", "Fonseca": FONSECA_ESPN_ID, "Diallo": "11718",
+  "Munar": "4229", "Fonseca": FONSECA_ESPN_ID, "Diallo": "3885",
   "Nakashima": "4581", "Tabilo": "4684", "Mpetshi Perricard": "11747",
   "Davidovich Fokina": "4579", "Baez": "11690", "Etcheverry": "11700",
   "Jarry": "3539", "Kotov": "11706", "Safiullin": "11714",
@@ -475,7 +476,7 @@ var NextDuelCard = function(props) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 8, alignItems: "center" }}>
           <div style={{ textAlign: "center" }}>
             <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid " + GREEN + "35", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:18px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; }} />
+              <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:18px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; } }} />
             </div>
             <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
             <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
@@ -776,7 +777,7 @@ var PlayerBlock = function(props) {
                 {/* Fonseca — FIX 1: usa FONSECA_IMG */}
                 <div style={{ textAlign: "center", flex: 1 }}>
                   <div style={{ width: 48, height: 48, borderRadius: "50%", overflow: "hidden", margin: "0 auto 6px", border: "2px solid " + GREEN + "40" }}>
-                    <img src={FONSECA_IMG} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:16px;font-weight:700;color:" + GREEN + ";display:flex;align-items:center;justify-content:center;width:100%;height:100%'>JF</span>"; }} />
+                    <img src={FONSECA_IMG} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:16px;font-weight:700;color:" + GREEN + ";display:flex;align-items:center;justify-content:center;width:100%;height:100%'>JF</span>"; } }} />
                   </div>
                   <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>Fonseca</span>
                   <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>🇧🇷 #{playerRanking || 40}</span>
@@ -804,31 +805,29 @@ var PlayerBlock = function(props) {
 
               <div style={{ height: 1, background: BORDER, marginBottom: 16 }} />
 
-              {/* FIX 5: Barras de stats redesenhadas — visual dual-bar limpo */}
+              {/* FIX 5: Barras de stats — barra contínua única */}
               {statRows.map(function(row, i) {
                 var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
-                // Para percentuais, usar diretamente; para absolutos, calcular proporção
+                // Para percentuais, usar valor direto; para absolutos, calcular proporção sobre total
                 var total = row.pct ? 100 : Math.max(row.fVal + row.oVal, 1);
                 var fWidth = row.pct ? row.fVal : Math.round((row.fVal / total) * 100);
                 var oWidth = row.pct ? row.oVal : Math.round((row.oVal / total) * 100);
+                // Garantir mínimo visual
+                if (fWidth > 0 && fWidth < 5) fWidth = 5;
+                if (oWidth > 0 && oWidth < 5) oWidth = 5;
 
                 return (
-                  <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 16 : 0 }}>
-                    {/* Label centrado */}
-                    <div style={{ textAlign: "center", marginBottom: 6 }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: SUB, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>{row.label}</span>
+                  <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 14 : 0 }}>
+                    {/* Valores nas pontas + label centrado */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? GREEN : DIM, fontFamily: SANS, minWidth: 40, textAlign: "left" }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: SUB, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: "center", flex: 1 }}>{row.label}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS, minWidth: 40, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                     </div>
-                    {/* Valores + barras */}
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      {/* Valor Fonseca */}
-                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? GREEN : DIM, fontFamily: SANS, minWidth: 40, textAlign: "right" }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
-                      {/* Dual bar */}
-                      <div style={{ flex: 1, display: "flex", height: 6, borderRadius: 3, overflow: "hidden", gap: 2 }}>
-                        <div style={{ width: fWidth + "%", height: 6, background: fBetter ? GREEN : "#d0d0d0", borderRadius: "3px 0 0 3px", transition: "width 0.8s ease", minWidth: fWidth > 0 ? 4 : 0 }} />
-                        <div style={{ width: oWidth + "%", height: 6, background: !fBetter ? "#e74c3c" : "#d0d0d0", borderRadius: "0 3px 3px 0", transition: "width 0.8s ease", marginLeft: "auto", minWidth: oWidth > 0 ? 4 : 0 }} />
-                      </div>
-                      {/* Valor Oponente */}
-                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? RED : DIM, fontFamily: SANS, minWidth: 40, textAlign: "left" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                    {/* Barra contínua: Fonseca da esquerda, oponente da direita */}
+                    <div style={{ position: "relative", height: 5, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}>
+                      <div style={{ position: "absolute", left: 0, top: 0, height: 5, width: fWidth + "%", background: fBetter ? GREEN : "#ccc", borderRadius: "3px 0 0 3px", transition: "width 0.8s ease" }} />
+                      <div style={{ position: "absolute", right: 0, top: 0, height: 5, width: oWidth + "%", background: !fBetter ? "#e74c3c" : "#ccc", borderRadius: "0 3px 3px 0", transition: "width 0.8s ease" }} />
                     </div>
                   </div>
                 );
