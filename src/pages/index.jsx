@@ -16,10 +16,10 @@ const SANS = "'Inter', -apple-system, sans-serif";
 const CACHE_DURATION_MS = 30 * 60 * 1000;
 const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
 
-// ===== FIX 1: Foto do Fonseca — SofaScore (funciona) + ESPN fallback =====
+// ===== FIX 1: Foto do Fonseca — ATP headshot (funciona) + SofaScore fallback =====
 const FONSECA_ESPN_ID = "11745";
-const FONSECA_IMG = "https://api.sofascore.app/api/v1/player/403869/image";
-const FONSECA_IMG_FALLBACK = "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + FONSECA_ESPN_ID + ".png&w=200&h=145";
+const FONSECA_IMG = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
+const FONSECA_IMG_FALLBACK = "https://api.sofascore.app/api/v1/player/403869/image";
 
 // ===== FIX 2: Mapa ESPN centralizado (usado em NextDuelCard + PlayerBlock) =====
 var ESPN_ID_MAP = {
@@ -48,6 +48,12 @@ var getESPNImage = function(name) {
     }
   }
   return null;
+};
+
+// Fallback: SofaScore player image by sofascore ID (set in opponent data)
+var getSofaScoreImage = function(sofascoreId) {
+  if (!sofascoreId) return null;
+  return "https://api.sofascore.app/api/v1/player/" + sofascoreId + "/image";
 };
 
 var SAMPLE_PLAYER = { ranking: 40, rankingChange: "+4" };
@@ -416,9 +422,10 @@ var NextDuelCard = function(props) {
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
 
-  // FIX 2: Usa getESPNImage centralizado
+  // FIX 2: Usa getESPNImage centralizado + SofaScore fallback
   var oppImg = getESPNImage(oppName);
-  var oppImgFallback = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null;
+  var oppSofaImg = match.opponent_id ? getSofaScoreImage(match.opponent_id) : null;
+  var oppImgFallback = oppSofaImg || (match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null);
   if (!oppImg && oppImgFallback) oppImg = oppImgFallback;
 
   var sc = surfaceColorMap[match.surface] || "#999";
@@ -734,9 +741,10 @@ var PlayerBlock = function(props) {
         var isWin = matchStats.result === "V";
         var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
 
-        // FIX 2: Foto do oponente via ESPN centralizado
+        // FIX 2: Foto do oponente via ESPN centralizado + SofaScore fallback
         var oppImg = getESPNImage(oppName);
-        var oppImgFallback = matchStats.opponent_id ? ("/api/player-image?id=" + matchStats.opponent_id) : null;
+        var oppSofaImg = matchStats.opponent_id ? getSofaScoreImage(matchStats.opponent_id) : null;
+        var oppImgFallback = oppSofaImg || (matchStats.opponent_id ? ("/api/player-image?id=" + matchStats.opponent_id) : null);
         if (!oppImg && oppImgFallback) oppImg = oppImgFallback;
 
         // FIX 3: Ranking do oponente
