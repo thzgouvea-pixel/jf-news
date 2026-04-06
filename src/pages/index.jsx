@@ -370,14 +370,15 @@ var NextDuelCard = function(props) {
   var onPushClick = props.onPushClick;
   var pushEnabled = props.pushEnabled;
   var pushLoading = props.pushLoading;
+  var oppProfile = props.oppProfile;
   var countdown = useCountdown(match ? match.date : null);
   if (!match) return null;
   var joaoImg = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
   var atpSlugs = { "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58", "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51", "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29", "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi", "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq", "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58", "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je", "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Fonseca": "f0fv" };
 
   var oppName = match.opponent_name || "A definir";
-  var oppRanking = match.opponent_ranking;
-  var oppCountry = match.opponent_country || "";
+  var oppRanking = match.opponent_ranking || (oppProfile && oppProfile.ranking ? oppProfile.ranking : null);
+  var oppCountry = match.opponent_country || (oppProfile && oppProfile.country ? oppProfile.country : "");
   var oppFlag = countryFlags[oppCountry] || "";
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
@@ -1303,7 +1304,7 @@ export default function JoaoFonsecaNews() {
         ) : (
           <section style={{ padding: "20px 0 0" }}>
             <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
-            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} />
+            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} />
           </section>
         )}
 
