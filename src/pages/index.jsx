@@ -1343,47 +1343,46 @@ export default function JoaoFonsecaNews() {
           </section>
         )}
 
+        {/* Sobre o torneio — banner horizontal scrollável */}
         {tournamentFacts && (
-          <section style={{ padding: "20px 0 0" }}>
-            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Sobre o torneio</p>
-            <div style={{ background: "linear-gradient(160deg, #0a1220 0%, #111d33 100%)", borderRadius: 18, overflow: "hidden", position: "relative" }}>
-              <div style={{ height: 3, background: "linear-gradient(to right, " + (surfaceColorMap[dm.surface] || "#999") + ", " + (surfaceColorMap[dm.surface] || "#999") + "40)" }} />
-              <div style={{ padding: "20px 22px 22px" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
-                  <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: "#fff", fontFamily: SERIF, letterSpacing: "-0.01em" }}>{tournamentFacts.name || dm.tournament_name}</h3>
-                  <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, flexShrink: 0, marginLeft: 12 }}>Wikipedia</span>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                  {(tournamentFacts.facts || []).map(function(fact, i) {
-                    var isLast = i === (tournamentFacts.facts || []).length - 1;
-                    var cleanText = (fact.text || "").replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").replace(/'{2,}/g, "").trim();
-                    cleanText = cleanText.replace(/Clay court/gi, "Saibro").replace(/Hard court/gi, "Piso duro").replace(/Grass court/gi, "Grama");
-                    var parts = cleanText.split(/:\s*/);
-                    var hasLabel = parts.length >= 2 && parts[0].length < 30;
-                    return (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 0", borderBottom: isLast ? "none" : "1px solid rgba(255,255,255,0.05)" }}>
-                        <div style={{ width: 34, height: 34, borderRadius: 9, background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                          <span style={{ fontSize: 16 }}>{fact.icon || "🎾"}</span>
-                        </div>
-                        {hasLabel ? (
-                          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", fontFamily: SANS, lineHeight: 1.5, letterSpacing: "0.01em" }}>
-                            {parts[0]}: <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{parts.slice(1).join(": ")}</span>
-                          </span>
-                        ) : (
-                          <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontFamily: SANS, lineHeight: 1.5, letterSpacing: "0.01em", fontWeight: 600 }}>{cleanText}</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+          <section style={{ padding: "16px 0 0" }}>
+            <div style={{ position: "relative" }}>
+              <div style={{ overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", display: "flex", gap: 10, padding: "0 0 4px" }}>
+                {(tournamentFacts.facts || []).map(function(fact, i) {
+                  var cleanText = (fact.text || "").replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").replace(/'{2,}/g, "").trim();
+                  cleanText = cleanText.replace(/Clay court/gi, "Saibro").replace(/Hard court/gi, "Piso duro").replace(/Grass court/gi, "Grama");
+                  return (
+                    <div key={i} style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#0D1726", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
+                      <span style={{ fontSize: 14 }}>{fact.icon || "🎾"}</span>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: SANS, fontWeight: 500, whiteSpace: "nowrap" }}>{cleanText}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </section>
         )}
 
-        {/* FIX: Passa playerRanking para o PlayerBlock */}
+        {/* Última Partida */}
         <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
 
+        {/* Notícias */}
+        <section style={{ padding: "20px 0 0" }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Notícias</p>
+          {loading && news.length === 0 && <Skeleton />}
+          {dn.length > 0 && !(loading && news.length === 0) && (
+            <>
+              <div>{buildFeed(dn.slice(0, visibleCount), allLikes, dm)}</div>
+              {visibleCount < dn.length && (
+                <button onClick={function() { setVisibleCount(function(v) { return Math.min(v + 10, dn.length); }); }} style={{ width: "100%", padding: "14px", background: "transparent", border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", fontSize: 13, fontWeight: 600, color: GREEN, fontFamily: SANS }}>
+                  Carregar mais ({dn.length - visibleCount} restantes)
+                </button>
+              )}
+            </>
+          )}
+        </section>
+
+        {/* João em números */}
         <section style={{ padding: "20px 0 0" }}>
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>João em números</p>
           {(function() {
@@ -1421,21 +1420,6 @@ export default function JoaoFonsecaNews() {
           </div>
             );
           })()}
-        </section>
-
-        <section style={{ padding: "20px 0 0" }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Notícias</p>
-          {loading && news.length === 0 && <Skeleton />}
-          {dn.length > 0 && !(loading && news.length === 0) && (
-            <>
-              <div>{buildFeed(dn.slice(0, visibleCount), allLikes, dm)}</div>
-              {visibleCount < dn.length && (
-                <button onClick={function() { setVisibleCount(function(v) { return Math.min(v + 10, dn.length); }); }} style={{ width: "100%", padding: "14px", background: "transparent", border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", fontSize: 13, fontWeight: 600, color: GREEN, fontFamily: SANS }}>
-                  Carregar mais ({dn.length - visibleCount} restantes)
-                </button>
-              )}
-            </>
-          )}
         </section>
 
         <section style={{ padding: "20px 0" }}>
