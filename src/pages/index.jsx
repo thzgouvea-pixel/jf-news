@@ -1299,7 +1299,7 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
                 {dp && <span style={{ fontSize: 11, fontWeight: 700, color: "#132440", fontFamily: SANS, whiteSpace: "nowrap" }}>#{dp.ranking}</span>}
               </div>
-              <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, display: "block", marginTop: 1 }}>Guia de bolso para fãs do João Fonseca</span>
+              <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, display: "block", marginTop: -1 }}>Guia de bolso para fãs do João Fonseca</span>
             </div>
           </div>
           <button onClick={handleRefresh} disabled={loading} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, padding: 0 }}>
@@ -1308,7 +1308,7 @@ export default function JoaoFonsecaNews() {
         </div>
 
         <div style={{ position: "relative" }}>
-          <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "2px 16px 12px", display: "flex", alignItems: "center", gap: 24 }}>
+          <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "2px 16px 12px", paddingRight: 48, display: "flex", alignItems: "center", gap: 24 }}>
             {[
               { label: "Biografia", href: "/biografia" },
               { label: "Ranking", action: function(){setShowRanking(true);} },
@@ -1316,7 +1316,6 @@ export default function JoaoFonsecaNews() {
               { label: "Conquistas", action: function(){setShowTitles(true);} },
               { label: "Regras do Tênis", href: "/regras" },
               { label: "Feedback", action: function(){setShowFeedback(true);} },
-              { label: "Raquetes", href: "/raquetes", gold: true },
               { label: "Apoiar", action: function(){setShowPixModal(true);}, green: true },
             ].map(function(item, i) {
               var isLink = !!item.href;
@@ -1402,7 +1401,7 @@ export default function JoaoFonsecaNews() {
             return (
           <div style={{ background: BG_ALT, borderRadius: 16, padding: "18px", border: "1px solid " + BORDER }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
-              {[{v:cW+"-"+cL,l:"Carreira",c:TEXT},{v:cPct+"%",l:"Aprov.",c:GREEN},{v:"1-4",l:"vs Top 10",c:TEXT},{v:prizeMoney ? (prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "$2.9M",l:"Prize",c:GREEN}].map(function(s,i){return(<div key={i} style={{textAlign:"center"}}><span style={{fontSize:18,fontWeight:800,color:s.c,fontFamily:SANS,display:"block"}}>{s.v}</span><span style={{fontSize:9,fontWeight:600,color:DIM,fontFamily:SANS,textTransform:"uppercase",letterSpacing:"0.04em"}}>{s.l}</span></div>);})}
+              {[{v:cW+"V "+cL+"D",l:"Carreira",c:TEXT},{v:cPct+"%",l:"Aprov.",c:GREEN},{v:"1V 4D",l:"vs Top 10",c:TEXT},{v:prizeMoney ? (prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "$2.9M",l:"Prize Money",c:GREEN}].map(function(s,i){return(<div key={i} style={{textAlign:"center"}}><span style={{fontSize:17,fontWeight:800,color:s.c,fontFamily:SANS,display:"block",lineHeight:1}}>{s.v}</span><span style={{fontSize:9,fontWeight:600,color:DIM,fontFamily:SANS,textTransform:"uppercase",letterSpacing:"0.04em",marginTop:2,display:"block"}}>{s.l}</span></div>);})}
             </div>
             <div style={{ height: 1, background: BORDER, marginBottom: 14 }} />
             <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Por superfície</p>
