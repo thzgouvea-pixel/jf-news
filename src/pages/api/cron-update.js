@@ -77,7 +77,7 @@ async function sofaFetch(path, apiKey) {
 async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
   if (!opponentId) { log.push("opp: no opponent_id"); return null; }
 
-  // Check cache first
+  // Check cache first — only use if ranking exists
   var cacheKey = "fn:oppCache:" + opponentId;
   try {
     var cached = await kv.get(cacheKey);
@@ -87,6 +87,8 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
         log.push("opp: cache hit #" + parsed.ranking + " " + (parsed.country || ""));
         return parsed;
       }
+      // Cache exists but no ranking — delete and refetch
+      log.push("opp: cache has no ranking, refetching");
     }
   } catch (e) {}
 
@@ -333,11 +335,62 @@ async function fetchMatchStats(matchId, apiKey) {
   return { home, away };
 }
 
-// ===== ODDS — The Odds API =====
-async function fetchOdds(nextMatch, log) {
-  var oddsApiKey = process.env.ODDS_API_KEY;
-  if (!oddsApiKey) { log.push("prob: no ODDS_API_KEY"); return; }
+// ===== ODDS — SofaScore + The Odds API =====
+async function fetchOdds(nextMatch, apiKey, log) {
   if (!nextMatch) { log.push("prob: no next match"); return; }
+
+  // Method 1: Try SofaScore odds (free with existing API key)
+  if (nextMatch.event_id) {
+    try {
+      var oddsData = await sofaFetch("/v1/event/" + nextMatch.event_id + "/odds", apiKey);
+      if (oddsData && oddsData.markets) {
+        // Look for "Full Time Result" / "Winner" market
+        var markets = Array.isArray(oddsData.markets) ? oddsData.markets : [];
+        for (var mi = 0; mi < markets.length; mi++) {
+          var market = markets[mi];
+          if (!market.choices || market.choices.length < 2) continue;
+          // Find Fonseca's odds
+          var fOdds = null; var oOdds = null;
+          for (var ci = 0; ci < market.choices.length; ci++) {
+            var choice = market.choices[ci];
+            var choiceName = (choice.name || "").toLowerCase();
+            if (choiceName.includes("fonseca")) fOdds = choice.fractionalValue || choice.odds;
+            else oOdds = choice.fractionalValue || choice.odds;
+          }
+          if (fOdds && oOdds) {
+            var implF = 1 / parseFloat(fOdds);
+            var implO = 1 / parseFloat(oOdds);
+            var totalImpl = implF + implO;
+            var fPct = Math.round((implF / totalImpl) * 100);
+            var oPct = 100 - fPct;
+            var payload = {
+              fonseca: fPct,
+              opponent: oPct,
+              opponent_name: nextMatch.opponent_name,
+              tournament: nextMatch.tournament_name,
+              source: "sofascore",
+              updatedAt: new Date().toISOString(),
+            };
+            await kv.set("fn:winProb", JSON.stringify(payload), { ex: 86400 });
+            log.push("prob: SofaScore odds Fonseca " + fPct + "% vs " + oPct + "%");
+            return;
+          }
+        }
+      }
+      // SofaScore might also return odds in a different structure
+      if (oddsData && oddsData.odds) {
+        log.push("prob: SofaScore odds present but unrecognized structure");
+      } else {
+        log.push("prob: SofaScore no odds for event " + nextMatch.event_id);
+      }
+    } catch (e) {
+      log.push("prob: SofaScore odds error " + e.message);
+    }
+  }
+
+  // Method 2: The Odds API (fallback)
+  var oddsApiKey = process.env.ODDS_API_KEY;
+  if (!oddsApiKey) { log.push("prob: no ODDS_API_KEY, skipping fallback"); return; }
 
   var tournamentName = (nextMatch.tournament_name || "").toLowerCase();
   var sportKey = null;
@@ -1173,6 +1226,22 @@ export default async function handler(req, res) {
       }
 
       await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 });
+      
+      // Fallback: if still no ranking, try opponentProfile (from Wikipedia)
+      if (!nextMatch.opponent_ranking) {
+        try {
+          var oppProfile = await kv.get("fn:opponentProfile");
+          if (oppProfile) {
+            var oppParsed = typeof oppProfile === "string" ? JSON.parse(oppProfile) : oppProfile;
+            if (oppParsed && oppParsed.ranking) {
+              nextMatch.opponent_ranking = oppParsed.ranking;
+              await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 });
+              log.push("nextMatch: ranking fallback from Wikipedia #" + oppParsed.ranking);
+            }
+          }
+        } catch (e) {}
+      }
+      
       log.push("nextMatch: vs " + nextMatch.opponent_name + (nextMatch.opponent_ranking ? " #" + nextMatch.opponent_ranking : "") + (nextMatch.opponent_country ? " (" + nextMatch.opponent_country + ")" : "") + " @ " + nextMatch.tournament_name);
     } else {
       var manualNext = await kv.get("fn:nextMatch");
@@ -1198,8 +1267,8 @@ export default async function handler(req, res) {
       }
     }
 
-    // 5. Odds
-    await fetchOdds(nextMatch, log);
+    // 5. Odds (try SofaScore first, then The Odds API)
+    await fetchOdds(nextMatch, apiKey, log);
 
     // 6. Season stats (computed from recentForm in KV — no RapidAPI cost)
     var seasonData = await fetchSeasonStats(apiKey, log);
