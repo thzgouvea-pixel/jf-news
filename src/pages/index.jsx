@@ -381,7 +381,7 @@ var NextDuelCard = function(props) {
   var oppFlag = countryFlags[oppCountry] || "";
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
-  var oppImg = oppAtpSlug ? ("https://www.atptour.com/-/media/alias/player-headshot/" + oppAtpSlug) : (match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null);
+  var oppImg = match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : (oppAtpSlug ? ("https://www.atptour.com/-/media/alias/player-headshot/" + oppAtpSlug) : null);
   var oppImgFallback = match.opponent_id ? ("https://api.sofascore.app/api/v1/player/" + match.opponent_id + "/image") : null;
   var sc = surfaceColorMap[match.surface] || "#999";
 
