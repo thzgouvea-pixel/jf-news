@@ -3,15 +3,23 @@ export default async function handler(req, res) {
   if (!id) return res.status(400).send("Missing id");
 
   var urls = [
-    "https://api.sofascore.app/api/v1/team/" + id + "/image",
-    "https://api.sofascore.app/api/v1/player/" + id + "/image",
+    {
+      url: "https://sofascore6.p.rapidapi.com/api/sofascore/v1/team/image?team_id=" + id,
+      headers: {
+        "x-rapidapi-host": "sofascore6.p.rapidapi.com",
+        "x-rapidapi-key": process.env.RAPIDAPI_KEY,
+      },
+    },
+    {
+      url: "https://a.espncdn.com/i/headshots/tennis/players/full/" + (req.query.espn || "") + ".png",
+      headers: { "User-Agent": "FonsecaNews/9.0" },
+    },
   ];
 
   for (var i = 0; i < urls.length; i++) {
+    if (i === 1 && !req.query.espn) continue;
     try {
-      var r = await fetch(urls[i], {
-        headers: { "User-Agent": "FonsecaNews/9.0" },
-      });
+      var r = await fetch(urls[i].url, { headers: urls[i].headers });
       if (r.ok) {
         var buf = await r.arrayBuffer();
         res.setHeader("Content-Type", r.headers.get("content-type") || "image/png");
