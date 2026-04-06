@@ -1198,7 +1198,7 @@ export default function JoaoFonsecaNews() {
 
       {/* HEADER — Editorial Premium */}
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
-        {/* Row 1: Brand + Actions */}
+        {/* Row 1: Brand */}
         <div style={{ maxWidth: 640, margin: "0 auto", padding: "16px 16px 8px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
             <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 12px rgba(0,0,0,0.15)" }}>
@@ -1208,19 +1208,16 @@ export default function JoaoFonsecaNews() {
               <span style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap", display: "block" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
                 {dp && <span style={{ fontSize: 10, fontWeight: 700, color: GREEN, fontFamily: SANS, background: GREEN + "0A", padding: "2px 7px", borderRadius: 999, whiteSpace: "nowrap", border: "1px solid " + GREEN + "18" }}>#{dp.ranking} ATP</span>}
-                <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>Site de fãs{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}</span>
+                <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, whiteSpace: "nowrap" }}>Site de fãs{lastUpdate ? " · atualizado " + formatTimeAgo(lastUpdate) : ""}</span>
+                <button onClick={handleRefresh} disabled={loading} style={{ width: 24, height: 24, borderRadius: 6, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, marginLeft: 2 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
+                </button>
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <a href="/raquetes" style={{ fontSize: 8, fontWeight: 700, color: "#b8860b", fontFamily: SANS, textDecoration: "none", padding: "5px 8px", borderRadius: 6, background: YELLOW + "0A", border: "1px solid " + YELLOW + "20", whiteSpace: "nowrap", letterSpacing: "0.03em", textTransform: "uppercase" }}>Venda sua raquete</a>
-            <button onClick={handleRefresh} disabled={loading} style={{ width: 34, height: 34, borderRadius: 10, background: "transparent", border: "1px solid " + BORDER, color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
-            </button>
-          </div>
         </div>
 
-        {/* Row 2: Horizontal scrollable navigation — pill-style tabs */}
+        {/* Row 2: Horizontal scrollable navigation */}
         <div style={{ position: "relative" }}>
           <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: 16, background: "linear-gradient(to right, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
           <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: 28, background: "linear-gradient(to left, rgba(255,255,255,0.97), transparent)", zIndex: 2, pointerEvents: "none" }} />
@@ -1230,16 +1227,20 @@ export default function JoaoFonsecaNews() {
               { label: "Ranking", action: function(){setShowRanking(true);} },
               { label: "Calendário", action: function(){setShowCalendar(true);} },
               { label: "Conquistas", action: function(){setShowTitles(true);} },
-              { label: "Next Gen", action: function(){setShowNextGen(true);} },
               { label: "Regras do Tênis", href: "/regras" },
               { label: "Feedback", action: function(){setShowFeedback(true);} },
+              { label: "Raquetes", href: "/raquetes", gold: true },
               { label: "Apoiar", action: function(){setShowPixModal(true);}, green: true },
             ].map(function(item, i) {
               var isLink = !!item.href;
               var isGreen = !!item.green;
-              var navStyle = { fontSize: 13, fontWeight: isGreen ? 700 : 600, color: isGreen ? "#fff" : TEXT, fontFamily: SANS, whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, background: isGreen ? GREEN : BG_ALT, border: "1px solid " + (isGreen ? GREEN : BORDER), cursor: "pointer", textDecoration: "none", display: "block", letterSpacing: "0.01em", transition: "all 0.15s", flexShrink: 0 };
-              var hoverIn = function(e){ if (!isGreen) { e.target.style.color=GREEN;e.target.style.borderColor=GREEN+"40";e.target.style.background=GREEN+"08"; } else { e.target.style.background="#009A50"; }};
-              var hoverOut = function(e){ if (!isGreen) { e.target.style.color=TEXT;e.target.style.borderColor=BORDER;e.target.style.background=BG_ALT; } else { e.target.style.background=GREEN; }};
+              var isGold = !!item.gold;
+              var navColor = isGreen ? "#fff" : (isGold ? "#b8860b" : "#555");
+              var navBg = isGreen ? GREEN : (isGold ? YELLOW + "0A" : BG_ALT);
+              var navBorder = isGreen ? GREEN : (isGold ? YELLOW + "30" : BORDER);
+              var navStyle = { fontSize: 13, fontWeight: (isGreen || isGold) ? 700 : 600, color: navColor, fontFamily: SANS, whiteSpace: "nowrap", padding: "8px 16px", borderRadius: 999, background: navBg, border: "1px solid " + navBorder, cursor: "pointer", textDecoration: "none", display: "block", letterSpacing: "0.01em", transition: "all 0.15s", flexShrink: 0 };
+              var hoverIn = function(e){ if (!isGreen && !isGold) { e.target.style.color=GREEN;e.target.style.borderColor=GREEN+"40";e.target.style.background=GREEN+"08"; } else if (isGreen) { e.target.style.background="#009A50"; }};
+              var hoverOut = function(e){ if (!isGreen && !isGold) { e.target.style.color="#555";e.target.style.borderColor=BORDER;e.target.style.background=BG_ALT; } else if (isGreen) { e.target.style.background=GREEN; }};
               if (isLink) {
                 return <a key={i} href={item.href} style={navStyle} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>{item.label}</a>;
               }
@@ -1267,7 +1268,7 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Adicione à tela inicial — sem baixar nada</span>
               </div>
               <button onClick={function(){setShowInstallGuide(true);}} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>Como fazer</button>
-              <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 8, right: 14, background: "none", border: "none", color: DIM, fontSize: 12, cursor: "pointer", padding: 6, lineHeight: 1 }}>✕</button>
+              <button onClick={function(){ try { localStorage.setItem("fn_install_dismissed", "1"); } catch(e){} window.location.reload(); }} style={{ position: "absolute", top: 6, right: 8, background: BG_ALT, border: "1px solid " + BORDER, width: 24, height: 24, borderRadius: "50%", color: SUB, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
             </div>
           );
         })()}
@@ -1287,7 +1288,7 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontSize: 10, color: SUB, fontFamily: SANS }}>Receba notificações de ranking, partidas e mais</span>
               </div>
               <button onClick={handlePushSubscribe} disabled={pushLoading} style={{ padding: "6px 12px", background: GREEN, border: "none", borderRadius: 8, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: SANS, whiteSpace: "nowrap" }}>{pushLoading ? "..." : "Ativar"}</button>
-              <button onClick={function(){ try { localStorage.setItem("fn_push_dismissed", "1"); } catch(e){} this.parentNode.style.display="none"; }} style={{ position: "absolute", top: 8, right: 14, background: "none", border: "none", color: DIM, fontSize: 12, cursor: "pointer", padding: 6, lineHeight: 1 }}>✕</button>
+              <button onClick={function(){ try { localStorage.setItem("fn_push_dismissed", "1"); } catch(e){} window.location.reload(); }} style={{ position: "absolute", top: 6, right: 8, background: GREEN + "10", border: "1px solid " + GREEN + "20", width: 24, height: 24, borderRadius: "50%", color: GREEN, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>✕</button>
             </div>
           );
         })()}
