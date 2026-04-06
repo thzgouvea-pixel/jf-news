@@ -1295,7 +1295,14 @@ export default function JoaoFonsecaNews() {
                 <span style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
                 {dp && <span style={{ fontSize: 11, fontWeight: 700, color: "#132440", fontFamily: SANS, whiteSpace: "nowrap" }}>#{dp.ranking}</span>}
               </div>
-              <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, display: "block", marginTop: -1 }}>Guia de bolso para fãs do João Fonseca</span>
+              <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, display: "flex", alignItems: "center", gap: 4, marginTop: -1 }}>
+                {lastUpdate && (function() {
+                  var minAgo = Math.floor((Date.now() - new Date(lastUpdate).getTime()) / 60000);
+                  var isFresh = minAgo < 30;
+                  return <span style={{ width: 5, height: 5, borderRadius: "50%", background: isFresh ? GREEN : "#ccc", display: "inline-block", flexShrink: 0, animation: isFresh ? "pulse 2s ease-in-out infinite" : "none" }} />;
+                })()}
+                <span>Guia de bolso{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}</span>
+              </span>
             </div>
           </div>
           <button onClick={handleRefresh} disabled={loading} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, padding: 0 }}>
@@ -1310,7 +1317,6 @@ export default function JoaoFonsecaNews() {
               { label: "Ranking", action: function(){setShowRanking(true);} },
               { label: "Calendário", action: function(){setShowCalendar(true);} },
               { label: "Conquistas", action: function(){setShowTitles(true);} },
-              { label: "Regras do Tênis", href: "/regras" },
               { label: "Feedback", action: function(){setShowFeedback(true);} },
               { label: "Apoiar", action: function(){setShowPixModal(true);}, green: true },
             ].map(function(item, i) {
@@ -1348,6 +1354,11 @@ export default function JoaoFonsecaNews() {
           <section style={{ padding: "16px 0 0" }}>
             <div style={{ position: "relative" }}>
               <div style={{ overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", display: "flex", gap: 10, padding: "0 0 4px" }}>
+                {/* Banner título */}
+                <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", background: "linear-gradient(135deg, #0D1726, #1a2d4a)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <span style={{ fontSize: 16 }}>💡</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SERIF, whiteSpace: "nowrap" }}>Curiosidades sobre {(tournamentFacts.name || dm.tournament_name || "").split(",")[0]}</span>
+                </div>
                 {(tournamentFacts.facts || []).map(function(fact, i) {
                   var cleanText = (fact.text || "").replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").replace(/'{2,}/g, "").trim();
                   cleanText = cleanText.replace(/Clay court/gi, "Saibro").replace(/Hard court/gi, "Piso duro").replace(/Grass court/gi, "Grama");
@@ -1436,6 +1447,7 @@ export default function JoaoFonsecaNews() {
             {[
               { href: "/raquetes", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>, bg: YELLOW + "10", title: "Venda sua raquete", sub: "Anuncie grátis na comunidade do Telegram" },
               { href: "/game", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/></svg>, bg: "#7C3AED10", title: "Tennis Career 26", sub: "Simulador de carreira profissional" },
+              { href: "/regras", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, bg: "#2563EB10", title: "Regras do Tênis", sub: "Aprenda como funciona o esporte" },
               { href: "https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights", target: "_blank", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>, bg: RED + "10", title: "Momentos do João", sub: "Highlights e jogadas no YouTube" },
             ].map(function(item, i) {
               return (<a key={i} href={item.href} target={item.target} rel={item.target ? "noopener noreferrer" : undefined} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER }}><div style={{ width: 32, height: 32, borderRadius: 8, background: item.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</div><div><span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{item.title}</span><span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{item.sub}</span></div></a>);
