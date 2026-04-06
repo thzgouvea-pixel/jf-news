@@ -1,10 +1,9 @@
-// ===== CRON: SofaScore Update v7 =====
-// CHANGES FROM v6:
-//   - Added fetchBiography: parses João's Wikipedia for sponsors, equipment, coach, bio
-//   - Added fetchTournamentFacts: parses tournament Wikipedia for history, facts, curiosities
-//   - Added fetchOpponentProfile: parses opponent Wikipedia for style, height, hand, titles
-//   - All 3 are free (Wikipedia API), cached in KV, auto-update when data changes
-//   - Biography cached 3 days, tournament facts until tournament changes, opponent until opponent changes
+// ===== CRON: SofaScore Update v8 =====
+// CHANGES FROM v7:
+//   - Opponent cache reduced to 2 days (was 7) for fresher ranking data
+//   - Added Method 3 for odds: manual odds from KV key "fn:manualOdds"
+//     Set via Upstash: key=fn:manualOdds value={"fonseca":1.25,"opponent":4.00}
+//     Calculates normalized probability from decimal odds
 // TESTED ENDPOINTS:
 //   GET /v1/match/list?sport_slug=tennis&date=YYYY-MM-DD
 //   GET /v1/match/statistics?match_id=XXXXX
@@ -72,12 +71,9 @@ async function sofaFetch(path, apiKey) {
 }
 
 // ===== OPPONENT ENRICHMENT — ranking + country via SofaScore =====
-// Fetches opponent details ONLY when opponent changes (cached in KV 7 days)
-// Cost: 1 request per new opponent, 0 when cached
 async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
   if (!opponentId) { log.push("opp: no opponent_id"); return null; }
 
-  // Check cache first — only use if ranking exists
   var cacheKey = "fn:oppCache:" + opponentId;
   try {
     var cached = await kv.get(cacheKey);
@@ -87,33 +83,27 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
         log.push("opp: cache hit #" + parsed.ranking + " " + (parsed.country || ""));
         return parsed;
       }
-      // Cache exists but no ranking — delete and refetch
       log.push("opp: cache has no ranking, refetching");
     }
   } catch (e) {}
 
-  // Fetch from SofaScore /v1/team/details — returns ranking + country
   var data = await sofaFetch("/v1/team/details?team_id=" + opponentId, apiKey);
 
   if (!data) { log.push("opp: details 404 for " + opponentId); return null; }
 
-  // The response structure varies — try multiple paths
   var team = data.team || data;
   var ranking = team.ranking || (team.rankings && team.rankings.singlesRanking) || null;
   var country = "";
 
-  // Country can be in team.country.name or team.nationality
   if (team.country && team.country.name) {
     country = team.country.name;
   } else if (team.nationality) {
     country = team.nationality;
   }
 
-  // If no ranking in details, try /v1/team/rankings
   if (!ranking) {
     var rankData = await sofaFetch("/v1/team/rankings?team_id=" + opponentId, apiKey);
     if (rankData) {
-      // Try different response shapes
       if (rankData.ranking) ranking = rankData.ranking;
       else if (rankData.rankings && rankData.rankings.ranking) ranking = rankData.rankings.ranking;
       else if (Array.isArray(rankData) && rankData.length > 0) {
@@ -125,7 +115,6 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
     }
   }
 
-  // Resolve ATP headshot slug
   var atpSlug = null;
   var nameToCheck = opponentName || team.name || "";
   for (var k in ATP_SLUGS) {
@@ -143,19 +132,19 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
     updatedAt: new Date().toISOString()
   };
 
-  // Cache for 7 days (ranking changes weekly, this is good enough)
-  await kv.set(cacheKey, JSON.stringify(result), { ex: 86400 * 7 });
+  // Cache for 2 days — rankings update weekly, need fresh data for next opponent
+  await kv.set(cacheKey, JSON.stringify(result), { ex: 86400 * 2 });
   log.push("opp: fetched #" + (result.ranking || "?") + " " + result.country + (atpSlug ? " (atp:" + atpSlug + ")" : ""));
 
   return result;
 }
 
-// ===== RANKING — from Wikipedia API (wikitext, public, free) =====
+// ===== RANKING — from Wikipedia API =====
 async function fetchRanking(apiKey, log) {
   try {
     var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&section=0&format=json";
     var res = await fetch(apiUrl, {
-      headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
+      headers: { "User-Agent": "FonsecaNews/8.0 (fan site; contact: thzgouvea@gmail.com)" },
     });
     if (!res.ok) { log.push("ranking: Wikipedia API HTTP " + res.status); return null; }
     var data = await res.json();
@@ -225,7 +214,7 @@ async function fetchRanking(apiKey, log) {
   return null;
 }
 
-// ===== SEASON STATS — compute from recentForm in KV =====
+// ===== SEASON STATS =====
 async function fetchSeasonStats(apiKey, log) {
   try {
     var existingForm = await kv.get("fn:recentForm");
@@ -335,7 +324,7 @@ async function fetchMatchStats(matchId, apiKey) {
   return { home, away };
 }
 
-// ===== ODDS — SofaScore + The Odds API =====
+// ===== ODDS — SofaScore + The Odds API + Manual =====
 async function fetchOdds(nextMatch, apiKey, log) {
   if (!nextMatch) { log.push("prob: no next match"); return; }
 
@@ -344,12 +333,10 @@ async function fetchOdds(nextMatch, apiKey, log) {
     try {
       var oddsData = await sofaFetch("/v1/event/" + nextMatch.event_id + "/odds", apiKey);
       if (oddsData && oddsData.markets) {
-        // Look for "Full Time Result" / "Winner" market
         var markets = Array.isArray(oddsData.markets) ? oddsData.markets : [];
         for (var mi = 0; mi < markets.length; mi++) {
           var market = markets[mi];
           if (!market.choices || market.choices.length < 2) continue;
-          // Find Fonseca's odds
           var fOdds = null; var oOdds = null;
           for (var ci = 0; ci < market.choices.length; ci++) {
             var choice = market.choices[ci];
@@ -377,7 +364,6 @@ async function fetchOdds(nextMatch, apiKey, log) {
           }
         }
       }
-      // SofaScore might also return odds in a different structure
       if (oddsData && oddsData.odds) {
         log.push("prob: SofaScore odds present but unrecognized structure");
       } else {
@@ -390,93 +376,125 @@ async function fetchOdds(nextMatch, apiKey, log) {
 
   // Method 2: The Odds API (fallback)
   var oddsApiKey = process.env.ODDS_API_KEY;
-  if (!oddsApiKey) { log.push("prob: no ODDS_API_KEY, skipping fallback"); return; }
-
-  var tournamentName = (nextMatch.tournament_name || "").toLowerCase();
-  var sportKey = null;
-  for (var key of Object.keys(ODDS_TOURNAMENT_MAP)) {
-    if (tournamentName.includes(key)) {
-      sportKey = ODDS_TOURNAMENT_MAP[key];
-      break;
+  if (oddsApiKey) {
+    var tournamentName = (nextMatch.tournament_name || "").toLowerCase();
+    var sportKey = null;
+    for (var key of Object.keys(ODDS_TOURNAMENT_MAP)) {
+      if (tournamentName.includes(key)) {
+        sportKey = ODDS_TOURNAMENT_MAP[key];
+        break;
+      }
     }
+
+    if (sportKey) {
+      try {
+        var url = "https://api.the-odds-api.com/v4/sports/" + sportKey + "/odds"
+          + "?regions=eu&markets=h2h&oddsFormat=decimal&apiKey=" + oddsApiKey;
+
+        var res = await fetch(url);
+        if (res.ok) {
+          var data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            var fonsecaMatch = data.find(function (event) {
+              var home = (event.home_team || "").toLowerCase();
+              var away = (event.away_team || "").toLowerCase();
+              return home.includes("fonseca") || away.includes("fonseca");
+            });
+
+            if (fonsecaMatch) {
+              var isFonsecaHome = (fonsecaMatch.home_team || "").toLowerCase().includes("fonseca");
+              var opponentName = isFonsecaHome ? fonsecaMatch.away_team : fonsecaMatch.home_team;
+
+              var fonsecaOdds = [], opponentOdds = [];
+              (fonsecaMatch.bookmakers || []).forEach(function (bm) {
+                var market = (bm.markets || []).find(function (m) { return m.key === "h2h"; });
+                if (!market) return;
+                (market.outcomes || []).forEach(function (o) {
+                  if ((o.name || "").toLowerCase().includes("fonseca")) fonsecaOdds.push(o.price);
+                  else opponentOdds.push(o.price);
+                });
+              });
+
+              if (fonsecaOdds.length > 0 && opponentOdds.length > 0) {
+                function median(arr) {
+                  var sorted = arr.slice().sort(function (a, b) { return a - b; });
+                  var mid = Math.floor(sorted.length / 2);
+                  return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+                }
+
+                var medF = median(fonsecaOdds);
+                var medO = median(opponentOdds);
+                var impliedF = 1 / medF;
+                var impliedO = 1 / medO;
+                var total = impliedF + impliedO;
+                var fonsecaPct = Math.round((impliedF / total) * 100);
+                var opponentPct = 100 - fonsecaPct;
+
+                var payload = {
+                  fonseca: fonsecaPct,
+                  opponent: opponentPct,
+                  opponent_name: opponentName,
+                  tournament: nextMatch.tournament_name,
+                  source: "odds-api",
+                  commence_time: fonsecaMatch.commence_time,
+                  updatedAt: new Date().toISOString(),
+                };
+
+                await kv.set("fn:winProb", JSON.stringify(payload), { ex: 86400 });
+                log.push("prob: Fonseca " + fonsecaPct + "% vs " + opponentName + " " + opponentPct + "%");
+                return;
+              } else {
+                log.push("prob: incomplete data");
+              }
+            } else {
+              log.push("prob: Fonseca not in " + data.length + " events");
+            }
+          } else {
+            log.push("prob: no data for " + sportKey);
+          }
+        } else {
+          log.push("prob: API error " + res.status);
+        }
+      } catch (e) {
+        log.push("prob: exception " + e.message);
+      }
+    } else {
+      log.push("prob: tournament not covered (" + nextMatch.tournament_name + ")");
+    }
+  } else {
+    log.push("prob: no ODDS_API_KEY, skipping fallback");
   }
 
-  if (!sportKey) {
-    log.push("prob: tournament not covered (" + nextMatch.tournament_name + ")");
-    return;
-  }
-
+  // Method 3: Manual odds from KV (set via Upstash console)
+  // Key: fn:manualOdds  Value: {"fonseca":1.25,"opponent":4.00}
   try {
-    var url = "https://api.the-odds-api.com/v4/sports/" + sportKey + "/odds"
-      + "?regions=eu&markets=h2h&oddsFormat=decimal&apiKey=" + oddsApiKey;
-
-    var res = await fetch(url);
-    if (!res.ok) { log.push("prob: API error " + res.status); return; }
-
-    var data = await res.json();
-    if (!Array.isArray(data) || data.length === 0) {
-      log.push("prob: no data for " + sportKey);
-      return;
+    var manualOdds = await kv.get("fn:manualOdds");
+    if (manualOdds) {
+      var mo = typeof manualOdds === "string" ? JSON.parse(manualOdds) : manualOdds;
+      if (mo.fonseca && mo.opponent) {
+        var implF3 = 1 / parseFloat(mo.fonseca);
+        var implO3 = 1 / parseFloat(mo.opponent);
+        var totalImpl3 = implF3 + implO3;
+        var fPct3 = Math.round((implF3 / totalImpl3) * 100);
+        var oPct3 = 100 - fPct3;
+        var payload3 = {
+          fonseca: fPct3,
+          opponent: oPct3,
+          opponent_name: nextMatch.opponent_name,
+          tournament: nextMatch.tournament_name,
+          source: "manual",
+          updatedAt: new Date().toISOString(),
+        };
+        await kv.set("fn:winProb", JSON.stringify(payload3), { ex: 86400 });
+        log.push("prob: manual odds Fonseca " + fPct3 + "% vs " + oPct3 + "% (odds " + mo.fonseca + "/" + mo.opponent + ")");
+        return;
+      }
     }
-
-    var fonsecaMatch = data.find(function (event) {
-      var home = (event.home_team || "").toLowerCase();
-      var away = (event.away_team || "").toLowerCase();
-      return home.includes("fonseca") || away.includes("fonseca");
-    });
-
-    if (!fonsecaMatch) {
-      log.push("prob: Fonseca not in " + data.length + " events");
-      return;
-    }
-
-    var isFonsecaHome = (fonsecaMatch.home_team || "").toLowerCase().includes("fonseca");
-    var opponentName = isFonsecaHome ? fonsecaMatch.away_team : fonsecaMatch.home_team;
-
-    var fonsecaOdds = [], opponentOdds = [];
-    (fonsecaMatch.bookmakers || []).forEach(function (bm) {
-      var market = (bm.markets || []).find(function (m) { return m.key === "h2h"; });
-      if (!market) return;
-      (market.outcomes || []).forEach(function (o) {
-        if ((o.name || "").toLowerCase().includes("fonseca")) fonsecaOdds.push(o.price);
-        else opponentOdds.push(o.price);
-      });
-    });
-
-    if (!fonsecaOdds.length || !opponentOdds.length) {
-      log.push("prob: incomplete data");
-      return;
-    }
-
-    function median(arr) {
-      var sorted = arr.slice().sort(function (a, b) { return a - b; });
-      var mid = Math.floor(sorted.length / 2);
-      return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
-    }
-
-    var medF = median(fonsecaOdds);
-    var medO = median(opponentOdds);
-    var impliedF = 1 / medF;
-    var impliedO = 1 / medO;
-    var total = impliedF + impliedO;
-    var fonsecaPct = Math.round((impliedF / total) * 100);
-    var opponentPct = 100 - fonsecaPct;
-
-    var payload = {
-      fonseca: fonsecaPct,
-      opponent: opponentPct,
-      opponent_name: opponentName,
-      tournament: nextMatch.tournament_name,
-      commence_time: fonsecaMatch.commence_time,
-      updatedAt: new Date().toISOString(),
-    };
-
-    await kv.set("fn:winProb", JSON.stringify(payload), { ex: 86400 });
-    log.push("prob: Fonseca " + fonsecaPct + "% vs " + opponentName + " " + opponentPct + "%");
-
   } catch (e) {
-    log.push("prob: exception " + e.message);
+    log.push("prob: manual odds error " + e.message);
   }
+
+  log.push("prob: no odds source available");
 }
 
 function parseMatch(m, isNext) {
@@ -497,16 +515,14 @@ function parseMatch(m, isNext) {
   if (m.groundType) detectedSurface = m.groundType;
   else if (tournament.groundType) detectedSurface = tournament.groundType;
   else if (season.groundType) detectedSurface = season.groundType;
-  // Fallback: infer from tournament name
   if (!detectedSurface) {
     var tName = (tournament.name || "").toLowerCase();
     var clayTournaments = ["monte carlo", "madrid", "roma", "roland garros", "french open", "buenos aires", "rio open", "barcelona", "hamburg", "kitzbuhel", "bastad", "umag", "gstaad"];
     var grassTournaments = ["wimbledon", "halle", "queen", "s-hertogenbosch", "eastbourne", "mallorca", "newport", "stuttgart"];
     for (var ci = 0; ci < clayTournaments.length; ci++) { if (tName.includes(clayTournaments[ci])) { detectedSurface = "Saibro"; break; } }
     if (!detectedSurface) { for (var gi = 0; gi < grassTournaments.length; gi++) { if (tName.includes(grassTournaments[gi])) { detectedSurface = "Grama"; break; } } }
-    if (!detectedSurface && tName) detectedSurface = "Duro"; // Default to hard court
+    if (!detectedSurface && tName) detectedSurface = "Duro";
   }
-  // Translate English surface names
   if (detectedSurface.toLowerCase() === "clay") detectedSurface = "Saibro";
   else if (detectedSurface.toLowerCase() === "grass") detectedSurface = "Grama";
   else if (detectedSurface.toLowerCase() === "hard" || detectedSurface.toLowerCase() === "hardcourt") detectedSurface = "Duro";
@@ -559,8 +575,7 @@ function parseMatch(m, isNext) {
   return result;
 }
 
-// ===== BIOGRAPHY — from João Fonseca's Wikipedia page =====
-// Parses sponsors, equipment, coach, bio text. Cached 3 days.
+// ===== BIOGRAPHY — from Wikipedia =====
 async function fetchBiography(log) {
   try {
     var cached = await kv.get("fn:biography");
@@ -575,30 +590,26 @@ async function fetchBiography(log) {
   } catch (e) {}
 
   try {
-    // Fetch full article wikitext (section 0 = infobox + intro)
     var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json";
     var res = await fetch(apiUrl, {
-      headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
+      headers: { "User-Agent": "FonsecaNews/8.0 (fan site; contact: thzgouvea@gmail.com)" },
     });
     if (!res.ok) { log.push("bio: Wikipedia HTTP " + res.status); return; }
     var data = await res.json();
     var wikitext = (data && data.parse && data.parse.wikitext) ? (data.parse.wikitext["*"] || "") : "";
     if (!wikitext) { log.push("bio: empty wikitext"); return; }
 
-    // === Parse infobox fields ===
     var getField = function(field) {
       var m = wikitext.match(new RegExp("\\|\\s*" + field + "\\s*=\\s*([^\\n|]+)", "i"));
       return m ? m[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").trim() : null;
     };
 
     var birthDate = getField("birth_date") || getField("date_of_birth");
-    // Clean birth date: extract from {{birth date and age|2006|8|21}}
     var bdMatch = wikitext.match(/birth.date.*?\|(\d{4})\|(\d{1,2})\|(\d{1,2})/i);
     var birthDateClean = bdMatch ? (bdMatch[3].padStart(2, "0") + "/" + bdMatch[2].padStart(2, "0") + "/" + bdMatch[1]) : (birthDate || "21/08/2006");
 
     var birthPlace = getField("birth_place") || "Ipanema, Rio de Janeiro";
     var height = getField("height");
-    // Clean height: {{height|m=1.83}} or {{convert|1.83|m}}
     var hMatch = wikitext.match(/height.*?(\d\.\d{2})/i);
     var heightClean = hMatch ? hMatch[1] + "m" : (height || "1,83m");
 
@@ -612,10 +623,7 @@ async function fetchBiography(log) {
 
     var proYear = getField("turned_pro") || getField("turnedpro") || "2024";
 
-    // === Sponsors/Equipment ===
-    // Look for "Equipment" or "Endorsements" sections
     var sponsors = [];
-    // Common patterns: "He is sponsored by [[Nike]]" / "wears Nike" / "uses a [[Head (company)|Head]] racket"
     var sponsorPatterns = [
       /(?:sponsored|endorsed|sponsorship|deal|contract|partnership)\s+(?:by|with)\s+\[\[([^\]|]+)/gi,
       /(?:wears|wearing|clothing)\s+\[\[([^\]|]+)/gi,
@@ -628,41 +636,33 @@ async function fetchBiography(log) {
         if (brand && sponsors.indexOf(brand) === -1) sponsors.push(brand);
       }
     }
-    // Also look for explicit brand names
     var brandNames = ["Nike", "Head", "Adidas", "Wilson", "Babolat", "Yonex", "Lacoste", "Rolex", "TAG Heuer", "Uniqlo"];
     for (var bi = 0; bi < brandNames.length; bi++) {
       if (wikitext.indexOf(brandNames[bi]) !== -1 && sponsors.indexOf(brandNames[bi]) === -1) {
-        // Verify it's in the context of sponsorship, not just mentioned
         var brandContext = wikitext.match(new RegExp("(" + brandNames[bi] + ")[^.]{0,50}(sponsor|endors|wear|equip|racket|shoe|cloth|apparel|deal|contract)", "i"));
         var brandContext2 = wikitext.match(new RegExp("(sponsor|endors|wear|equip|racket|shoe|cloth|apparel|deal|contract)[^.]{0,50}(" + brandNames[bi] + ")", "i"));
         if (brandContext || brandContext2) sponsors.push(brandNames[bi]);
       }
     }
 
-    // Racket model
     var racketMatch = wikitext.match(/(?:racket|racquet)[^.]*?(Head\s+[A-Za-z]+\s*\d*|Wilson\s+[A-Za-z]+\s*\d*|Babolat\s+[A-Za-z]+\s*\d*|Yonex\s+[A-Za-z]+\s*\d*)/i);
     var racket = racketMatch ? racketMatch[1].trim() : null;
 
-    // === Bio paragraphs from intro ===
-    // Get the intro text (before first ==Section==)
     var introEnd = wikitext.indexOf("\n==");
     var intro = introEnd > 0 ? wikitext.substring(0, introEnd) : wikitext.substring(0, 3000);
-    // Remove infobox
     var infoboxEnd = intro.lastIndexOf("}}");
     if (infoboxEnd > 0) intro = intro.substring(infoboxEnd + 2);
-    // Clean wikitext markup
     intro = intro
-      .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2") // [[link|text]] -> text
-      .replace(/\{\{[^}]*\}\}/g, "") // remove templates
-      .replace(/'{2,}/g, "") // remove bold/italic
-      .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, "") // remove refs
-      .replace(/<ref[^/]*\/>/g, "") // remove self-closing refs
-      .replace(/<[^>]+>/g, "") // remove HTML tags
+      .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2")
+      .replace(/\{\{[^}]*\}\}/g, "")
+      .replace(/'{2,}/g, "")
+      .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, "")
+      .replace(/<ref[^/]*\/>/g, "")
+      .replace(/<[^>]+>/g, "")
       .replace(/\n{3,}/g, "\n\n")
       .trim();
 
     var paragraphs = intro.split(/\n\n+/).filter(function(p) { return p.trim().length > 40; }).slice(0, 4);
-    // Translate key phrases to Portuguese
     var ptParagraphs = paragraphs.map(function(p) {
       return p
         .replace(/is a Brazilian professional tennis player/gi, "é um tenista profissional brasileiro")
@@ -695,8 +695,7 @@ async function fetchBiography(log) {
   }
 }
 
-// ===== TOURNAMENT FACTS — from Wikipedia page of current tournament =====
-// Maps tournament names to Wikipedia page titles
+// ===== TOURNAMENT FACTS =====
 var TOURNAMENT_WIKI_MAP = {
   "monte carlo": "Monte-Carlo_Masters",
   "madrid": "Madrid_Open_(tennis)",
@@ -723,13 +722,11 @@ var TOURNAMENT_WIKI_MAP = {
 async function fetchTournamentFacts(tournamentName, log) {
   if (!tournamentName) { log.push("tournament: no name"); return; }
 
-  // Check if tournament changed or data is broken
   try {
     var cached = await kv.get("fn:tournamentFacts");
     if (cached) {
       var parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
       var sameTournament = parsed.name && tournamentName.toLowerCase().includes(parsed.name.toLowerCase().split(" ")[0]);
-      // Check data quality — if any fact contains [[ or {{ it's broken
       var dataClean = true;
       if (parsed.facts) {
         for (var fi = 0; fi < parsed.facts.length; fi++) {
@@ -744,7 +741,6 @@ async function fetchTournamentFacts(tournamentName, log) {
     }
   } catch (e) {}
 
-  // Find Wikipedia page
   var wikiPage = null;
   var tLower = tournamentName.toLowerCase();
   for (var key in TOURNAMENT_WIKI_MAP) {
@@ -758,7 +754,7 @@ async function fetchTournamentFacts(tournamentName, log) {
   try {
     var apiUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=" + encodeURIComponent(wikiPage) + "&prop=wikitext&section=0&format=json";
     var res = await fetch(apiUrl, {
-      headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
+      headers: { "User-Agent": "FonsecaNews/8.0 (fan site; contact: thzgouvea@gmail.com)" },
     });
     if (!res.ok) { log.push("tournament: Wikipedia HTTP " + res.status); return; }
     var data = await res.json();
@@ -767,7 +763,6 @@ async function fetchTournamentFacts(tournamentName, log) {
 
     var facts = [];
 
-    // First edition year
     var firstMatch = wikitext.match(/(?:first.*?|inaugurated.*?|established.*?|founded.*?)(\d{4})/i);
     if (!firstMatch) firstMatch = wikitext.match(/(?:held\s+since|since)\s+(\d{4})/i);
     if (firstMatch) {
@@ -775,11 +770,10 @@ async function fetchTournamentFacts(tournamentName, log) {
       facts.push({ icon: "📅", text: "Disputado desde " + firstMatch[1] + " — " + yearsAgo + " anos de história" });
     }
 
-    // Surface
     var surfMatch = wikitext.match(/surface\s*=\s*([^\n|]+)/i);
     if (surfMatch) {
       var surf = surfMatch[1]
-        .replace(/\[\[([^\]|]*\|)?([^\]]*)\]?\]?/g, "$2") // handle incomplete [[ ]]
+        .replace(/\[\[([^\]|]*\|)?([^\]]*)\]?\]?/g, "$2")
         .replace(/\{\{[^}]*\}\}/g, "")
         .replace(/clay\s*court/gi, "Saibro")
         .replace(/hard\s*court/gi, "Piso duro")
@@ -791,7 +785,6 @@ async function fetchTournamentFacts(tournamentName, log) {
       if (surf) facts.push({ icon: "🏟️", text: "Superfície: " + surf });
     }
 
-    // Location/venue
     var venueMatch = wikitext.match(/(?:venue|location)\s*=\s*([^\n|]+)/i);
     if (venueMatch) {
       var venue = venueMatch[1]
@@ -801,7 +794,6 @@ async function fetchTournamentFacts(tournamentName, log) {
       if (venue.length > 5 && venue.length < 80) facts.push({ icon: "📍", text: venue });
     }
 
-    // Prize money
     var prizeMatch = wikitext.match(/prize.?money\s*=\s*([^\n|]+)/i);
     if (prizeMatch) {
       var prize = prizeMatch[1]
@@ -811,26 +803,22 @@ async function fetchTournamentFacts(tournamentName, log) {
       if (prize.length > 2 && prize.length < 50) facts.push({ icon: "💰", text: "Premiação: " + prize });
     }
 
-    // Most titles / notable champions from intro text
     var nadalMatch = wikitext.match(/(?:Nadal|Rafael Nadal).*?(\d+)\s*(?:titles|times|wins)/i);
     var djokovicMatch = wikitext.match(/(?:Djokovic|Novak Djokovic).*?(\d+)\s*(?:titles|times|wins)/i);
     if (nadalMatch) facts.push({ icon: "👑", text: "Rafael Nadal é o maior campeão com " + nadalMatch[1] + " títulos" });
     else if (djokovicMatch) facts.push({ icon: "👑", text: "Novak Djokovic é o maior campeão com " + djokovicMatch[1] + " títulos" });
 
-    // Most successful player (generic)
     if (!nadalMatch && !djokovicMatch) {
       var mostMatch = wikitext.match(/most\s+(?:successful|titles|wins).*?\[\[([^\]|]+)/i);
       if (mostMatch) facts.push({ icon: "👑", text: "Maior campeão: " + mostMatch[1].split("|").pop() });
     }
 
-    // Category — translate and clean
     var catMatch = wikitext.match(/(?:category|series|type)\s*=\s*([^\n|]+)/i);
     if (catMatch) {
       var cat = catMatch[1]
         .replace(/\[\[([^\]|]*\|)?([^\]]*)\]?\]?/g, "$2")
         .replace(/\{\{[^}]*\}\}/g, "")
         .trim();
-      // Translate common values
       if (cat.toLowerCase() === "atp" || cat.toLowerCase() === "atp tour masters 1000") cat = "ATP Masters 1000";
       else if (cat.toLowerCase().includes("grand slam")) cat = "Grand Slam";
       else if (cat.toLowerCase().includes("500")) cat = "ATP 500";
@@ -838,7 +826,6 @@ async function fetchTournamentFacts(tournamentName, log) {
       if (cat.length > 2 && cat.length < 40) facts.push({ icon: "🏆", text: "Categoria: " + cat });
     }
 
-    // Brazilian players history (special for our audience)
     var brMatch = wikitext.match(/(?:Brazil|Brazilian|Kuerten|Guga|Bellucci|Fonseca)[^.]{0,100}\./i);
     if (brMatch) {
       var brFact = brMatch[0].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").trim();
@@ -852,7 +839,7 @@ async function fetchTournamentFacts(tournamentName, log) {
 
     var payload = {
       name: tournamentName,
-      facts: facts.slice(0, 5), // max 5 facts
+      facts: facts.slice(0, 5),
       source: "Wikipedia",
       updatedAt: new Date().toISOString()
     };
@@ -864,12 +851,10 @@ async function fetchTournamentFacts(tournamentName, log) {
   }
 }
 
-// ===== OPPONENT PROFILE — from Wikipedia page =====
-// Fetches style of play, height, hand, titles for the next opponent
+// ===== OPPONENT PROFILE =====
 async function fetchOpponentProfile(opponentName, opponentId, log) {
   if (!opponentName || opponentName === "A definir") { log.push("oppProfile: no opponent"); return; }
 
-  // Check if same opponent is already cached
   try {
     var cached = await kv.get("fn:opponentProfile");
     if (cached) {
@@ -882,8 +867,7 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
   } catch (e) {}
 
   try {
-    // Build Wikipedia search — try full name first, then last name
-    var fullName = opponentName.replace(/^[A-Z]\.\s*/, ""); // "G. Diallo" -> "Diallo"
+    var fullName = opponentName.replace(/^[A-Z]\.\s*/, "");
     var searchTerms = [
       opponentName.replace(/\./g, "").trim() + " tennis",
       fullName + " tennis player",
@@ -892,16 +876,14 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
 
     var wikitext = "";
     for (var si = 0; si < searchTerms.length; si++) {
-      // Use Wikipedia search API to find the right page
       var searchUrl = "https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=" + encodeURIComponent(searchTerms[si]) + "&srlimit=3&format=json";
       var searchRes = await fetch(searchUrl, {
-        headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
+        headers: { "User-Agent": "FonsecaNews/8.0 (fan site; contact: thzgouvea@gmail.com)" },
       });
       if (!searchRes.ok) continue;
       var searchData = await searchRes.json();
       var results = (searchData.query && searchData.query.search) || [];
 
-      // Find the tennis player page
       var pageTitle = null;
       for (var ri = 0; ri < results.length; ri++) {
         var title = results[ri].title || "";
@@ -916,7 +898,7 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
       if (pageTitle) {
         var pageUrl = "https://en.wikipedia.org/w/api.php?action=parse&page=" + encodeURIComponent(pageTitle) + "&prop=wikitext&format=json";
         var pageRes = await fetch(pageUrl, {
-          headers: { "User-Agent": "FonsecaNews/7.0 (fan site; contact: thzgouvea@gmail.com)" },
+          headers: { "User-Agent": "FonsecaNews/8.0 (fan site; contact: thzgouvea@gmail.com)" },
         });
         if (pageRes.ok) {
           var pageData = await pageRes.json();
@@ -931,58 +913,46 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
       return;
     }
 
-    // === Parse infobox ===
     var getField = function(field) {
       var m = wikitext.match(new RegExp("\\|\\s*" + field + "\\s*=\\s*([^\\n|]+)", "i"));
       return m ? m[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").trim() : null;
     };
 
-    // Height
     var height = getField("height");
     var hMatch = wikitext.match(/height.*?(\d\.\d{2})/i);
     var heightVal = hMatch ? hMatch[1] + "m" : (height || null);
 
-    // Hand
     var plays = getField("plays");
     var hand = plays ? (plays.toLowerCase().includes("right") ? "Destro" : plays.toLowerCase().includes("left") ? "Canhoto" : plays) : null;
 
-    // Birth date / age
     var bdMatch = wikitext.match(/birth.date.*?\|(\d{4})\|(\d{1,2})\|(\d{1,2})/i);
     var age = null;
     if (bdMatch) {
       var birthYear = parseInt(bdMatch[1], 10);
       age = new Date().getFullYear() - birthYear;
-      // Adjust if birthday hasn't happened yet this year
       var birthMonth = parseInt(bdMatch[2], 10);
       var birthDay = parseInt(bdMatch[3], 10);
       var now = new Date();
       if (now.getMonth() + 1 < birthMonth || (now.getMonth() + 1 === birthMonth && now.getDate() < birthDay)) age--;
     }
 
-    // Country
     var country = getField("birth_place") || getField("country") || "";
-    // Extract country from birth_place (last part after comma)
     var countryParts = country.split(",");
     var countryClean = countryParts.length > 1 ? countryParts[countryParts.length - 1].trim() : country;
 
-    // Career high
     var careerHighMatch = wikitext.match(/(?:highest|career.high).*?singles.*?No\.\s*(\d+)/i);
     var careerHigh = careerHighMatch ? parseInt(careerHighMatch[1], 10) : null;
 
-    // Current ranking
     var currentRankMatch = wikitext.match(/currentsinglesranking\s*=\s*No\.\s*(\d+)/i);
     var currentRanking = currentRankMatch ? parseInt(currentRankMatch[1], 10) : null;
 
-    // Titles
     var titlesMatch = wikitext.match(/(?:wonloss_singles|singlesrecord).*?(\d+)\s*title/i);
     var titles = titlesMatch ? parseInt(titlesMatch[1], 10) : null;
-    // Alternative: count title mentions
     if (titles === null) {
       var titleMatches = wikitext.match(/won\s+(?:his|her|the)\s+(?:first|second|third|maiden|fourth|fifth)?\s*(?:ATP)?\s*title/gi);
       if (titleMatches) titles = titleMatches.length;
     }
 
-    // Best surface (from W/L records)
     var bestSurface = null;
     var surfaceWins = {};
     var surfacePatterns = [
@@ -1004,8 +974,6 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
       if (surfaceWins[sk] > bestPct) { bestPct = surfaceWins[sk]; bestSurface = sk; }
     }
 
-    // === Style of play ===
-    // Try to find a "Playing style" or "Style of play" section
     var styleSection = "";
     var styleSectionMatch = wikitext.match(/==\s*(?:Playing style|Style of play|Game style)\s*==\s*\n([\s\S]*?)(?:\n==|$)/i);
     if (styleSectionMatch) {
@@ -1014,7 +982,6 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
 
     var styleText = "";
     if (styleSection) {
-      // Clean wikitext
       styleText = styleSection
         .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2")
         .replace(/\{\{[^}]*\}\}/g, "")
@@ -1024,12 +991,10 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
         .replace(/<[^>]+>/g, "")
         .replace(/\n+/g, " ")
         .trim();
-      // Take first 2 sentences
       var sentences = styleText.match(/[^.!?]+[.!?]+/g) || [];
       styleText = sentences.slice(0, 3).join(" ").trim();
     }
 
-    // If no style section, build from attributes
     if (!styleText) {
       var attrs = [];
       if (heightVal) {
@@ -1045,7 +1010,6 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
       styleText = attrs.join(". ") + ".";
     }
 
-    // Resolve ATP slug
     var atpSlug = null;
     for (var k in ATP_SLUGS) {
       if (opponentName.indexOf(k) !== -1) { atpSlug = ATP_SLUGS[k]; break; }
@@ -1073,10 +1037,9 @@ async function fetchOpponentProfile(opponentName, opponentId, log) {
   }
 }
 
-// ===== ENRICH MATCH — adds ranking, country, atp_slug from opponent details =====
+// ===== ENRICH MATCH =====
 function enrichMatch(match, oppDetails) {
   if (!match || !oppDetails) return match;
-  // Always overwrite with better data — oppDetails comes from SofaScore team details or cache
   if (oppDetails.ranking) match.opponent_ranking = oppDetails.ranking;
   if (oppDetails.country) match.opponent_country = oppDetails.country;
   if (oppDetails.atp_slug) match.opponent_atp_slug = oppDetails.atp_slug;
@@ -1093,13 +1056,13 @@ export default async function handler(req, res) {
     var totalRequests = 0;
     var now = new Date();
 
-    // 1. Ranking (via Wikipedia API — free, no RapidAPI cost)
+    // 1. Ranking (via Wikipedia API — free)
     var ranking = await fetchRanking(apiKey, log);
     if (ranking && ranking.ranking) {
       await kv.set("fn:ranking", JSON.stringify(ranking), { ex: 86400 });
     }
 
-    // 1b. Prize money (from Wikipedia ranking data)
+    // 1b. Prize money
     if (ranking && ranking.prizeMoney) {
       await kv.set("fn:prizeMoney", JSON.stringify({ amount: ranking.prizeMoney, currency: "USD", updatedAt: now.toISOString() }), { ex: 86400 * 8 });
       log.push("prizeMoney: $" + ranking.prizeMoney + " (Wikipedia)");
@@ -1113,12 +1076,11 @@ export default async function handler(req, res) {
     if (lastResult.match) {
       lastMatch = parseMatch(lastResult.match, false);
 
-      // Enrich last match opponent (cached, 0 cost if same opponent)
       if (lastMatch.opponent_id && (!lastMatch.opponent_ranking || !lastMatch.opponent_country)) {
         var lastOppDetails = await fetchOpponentDetails(lastMatch.opponent_id, lastMatch.opponent_name, apiKey, log);
         if (lastOppDetails) {
           lastMatch = enrichMatch(lastMatch, lastOppDetails);
-          totalRequests++; // only if cache miss
+          totalRequests++;
         }
       }
 
@@ -1210,23 +1172,24 @@ export default async function handler(req, res) {
     if (nextResult.match) {
       nextMatch = parseMatch(nextResult.match, true);
 
-      // ===== ENRICH NEXT MATCH OPPONENT (the main new feature) =====
-      // Only fetches from SofaScore when opponent_id changes (cached 7 days)
       if (nextMatch.opponent_id) {
         var prevOppId = null;
         try { prevOppId = await kv.get("fn:prevOpponentId"); } catch (e) {}
 
+        // Delete old opponent cache to force fresh ranking data
+        var oppCacheKey = "fn:oppCache:" + nextMatch.opponent_id;
+        try { await kv.del(oppCacheKey); } catch (e) {}
+
         var oppDetails = await fetchOpponentDetails(nextMatch.opponent_id, nextMatch.opponent_name, apiKey, log);
         if (oppDetails) {
           nextMatch = enrichMatch(nextMatch, oppDetails);
-          // Only count as extra request if it was a cache miss (new opponent)
           if (String(nextMatch.opponent_id) !== String(prevOppId)) totalRequests++;
         }
         await kv.set("fn:prevOpponentId", String(nextMatch.opponent_id));
       }
 
       await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 });
-      
+
       // Fallback: if still no ranking, try opponentProfile (from Wikipedia)
       if (!nextMatch.opponent_ranking) {
         try {
@@ -1241,14 +1204,13 @@ export default async function handler(req, res) {
           }
         } catch (e) {}
       }
-      
+
       log.push("nextMatch: vs " + nextMatch.opponent_name + (nextMatch.opponent_ranking ? " #" + nextMatch.opponent_ranking : "") + (nextMatch.opponent_country ? " (" + nextMatch.opponent_country + ")" : "") + " @ " + nextMatch.tournament_name);
     } else {
       var manualNext = await kv.get("fn:nextMatch");
       if (manualNext) {
         var parsed = typeof manualNext === "string" ? JSON.parse(manualNext) : manualNext;
         if (parsed && parsed.opponent_name) {
-          // Keep manual override, but still try to enrich if missing data
           if (parsed.opponent_id && (!parsed.opponent_ranking || !parsed.opponent_country)) {
             var manualOppDetails = await fetchOpponentDetails(parsed.opponent_id, parsed.opponent_name, apiKey, log);
             if (manualOppDetails) {
@@ -1258,7 +1220,7 @@ export default async function handler(req, res) {
             }
           }
           log.push("nextMatch: manual override active (" + parsed.opponent_name + (parsed.opponent_ranking ? " #" + parsed.opponent_ranking : "") + ")");
-          nextMatch = parsed; // use for odds fetch
+          nextMatch = parsed;
         } else {
           log.push("nextMatch: none in next 7 days");
         }
@@ -1267,24 +1229,24 @@ export default async function handler(req, res) {
       }
     }
 
-    // 5. Odds (try SofaScore first, then The Odds API)
+    // 5. Odds
     await fetchOdds(nextMatch, apiKey, log);
 
-    // 6. Season stats (computed from recentForm in KV — no RapidAPI cost)
+    // 6. Season stats
     var seasonData = await fetchSeasonStats(apiKey, log);
     if (seasonData) {
       await kv.set("fn:season", JSON.stringify(seasonData), { ex: 86400 });
     }
 
-    // 7. Biography (from Wikipedia — free, cached 3 days)
+    // 7. Biography
     await fetchBiography(log);
 
-    // 8. Tournament facts (from Wikipedia — free, cached until tournament changes)
+    // 8. Tournament facts
     if (nextMatch && nextMatch.tournament_name) {
       await fetchTournamentFacts(nextMatch.tournament_name, log);
     }
 
-    // 9. Opponent profile (from Wikipedia — free, cached until opponent changes)
+    // 9. Opponent profile
     if (nextMatch && nextMatch.opponent_name) {
       await fetchOpponentProfile(nextMatch.opponent_name, nextMatch.opponent_id, log);
     }
@@ -1298,7 +1260,6 @@ export default async function handler(req, res) {
       var baseUrl = "https://fonsecanews.com.br";
       var notifications = [];
 
-      // 1. Ranking changed
       if (ranking && ranking.ranking) {
         var prevRank = await kv.get("fn:prevRanking");
         var prevRankNum = prevRank ? parseInt(prevRank) : null;
@@ -1313,7 +1274,6 @@ export default async function handler(req, res) {
         await kv.set("fn:prevRanking", String(ranking.ranking));
       }
 
-      // 2. New match result
       if (lastMatch && lastMatch.result && lastMatch.event_id) {
         var prevLastMatchId = await kv.get("fn:prevLastMatchId");
         if (prevLastMatchId === null) {
@@ -1329,7 +1289,6 @@ export default async function handler(req, res) {
         }
       }
 
-      // 3. Next match opponent defined or changed
       if (nextMatch && nextMatch.opponent_name) {
         var prevOpponent = await kv.get("fn:prevOpponent");
         if (prevOpponent === null) {
@@ -1339,7 +1298,6 @@ export default async function handler(req, res) {
           var matchDate = nextMatch.date ? new Date(nextMatch.date) : null;
           var dateStr = matchDate ? matchDate.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long", timeZone: "America/Sao_Paulo" }) : "";
           var timeStr = matchDate ? matchDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" }) : "";
-          // Include ranking in push notification if available
           var oppRankText = nextMatch.opponent_ranking ? " · #" + nextMatch.opponent_ranking + " do mundo" : "";
           notifications.push({
             title: "🎾 Próximo adversário: " + nextMatch.opponent_name,
@@ -1349,7 +1307,6 @@ export default async function handler(req, res) {
         }
       }
 
-      // 4. Match starting soon (within 30 min)
       if (nextMatch && nextMatch.date) {
         var matchTime = new Date(nextMatch.date).getTime();
         var nowTime = Date.now();
@@ -1365,7 +1322,6 @@ export default async function handler(req, res) {
         }
       }
 
-      // Send all notifications
       for (var ni = 0; ni < notifications.length; ni++) {
         try {
           await fetch(baseUrl + "/api/push-send", {
@@ -1390,11 +1346,11 @@ export default async function handler(req, res) {
       log.push("push: erro " + pushErr.message);
     }
 
-    console.log("[cron-v7] Done. Requests: " + totalRequests + ". " + log.join(" | "));
+    console.log("[cron-v8] Done. Requests: " + totalRequests + ". " + log.join(" | "));
     return res.status(200).json({ ok: true, requests: totalRequests, log, timestamp: now.toISOString() });
 
   } catch (error) {
-    console.error("[cron-v7] Error:", error);
+    console.error("[cron-v8] Error:", error);
     return res.status(500).json({ ok: false, error: error.message });
   }
 }
