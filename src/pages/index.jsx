@@ -383,7 +383,7 @@ var NextDuelCard = function(props) {
   if (!oppAtpSlug) { for (var sk in atpSlugs) { if (oppName.indexOf(sk) !== -1) { oppAtpSlug = atpSlugs[sk]; break; } } }
   var oppImg = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : (oppAtpSlug ? ("https://www.atptour.com/-/media/alias/player-headshot/" + oppAtpSlug) : null);
       var oppImgFallback = match.opponent_id ? ("/api/player-image?id=" + match.opponent_id) : null;
-
+var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
   var surfaceLabel = surfaceTranslate[match.surface] || match.surface || "";
 
