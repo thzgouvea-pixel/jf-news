@@ -510,11 +510,12 @@ var TournamentFactsCarousel = function(props) {
   var _idx = useState(0); var activeIdx = _idx[0]; var setActiveIdx = _idx[1];
   var _fade = useState(true); var visible = _fade[0]; var setVisible = _fade[1];
   var _paused = useState(false); var paused = _paused[0]; var setPaused = _paused[1];
+  var touchStartX = useRef(0);
 
   var cleanFacts = facts.map(function(f) {
     var t = (f.text || "").replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").replace(/'{2,}/g, "").trim();
     t = t.replace(/Clay court/gi, "Saibro").replace(/Hard court/gi, "Piso duro").replace(/Grass court/gi, "Grama");
-    return { text: t, icon: f.icon || "🎾" };
+    return { text: t };
   });
 
   if (cleanFacts.length === 0) return null;
@@ -526,7 +527,7 @@ var TournamentFactsCarousel = function(props) {
       setTimeout(function() {
         setActiveIdx(function(prev) { return (prev + 1) % cleanFacts.length; });
         setVisible(true);
-      }, 400);
+      }, 350);
     }, 5000);
     return function() { clearInterval(iv); };
   }, [paused, cleanFacts.length]);
@@ -534,71 +535,77 @@ var TournamentFactsCarousel = function(props) {
   var goTo = function(i) {
     if (i === activeIdx) return;
     setVisible(false);
-    setTimeout(function() { setActiveIdx(i); setVisible(true); }, 300);
+    setTimeout(function() { setActiveIdx(i); setVisible(true); }, 250);
     setPaused(true);
     setTimeout(function() { setPaused(false); }, 10000);
+  };
+
+  var handleTouchStart = function(e) { touchStartX.current = e.touches[0].clientX; };
+  var handleTouchEnd = function(e) {
+    var diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) goTo((activeIdx + 1) % cleanFacts.length);
+      else goTo((activeIdx - 1 + cleanFacts.length) % cleanFacts.length);
+    }
   };
 
   var fact = cleanFacts[activeIdx];
   var shortName = (tournamentName || "").split(",")[0].trim();
 
   return (
-    <section style={{ padding: "16px 0 0" }}>
+    <section style={{ padding: "4px 0 0" }}>
       <div
-        onClick={function() { goTo((activeIdx + 1) % cleanFacts.length); }}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         style={{
           background: "linear-gradient(160deg, #0a1220 0%, #111d33 50%, #0d1828 100%)",
-          borderRadius: 16,
-          padding: "20px 22px 16px",
+          borderRadius: 14,
+          padding: "12px 18px 10px",
           position: "relative",
           overflow: "hidden",
-          cursor: "pointer",
-          minHeight: 96,
         }}
       >
-        {/* Subtle glow */}
-        <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,168,89,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
-
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 14 }}>💡</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Curiosidades</span>
-          </div>
-          <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>{shortName}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Curiosidades · {shortName}</span>
+          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.12)", fontFamily: SANS }}>{(activeIdx + 1) + "/" + cleanFacts.length}</span>
         </div>
 
-        {/* Fact content with fade */}
         <div style={{
-          display: "flex", alignItems: "flex-start", gap: 14,
           opacity: visible ? 1 : 0,
-          transform: visible ? "translateY(0)" : "translateY(6px)",
-          transition: "opacity 0.4s ease, transform 0.4s ease",
+          transform: visible ? "translateX(0)" : "translateX(8px)",
+          transition: "opacity 0.35s ease, transform 0.35s ease",
+          overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
         }}>
-          <span style={{
-            fontSize: 28, lineHeight: 1, flexShrink: 0, marginTop: 2,
-            display: "flex", alignItems: "center", justifyContent: "center",
-            width: 44, height: 44, borderRadius: 12,
-            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
-          }}>{fact.icon}</span>
-          <span style={{
-            fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)",
-            fontFamily: SANS, lineHeight: 1.5, letterSpacing: "0.01em",
+          <span key={activeIdx} ref={function(el) {
+            if (el) {
+              el.style.fontSize = "13px";
+              if (el.scrollWidth > el.parentElement.clientWidth) {
+                var size = 13;
+                while (size > 9 && el.scrollWidth > el.parentElement.clientWidth) {
+                  size -= 0.5;
+                  el.style.fontSize = size + "px";
+                }
+              }
+            }
+          }} style={{
+            fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)",
+            fontFamily: SANS, lineHeight: 1.4, whiteSpace: "nowrap",
           }}>{fact.text}</span>
         </div>
 
-        {/* Dot indicators */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 16 }}>
+        {/* Dots */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 8 }}>
           {cleanFacts.map(function(_, i) {
             var isActive = i === activeIdx;
             return (
               <button
                 key={i}
-                onClick={function(e) { e.stopPropagation(); goTo(i); }}
+                onClick={function() { goTo(i); }}
                 style={{
-                  width: isActive ? 18 : 6, height: 6,
+                  width: isActive ? 16 : 5, height: 5,
                   borderRadius: 3,
-                  background: isActive ? GREEN : "rgba(255,255,255,0.15)",
+                  background: isActive ? GREEN : "rgba(255,255,255,0.12)",
                   border: "none", padding: 0, cursor: "pointer",
                   transition: "all 0.3s ease",
                 }}
@@ -610,10 +617,7 @@ var TournamentFactsCarousel = function(props) {
         {/* Progress bar */}
         {!paused && cleanFacts.length > 1 && (
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "rgba(255,255,255,0.03)" }}>
-            <div style={{
-              height: 2, background: GREEN + "40", borderRadius: 1,
-              animation: "factProgress 5s linear infinite",
-            }} />
+            <div style={{ height: 2, background: GREEN + "30", borderRadius: 1, animation: "factProgress 5s linear infinite" }} />
           </div>
         )}
       </div>
