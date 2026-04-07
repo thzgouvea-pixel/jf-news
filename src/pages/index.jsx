@@ -1,5 +1,6 @@
 // Fonseca News — Clean Redesign v2 (corrigido + 5 fixes)
 import { useState, useEffect, useRef } from "react";
+import Head from "next/head";
 
 const GREEN = "#00A859";
 const YELLOW = "#FFCB05";
@@ -1304,6 +1305,10 @@ export default function JoaoFonsecaNews() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
+      <Head>
+        <title>Fonseca News — Guia de bolso sobre João Fonseca</title>
+        <meta name="description" content="Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas, próximos jogos e mais." />
+      </Head>
       <style>{
         "@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');" +
         "*{box-sizing:border-box;margin:0;padding:0}" +
