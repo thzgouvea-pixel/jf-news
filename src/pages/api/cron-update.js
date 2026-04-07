@@ -280,13 +280,73 @@ async function fetchRanking(apiKey, log) {
 
 async function fetchSeasonStats(apiKey, log) {
   try {
-    var existingForm = await kv.get("fn:recentForm");
-    var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
-    if (form.length === 0) { log.push("season: no form data"); return null; }
-    var currentYear = new Date().getFullYear(); var wins = 0; var losses = 0;
-    for (var i = 0; i < form.length; i++) { if (!form[i].date) continue; var matchYear = new Date(form[i].date).getFullYear(); if (matchYear !== currentYear) continue; if (form[i].result === "V") wins++; else if (form[i].result === "D") losses++; }
-    if (wins === 0 && losses === 0) { log.push("season: no " + currentYear + " matches"); return null; }
-    log.push("season: " + wins + "W-" + losses + "L (" + currentYear + ")");
+    var currentYear = new Date().getFullYear();
+    var wins = 0; var losses = 0;
+    var allMatches = [];
+
+    // Fetch last events pages from SofaScore (each page ~20 matches)
+    for (var page = 0; page < 5; page++) {
+      var data = await sofaFetch("/v1/team/events/last?team_id=" + FONSECA_TEAM_ID + "&page=" + page, apiKey);
+      if (!data) break;
+      var events = [];
+      if (Array.isArray(data)) events = data;
+      else if (data.events && Array.isArray(data.events)) events = data.events;
+      else { for (var k of Object.keys(data)) { if (Array.isArray(data[k])) { events = data[k]; break; } } }
+      if (events.length === 0) break;
+
+      var foundOlderYear = false;
+      for (var i = 0; i < events.length; i++) {
+        var ev = events[i];
+        if (!ev.timestamp && !ev.startTimestamp) continue;
+        var ts = ev.startTimestamp || ev.timestamp;
+        var matchDate = new Date(typeof ts === "number" ? ts * 1000 : ts);
+        var matchYear = matchDate.getFullYear();
+
+        // Stop scanning if we hit previous year
+        if (matchYear < currentYear) { foundOlderYear = true; continue; }
+        if (matchYear !== currentYear) continue;
+
+        // Only count finished matches
+        if (!ev.status || (ev.status.type !== "finished" && !ev.status.isFinished)) continue;
+
+        // Determine if Fonseca won
+        var homeTeam = ev.homeTeam || {};
+        var awayTeam = ev.awayTeam || {};
+        var isFonsecaHome = (homeTeam.slug || homeTeam.name || "").toLowerCase().includes("fonseca");
+        var homeScore = ev.homeScore || {};
+        var awayScore = ev.awayScore || {};
+        var fSetsWon = 0; var oSetsWon = 0;
+        for (var si = 1; si <= 5; si++) {
+          var sk = "period" + si;
+          if (homeScore[sk] !== undefined && awayScore[sk] !== undefined) {
+            if (isFonsecaHome) { if (homeScore[sk] > awayScore[sk]) fSetsWon++; else oSetsWon++; }
+            else { if (awayScore[sk] > homeScore[sk]) fSetsWon++; else oSetsWon++; }
+          }
+        }
+        var won = fSetsWon > oSetsWon;
+        if (fSetsWon === oSetsWon && ev.winnerCode) {
+          won = (ev.winnerCode === 1 && isFonsecaHome) || (ev.winnerCode === 2 && !isFonsecaHome);
+        }
+        if (won) wins++; else losses++;
+        allMatches.push({ date: matchDate.toISOString(), result: won ? "V" : "D" });
+      }
+      if (foundOlderYear) break;
+    }
+
+    if (wins === 0 && losses === 0) {
+      // Fallback: use recentForm if team events failed
+      var existingForm = await kv.get("fn:recentForm");
+      var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
+      for (var fi = 0; fi < form.length; fi++) {
+        if (!form[fi].date) continue;
+        if (new Date(form[fi].date).getFullYear() !== currentYear) continue;
+        if (form[fi].result === "V") wins++; else if (form[fi].result === "D") losses++;
+      }
+      if (wins === 0 && losses === 0) { log.push("season: no " + currentYear + " matches found"); return null; }
+      log.push("season: " + wins + "W-" + losses + "L (" + currentYear + ") [from form fallback]");
+    } else {
+      log.push("season: " + wins + "W-" + losses + "L (" + currentYear + ") [" + allMatches.length + " matches scanned]");
+    }
     return { wins: wins, losses: losses, year: currentYear };
   } catch (e) { log.push("season: error " + e.message); return null; }
 }
