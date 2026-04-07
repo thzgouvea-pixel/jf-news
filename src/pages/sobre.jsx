@@ -12,7 +12,11 @@ export default function Sobre() {
       </Head>
       <div style={{ minHeight: "100vh", background: "#fff", fontFamily: "'Inter', -apple-system, sans-serif" }}>
         <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid #e8e8e8" }}>
-          <div style={{ maxWidth: 640, margin: "0 auto", padding: "12px 16px", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ maxWidth: 640, margin: "0 auto", padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <a href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", color: "#6b6b6b", fontSize: 13, fontWeight: 600 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              Voltar
+            </a>
             <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                 <span style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: 15, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: "#00A859" }}>F</span><span style={{ color: "#FFCB05" }}>N</span></span>
@@ -49,28 +53,15 @@ export default function Sobre() {
                 As notícias exibidas são agregadas de fontes públicas e veículos de comunicação estabelecidos, com devidos créditos e links para as fontes originais. Nenhum conteúdo jornalístico original é produzido pelo site.
               </p>
               <p style={{ fontSize: 13, color: "#444", lineHeight: 1.7, marginBottom: 12 }}>
-                As estatísticas e dados exibidos são obtidos de fontes públicas como Wikipedia, SofaScore e ESPN, podendo conter imprecisões ou atrasos na atualização.
+                As estatísticas, dados e imagens exibidos são obtidos de fontes públicas disponíveis na internet, incluindo sites de estatísticas esportivas e veículos de comunicação. Podem conter imprecisões ou atrasos na atualização. Todos os direitos de imagem pertencem aos seus respectivos titulares.
               </p>
               <p style={{ fontSize: 13, color: "#444", lineHeight: 1.7, marginBottom: 12 }}>
-                As imagens de jogadores utilizadas são provenientes de fontes públicas (ATP Tour, ESPN). Todos os direitos de imagem pertencem aos seus respectivos titulares. Caso algum titular de direitos deseje a remoção de qualquer conteúdo, solicitamos que entre em contato pelo e-mail abaixo e atenderemos prontamente.
+                Caso algum titular de direitos deseje a remoção de qualquer conteúdo, solicitamos que entre em contato pelo e-mail abaixo e atenderemos prontamente.
               </p>
               <p style={{ fontSize: 13, color: "#444", lineHeight: 1.7 }}>
                 Os resultados de enquetes, quizzes e palpites são gerados pela comunidade de visitantes e não representam a opinião do site.
               </p>
             </div>
-          </section>
-
-          <section style={{ marginBottom: 32 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: "#1a1a1a", marginBottom: 10, fontFamily: "'Source Serif 4', Georgia, serif" }}>Fontes de dados</h2>
-            <p style={{ fontSize: 14, color: "#444", lineHeight: 1.7, marginBottom: 8 }}>
-              As informações exibidas no site são obtidas das seguintes fontes:
-            </p>
-            <ul style={{ fontSize: 13, color: "#444", lineHeight: 1.9, paddingLeft: 20 }}>
-              <li>Notícias: Google News RSS (agregação de veículos como ESPN, GE, UOL, Folha de S. Paulo)</li>
-              <li>Ranking e estatísticas: Wikipedia, SofaScore API</li>
-              <li>Fotos de jogadores: ATP Tour, ESPN</li>
-              <li>Probabilidade de vitória: calculada com base nas posições no ranking</li>
-            </ul>
           </section>
 
           <section style={{ marginBottom: 32 }}>
