@@ -566,7 +566,7 @@ var TournamentFactsCarousel = function(props) {
         }}
       >
         {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 6 }}>
           <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Curiosidades · {shortName}</span>
           <span style={{ fontSize: 9, color: "rgba(255,255,255,0.12)", fontFamily: SANS }}>{(activeIdx + 1) + "/" + cleanFacts.length}</span>
         </div>
@@ -575,14 +575,14 @@ var TournamentFactsCarousel = function(props) {
           opacity: visible ? 1 : 0,
           transform: visible ? "translateX(0)" : "translateX(8px)",
           transition: "opacity 0.35s ease, transform 0.35s ease",
-          overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis",
+          overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis", textAlign: "center",
         }}>
           <span key={activeIdx} ref={function(el) {
             if (el) {
               el.style.fontSize = "13px";
               if (el.scrollWidth > el.parentElement.clientWidth) {
                 var size = 13;
-                while (size > 9 && el.scrollWidth > el.parentElement.clientWidth) {
+                while (size > 8 && el.scrollWidth > el.parentElement.clientWidth) {
                   size -= 0.5;
                   el.style.fontSize = size + "px";
                 }
