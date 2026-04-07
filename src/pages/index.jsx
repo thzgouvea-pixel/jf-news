@@ -507,6 +507,8 @@ var MatchPrediction = function(props) {
 var TournamentFactsCarousel = function(props) {
   var facts = props.facts || [];
   var tournamentName = props.tournamentName || "";
+  var surface = props.surface || "";
+  var surfaceColor = surfaceColorMap[surface] || "#E8734A";
   var _idx = useState(0); var activeIdx = _idx[0]; var setActiveIdx = _idx[1];
   var _fade = useState(true); var visible = _fade[0]; var setVisible = _fade[1];
   var _paused = useState(false); var paused = _paused[0]; var setPaused = _paused[1];
@@ -589,7 +591,7 @@ var TournamentFactsCarousel = function(props) {
               }
             }
           }} style={{
-            fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)",
+            fontSize: 13, fontWeight: 500, color: surfaceColor,
             fontFamily: SANS, lineHeight: 1.4, whiteSpace: "nowrap",
           }}>{fact.text}</span>
         </div>
@@ -605,7 +607,7 @@ var TournamentFactsCarousel = function(props) {
                 style={{
                   width: isActive ? 16 : 5, height: 5,
                   borderRadius: 3,
-                  background: isActive ? GREEN : "rgba(255,255,255,0.12)",
+                  background: isActive ? surfaceColor : "rgba(255,255,255,0.12)",
                   border: "none", padding: 0, cursor: "pointer",
                   transition: "all 0.3s ease",
                 }}
@@ -617,7 +619,7 @@ var TournamentFactsCarousel = function(props) {
         {/* Progress bar */}
         {!paused && cleanFacts.length > 1 && (
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "rgba(255,255,255,0.03)" }}>
-            <div style={{ height: 2, background: GREEN + "30", borderRadius: 1, animation: "factProgress 5s linear infinite" }} />
+            <div style={{ height: 2, background: surfaceColor + "30", borderRadius: 1, animation: "factProgress 5s linear infinite" }} />
           </div>
         )}
       </div>
@@ -1518,7 +1520,7 @@ export default function JoaoFonsecaNews() {
 
         {/* Curiosidades do torneio — carrossel automático */}
         {tournamentFacts && tournamentFacts.facts && tournamentFacts.facts.length > 0 && (
-          <TournamentFactsCarousel facts={tournamentFacts.facts} tournamentName={tournamentFacts.name || dm.tournament_name} />
+          <TournamentFactsCarousel facts={tournamentFacts.facts} tournamentName={tournamentFacts.name || dm.tournament_name} surface={dm.surface} />
         )}
 
         {/* Última Partida */}
