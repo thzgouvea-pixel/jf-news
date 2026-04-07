@@ -503,6 +503,124 @@ var MatchPrediction = function(props) {
   );
 };
 
+// ===== TOURNAMENT FACTS CAROUSEL =====
+var TournamentFactsCarousel = function(props) {
+  var facts = props.facts || [];
+  var tournamentName = props.tournamentName || "";
+  var _idx = useState(0); var activeIdx = _idx[0]; var setActiveIdx = _idx[1];
+  var _fade = useState(true); var visible = _fade[0]; var setVisible = _fade[1];
+  var _paused = useState(false); var paused = _paused[0]; var setPaused = _paused[1];
+
+  var cleanFacts = facts.map(function(f) {
+    var t = (f.text || "").replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").replace(/'{2,}/g, "").trim();
+    t = t.replace(/Clay court/gi, "Saibro").replace(/Hard court/gi, "Piso duro").replace(/Grass court/gi, "Grama");
+    return { text: t, icon: f.icon || "🎾" };
+  });
+
+  if (cleanFacts.length === 0) return null;
+
+  useEffect(function() {
+    if (paused || cleanFacts.length <= 1) return;
+    var iv = setInterval(function() {
+      setVisible(false);
+      setTimeout(function() {
+        setActiveIdx(function(prev) { return (prev + 1) % cleanFacts.length; });
+        setVisible(true);
+      }, 400);
+    }, 5000);
+    return function() { clearInterval(iv); };
+  }, [paused, cleanFacts.length]);
+
+  var goTo = function(i) {
+    if (i === activeIdx) return;
+    setVisible(false);
+    setTimeout(function() { setActiveIdx(i); setVisible(true); }, 300);
+    setPaused(true);
+    setTimeout(function() { setPaused(false); }, 10000);
+  };
+
+  var fact = cleanFacts[activeIdx];
+  var shortName = (tournamentName || "").split(",")[0].trim();
+
+  return (
+    <section style={{ padding: "16px 0 0" }}>
+      <div
+        onClick={function() { goTo((activeIdx + 1) % cleanFacts.length); }}
+        style={{
+          background: "linear-gradient(160deg, #0a1220 0%, #111d33 50%, #0d1828 100%)",
+          borderRadius: 16,
+          padding: "20px 22px 16px",
+          position: "relative",
+          overflow: "hidden",
+          cursor: "pointer",
+          minHeight: 96,
+        }}
+      >
+        {/* Subtle glow */}
+        <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(0,168,89,0.06) 0%, transparent 70%)", pointerEvents: "none" }} />
+
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14 }}>💡</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Curiosidades</span>
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>{shortName}</span>
+        </div>
+
+        {/* Fact content with fade */}
+        <div style={{
+          display: "flex", alignItems: "flex-start", gap: 14,
+          opacity: visible ? 1 : 0,
+          transform: visible ? "translateY(0)" : "translateY(6px)",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
+        }}>
+          <span style={{
+            fontSize: 28, lineHeight: 1, flexShrink: 0, marginTop: 2,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            width: 44, height: 44, borderRadius: 12,
+            background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
+          }}>{fact.icon}</span>
+          <span style={{
+            fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)",
+            fontFamily: SANS, lineHeight: 1.5, letterSpacing: "0.01em",
+          }}>{fact.text}</span>
+        </div>
+
+        {/* Dot indicators */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 16 }}>
+          {cleanFacts.map(function(_, i) {
+            var isActive = i === activeIdx;
+            return (
+              <button
+                key={i}
+                onClick={function(e) { e.stopPropagation(); goTo(i); }}
+                style={{
+                  width: isActive ? 18 : 6, height: 6,
+                  borderRadius: 3,
+                  background: isActive ? GREEN : "rgba(255,255,255,0.15)",
+                  border: "none", padding: 0, cursor: "pointer",
+                  transition: "all 0.3s ease",
+                }}
+              />
+            );
+          })}
+        </div>
+
+        {/* Progress bar */}
+        {!paused && cleanFacts.length > 1 && (
+          <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "rgba(255,255,255,0.03)" }}>
+            <div style={{
+              height: 2, background: GREEN + "40", borderRadius: 1,
+              animation: "factProgress 5s linear infinite",
+            }} />
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
+
 // ===== NEXT DUEL CARD — v4 (usando PLAYER_DB unificado) =====
 var NextDuelCard = function(props) {
   var match = props.match; var player = props.player;
@@ -1318,7 +1436,8 @@ export default function JoaoFonsecaNews() {
         "@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}" +
         "@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}" +
         "@keyframes slideU{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}" +
-        "@keyframes fadeInO{from{opacity:0}to{opacity:1}}"
+        "@keyframes fadeInO{from{opacity:0}to{opacity:1}}" +
+        "@keyframes factProgress{from{width:0}to{width:100%}}"
       }</style>
 
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
@@ -1393,29 +1512,9 @@ export default function JoaoFonsecaNews() {
           </section>
         )}
 
-        {/* Sobre o torneio — banner horizontal scrollável */}
-        {tournamentFacts && (
-          <section style={{ padding: "16px 0 0" }}>
-            <div style={{ position: "relative" }}>
-              <div style={{ overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", display: "flex", gap: 10, padding: "0 0 4px" }}>
-                {/* Banner título */}
-                <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 10, padding: "12px 18px", background: "linear-gradient(135deg, #0D1726, #1a2d4a)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <span style={{ fontSize: 16 }}>💡</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SERIF, whiteSpace: "nowrap" }}>Curiosidades sobre {(tournamentFacts.name || dm.tournament_name || "").split(",")[0]}</span>
-                </div>
-                {(tournamentFacts.facts || []).map(function(fact, i) {
-                  var cleanText = (fact.text || "").replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g, "$2").replace(/\{\{[^}]*\}\}/g, "").replace(/'{2,}/g, "").trim();
-                  cleanText = cleanText.replace(/Clay court/gi, "Saibro").replace(/Hard court/gi, "Piso duro").replace(/Grass court/gi, "Grama");
-                  return (
-                    <div key={i} style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#0D1726", borderRadius: 12, border: "1px solid rgba(255,255,255,0.06)" }}>
-                      <span style={{ fontSize: 14 }}>{fact.icon || "🎾"}</span>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: SANS, fontWeight: 500, whiteSpace: "nowrap" }}>{cleanText}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </section>
+        {/* Curiosidades do torneio — carrossel automático */}
+        {tournamentFacts && tournamentFacts.facts && tournamentFacts.facts.length > 0 && (
+          <TournamentFactsCarousel facts={tournamentFacts.facts} tournamentName={tournamentFacts.name || dm.tournament_name} />
         )}
 
         {/* Última Partida */}
