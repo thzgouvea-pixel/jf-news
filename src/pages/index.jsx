@@ -1377,7 +1377,7 @@ export default function JoaoFonsecaNews() {
               { label: "Calendário", action: function(){setShowCalendar(true);} },
               { label: "Conquistas", action: function(){setShowTitles(true);} },
               { label: "Feedback", action: function(){setShowFeedback(true);} },
-              { label: "Apoiar", action: function(){setShowPixModal(true);}, green: true },
+              { label: "Sobre", href: "/sobre" },
             ].map(function(item, i) {
               var isLink = !!item.href;
               var isGreen = !!item.green;
