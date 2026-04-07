@@ -975,32 +975,6 @@ var PlayerBlock = function(props) {
   );
 };
 
-// ===== PIX DONATION =====
-var PixDonation = function() {
-  var _s = useState(false); var showModal = _s[0]; var setShowModal = _s[1];
-  var _c = useState(false); var copied = _c[0]; var setCopied = _c[1];
-  var PIX_KEY = "SUA-CHAVE-PIX-AQUI";
-  var handleCopy = function() { if (navigator.clipboard) { navigator.clipboard.writeText(PIX_KEY).then(function() { setCopied(true); setTimeout(function() { setCopied(false); }, 3000); }); } };
-  return (
-    <>
-      <button data-pix-btn onClick={function() { setShowModal(true); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 16px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: SANS }}>💚 Apoie via PIX</button>
-      {showModal && (
-        <div onClick={function() { setShowModal(false); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
-          <div onClick={function(e) { e.stopPropagation(); }} style={{ background: "#fff", borderRadius: 20, padding: 28, maxWidth: 360, width: "100%", textAlign: "center", position: "relative" }}>
-            <button onClick={function() { setShowModal(false); }} style={{ position: "absolute", top: 12, right: 16, background: "none", border: "none", color: DIM, fontSize: 18, cursor: "pointer" }}>✕</button>
-            <h3 style={{ margin: "0 0 6px", color: TEXT, fontSize: 18, fontFamily: SERIF }}>Apoie o Fonseca News</h3>
-            <p style={{ color: SUB, fontSize: 13, margin: "0 0 20px", fontFamily: SANS }}>Ajude a manter o site no ar!</p>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "center" }}>
-              <code style={{ background: BG_ALT, padding: "8px 12px", borderRadius: 8, color: SUB, fontSize: 11 }}>{PIX_KEY}</code>
-              <button onClick={handleCopy} style={{ padding: "8px 14px", background: GREEN, color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontSize: 12, fontWeight: 600, fontFamily: SANS }}>{copied ? "✅ Copiado!" : "Copiar"}</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  );
-};
-
 // ===== SKELETON =====
 var Skeleton = function() { return (<div>{[...Array(4)].map(function(_, i) { return (<div key={i} style={{ padding: "22px 0", borderBottom: "1px solid " + BORDER, animation: "pulse 1.8s ease-in-out infinite", animationDelay: (i * .12) + "s" }}><div style={{ height: 12, width: 70, background: "#f0f0f0", borderRadius: 4, marginBottom: 10 }} /><div style={{ height: 16, width: "85%", background: "#f0f0f0", borderRadius: 4, marginBottom: 8 }} /><div style={{ height: 14, width: "60%", background: "#f5f5f5", borderRadius: 4 }} /></div>); })}</div>); };
 
@@ -1142,7 +1116,6 @@ export default function JoaoFonsecaNews() {
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
   var _showFeedback = useState(false); var showFeedback = _showFeedback[0]; var setShowFeedback = _showFeedback[1];
   var _showInstallGuide = useState(false); var showInstallGuide = _showInstallGuide[0]; var setShowInstallGuide = _showInstallGuide[1];
-  var _showPixModal = useState(false); var showPixModal = _showPixModal[0]; var setShowPixModal = _showPixModal[1];
   var _pushEnabled = useState(function() { try { return localStorage.getItem("fn_push_enabled") === "1"; } catch(e) { return false; } });
   var pushEnabled = _pushEnabled[0]; var setPushEnabled = _pushEnabled[1];
   var _pushLoading = useState(false); var pushLoading = _pushLoading[0]; var setPushLoading = _pushLoading[1];
@@ -1624,15 +1597,6 @@ export default function JoaoFonsecaNews() {
               <button onClick={function() { setShowFeedback(false); setFbSent(false); setFbMsg(""); setFbName(""); setFbRating(null); }} style={{ padding: "10px 20px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Fechar</button>
             </div>
           )}
-        </Modal>
-      )}
-
-      {showPixModal && (
-        <Modal title="Apoie o Fonseca News" subtitle="Ajude a manter o site no ar" onClose={function(){setShowPixModal(false);}}>
-          <div style={{ textAlign: "center", padding: "8px 0" }}>
-            <code style={{ background: BG_ALT, padding: "10px 16px", borderRadius: 8, color: SUB, fontSize: 12, display: "inline-block" }}>SUA-CHAVE-PIX-AQUI</code>
-            <button onClick={function() { if (navigator.clipboard) navigator.clipboard.writeText("SUA-CHAVE-PIX-AQUI"); }} style={{ display: "block", margin: "12px auto 0", padding: "10px 20px", background: GREEN, color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: SANS }}>Copiar chave PIX</button>
-          </div>
         </Modal>
       )}
 
