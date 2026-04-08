@@ -719,7 +719,7 @@ export default async function handler(req,res){
               },
               body: JSON.stringify({
                 model: "claude-haiku-4-5-20251001",
-                max_tokens: 30,
+                max_tokens: 300,
                 system: "You are a tennis data bot. Reply with ONLY the court name (e.g. 'Court Des Princes'). No other text. If unknown, reply 'unknown'.",
                 tools: [{ type: "web_search_20250305", name: "web_search" }],
                 messages: [{ role: "user", content: courtPrompt }]
@@ -733,7 +733,10 @@ export default async function handler(req,res){
               }
               courtAnswer = courtAnswer.trim().replace(/^["']|["']$/g, "").replace(/\.$/, "").trim();
               console.log("[cron] AI court raw response:", courtAnswer);
-              if(courtAnswer && courtAnswer.toLowerCase() !== "unknown" && courtAnswer.toLowerCase() !== "desconhecida" && courtAnswer.length > 2 && courtAnswer.length < 60 && !courtAnswer.toLowerCase().includes("cannot") && !courtAnswer.toLowerCase().includes("unable")){
+              // Try to extract court name from response (e.g. "Court Des Princes", "Court Rainier III")
+              var courtMatch = courtAnswer.match(/\b(Court\s+[A-Z][A-Za-z\s']{2,30}|Centre\s+Court|Stadium\s+Court)\b/i);
+              if(courtMatch) courtAnswer = courtMatch[0].trim();
+              if(courtAnswer && courtAnswer.toLowerCase() !== "unknown" && courtAnswer.toLowerCase() !== "desconhecida" && courtAnswer.length > 2 && courtAnswer.length < 60 && !courtAnswer.toLowerCase().includes("cannot") && !courtAnswer.toLowerCase().includes("unable") && !courtAnswer.toLowerCase().includes("i'll") && !courtAnswer.toLowerCase().includes("let me") && !courtAnswer.toLowerCase().includes("search")){
                 nextMatch.court = courtAnswer;
                 await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
                 log.push("court: " + courtAnswer + " (via Claude AI)");
