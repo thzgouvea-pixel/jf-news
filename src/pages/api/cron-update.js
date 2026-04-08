@@ -703,8 +703,16 @@ export default async function handler(req,res){
         if(od){nextMatch=enrichMatch(nextMatch,od);totalRequests++;}
         await kv.set("fn:prevOpponentId",String(nextMatch.opponent_id));
       }
+      // Preserve court from previous KV data if same match
+      try{
+        var prevNext = await kv.get("fn:nextMatch");
+        var prevParsed = prevNext ? (typeof prevNext === "string" ? JSON.parse(prevNext) : prevNext) : null;
+        if(prevParsed && prevParsed.court && String(prevParsed.event_id) === String(nextMatch.event_id)){
+          nextMatch.court = prevParsed.court;
+        }
+      }catch(e){}
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-      // Court: use Claude AI with web search to find court assignment
+      // Court: fetch via Claude AI if still missing
       if(!nextMatch.court){
         try{
           var anthropicKey = process.env.ANTHROPIC_API_KEY;
@@ -734,14 +742,13 @@ export default async function handler(req,res){
               for(var ci=0;ci<(aiData.content||[]).length;ci++){
                 if(aiData.content[ci].type === "text" && aiData.content[ci].text) courtAnswer = aiData.content[ci].text;
               }
-              courtAnswer = courtAnswer.trim().replace(/^["']|["']$/g, "").replace(/\.$/, "").trim();
+              courtAnswer = courtAnswer.trim().replace(/^["'\.\s]+|["'\.\s]+$/g, "").replace(/\n/g, " ").trim();
               console.log("[cron] AI court raw response:", courtAnswer);
               // Try to extract court name from response
               var courtMatch = courtAnswer.match(/\b(Court\s+[A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){0,3}|Centre\s+Court|Stadium\s+Court|Grandstand)\b/);
               if(courtMatch) courtAnswer = courtMatch[0].trim();
-              // Remove trailing common words
               courtAnswer = courtAnswer.replace(/\s+(on|for|in|is|at|the|during|from|will|where|has|was|and)\b.*$/i, "").trim();
-              if(courtAnswer && courtAnswer.toLowerCase() !== "unknown" && courtAnswer.toLowerCase() !== "desconhecida" && courtAnswer.length > 2 && courtAnswer.length < 60 && !courtAnswer.toLowerCase().includes("cannot") && !courtAnswer.toLowerCase().includes("unable") && !courtAnswer.toLowerCase().includes("i'll") && !courtAnswer.toLowerCase().includes("let me") && !courtAnswer.toLowerCase().includes("search")){
+              if(courtAnswer && courtAnswer.length > 4 && courtAnswer.length < 40 && !courtAnswer.toLowerCase().includes("unknown") && !courtAnswer.toLowerCase().includes("desconhecida") && !courtAnswer.toLowerCase().includes("cannot") && !courtAnswer.toLowerCase().includes("unable") && !courtAnswer.toLowerCase().includes("i'll") && !courtAnswer.toLowerCase().includes("let me") && !courtAnswer.toLowerCase().includes("search") && !courtAnswer.toLowerCase().includes("not found")){
                 nextMatch.court = courtAnswer;
                 await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
                 log.push("court: " + courtAnswer + " (via Claude AI)");
