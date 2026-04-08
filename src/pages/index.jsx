@@ -1007,6 +1007,79 @@ var WinProbBar = function(props) {
 };
 
 // ===== PLAYER BLOCK (REDESIGN — FIX 1,2,3,4,5) =====
+// ===== MATCH CAROUSEL (Última Partida + Melhores Momentos) =====
+var MatchCarousel = function(props) {
+  var scrollRef = useRef(null);
+  var _page = useState(0); var activePage = _page[0]; var setActivePage = _page[1];
+
+  var handleScroll = function() {
+    if (!scrollRef.current) return;
+    var el = scrollRef.current;
+    var page = Math.round(el.scrollLeft / el.clientWidth);
+    setActivePage(page);
+  };
+
+  var goTo = function(i) {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ left: i * scrollRef.current.clientWidth, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <div>
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        data-match-carousel=""
+        style={{
+          display: "flex", overflowX: "auto", scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none",
+          gap: 0,
+        }}
+      >
+        {/* Slide 1: Stats */}
+        <div style={{ flex: "0 0 100%", scrollSnapAlign: "start", minWidth: "100%" }}>
+          <PlayerBlock
+            lastMatch={props.lastMatch} matchStats={props.matchStats}
+            recentForm={props.recentForm} prizeMoney={props.prizeMoney}
+            playerRanking={props.playerRanking} opponentProfile={props.opponentProfile}
+          />
+        </div>
+
+        {/* Slide 2: Video */}
+        <div style={{ flex: "0 0 100%", scrollSnapAlign: "start", minWidth: "100%" }}>
+          <div style={{ borderRadius: 16, overflow: "hidden", background: "#000", border: "1px solid " + BORDER }}>
+            <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+              <iframe
+                src={"https://www.youtube.com/embed/" + props.highlightVideo.videoId}
+                title={props.highlightVideo.title || "Melhores momentos"}
+                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
+          {props.highlightVideo.title && (
+            <p style={{ margin: "10px 0 0", fontSize: 12, color: SUB, fontFamily: SANS, textAlign: "center" }}>{props.highlightVideo.title}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Dot indicators + labels */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 14 }}>
+        <button onClick={function() { goTo(0); }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", background: activePage === 0 ? BG_ALT : "transparent", border: "1px solid " + (activePage === 0 ? BORDER : "transparent"), borderRadius: 999, cursor: "pointer" }}>
+          <span style={{ width: activePage === 0 ? 14 : 6, height: 6, borderRadius: 3, background: activePage === 0 ? GREEN : DIM, transition: "all 0.3s ease" }} />
+          <span style={{ fontSize: 10, fontWeight: 600, color: activePage === 0 ? TEXT : DIM, fontFamily: SANS, transition: "color 0.3s ease" }}>Stats</span>
+        </button>
+        <button onClick={function() { goTo(1); }} style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", background: activePage === 1 ? BG_ALT : "transparent", border: "1px solid " + (activePage === 1 ? BORDER : "transparent"), borderRadius: 999, cursor: "pointer" }}>
+          <span style={{ width: activePage === 1 ? 14 : 6, height: 6, borderRadius: 3, background: activePage === 1 ? "#ef4444" : DIM, transition: "all 0.3s ease" }} />
+          <span style={{ fontSize: 10, fontWeight: 600, color: activePage === 1 ? TEXT : DIM, fontFamily: SANS, transition: "color 0.3s ease" }}>Highlights</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 var PlayerBlock = function(props) {
   var lastMatch = props.lastMatch;
   var matchStats = props.matchStats;
@@ -1500,6 +1573,7 @@ export default function JoaoFonsecaNews() {
         "*{box-sizing:border-box;margin:0;padding:0}" +
         "body{background:#fff;-webkit-font-smoothing:antialiased}" +
         "nav::-webkit-scrollbar{display:none}" +
+        "[data-match-carousel]::-webkit-scrollbar{display:none}" +
         "@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}" +
         "@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}" +
         "@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}" +
@@ -1578,29 +1652,15 @@ export default function JoaoFonsecaNews() {
           <TournamentFactsCarousel facts={tournamentFacts.facts} tournamentName={tournamentFacts.name || dm.tournament_name} surface={dm.surface} />
         )}
 
-        {/* Última Partida */}
-        <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
-
-        {/* Melhores momentos — YouTube embed */}
-        {highlightVideo && highlightVideo.videoId && (
-          <section style={{ padding: "20px 0 0" }}>
-            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Melhores momentos da última partida</p>
-            <div style={{ borderRadius: 16, overflow: "hidden", background: "#000", border: "1px solid " + BORDER }}>
-              <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
-                <iframe
-                  src={"https://www.youtube.com/embed/" + highlightVideo.videoId}
-                  title={highlightVideo.title || "Melhores momentos"}
-                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
-              </div>
-            </div>
-            {highlightVideo.title && (
-              <p style={{ margin: "8px 0 0", fontSize: 12, color: SUB, fontFamily: SANS }}>{highlightVideo.title}</p>
-            )}
-          </section>
-        )}
+        {/* Última Partida + Melhores Momentos — carrossel swipável */}
+        <section style={{ padding: "20px 0 0" }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Última partida</p>
+          {highlightVideo && highlightVideo.videoId ? (
+            <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
+          ) : (
+            <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
+          )}
+        </section>
 
         {/* Notícias */}
         <section style={{ padding: "20px 0 0" }}>
