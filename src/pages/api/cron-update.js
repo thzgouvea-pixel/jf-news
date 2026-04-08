@@ -704,8 +704,42 @@ export default async function handler(req,res){
         await kv.set("fn:prevOpponentId",String(nextMatch.opponent_id));
       }
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-      // Court: fetched client-side from SofaScore public API (browser bypasses Cloudflare)
-      if(!nextMatch.court)log.push("court: will be fetched client-side");
+      // Court: use Claude AI with web search to find court assignment
+      if(!nextMatch.court){
+        try{
+          var anthropicKey = process.env.ANTHROPIC_API_KEY;
+          if(anthropicKey){
+            var courtPrompt = "Em qual quadra (court) será disputada a partida de João Fonseca vs " + nextMatch.opponent_name + " no " + nextMatch.tournament_name + "? Responda APENAS com o nome da quadra, nada mais. Exemplo: Court Des Princes. Se não encontrar, responda apenas: desconhecida";
+            var aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": anthropicKey,
+                "anthropic-version": "2023-06-01"
+              },
+              body: JSON.stringify({
+                model: "claude-haiku-4-5-20251001",
+                max_tokens: 50,
+                tools: [{ type: "web_search_20250305", name: "web_search" }],
+                messages: [{ role: "user", content: courtPrompt }]
+              })
+            });
+            if(aiRes.ok){
+              var aiData = await aiRes.json();
+              var courtAnswer = "";
+              for(var ci=0;ci<(aiData.content||[]).length;ci++){
+                if(aiData.content[ci].type === "text") courtAnswer += aiData.content[ci].text;
+              }
+              courtAnswer = courtAnswer.trim();
+              if(courtAnswer && courtAnswer.toLowerCase() !== "desconhecida" && courtAnswer.length < 50){
+                nextMatch.court = courtAnswer;
+                await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
+                log.push("court: " + courtAnswer + " (via Claude AI)");
+              } else { log.push("court: AI could not find"); }
+            } else { log.push("court: AI HTTP " + aiRes.status); }
+          } else { log.push("court: no ANTHROPIC_API_KEY"); }
+        }catch(e){log.push("court: AI error " + e.message);}
+      } else { log.push("court: " + nextMatch.court); }
       if(!nextMatch.opponent_ranking){try{var op=await kv.get("fn:opponentProfile");if(op){var opp=typeof op==="string"?JSON.parse(op):op;if(opp&&opp.ranking){nextMatch.opponent_ranking=opp.ranking;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("nextMatch: ranking fallback #"+opp.ranking);}}}catch(e){}}
       log.push("nextMatch: vs "+nextMatch.opponent_name+(nextMatch.opponent_ranking?" #"+nextMatch.opponent_ranking:"")+" @ "+nextMatch.tournament_name+(nextMatch.round?" · "+nextMatch.round:"")+(nextMatch.court?" · "+nextMatch.court:""));
     }else{
