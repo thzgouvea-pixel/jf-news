@@ -405,7 +405,7 @@ function parseMatch(m, isNext) {
     console.log("[cron] venue:", JSON.stringify(m.venue||"none"));
     console.log("[cron] season:", JSON.stringify({name:season.name,slug:season.slug}));
     if (m.tournament) console.log("[cron] tournament:", JSON.stringify({name:tournament.name,slug:tournament.slug}));
-    console.log("[cron] opponent raw:", JSON.stringify({name:opponent.name,shortName:opponent.shortName,ranking:opponent.ranking,position:opponent.position,id:opponent.id}));
+    console.log("[cron] opponent raw:", JSON.stringify({name:(opponent||{}).name,shortName:(opponent||{}).shortName,ranking:(opponent||{}).ranking,position:(opponent||{}).position,id:(opponent||{}).id}));
   }
   var isFonsecaHome = (homeTeam.slug||"").toLowerCase().includes(FONSECA_SLUG);
   var opponent = isFonsecaHome ? awayTeam : homeTeam;
