@@ -8,6 +8,8 @@ export default function Sobre() {
         <title>Sobre — Fonseca News</title>
         <meta name="description" content="Sobre o Fonseca News — site de fãs dedicado a acompanhar a carreira do tenista João Fonseca." />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-J5CD56E1VX"></script>
+        <script dangerouslySetInnerHTML={{ __html: "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-J5CD56E1VX');" }} />
         <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
       <div style={{ minHeight: "100vh", background: "#fff", fontFamily: "'Inter', -apple-system, sans-serif" }}>
