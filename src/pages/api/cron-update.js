@@ -736,9 +736,11 @@ export default async function handler(req,res){
               }
               courtAnswer = courtAnswer.trim().replace(/^["']|["']$/g, "").replace(/\.$/, "").trim();
               console.log("[cron] AI court raw response:", courtAnswer);
-              // Try to extract court name from response (e.g. "Court Des Princes", "Court Rainier III")
-              var courtMatch = courtAnswer.match(/\b(Court\s+[A-Z][A-Za-z\s']{2,30}|Centre\s+Court|Stadium\s+Court)\b/i);
+              // Try to extract court name from response
+              var courtMatch = courtAnswer.match(/\b(Court\s+[A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){0,3}|Centre\s+Court|Stadium\s+Court|Grandstand)\b/);
               if(courtMatch) courtAnswer = courtMatch[0].trim();
+              // Remove trailing common words
+              courtAnswer = courtAnswer.replace(/\s+(on|for|in|is|at|the|during|from|will|where|has|was|and)\b.*$/i, "").trim();
               if(courtAnswer && courtAnswer.toLowerCase() !== "unknown" && courtAnswer.toLowerCase() !== "desconhecida" && courtAnswer.length > 2 && courtAnswer.length < 60 && !courtAnswer.toLowerCase().includes("cannot") && !courtAnswer.toLowerCase().includes("unable") && !courtAnswer.toLowerCase().includes("i'll") && !courtAnswer.toLowerCase().includes("let me") && !courtAnswer.toLowerCase().includes("search")){
                 nextMatch.court = courtAnswer;
                 await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
