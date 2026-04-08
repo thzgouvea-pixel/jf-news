@@ -703,12 +703,15 @@ export default async function handler(req,res){
         if(od){nextMatch=enrichMatch(nextMatch,od);totalRequests++;}
         await kv.set("fn:prevOpponentId",String(nextMatch.opponent_id));
       }
-      // Preserve court from previous KV data if same match
+      // Preserve court from previous KV data if same match AND valid
       try{
         var prevNext = await kv.get("fn:nextMatch");
         var prevParsed = prevNext ? (typeof prevNext === "string" ? JSON.parse(prevNext) : prevNext) : null;
         if(prevParsed && prevParsed.court && String(prevParsed.event_id) === String(nextMatch.event_id)){
-          nextMatch.court = prevParsed.court;
+          var prevCourt = String(prevParsed.court).replace(/\n/g,"").trim();
+          if(prevCourt.length > 4 && !prevCourt.toLowerCase().includes("unknown") && !prevCourt.includes(".")){
+            nextMatch.court = prevCourt;
+          }
         }
       }catch(e){}
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
