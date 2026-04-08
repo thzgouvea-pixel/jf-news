@@ -746,22 +746,30 @@ export default async function handler(req,res){
         await kv.set("fn:prevOpponentId",String(nextMatch.opponent_id));
       }
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-      // Court: check 4h cache first, then fetch via Claude AI
+      // Court + Ranking: check 4h cache first, then fetch via Claude AI
       var courtCacheKey = "fn:court:" + nextMatch.event_id;
+      var rankCacheKey = "fn:aiRank:" + (nextMatch.opponent_id || nextMatch.opponent_name);
       try{
         var cachedCourt = await kv.get(courtCacheKey);
         if(cachedCourt && typeof cachedCourt === "string" && cachedCourt.length > 4 && !cachedCourt.toLowerCase().includes("unknown")){
           nextMatch.court = cachedCourt;
-          await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
           log.push("court: " + cachedCourt + " (cached 4h)");
         }
       }catch(e){}
-      if(!nextMatch.court){
+      try{
+        var cachedRank = await kv.get(rankCacheKey);
+        if(cachedRank){
+          var cr = parseInt(String(cachedRank), 10);
+          if(cr > 0 && cr < 1000){ nextMatch.opponent_ranking = cr; log.push("ranking: #" + cr + " (cached)"); }
+        }
+      }catch(e){}
+      await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
+      if(!nextMatch.court || !nextMatch.opponent_ranking){
         try{
           var anthropicKey = process.env.ANTHROPIC_API_KEY;
           if(anthropicKey){
             var matchDate = nextMatch.date ? new Date(nextMatch.date).toISOString().split("T")[0] : "";
-            var courtPrompt = "Search for the official order of play for " + nextMatch.tournament_name + " on " + matchDate + ". On which specific court is Joao Fonseca playing" + (nextMatch.opponent_name ? " against " + nextMatch.opponent_name : "") + (nextMatch.round ? " in the " + nextMatch.round : "") + "? Check atptour.com, rolandgarros.com, or official tournament sites for today's order of play schedule.";
+            var courtPrompt = "Two questions about tennis:\n1. Search for the official order of play for " + nextMatch.tournament_name + " on " + matchDate + ". On which specific court is Joao Fonseca playing" + (nextMatch.opponent_name ? " against " + nextMatch.opponent_name : "") + (nextMatch.round ? " in the " + nextMatch.round : "") + "?\n2. What is " + (nextMatch.opponent_name || "the opponent") + "'s current ATP singles ranking?\nReply in this exact format:\nCOURT: [name]\nRANKING: [number]";
             var aiRes = await fetch("https://api.anthropic.com/v1/messages", {
               method: "POST",
               headers: {
@@ -772,7 +780,7 @@ export default async function handler(req,res){
               body: JSON.stringify({
                 model: "claude-haiku-4-5-20251001",
                 max_tokens: 300,
-                system: "You are a tennis data bot. Reply with ONLY the court name (e.g. 'Court Des Princes'). No other text. If unknown, reply 'unknown'.",
+                system: "You are a tennis data bot. Reply ONLY in this format:\nCOURT: [court name]\nRANKING: [number]\nExample:\nCOURT: Court Des Princes\nRANKING: 90\nIf unknown, use 'unknown' for that field.",
                 tools: [{ type: "web_search_20250305", name: "web_search" }],
                 messages: [{ role: "user", content: courtPrompt }]
               })
@@ -788,16 +796,31 @@ export default async function handler(req,res){
               }
               courtAnswer = courtAnswer.trim().replace(/^["'\.\s]+|["'\.\s]+$/g, "").replace(/\n/g, " ").trim();
               console.log("[cron] AI court raw response:", courtAnswer);
-              // Try to extract court name from response
-              var courtMatch = courtAnswer.match(/\b(Court\s+[A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){0,3}|Centre\s+Court|Stadium\s+Court|Grandstand)\b/);
-              if(courtMatch) courtAnswer = courtMatch[0].trim();
-              courtAnswer = courtAnswer.replace(/\s+(on|for|in|is|at|the|during|from|will|where|has|was|and)\b.*$/i, "").trim();
-              if(courtAnswer && courtAnswer.length > 4 && courtAnswer.length < 40 && !courtAnswer.toLowerCase().includes("unknown") && !courtAnswer.toLowerCase().includes("desconhecida") && !courtAnswer.toLowerCase().includes("cannot") && !courtAnswer.toLowerCase().includes("unable") && !courtAnswer.toLowerCase().includes("i'll") && !courtAnswer.toLowerCase().includes("let me") && !courtAnswer.toLowerCase().includes("search") && !courtAnswer.toLowerCase().includes("not found")){
-                nextMatch.court = courtAnswer;
+              // Extract COURT
+              var courtExtract = courtAnswer.match(/COURT:\s*(.+?)(?:\s*RANKING:|$)/i);
+              var rankExtract = courtAnswer.match(/RANKING:\s*(\d+)/i);
+              // Fallback: try to find court name pattern
+              if (!courtExtract) {
+                var courtMatch2 = courtAnswer.match(/\b(Court\s+[A-Z][A-Za-z'\-]+(?:\s+[A-Z][A-Za-z'\-]+){0,3}|Centre\s+Court|Stadium\s+Court|Grandstand)\b/);
+                if (courtMatch2) courtExtract = [null, courtMatch2[0]];
+              }
+              var finalCourt = courtExtract ? courtExtract[1].trim().replace(/\s+(on|for|in|is|at|the|during|from|will)\b.*$/i, "").trim() : null;
+              if (finalCourt && finalCourt.length > 4 && finalCourt.length < 40 && !finalCourt.toLowerCase().includes("unknown")) {
+                nextMatch.court = finalCourt;
                 await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-                await kv.set(courtCacheKey, courtAnswer, {ex:14400});
-                log.push("court: " + courtAnswer + " (via Claude AI, cached 4h)");
-              } else { log.push("court: AI could not find"); }
+                await kv.set(courtCacheKey, finalCourt, {ex:14400});
+                log.push("court: " + finalCourt + " (via Claude AI, cached 4h)");
+              } else { log.push("court: AI could not find court"); }
+              // Apply ranking from AI if found and we don't have a reliable one
+              if (rankExtract) {
+                var aiRanking = parseInt(rankExtract[1], 10);
+                if (aiRanking > 0 && aiRanking < 1000) {
+                  nextMatch.opponent_ranking = aiRanking;
+                  await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
+                  await kv.set(rankCacheKey, String(aiRanking), {ex:14400});
+                  log.push("ranking-ai: #" + aiRanking + " (via Claude AI, cached 4h)");
+                }
+              }
             } else { log.push("court: AI HTTP " + aiRes.status); }
           } else { log.push("court: no ANTHROPIC_API_KEY"); }
         }catch(e){log.push("court: AI error " + e.message);}
