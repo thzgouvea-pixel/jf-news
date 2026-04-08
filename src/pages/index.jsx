@@ -718,6 +718,7 @@ var NextDuelCard = function(props) {
   var fSets = liveScore.fonseca_sets || [];
   var oSets = liveScore.opponent_sets || [];
   var setsWon = liveScore.sets_won || {};
+  var liveServing = liveScore.serving || "";
 
   return (
     <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
@@ -779,7 +780,7 @@ var NextDuelCard = function(props) {
               <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:16px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; } }} />
             </div>
             <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
+            {isLive && liveServing === "fonseca" ? <span style={{ fontSize: 10, color: YELLOW, fontFamily: SANS, display: "block", marginTop: 2 }}>🇧🇷 Sacando</span> : <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>}
           </div>
           {isLive ? (
             <div style={{ textAlign: "center", minWidth: 80 }}>
@@ -807,7 +808,7 @@ var NextDuelCard = function(props) {
               {!isLive && onOppClick && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
             </div>
             <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppName}</span>
-            {oppCountry ? <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 2 }}>chave pendente</span>}
+            {isLive && liveServing === "opponent" ? <span style={{ fontSize: 10, color: YELLOW, fontFamily: SANS, display: "block", marginTop: 2 }}>{oppFlag} Sacando</span> : (oppCountry ? <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 2 }}>chave pendente</span>)}
           </div>
         </div>
       </div>
@@ -1561,7 +1562,7 @@ export default function JoaoFonsecaNews() {
         )}
 
         <section style={{ padding: "20px 0 0" }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>{liveMatch ? "Ao vivo" : "Próximo duelo"}</p>
+          {!liveMatch && <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>}
           <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} />
         </section>
 
