@@ -746,6 +746,21 @@ export default async function handler(req,res){
         await kv.set("fn:prevOpponentId",String(nextMatch.opponent_id));
       }
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
+      // Fetch court/venue from event details
+      if(nextMatch.event_id){
+        try{
+          var courtEndpoints=["/v1/event/"+nextMatch.event_id,"/v1/event/details?event_id="+nextMatch.event_id,"/v1/match/details?match_id="+nextMatch.event_id];
+          for(var ce=0;ce<courtEndpoints.length;ce++){
+            var cd=await sofaFetch(courtEndpoints[ce],apiKey);totalRequests++;
+            if(!cd)continue;
+            var ev=cd.event||cd;
+            var courtName=ev.venue||ev.courtName||ev.court||(ev.roundInfo&&ev.roundInfo.cupRoundType)||(ev.venue&&ev.venue.stadium)||null;
+            if(!courtName&&ev.venue&&typeof ev.venue==="object")courtName=ev.venue.name||ev.venue.stadium||ev.venue.court||null;
+            if(courtName){nextMatch.court=courtName;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("court: "+courtName);break;}
+          }
+          if(!nextMatch.court)log.push("court: not available yet");
+        }catch(e){log.push("court: error "+e.message);}
+      }
       if(!nextMatch.opponent_ranking){try{var op=await kv.get("fn:opponentProfile");if(op){var opp=typeof op==="string"?JSON.parse(op):op;if(opp&&opp.ranking){nextMatch.opponent_ranking=opp.ranking;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("nextMatch: ranking fallback #"+opp.ranking);}}}catch(e){}}
       log.push("nextMatch: vs "+nextMatch.opponent_name+(nextMatch.opponent_ranking?" #"+nextMatch.opponent_ranking:"")+" @ "+nextMatch.tournament_name);
     }else{
