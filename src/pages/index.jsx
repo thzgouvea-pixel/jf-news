@@ -1398,6 +1398,7 @@ export default function JoaoFonsecaNews() {
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
   var siteFeedback = _fb[0]; var setSiteFeedback = _fb[1];
   var _showFeedback = useState(false); var showFeedback = _showFeedback[0]; var setShowFeedback = _showFeedback[1];
+  var _showMaisMenu = useState(false); var showMaisMenu = _showMaisMenu[0]; var setShowMaisMenu = _showMaisMenu[1];
   var _showInstallGuide = useState(false); var showInstallGuide = _showInstallGuide[0]; var setShowInstallGuide = _showInstallGuide[1];
   var _pushEnabled = useState(function() { try { return localStorage.getItem("fn_push_enabled") === "1"; } catch(e) { return false; } });
   var pushEnabled = _pushEnabled[0]; var setPushEnabled = _pushEnabled[1];
@@ -1608,7 +1609,9 @@ export default function JoaoFonsecaNews() {
         "@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}" +
         "@keyframes slideU{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}" +
         "@keyframes fadeInO{from{opacity:0}to{opacity:1}}" +
-        "@keyframes factProgress{from{width:0}to{width:100%}}"
+        "@keyframes factProgress{from{width:0}to{width:100%}}" +
+        "@media(max-width:768px){.desktop-nav{display:none!important}.mobile-tab-bar{display:flex!important}.mobile-pad{padding-bottom:72px!important}}" +
+        "@media(min-width:769px){.mobile-tab-bar{display:none!important}}"
       }</style>
 
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
@@ -1637,7 +1640,7 @@ export default function JoaoFonsecaNews() {
           </button>
         </div>
 
-        <div style={{ position: "relative" }}>
+        <div className="desktop-nav" style={{ position: "relative" }}>
           <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "2px 16px 12px", paddingRight: 48, display: "flex", alignItems: "center", gap: 24 }}>
             {[
               { label: "Biografia", href: "/biografia" },
@@ -1662,7 +1665,7 @@ export default function JoaoFonsecaNews() {
         </div>
       </header>
 
-      <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
+      <main className="mobile-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
 
         {!loading && news.length === 0 && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#FEF3C7", borderRadius: 10, margin: "12px 0 0", border: "1px solid #F59E0B33" }}>
@@ -1874,6 +1877,38 @@ export default function JoaoFonsecaNews() {
           )}
         </Modal>
       )}
+
+      {/* Mobile Tab Bar */}
+      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid " + BORDER, paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
+        {showMaisMenu && (
+          <div style={{ position: "absolute", bottom: "100%", right: 12, background: "white", borderRadius: 14, boxShadow: "0 4px 20px rgba(0,0,0,0.12)", border: "1px solid " + BORDER, padding: "6px 0", minWidth: 160, marginBottom: 4 }}>
+            {[
+              { label: "Biografia", action: function(){ window.location.href="/biografia"; } },
+              { label: "Feedback", action: function(){ setShowFeedback(true); setShowMaisMenu(false); } },
+              { label: "Sobre", action: function(){ window.location.href="/sobre"; } },
+            ].map(function(item, i) {
+              return <button key={i} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 18px", background: "none", border: "none", fontSize: 14, fontWeight: 500, color: TEXT, fontFamily: SANS, cursor: "pointer" }}>{item.label}</button>;
+            })}
+          </div>
+        )}
+        <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", justifyContent: "space-around", alignItems: "center", padding: "8px 0 4px" }}>
+          {[
+            { label: "Home", action: function(){ window.scrollTo({top:0,behavior:"smooth"}); setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>; } },
+            { label: "Ranking", action: function(){ setShowRanking(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>; } },
+            { label: "Calendário", action: function(){ setShowCalendar(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; } },
+            { label: "Conquistas", action: function(){ setShowTitles(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>; } },
+            { label: "Mais", action: function(){ setShowMaisMenu(!showMaisMenu); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>; } },
+          ].map(function(tab, i) {
+            var isActive = (tab.label === "Mais" && showMaisMenu);
+            return (
+              <button key={i} onClick={tab.action} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "none", border: "none", cursor: "pointer", padding: "4px 12px", minWidth: 56 }}>
+                {tab.icon(isActive)}
+                <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, color: isActive ? "#4FC3F7" : "rgba(0,0,0,0.35)", fontFamily: SANS }}>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
     </div>
   );
