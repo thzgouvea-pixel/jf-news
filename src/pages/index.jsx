@@ -279,7 +279,7 @@ var DailyPoll = function() {
               </div>
             );
           })}
-          <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>{results && results.total ? results.total + (results.total === 1 ? " voto" : " votos") + " · " : ""}Nova enquete amanhã</p>
+          <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>{results && results.total ? results.total + (results.total === 1 ? " voto" : " votos") : "Seja o primeiro a votar"} · Nova enquete amanhã</p>
         </div>
       )}
     </div>
