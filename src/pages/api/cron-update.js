@@ -533,7 +533,7 @@ async function fetchTournamentFacts(tournamentName,log){
 
 async function fetchOpponentProfile(opponentName,opponentId,log){
   if(!opponentName||opponentName==="A definir"){log.push("oppProfile: no opponent");return;}
-  try{var cached=await kv.get("fn:opponentProfile");if(cached){var p=typeof cached==="string"?JSON.parse(cached):cached;if(p.name===opponentName&&p.style){log.push("oppProfile: cache ok ("+p.name+")");return;}}}catch(e){}
+  try{var cached=await kv.get("fn:opponentProfile");if(cached){var p=typeof cached==="string"?JSON.parse(cached):cached;var styleClean=p.style&&!p.style.includes("thumb|")&&!p.style.includes("[[")&&!p.style.includes("{{");if(p.name===opponentName&&p.style&&styleClean){log.push("oppProfile: cache ok ("+p.name+")");return;}}}catch(e){}
   try{
     var fullName=opponentName.replace(/^[A-Z]\.\s*/,"").trim();
     var searchTerms=[opponentName.replace(/\./g,"").trim()+" tennis",fullName+" tennis player"];
@@ -562,7 +562,37 @@ async function fetchOpponentProfile(opponentName,opponentId,log){
     if(titles&&titles>0)attrs.push(titles+" título"+(titles>1?"s":"")+" ATP na carreira");
     var styleText=attrs.join(". ")+".";
     var styleSM=wikitext.match(/==\s*(?:Playing style|Style of play)\s*==\s*\n([\s\S]*?)(?:\n==|$)/i);
-    if(styleSM){var st=styleSM[1].replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g,"$2").replace(/\{\{[^}]*\}\}/g,"").replace(/'{2,}/g,"").replace(/<ref[^>]*>[\s\S]*?<\/ref>/g,"").replace(/<ref[^/]*\/>/g,"").replace(/<[^>]+>/g,"").replace(/\n+/g," ").trim();var sentences=st.match(/[^.!?]+[.!?]+/g)||[];if(sentences.length>0)styleText=sentences.slice(0,3).join(" ").trim();}
+    if(styleSM){var st=styleSM[1]
+      .replace(/\[\[File:[^\]]*\]\]/gi,"")
+      .replace(/\[\[Image:[^\]]*\]\]/gi,"")
+      .replace(/\[\[([^\]|]*\|)?([^\]]*)\]\]/g,"$2")
+      .replace(/\{\{[^}]*\}\}/g,"")
+      .replace(/'{2,}/g,"")
+      .replace(/<ref[^>]*>[\s\S]*?<\/ref>/g,"")
+      .replace(/<ref[^/]*\/>/g,"")
+      .replace(/<[^>]+>/g,"")
+      .replace(/thumb\|[^.]*\./gi,"")
+      .replace(/\|/g," ")
+      .replace(/\s{2,}/g," ")
+      .replace(/\n+/g," ").trim();
+      var sentences=st.match(/[^.!?]+[.!?]+/g)||[];
+      if(sentences.length>0){
+        styleText=sentences.slice(0,3).join(" ").trim();
+        styleText=styleText
+          .replace(/is an? /gi,"é um ")
+          .replace(/known for his/gi,"conhecido por seu")
+          .replace(/known for her/gi,"conhecida por sua")
+          .replace(/His primary weapon is his/gi,"Sua principal arma é o")
+          .replace(/Her primary weapon is her/gi,"Sua principal arma é o")
+          .replace(/strong serve/gi,"saque forte")
+          .replace(/forehand/gi,"forehand")
+          .replace(/backhand/gi,"backhand")
+          .replace(/aggressive/gi,"agressivo")
+          .replace(/all-court player/gi,"jogador completo")
+          .replace(/baseline player/gi,"jogador de fundo de quadra")
+          .replace(/serve[- ]and[- ]volley/gi,"saque e voleio");
+      }
+    }
     var atpSlug=null;for(var k in ATP_SLUGS){if(opponentName.indexOf(k)!==-1){atpSlug=ATP_SLUGS[k];break;}}
     var profile={name:opponentName,ranking:currentRanking,country:cc,age:age,height:heightVal,hand:hand,style:styleText||null,titles:titles,careerHigh:careerHigh,atp_slug:atpSlug,updatedAt:new Date().toISOString()};
     await kv.set("fn:opponentProfile",JSON.stringify(profile),{ex:86400*7});
