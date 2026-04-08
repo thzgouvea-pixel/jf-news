@@ -1290,6 +1290,7 @@ export default function JoaoFonsecaNews() {
   var _prizeMoney = useState(null); var prizeMoney = _prizeMoney[0]; var setPrizeMoney = _prizeMoney[1];
   var _careerStats = useState(null); var careerStats = _careerStats[0]; var setCareerStats = _careerStats[1];
   var _liveMatch = useState(null); var liveMatch = _liveMatch[0]; var setLiveMatch = _liveMatch[1];
+  var _highlightVideo = useState(null); var highlightVideo = _highlightVideo[0]; var setHighlightVideo = _highlightVideo[1];
   var _winProb = useState(null); var winProb = _winProb[0]; var setWinProb = _winProb[1];
   var _visibleCount = useState(12); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
@@ -1389,6 +1390,12 @@ export default function JoaoFonsecaNews() {
       if (!document.hidden) pollLive();
     }, 30000);
     return function() { clearInterval(iv); };
+  }, []);
+
+  useEffect(function() {
+    fetch("/api/manual-video").then(function(r) { return r.json(); }).then(function(d) {
+      if (d && d.videoId) setHighlightVideo(d);
+    }).catch(function() {});
   }, []);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 60000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -1573,6 +1580,27 @@ export default function JoaoFonsecaNews() {
 
         {/* Última Partida */}
         <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
+
+        {/* Melhores momentos — YouTube embed */}
+        {highlightVideo && highlightVideo.videoId && (
+          <section style={{ padding: "20px 0 0" }}>
+            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Melhores momentos da última partida</p>
+            <div style={{ borderRadius: 16, overflow: "hidden", background: "#000", border: "1px solid " + BORDER }}>
+              <div style={{ position: "relative", paddingBottom: "56.25%", height: 0 }}>
+                <iframe
+                  src={"https://www.youtube.com/embed/" + highlightVideo.videoId}
+                  title={highlightVideo.title || "Melhores momentos"}
+                  style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: "none" }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </div>
+            {highlightVideo.title && (
+              <p style={{ margin: "8px 0 0", fontSize: 12, color: SUB, fontFamily: SANS }}>{highlightVideo.title}</p>
+            )}
+          </section>
+        )}
 
         {/* Notícias */}
         <section style={{ padding: "20px 0 0" }}>
