@@ -50,11 +50,15 @@ var ATP_SLUGS = {
 async function sofaFetch(path, apiKey) {
   var url = "https://" + RAPIDAPI_HOST + "/api/sofascore" + path;
   console.log("[cron] Fetching:", path);
-  var res = await fetch(url, {
-    headers: { "x-rapidapi-host": RAPIDAPI_HOST, "x-rapidapi-key": apiKey },
-  });
-  if (!res.ok) { console.log("[cron] Error " + res.status + " for " + path); return null; }
-  return res.json();
+  try {
+    var res = await fetch(url, {
+      headers: { "x-rapidapi-host": RAPIDAPI_HOST, "x-rapidapi-key": apiKey },
+    });
+    if (!res.ok) { console.log("[cron] Error " + res.status + " for " + path); return null; }
+    var text = await res.text();
+    if (!text || text.length < 2) return null;
+    return JSON.parse(text);
+  } catch (e) { console.log("[cron] Parse error for " + path + ": " + e.message); return null; }
 }
 
 // ===== OPPONENT RANKING — from ESPN (automatic, no API key needed) =====
