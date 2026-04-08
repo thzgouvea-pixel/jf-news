@@ -395,6 +395,14 @@ async function fetchOdds(nextMatch, apiKey, log) {
 function parseMatch(m, isNext) {
   if (!m) return null;
   var homeTeam=m.homeTeam||{}, awayTeam=m.awayTeam||{}, tournament=m.tournament||{}, season=m.season||{}, roundInfo=m.roundInfo||{}, homeScore=m.homeScore||{}, awayScore=m.awayScore||{};
+  // Debug: log raw data for next match
+  if (isNext) {
+    console.log("[cron] nextMatch raw keys:", Object.keys(m).join(","));
+    console.log("[cron] roundInfo:", JSON.stringify(m.roundInfo||"none"));
+    console.log("[cron] venue:", JSON.stringify(m.venue||"none"));
+    console.log("[cron] season:", JSON.stringify({name:season.name,slug:season.slug}));
+    if (m.tournament) console.log("[cron] tournament:", JSON.stringify({name:tournament.name,slug:tournament.slug,groundType:tournament.groundType}));
+  }
   var isFonsecaHome = (homeTeam.slug||"").toLowerCase().includes(FONSECA_SLUG);
   var opponent = isFonsecaHome ? awayTeam : homeTeam;
   var detectedSurface = "";
@@ -419,8 +427,14 @@ function parseMatch(m, isNext) {
     else if (typeof m.venue === "object") courtName = m.venue.stadium || m.venue.name || m.venue.court || null;
   }
   if (!courtName && m.courtName) courtName = m.courtName;
-  // Round translation
-  var roundName = roundInfo.name || "";
+  // Round translation — try multiple field names
+  var roundName = roundInfo.name || roundInfo.slug || m.round || m.roundName || "";
+  if (!roundName && roundInfo.round) roundName = String(roundInfo.round);
+  if (!roundName && season.name) {
+    // Sometimes round is embedded in season name like "ATP Monte Carlo, Monaco Men Singles 2026, Round of 16"
+    var rnMatch = season.name.match(/(Round of \d+|Quarterfinal|Semifinal|Final|1st round|2nd round|3rd round|4th round)/i);
+    if (rnMatch) roundName = rnMatch[1];
+  }
   var roundTranslate = {"Round of 128":"1ª Rodada","Round of 64":"2ª Rodada","Round of 32":"2ª Rodada","Round of 16":"Oitavas de final","Quarterfinals":"Quartas de final","Semifinals":"Semifinal","Final":"Final","Qualification":"Qualificatório","1st round":"1ª Rodada","2nd round":"2ª Rodada","3rd round":"3ª Rodada"};
   var roundDisplay = roundTranslate[roundName] || roundName;
   var result = { event_id:m.id, tournament_name:tournament.name||"", tournament_category:season.name||tournament.name||"", surface:detectedSurface, city:(tournament.name||"").split(",")[0]||"", round:roundDisplay, date:m.timestamp?new Date(m.timestamp*1000).toISOString():(m.startTimestamp?new Date(m.startTimestamp*1000).toISOString():null), opponent_name:opponent.shortName||opponent.name||"A definir", opponent_id:opponent.id||null, opponent_ranking:opponent.ranking||null, opponent_country:opponent.country?opponent.country.name:"", court:courtName, isFonsecaHome };
@@ -686,21 +700,31 @@ export default async function handler(req,res){
           var courtEndpoints=["/v1/event/"+nextMatch.event_id,"/v1/event/details?event_id="+nextMatch.event_id,"/v1/match/details?match_id="+nextMatch.event_id];
           for(var ce=0;ce<courtEndpoints.length;ce++){
             var cd=await sofaFetch(courtEndpoints[ce],apiKey);totalRequests++;
-            if(!cd)continue;
+            if(!cd){log.push("court: endpoint "+ce+" returned null");continue;}
             var ev=cd.event||cd;
+            console.log("[cron] court endpoint "+ce+" keys:", Object.keys(ev).join(","));
+            if(ev.venue)console.log("[cron] venue data:", JSON.stringify(ev.venue).substring(0,200));
+            if(ev.roundInfo)console.log("[cron] roundInfo from event:", JSON.stringify(ev.roundInfo));
             var courtFound=null;
             if(ev.venue){
               if(typeof ev.venue==="string")courtFound=ev.venue;
               else if(typeof ev.venue==="object")courtFound=ev.venue.stadium||ev.venue.name||ev.venue.court||null;
             }
             if(!courtFound)courtFound=ev.courtName||ev.court||null;
+            // Also try to get round from event details if we don't have it
+            if(!nextMatch.round&&ev.roundInfo){
+              var ri=ev.roundInfo;
+              var rn=ri.name||ri.slug||"";
+              var rt={"Round of 128":"1ª Rodada","Round of 64":"2ª Rodada","Round of 32":"2ª Rodada","Round of 16":"Oitavas de final","Quarterfinals":"Quartas de final","Semifinals":"Semifinal","Final":"Final"};
+              if(rn){nextMatch.round=rt[rn]||rn;log.push("round: "+nextMatch.round+" (from event details)");}
+            }
             if(courtFound){nextMatch.court=courtFound;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("court: "+courtFound);break;}
           }
           if(!nextMatch.court)log.push("court: not available yet");
         }catch(e){log.push("court: error "+e.message);}
       }
       if(!nextMatch.opponent_ranking){try{var op=await kv.get("fn:opponentProfile");if(op){var opp=typeof op==="string"?JSON.parse(op):op;if(opp&&opp.ranking){nextMatch.opponent_ranking=opp.ranking;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("nextMatch: ranking fallback #"+opp.ranking);}}}catch(e){}}
-      log.push("nextMatch: vs "+nextMatch.opponent_name+(nextMatch.opponent_ranking?" #"+nextMatch.opponent_ranking:"")+" @ "+nextMatch.tournament_name);
+      log.push("nextMatch: vs "+nextMatch.opponent_name+(nextMatch.opponent_ranking?" #"+nextMatch.opponent_ranking:"")+" @ "+nextMatch.tournament_name+(nextMatch.round?" · "+nextMatch.round:"")+(nextMatch.court?" · "+nextMatch.court:""));
     }else{
       var mn=await kv.get("fn:nextMatch");if(mn){var mp=typeof mn==="string"?JSON.parse(mn):mn;if(mp&&mp.opponent_name){if(mp.opponent_id&&(!mp.opponent_ranking||!mp.opponent_country)){var mod=await fetchOpponentDetails(mp.opponent_id,mp.opponent_name,apiKey,log);if(mod){mp=enrichMatch(mp,mod);await kv.set("fn:nextMatch",JSON.stringify(mp),{ex:86400*7});totalRequests++;}}log.push("nextMatch: manual ("+mp.opponent_name+")");nextMatch=mp;}else{log.push("nextMatch: none");}}else{log.push("nextMatch: none");}
     }
