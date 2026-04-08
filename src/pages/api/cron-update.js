@@ -704,36 +704,55 @@ export default async function handler(req,res){
         await kv.set("fn:prevOpponentId",String(nextMatch.opponent_id));
       }
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-      // Court: fetch from SofaScore PUBLIC API (not RapidAPI)
+      // Court: try SofaScore public API via proxy, then ATP Tour
       if(nextMatch.event_id && !nextMatch.court){
         try{
-          var courtRes = await fetch("https://api.sofascore.com/api/v1/event/"+nextMatch.event_id, {
-            headers: {
-              "User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-              "Accept":"application/json",
-              "Referer":"https://www.sofascore.com/",
-              "Origin":"https://www.sofascore.com",
-              "Cache-Control":"no-cache"
-            }
-          });
-          if(courtRes.ok){
-            var courtText = await courtRes.text();
-            var courtData = JSON.parse(courtText);
-            var ev = courtData.event || courtData;
-            console.log("[cron] SofaScore public event keys:", Object.keys(ev).join(","));
-            if(ev.venue){
-              console.log("[cron] venue from public API:", JSON.stringify(ev.venue).substring(0,300));
-              var venueName = null;
-              if(typeof ev.venue === "string") venueName = ev.venue;
-              else if(typeof ev.venue === "object") venueName = ev.venue.stadium || ev.venue.name || ev.venue.fieldName || ev.venue.court || null;
-              if(venueName){
-                nextMatch.court = venueName;
-                await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-                log.push("court: " + venueName + " (SofaScore public API)");
-              } else { log.push("court: venue object found but no name"); }
-            } else { log.push("court: no venue in public API"); }
-          } else { log.push("court: public API HTTP " + courtRes.status); }
-        }catch(e){log.push("court: public API error " + e.message);}
+          var courtFound = null;
+          // Attempt 1: SofaScore public API via allorigins proxy
+          try {
+            var proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent("https://api.sofascore.com/api/v1/event/" + nextMatch.event_id);
+            var pRes = await fetch(proxyUrl, {headers:{"Accept":"application/json"}});
+            if(pRes.ok){
+              var pText = await pRes.text();
+              if(pText && pText.length > 10){
+                var pData = JSON.parse(pText);
+                var pEv = pData.event || pData;
+                if(pEv.venue){
+                  console.log("[cron] venue via proxy:", JSON.stringify(pEv.venue).substring(0,200));
+                  if(typeof pEv.venue === "string") courtFound = pEv.venue;
+                  else if(typeof pEv.venue === "object") courtFound = pEv.venue.stadium || pEv.venue.name || pEv.venue.fieldName || null;
+                }
+              }
+            } else { console.log("[cron] proxy HTTP " + pRes.status); }
+          } catch(pe) { console.log("[cron] proxy error: " + pe.message); }
+
+          // Attempt 2: corsproxy.io
+          if(!courtFound){
+            try {
+              var proxy2 = "https://corsproxy.io/?" + encodeURIComponent("https://api.sofascore.com/api/v1/event/" + nextMatch.event_id);
+              var p2Res = await fetch(proxy2, {headers:{"Accept":"application/json"}});
+              if(p2Res.ok){
+                var p2Text = await p2Res.text();
+                if(p2Text && p2Text.length > 10){
+                  var p2Data = JSON.parse(p2Text);
+                  var p2Ev = p2Data.event || p2Data;
+                  if(p2Ev.venue){
+                    if(typeof p2Ev.venue === "string") courtFound = p2Ev.venue;
+                    else if(typeof p2Ev.venue === "object") courtFound = p2Ev.venue.stadium || p2Ev.venue.name || null;
+                  }
+                }
+              }
+            } catch(p2e) { console.log("[cron] proxy2 error: " + p2e.message); }
+          }
+
+          if(courtFound){
+            nextMatch.court = courtFound;
+            await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
+            log.push("court: " + courtFound);
+          } else {
+            log.push("court: not found via proxies");
+          }
+        }catch(e){log.push("court: error " + e.message);}
       } else if(nextMatch.court) { log.push("court: " + nextMatch.court); }
       if(!nextMatch.opponent_ranking){try{var op=await kv.get("fn:opponentProfile");if(op){var opp=typeof op==="string"?JSON.parse(op):op;if(opp&&opp.ranking){nextMatch.opponent_ranking=opp.ranking;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("nextMatch: ranking fallback #"+opp.ranking);}}}catch(e){}}
       log.push("nextMatch: vs "+nextMatch.opponent_name+(nextMatch.opponent_ranking?" #"+nextMatch.opponent_ranking:"")+" @ "+nextMatch.tournament_name+(nextMatch.round?" · "+nextMatch.round:"")+(nextMatch.court?" · "+nextMatch.court:""));
