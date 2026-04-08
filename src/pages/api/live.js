@@ -114,6 +114,8 @@ export default async function handler(req, res) {
 
     var tournament = fonsecaMatch.tournament || {};
     var roundInfo = fonsecaMatch.roundInfo || {};
+    var venue = fonsecaMatch.venue || fonsecaMatch.courtName || fonsecaMatch.court || null;
+    if (!venue && fonsecaMatch.venue && typeof fonsecaMatch.venue === "object") venue = fonsecaMatch.venue.name || fonsecaMatch.venue.stadium || null;
 
     var result = {
       live: true,
@@ -138,6 +140,7 @@ export default async function handler(req, res) {
         return "Duro";
       })(),
       round: roundInfo.name || "",
+      court: venue,
       checkedAt: new Date().toISOString(),
     };
 
