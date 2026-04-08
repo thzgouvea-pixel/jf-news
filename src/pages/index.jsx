@@ -591,7 +591,7 @@ var TournamentFactsCarousel = function(props) {
               }
             }
           }} style={{
-            fontSize: 13, fontWeight: 500, color: surfaceColor,
+            fontSize: 13, fontWeight: 500, color: "#4FC3F7",
             fontFamily: SANS, lineHeight: 1.4, whiteSpace: "nowrap",
           }}>{fact.text}</span>
         </div>
@@ -607,7 +607,7 @@ var TournamentFactsCarousel = function(props) {
                 style={{
                   width: isActive ? 16 : 5, height: 5,
                   borderRadius: 3,
-                  background: isActive ? surfaceColor : "rgba(255,255,255,0.12)",
+                  background: isActive ? "#4FC3F7" : "rgba(255,255,255,0.12)",
                   border: "none", padding: 0, cursor: "pointer",
                   transition: "all 0.3s ease",
                 }}
@@ -619,7 +619,7 @@ var TournamentFactsCarousel = function(props) {
         {/* Progress bar */}
         {!paused && cleanFacts.length > 1 && (
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: "rgba(255,255,255,0.03)" }}>
-            <div style={{ height: 2, background: surfaceColor + "30", borderRadius: 1, animation: "factProgress 5s linear infinite" }} />
+            <div style={{ height: 2, background: "#4FC3F730", borderRadius: 1, animation: "factProgress 5s linear infinite" }} />
           </div>
         )}
       </div>
