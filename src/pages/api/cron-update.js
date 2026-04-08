@@ -478,7 +478,18 @@ function parseMatch(m, isNext) {
   if(detectedSurface.toLowerCase()==="clay") detectedSurface="Saibro";
   else if(detectedSurface.toLowerCase()==="grass") detectedSurface="Grama";
   else if(detectedSurface.toLowerCase()==="hard"||detectedSurface.toLowerCase()==="hardcourt") detectedSurface="Duro";
-  var result = { event_id:m.id, tournament_name:tournament.name||"", tournament_category:season.name||tournament.name||"", surface:detectedSurface, city:(tournament.name||"").split(",")[0]||"", round:roundInfo.name||"", date:m.timestamp?new Date(m.timestamp*1000).toISOString():(m.startTimestamp?new Date(m.startTimestamp*1000).toISOString():null), opponent_name:opponent.shortName||opponent.name||"A definir", opponent_id:opponent.id||null, opponent_ranking:opponent.ranking||null, opponent_country:opponent.country?opponent.country.name:"", court:m.venue||m.courtName||null, isFonsecaHome };
+  // Extract court/venue name
+  var courtName = null;
+  if (m.venue) {
+    if (typeof m.venue === "string") courtName = m.venue;
+    else if (typeof m.venue === "object") courtName = m.venue.stadium || m.venue.name || m.venue.court || null;
+  }
+  if (!courtName && m.courtName) courtName = m.courtName;
+  // Round translation
+  var roundName = roundInfo.name || "";
+  var roundTranslate = {"Round of 128":"1ª Rodada","Round of 64":"2ª Rodada","Round of 32":"2ª Rodada","Round of 16":"Oitavas de final","Quarterfinals":"Quartas de final","Semifinals":"Semifinal","Final":"Final","Qualification":"Qualificatório","1st round":"1ª Rodada","2nd round":"2ª Rodada","3rd round":"3ª Rodada"};
+  var roundDisplay = roundTranslate[roundName] || roundName;
+  var result = { event_id:m.id, tournament_name:tournament.name||"", tournament_category:season.name||tournament.name||"", surface:detectedSurface, city:(tournament.name||"").split(",")[0]||"", round:roundDisplay, date:m.timestamp?new Date(m.timestamp*1000).toISOString():(m.startTimestamp?new Date(m.startTimestamp*1000).toISOString():null), opponent_name:opponent.shortName||opponent.name||"A definir", opponent_id:opponent.id||null, opponent_ranking:opponent.ranking||null, opponent_country:opponent.country?opponent.country.name:"", court:courtName, isFonsecaHome };
   if (!isNext) {
     var fScore=isFonsecaHome?homeScore:awayScore, oScore=isFonsecaHome?awayScore:homeScore, sets=[];
     for(var i=1;i<=5;i++){var key="period"+i;if(fScore[key]!==undefined&&oScore[key]!==undefined)sets.push(fScore[key]+"-"+oScore[key]);}
@@ -754,9 +765,13 @@ export default async function handler(req,res){
             var cd=await sofaFetch(courtEndpoints[ce],apiKey);totalRequests++;
             if(!cd)continue;
             var ev=cd.event||cd;
-            var courtName=ev.venue||ev.courtName||ev.court||(ev.roundInfo&&ev.roundInfo.cupRoundType)||(ev.venue&&ev.venue.stadium)||null;
-            if(!courtName&&ev.venue&&typeof ev.venue==="object")courtName=ev.venue.name||ev.venue.stadium||ev.venue.court||null;
-            if(courtName){nextMatch.court=courtName;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("court: "+courtName);break;}
+            var courtFound=null;
+            if(ev.venue){
+              if(typeof ev.venue==="string")courtFound=ev.venue;
+              else if(typeof ev.venue==="object")courtFound=ev.venue.stadium||ev.venue.name||ev.venue.court||null;
+            }
+            if(!courtFound)courtFound=ev.courtName||ev.court||null;
+            if(courtFound){nextMatch.court=courtFound;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("court: "+courtFound);break;}
           }
           if(!nextMatch.court)log.push("court: not available yet");
         }catch(e){log.push("court: error "+e.message);}
