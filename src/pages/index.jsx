@@ -1623,7 +1623,7 @@ export default function JoaoFonsecaNews() {
         "@keyframes slideU{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}" +
         "@keyframes fadeInO{from{opacity:0}to{opacity:1}}" +
         "@keyframes factProgress{from{width:0}to{width:100%}}" +
-        "@media(max-width:768px){.desktop-nav{display:none!important}.mobile-tab-bar{display:flex!important;flex-direction:column}.mobile-pad{padding-bottom:90px!important}}" +
+        "@media(max-width:768px){.desktop-nav{display:none!important}.mobile-tab-bar{display:flex!important;flex-direction:column}.mobile-pad{padding-bottom:100px!important}}" +
         "@media(min-width:769px){.mobile-tab-bar{display:none!important}}"
       }</style>
 
@@ -1904,7 +1904,7 @@ export default function JoaoFonsecaNews() {
             })}
           </div>
         )}
-        <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", justifyContent: "space-around", alignItems: "center", padding: "10px 0 0" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", justifyContent: "space-around", alignItems: "center", padding: "12px 0 4px" }}>
           {[
             { label: "Home", action: function(){ window.scrollTo({top:0,behavior:"smooth"}); setShowMaisMenu(false); }, icon: function(a){ return <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>; } },
             { label: "Ranking", action: function(){ setShowRanking(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>; } },
@@ -1921,7 +1921,7 @@ export default function JoaoFonsecaNews() {
             );
           })}
         </div>
-        <div style={{ height: "env(safe-area-inset-bottom, 8px)" }}></div>
+        <div style={{ height: 20, flexShrink: 0 }}></div>
       </div>
 
     </div>
