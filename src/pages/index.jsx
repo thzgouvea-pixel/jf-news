@@ -1404,10 +1404,18 @@ export default function JoaoFonsecaNews() {
 
   useEffect(function() {
     var lastScrollY = window.scrollY;
+    var scrollDelta = 0;
     var handleScroll = function() {
       var currentY = window.scrollY;
-      if (currentY > lastScrollY && currentY > 100) { setTabBarHidden(true); setShowMaisMenu(false); }
-      else if (currentY < lastScrollY) { setTabBarHidden(false); }
+      var diff = currentY - lastScrollY;
+      scrollDelta += diff;
+      // Only hide after scrolling down 80px consistently
+      if (scrollDelta > 80 && currentY > 150) { setTabBarHidden(true); setShowMaisMenu(false); scrollDelta = 0; }
+      // Show immediately when scrolling up a bit
+      else if (scrollDelta < -30) { setTabBarHidden(false); scrollDelta = 0; }
+      // Reset delta if direction changes
+      if (diff > 0 && scrollDelta < 0) scrollDelta = 0;
+      if (diff < 0 && scrollDelta > 0) scrollDelta = 0;
       setHeaderCompact(currentY > 60);
       lastScrollY = currentY;
     };
@@ -1894,7 +1902,7 @@ export default function JoaoFonsecaNews() {
       )}
 
       {/* Mobile Tab Bar */}
-      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "rgba(255,255,255,0.98)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid " + BORDER, transition: "transform 0.3s ease", transform: tabBarHidden ? "translateY(100%)" : "translateY(0)" }}>
+      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "rgba(255,255,255,0.98)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid " + BORDER, transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)", transform: tabBarHidden ? "translateY(100%)" : "translateY(0)" }}>
         {showMaisMenu && (
           <div style={{ position: "absolute", bottom: "100%", right: 16, background: "white", borderRadius: 16, boxShadow: "0 8px 30px rgba(0,0,0,0.15)", border: "1px solid " + BORDER, padding: "8px 0", minWidth: 180, marginBottom: 6 }}>
             {[
