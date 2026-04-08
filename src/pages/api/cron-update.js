@@ -704,8 +704,31 @@ export default async function handler(req,res){
         await kv.set("fn:prevOpponentId",String(nextMatch.opponent_id));
       }
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-      // Court: not available in this SofaScore API — use manual if needed
-      if(!nextMatch.court)log.push("court: not in API (use manual-video endpoint format if needed)");
+      // Court: fetch from SofaScore PUBLIC API (not RapidAPI)
+      if(nextMatch.event_id && !nextMatch.court){
+        try{
+          var courtRes = await fetch("https://api.sofascore.com/api/v1/event/"+nextMatch.event_id, {
+            headers: {"User-Agent":"FonsecaNews/1.0","Accept":"application/json"}
+          });
+          if(courtRes.ok){
+            var courtText = await courtRes.text();
+            var courtData = JSON.parse(courtText);
+            var ev = courtData.event || courtData;
+            console.log("[cron] SofaScore public event keys:", Object.keys(ev).join(","));
+            if(ev.venue){
+              console.log("[cron] venue from public API:", JSON.stringify(ev.venue).substring(0,300));
+              var venueName = null;
+              if(typeof ev.venue === "string") venueName = ev.venue;
+              else if(typeof ev.venue === "object") venueName = ev.venue.stadium || ev.venue.name || ev.venue.fieldName || ev.venue.court || null;
+              if(venueName){
+                nextMatch.court = venueName;
+                await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
+                log.push("court: " + venueName + " (SofaScore public API)");
+              } else { log.push("court: venue object found but no name"); }
+            } else { log.push("court: no venue in public API"); }
+          } else { log.push("court: public API HTTP " + courtRes.status); }
+        }catch(e){log.push("court: public API error " + e.message);}
+      } else if(nextMatch.court) { log.push("court: " + nextMatch.court); }
       if(!nextMatch.opponent_ranking){try{var op=await kv.get("fn:opponentProfile");if(op){var opp=typeof op==="string"?JSON.parse(op):op;if(opp&&opp.ranking){nextMatch.opponent_ranking=opp.ranking;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("nextMatch: ranking fallback #"+opp.ranking);}}}catch(e){}}
       log.push("nextMatch: vs "+nextMatch.opponent_name+(nextMatch.opponent_ranking?" #"+nextMatch.opponent_ranking:"")+" @ "+nextMatch.tournament_name+(nextMatch.round?" · "+nextMatch.round:"")+(nextMatch.court?" · "+nextMatch.court:""));
     }else{
