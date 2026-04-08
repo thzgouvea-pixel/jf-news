@@ -914,7 +914,7 @@ var LiveScoreCard = function(props) {
     { label: "1o Saque %", f: fST > 0 ? Math.round((fStats.firstserveaccuracy||0)/fST*100) : 0, o: oST > 0 ? Math.round((oStats.firstserveaccuracy||0)/oST*100) : 0, pct: true },
     { label: "Winners", f: fStats.winners || 0, o: oStats.winners || 0 },
     { label: "Break Points", f: fStats.breakpointsscored || 0, o: oStats.breakpointsscored || 0 },
-    { label: "Pontos", f: fStats.pointstotal || 0, o: oStats.pointstotal || 0 },
+    { label: "Pontos", f: (fStats.servicepointsscored||0) + (fStats.receiverpointsscored||0) || fStats.pointstotal || 0, o: (oStats.servicepointsscored||0) + (oStats.receiverpointsscored||0) || oStats.pointstotal || 0 },
   ].filter(function(r) { return r.f > 0 || r.o > 0; });
 
   return (
@@ -1135,7 +1135,7 @@ var PlayerBlock = function(props) {
           { label: "Pts no 1o saque", fVal: fPts1st, oVal: oPts1st, pct: true, icon: "P1" },
           { label: "Pts no 2o saque", fVal: fPts2nd, oVal: oPts2nd, pct: true, icon: "P2" },
           { label: "Breaks salvos", fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0, icon: "BP" },
-          { label: "Total de pontos", fVal: f.pointstotal || 0, oVal: o.pointstotal || 0, icon: "TP" },
+          { label: "Total de pontos", fVal: (f.servicepointsscored||0) + (f.receiverpointsscored||0) || f.pointstotal || 0, oVal: (o.servicepointsscored||0) + (o.receiverpointsscored||0) || o.pointstotal || 0, icon: "TP" },
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
         if (statRows.length === 0) return null;
         var oppName = matchStats.opponent_name || "Adv.";
