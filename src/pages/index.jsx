@@ -1464,7 +1464,7 @@ export default function JoaoFonsecaNews() {
 
   useEffect(function() {
     var pollLive = function() {
-      fetch("/api/live?t=" + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
+      fetch("/api/live").then(function(r) { return r.json(); }).then(function(d) {
         if (d && d.live) {
           setLiveMatch(d);
         } else {
@@ -1480,7 +1480,7 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   useEffect(function() {
-    fetch("/api/manual-video?t=" + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/manual-video").then(function(r) { return r.json(); }).then(function(d) {
       if (d && d.videoId) setHighlightVideo(d);
     }).catch(function() {});
   }, []);
@@ -1505,12 +1505,12 @@ export default function JoaoFonsecaNews() {
 
   var fetchNews = function() {
     setLoading(true);
-    fetch("/api/news?t=" + Date.now()).then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
+    fetch("/api/news").then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
   };
 
   var handleRefresh = function() {
     fetchNews();
-    fetch("/api/sofascore-data?t=" + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
@@ -1544,7 +1544,7 @@ export default function JoaoFonsecaNews() {
         localStorage.setItem("fn_standalone_tracked", "1");
       }
     } catch(e) {}
-    fetch("/api/sofascore-data?t=" + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
@@ -1581,6 +1581,8 @@ export default function JoaoFonsecaNews() {
       <Head>
         <title>Fonseca News — Guia de bolso sobre João Fonseca</title>
         <meta name="description" content="Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas, próximos jogos e mais." />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-J5CD56E1VX"></script>
+        <script dangerouslySetInnerHTML={{ __html: "window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-J5CD56E1VX');" }} />
       </Head>
       <style>{
         "@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');" +
