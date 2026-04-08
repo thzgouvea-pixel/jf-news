@@ -756,15 +756,16 @@ export default async function handler(req,res){
           log.push("court: " + cachedCourt + " (cached 4h)");
         }
       }catch(e){}
+      var hasAiRanking = false;
       try{
         var cachedRank = await kv.get(rankCacheKey);
         if(cachedRank){
           var cr = parseInt(String(cachedRank), 10);
-          if(cr > 0 && cr < 1000){ nextMatch.opponent_ranking = cr; log.push("ranking: #" + cr + " (cached)"); }
+          if(cr > 0 && cr < 1000){ nextMatch.opponent_ranking = cr; hasAiRanking = true; log.push("ranking: #" + cr + " (cached)"); }
         }
       }catch(e){}
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-      if(!nextMatch.court || !nextMatch.opponent_ranking){
+      if(!nextMatch.court || !hasAiRanking){
         try{
           var anthropicKey = process.env.ANTHROPIC_API_KEY;
           if(anthropicKey){
