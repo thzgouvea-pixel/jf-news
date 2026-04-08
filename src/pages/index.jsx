@@ -870,7 +870,7 @@ var NextDuelCard = function(props) {
             </a>
           </div>
           <div style={{ padding: "0 18px 22px", textAlign: "center" }}>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>{match.court ? "Quadra " + match.court : "Quadra ainda desconhecida"}</span>
+            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>{match.court || props.courtName ? "Quadra " + (match.court || props.courtName) : "Quadra ainda desconhecida"}</span>
           </div>
         </>
       )}
@@ -1378,6 +1378,7 @@ export default function JoaoFonsecaNews() {
   var _careerStats = useState(null); var careerStats = _careerStats[0]; var setCareerStats = _careerStats[1];
   var _liveMatch = useState(null); var liveMatch = _liveMatch[0]; var setLiveMatch = _liveMatch[1];
   var _highlightVideo = useState(null); var highlightVideo = _highlightVideo[0]; var setHighlightVideo = _highlightVideo[1];
+  var _courtName = useState(null); var courtName = _courtName[0]; var setCourtName = _courtName[1];
   var _winProb = useState(null); var winProb = _winProb[0]; var setWinProb = _winProb[1];
   var _visibleCount = useState(12); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
@@ -1484,6 +1485,21 @@ export default function JoaoFonsecaNews() {
       if (d && d.videoId) setHighlightVideo(d);
     }).catch(function() {});
   }, []);
+
+  // Fetch court name from SofaScore public API (client-side bypasses Cloudflare)
+  useEffect(function() {
+    if (!nextMatch || !nextMatch.event_id || nextMatch.court) return;
+    fetch("https://api.sofascore.com/api/v1/event/" + nextMatch.event_id)
+      .then(function(r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(d) {
+        var ev = d.event || d;
+        if (ev.venue) {
+          var name = typeof ev.venue === "string" ? ev.venue : (ev.venue.stadium || ev.venue.name || null);
+          if (name) setCourtName(name);
+        }
+      })
+      .catch(function() { /* CORS or other error — silent fail */ });
+  }, [nextMatch]);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 60000); return function() { clearTimeout(t); }; }, [popupDismissed]);
 
@@ -1660,7 +1676,7 @@ export default function JoaoFonsecaNews() {
 
         <section style={{ padding: "20px 0 0" }}>
           {!liveMatch && <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>}
-          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} />
+          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} courtName={courtName} />
         </section>
 
         {/* Curiosidades do torneio — carrossel automático */}
