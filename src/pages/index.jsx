@@ -1633,7 +1633,7 @@ export default function JoaoFonsecaNews() {
         "@keyframes slideU{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}" +
         "@keyframes fadeInO{from{opacity:0}to{opacity:1}}" +
         "@keyframes factProgress{from{width:0}to{width:100%}}" +
-        "@media(max-width:768px){.desktop-nav{display:none!important}.mobile-tab-bar{display:flex!important;flex-direction:column}.mobile-pad{padding-bottom:100px!important}}" +
+        "@media(max-width:768px){.desktop-nav{display:none!important}.mobile-tab-bar{display:flex!important;flex-direction:column}.mobile-pad{padding-bottom:80px!important}}" +
         "@media(min-width:769px){.mobile-tab-bar{display:none!important}}"
       }</style>
 
@@ -1646,7 +1646,6 @@ export default function JoaoFonsecaNews() {
             <div style={{ minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
                 <span style={{ fontFamily: SERIF, fontSize: headerCompact ? 16 : 22, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap", transition: "font-size 0.3s ease" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
-                {dp && <span style={{ fontSize: headerCompact ? 10 : 12, fontWeight: 700, color: "#132440", fontFamily: SANS, whiteSpace: "nowrap", transition: "font-size 0.3s ease" }}>{"#" + dp.ranking}</span>}
               </div>
               <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, display: "flex", alignItems: "center", gap: 4, marginTop: -1, overflow: "hidden", maxHeight: headerCompact ? 0 : 16, opacity: headerCompact ? 0 : 1, transition: "all 0.3s ease" }}>
                 {lastUpdate && (function() {
@@ -1802,7 +1801,7 @@ export default function JoaoFonsecaNews() {
         <footer style={{ padding: "28px 0", borderTop: "1px solid " + BORDER, marginTop: 8 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 }}>
             {[
-              { href: "https://www.instagram.com/joaoffonseca", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1.5" fill={SUB} stroke="none"/></svg> },
+              { href: "https://www.instagram.com/joaoffonseca", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill={SUB} stroke="none"/></svg> },
               { href: "https://x.com/JFonsecaNews", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill={SUB}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
               { href: "mailto:thzgouvea@gmail.com", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg> },
             ].map(function(s, i) {
@@ -1914,24 +1913,24 @@ export default function JoaoFonsecaNews() {
             })}
           </div>
         )}
-        <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", justifyContent: "space-around", alignItems: "center", padding: "12px 0 4px" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto", display: "flex", justifyContent: "space-around", alignItems: "center", padding: "8px 0 2px" }}>
           {[
-            { label: "Home", action: function(){ window.scrollTo({top:0,behavior:"smooth"}); setShowMaisMenu(false); }, icon: function(a){ return <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>; } },
-            { label: "Ranking", action: function(){ setShowRanking(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>; } },
-            { label: "Calendário", action: function(){ setShowCalendar(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; } },
-            { label: "Conquistas", action: function(){ setShowTitles(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>; } },
-            { label: "Mais", action: function(){ setShowMaisMenu(!showMaisMenu); }, icon: function(a){ return <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/><circle cx="5" cy="12" r="1.5"/></svg>; } },
+            { label: "Home", action: function(){ window.scrollTo({top:0,behavior:"smooth"}); setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>; } },
+            { label: "Ranking", action: function(){ setShowRanking(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>; } },
+            { label: "Calendário", action: function(){ setShowCalendar(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>; } },
+            { label: "Conquistas", action: function(){ setShowTitles(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>; } },
+            { label: "Mais", action: function(){ setShowMaisMenu(!showMaisMenu); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>; } },
           ].map(function(tab, i) {
             var isActive = (tab.label === "Mais" && showMaisMenu);
             return (
-              <button key={i} onClick={tab.action} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer", padding: "4px 14px", minWidth: 60 }}>
+              <button key={i} onClick={tab.action} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "none", border: "none", cursor: "pointer", padding: "3px 10px", minWidth: 52 }}>
                 {tab.icon(isActive)}
-                <span style={{ fontSize: 11, fontWeight: isActive ? 700 : 500, color: isActive ? "#4FC3F7" : "rgba(0,0,0,0.35)", fontFamily: SANS }}>{tab.label}</span>
+                <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, color: isActive ? "#4FC3F7" : "rgba(0,0,0,0.35)", fontFamily: SANS }}>{tab.label}</span>
               </button>
             );
           })}
         </div>
-        <div style={{ height: 20, flexShrink: 0 }}></div>
+        <div style={{ height: 14, flexShrink: 0 }}></div>
       </div>
 
     </div>
