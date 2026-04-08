@@ -399,6 +399,7 @@ function parseMatch(m, isNext) {
   if (isNext) {
     console.log("[cron] nextMatch raw keys:", Object.keys(m).join(","));
     console.log("[cron] roundInfo:", JSON.stringify(m.roundInfo||"none"));
+    console.log("[cron] round field:", JSON.stringify(m.round));
     console.log("[cron] venue:", JSON.stringify(m.venue||"none"));
     console.log("[cron] season:", JSON.stringify({name:season.name,slug:season.slug}));
     if (m.tournament) console.log("[cron] tournament:", JSON.stringify({name:tournament.name,slug:tournament.slug,groundType:tournament.groundType}));
@@ -428,12 +429,17 @@ function parseMatch(m, isNext) {
   }
   if (!courtName && m.courtName) courtName = m.courtName;
   // Round translation — try multiple field names
-  var roundName = roundInfo.name || roundInfo.slug || m.round || m.roundName || "";
-  if (!roundName && roundInfo.round) roundName = String(roundInfo.round);
-  if (!roundName && season.name) {
-    // Sometimes round is embedded in season name like "ATP Monte Carlo, Monaco Men Singles 2026, Round of 16"
-    var rnMatch = season.name.match(/(Round of \d+|Quarterfinal|Semifinal|Final|1st round|2nd round|3rd round|4th round)/i);
-    if (rnMatch) roundName = rnMatch[1];
+  var roundName = "";
+  if (roundInfo && roundInfo.name) roundName = roundInfo.name;
+  else if (m.round !== undefined && m.round !== null) {
+    // m.round can be a number (4 = Round of 16) or string
+    var rVal = m.round;
+    if (typeof rVal === "number") {
+      var roundNumMap = {1:"Final",2:"Semifinal",4:"Quartas de final",8:"Oitavas de final",16:"2ª Rodada",32:"2ª Rodada",64:"1ª Rodada",128:"1ª Rodada"};
+      roundName = roundNumMap[rVal] || "Rodada " + rVal;
+    } else {
+      roundName = String(rVal);
+    }
   }
   var roundTranslate = {"Round of 128":"1ª Rodada","Round of 64":"2ª Rodada","Round of 32":"2ª Rodada","Round of 16":"Oitavas de final","Quarterfinals":"Quartas de final","Semifinals":"Semifinal","Final":"Final","Qualification":"Qualificatório","1st round":"1ª Rodada","2nd round":"2ª Rodada","3rd round":"3ª Rodada"};
   var roundDisplay = roundTranslate[roundName] || roundName;
@@ -694,35 +700,8 @@ export default async function handler(req,res){
         await kv.set("fn:prevOpponentId",String(nextMatch.opponent_id));
       }
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-      // Fetch court/venue from event details
-      if(nextMatch.event_id){
-        try{
-          var courtEndpoints=["/v1/event/"+nextMatch.event_id,"/v1/event/details?event_id="+nextMatch.event_id,"/v1/match/details?match_id="+nextMatch.event_id];
-          for(var ce=0;ce<courtEndpoints.length;ce++){
-            var cd=await sofaFetch(courtEndpoints[ce],apiKey);totalRequests++;
-            if(!cd){log.push("court: endpoint "+ce+" returned null");continue;}
-            var ev=cd.event||cd;
-            console.log("[cron] court endpoint "+ce+" keys:", Object.keys(ev).join(","));
-            if(ev.venue)console.log("[cron] venue data:", JSON.stringify(ev.venue).substring(0,200));
-            if(ev.roundInfo)console.log("[cron] roundInfo from event:", JSON.stringify(ev.roundInfo));
-            var courtFound=null;
-            if(ev.venue){
-              if(typeof ev.venue==="string")courtFound=ev.venue;
-              else if(typeof ev.venue==="object")courtFound=ev.venue.stadium||ev.venue.name||ev.venue.court||null;
-            }
-            if(!courtFound)courtFound=ev.courtName||ev.court||null;
-            // Also try to get round from event details if we don't have it
-            if(!nextMatch.round&&ev.roundInfo){
-              var ri=ev.roundInfo;
-              var rn=ri.name||ri.slug||"";
-              var rt={"Round of 128":"1ª Rodada","Round of 64":"2ª Rodada","Round of 32":"2ª Rodada","Round of 16":"Oitavas de final","Quarterfinals":"Quartas de final","Semifinals":"Semifinal","Final":"Final"};
-              if(rn){nextMatch.round=rt[rn]||rn;log.push("round: "+nextMatch.round+" (from event details)");}
-            }
-            if(courtFound){nextMatch.court=courtFound;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("court: "+courtFound);break;}
-          }
-          if(!nextMatch.court)log.push("court: not available yet");
-        }catch(e){log.push("court: error "+e.message);}
-      }
+      // Court: not available in this SofaScore API — use manual if needed
+      if(!nextMatch.court)log.push("court: not in API (use manual-video endpoint format if needed)");
       if(!nextMatch.opponent_ranking){try{var op=await kv.get("fn:opponentProfile");if(op){var opp=typeof op==="string"?JSON.parse(op):op;if(opp&&opp.ranking){nextMatch.opponent_ranking=opp.ranking;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("nextMatch: ranking fallback #"+opp.ranking);}}}catch(e){}}
       log.push("nextMatch: vs "+nextMatch.opponent_name+(nextMatch.opponent_ranking?" #"+nextMatch.opponent_ranking:"")+" @ "+nextMatch.tournament_name+(nextMatch.round?" · "+nextMatch.round:"")+(nextMatch.court?" · "+nextMatch.court:""));
     }else{
