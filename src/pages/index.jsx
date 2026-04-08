@@ -1141,7 +1141,6 @@ var PlayerBlock = function(props) {
 
         return (
           <div>
-            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", paddingTop: 20 }}>Última partida</p>
             <div style={{ background: BG_ALT, borderRadius: 16, padding: "20px", overflow: "hidden", border: "1px solid " + BORDER }}>
 
               {/* Header: torneio + forma atual */}
