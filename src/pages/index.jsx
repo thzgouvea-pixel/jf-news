@@ -1464,7 +1464,7 @@ export default function JoaoFonsecaNews() {
 
   useEffect(function() {
     var pollLive = function() {
-      fetch("/api/live").then(function(r) { return r.json(); }).then(function(d) {
+      fetch("/api/live?t=" + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
         if (d && d.live) {
           setLiveMatch(d);
         } else {
@@ -1480,7 +1480,7 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   useEffect(function() {
-    fetch("/api/manual-video").then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/manual-video?t=" + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
       if (d && d.videoId) setHighlightVideo(d);
     }).catch(function() {});
   }, []);
@@ -1510,7 +1510,7 @@ export default function JoaoFonsecaNews() {
 
   var handleRefresh = function() {
     fetchNews();
-    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/sofascore-data?t=" + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
@@ -1544,7 +1544,7 @@ export default function JoaoFonsecaNews() {
         localStorage.setItem("fn_standalone_tracked", "1");
       }
     } catch(e) {}
-    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/sofascore-data?t=" + Date.now()).then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
