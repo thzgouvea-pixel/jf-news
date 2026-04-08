@@ -137,7 +137,9 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
   var data = await sofaFetch("/v1/team/details?team_id=" + opponentId, apiKey);
   if (!data) { log.push("opp: details 404 for " + opponentId); return null; }
   var team = data.team || data;
-  var ranking = team.ranking || (team.rankings && team.rankings.singlesRanking) || null;
+  console.log("[cron] opp team keys:", Object.keys(team).join(","));
+  console.log("[cron] opp team ranking fields:", JSON.stringify({ranking:team.ranking, position:team.position, singlesRanking:team.singlesRanking, rankings:team.rankings, currentRanking:team.currentRanking}));
+  var ranking = team.ranking || team.position || team.singlesRanking || (team.rankings && (team.rankings.singlesRanking || team.rankings.ranking)) || null;
   var country = "";
   if (team.country && team.country.name) country = team.country.name;
   else if (team.nationality) country = team.nationality;
@@ -402,7 +404,8 @@ function parseMatch(m, isNext) {
     console.log("[cron] round field:", JSON.stringify(m.round));
     console.log("[cron] venue:", JSON.stringify(m.venue||"none"));
     console.log("[cron] season:", JSON.stringify({name:season.name,slug:season.slug}));
-    if (m.tournament) console.log("[cron] tournament:", JSON.stringify({name:tournament.name,slug:tournament.slug,groundType:tournament.groundType}));
+    if (m.tournament) console.log("[cron] tournament:", JSON.stringify({name:tournament.name,slug:tournament.slug}));
+    console.log("[cron] opponent raw:", JSON.stringify({name:opponent.name,shortName:opponent.shortName,ranking:opponent.ranking,position:opponent.position,id:opponent.id}));
   }
   var isFonsecaHome = (homeTeam.slug||"").toLowerCase().includes(FONSECA_SLUG);
   var opponent = isFonsecaHome ? awayTeam : homeTeam;
@@ -600,7 +603,7 @@ async function fetchOpponentProfile(opponentName,opponentId,log){
   }catch(e){log.push("oppProfile: error "+e.message);}
 }
 
-function enrichMatch(match,oppDetails){if(!match||!oppDetails)return match;if(oppDetails.ranking)match.opponent_ranking=oppDetails.ranking;if(oppDetails.country)match.opponent_country=oppDetails.country;if(oppDetails.atp_slug)match.opponent_atp_slug=oppDetails.atp_slug;return match;}
+function enrichMatch(match,oppDetails){if(!match||!oppDetails)return match;if(oppDetails.ranking&&!match.opponent_ranking)match.opponent_ranking=oppDetails.ranking;if(oppDetails.country)match.opponent_country=oppDetails.country;if(oppDetails.atp_slug)match.opponent_atp_slug=oppDetails.atp_slug;return match;}
 
 // ===== ATP RANKINGS — Top 50 (updates Mondays only) =====
 async function fetchATPRankings(apiKey, log) {
