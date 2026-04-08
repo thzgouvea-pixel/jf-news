@@ -727,9 +727,12 @@ export default async function handler(req,res){
             });
             if(aiRes.ok){
               var aiData = await aiRes.json();
+              console.log("[cron] AI stop_reason:", aiData.stop_reason);
+              console.log("[cron] AI content blocks:", (aiData.content||[]).length, (aiData.content||[]).map(function(c){return c.type;}).join(","));
               var courtAnswer = "";
+              // Get LAST text block (first ones are narration, last is the answer)
               for(var ci=0;ci<(aiData.content||[]).length;ci++){
-                if(aiData.content[ci].type === "text") courtAnswer += aiData.content[ci].text;
+                if(aiData.content[ci].type === "text" && aiData.content[ci].text) courtAnswer = aiData.content[ci].text;
               }
               courtAnswer = courtAnswer.trim().replace(/^["']|["']$/g, "").replace(/\.$/, "").trim();
               console.log("[cron] AI court raw response:", courtAnswer);
