@@ -284,9 +284,23 @@ async function fetchSeasonStats(apiKey, log) {
     var wins = 0; var losses = 0;
     var allMatches = [];
 
-    // Fetch last events pages from SofaScore (each page ~20 matches)
+    // Fetch last events — try multiple endpoint formats
+    var seasonEndpoints = [
+      "/v1/team/" + FONSECA_TEAM_ID + "/events/last/",
+      "/v1/team/" + FONSECA_TEAM_ID + "/events/previous/",
+      "/v1/team/events/last?team_id=" + FONSECA_TEAM_ID + "&page="
+    ];
+    var workingEndpoint = null;
     for (var page = 0; page < 5; page++) {
-      var data = await sofaFetch("/v1/team/events/last?team_id=" + FONSECA_TEAM_ID + "&page=" + page, apiKey);
+      var data = null;
+      if (workingEndpoint) {
+        data = await sofaFetch(workingEndpoint + page, apiKey);
+      } else {
+        for (var se = 0; se < seasonEndpoints.length; se++) {
+          data = await sofaFetch(seasonEndpoints[se] + page, apiKey);
+          if (data) { workingEndpoint = seasonEndpoints[se]; break; }
+        }
+      }
       if (!data) break;
       var events = [];
       if (Array.isArray(data)) events = data;
@@ -696,24 +710,30 @@ export default async function handler(req,res){
         }catch(e){log.push("stats: patch error "+e.message);}
       }
 
-      // FIX v11: recentForm via team/events/last (confiável)
+      // FIX v12: recentForm — tenta team events com múltiplos formatos, fallback day-scan 45d
       try{
         var allFinished=[];
-        for(var pg=0;pg<3;pg++){
-          var evData=await sofaFetch("/v1/team/events/last?team_id="+FONSECA_TEAM_ID+"&page="+pg,apiKey);totalRequests++;
-          if(!evData)break;
+        var endpoints=["/v1/team/"+FONSECA_TEAM_ID+"/events/last/0","/v1/team/"+FONSECA_TEAM_ID+"/events/previous/0","/v1/team/events/last?team_id="+FONSECA_TEAM_ID+"&page=0"];
+        for(var ep=0;ep<endpoints.length;ep++){
+          var evData=await sofaFetch(endpoints[ep],apiKey);totalRequests++;
+          if(!evData)continue;
           var evArr=[];if(Array.isArray(evData))evArr=evData;else if(evData.events)evArr=evData.events;else{for(var ek of Object.keys(evData)){if(Array.isArray(evData[ek])){evArr=evData[ek];break;}}}
-          if(evArr.length===0)break;
+          if(evArr.length===0)continue;
           for(var ei=0;ei<evArr.length;ei++){if(evArr[ei].status&&(evArr[ei].status.type==="finished"||evArr[ei].status.isFinished)){allFinished.push(evArr[ei]);}}
-          if(allFinished.length>=10)break;
+          if(allFinished.length>0){log.push("form: endpoint "+endpoints[ep]+" worked");break;}
+        }
+        if(allFinished.length===0){
+          var td=new Date();
+          for(var fd=0;fd<45;fd++){var sd=new Date(td);sd.setDate(sd.getDate()-fd);var dm=await findFonsecaMatches(sd,apiKey);totalRequests++;var fin=dm.filter(function(m){return m.status&&(m.status.type==="finished"||m.status.isFinished);});allFinished=allFinished.concat(fin);if(allFinished.length>=10)break;}
+          if(allFinished.length>0)log.push("form: day-scan fallback ("+allFinished.length+" in "+Math.min(fd+1,45)+"d)");
         }
         if(allFinished.length>0){
           allFinished.sort(function(a,b){return(b.startTimestamp||b.timestamp||0)-(a.startTimestamp||a.timestamp||0);});
           var seen={},uniq=[];for(var ui=0;ui<allFinished.length;ui++){var mid=allFinished[ui].id;if(!seen[mid]){seen[mid]=true;uniq.push(allFinished[ui]);}}
           var form=uniq.slice(0,10).map(function(m){return parseMatch(m,false);});
           await kv.set("fn:recentForm",JSON.stringify(form),{ex:86400*7});
-          log.push("form: "+form.map(function(m){return m.result;}).join("")+" ("+form.length+" matches)");
-        }else{log.push("form: no finished matches found");}
+          log.push("form: "+form.map(function(m){return m.result;}).join("")+" ("+form.length+" matches saved)");
+        }else{log.push("form: no finished matches found anywhere");}
       }catch(e){log.push("form: error "+e.message);}
     }else{log.push("lastMatch: none in 7 days");}
     var nextResult=await findNextMatch(apiKey);totalRequests+=nextResult.requestsUsed;var nextMatch=null;
