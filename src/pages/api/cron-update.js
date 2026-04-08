@@ -660,11 +660,20 @@ export default async function handler(req,res){
       if(String(lastResult.match.id)!==String(prevStatsId)){
         var rawStats=await fetchMatchStats(lastResult.match.id,apiKey);totalRequests++;
         if(rawStats){var fS=lastMatch.isFonsecaHome?rawStats.home:rawStats.away,oS=lastMatch.isFonsecaHome?rawStats.away:rawStats.home;
+          console.log("[cron] STATS KEYS:", Object.keys(fS).join(","));
+          console.log("[cron] STATS FONSECA:", JSON.stringify(fS));
+          console.log("[cron] STATS OPPONENT:", JSON.stringify(oS));
           await kv.set("fn:matchStats",JSON.stringify({event_id:lastResult.match.id,fonseca:fS,opponent:oS,opponent_name:lastMatch.opponent_name,opponent_id:lastMatch.opponent_id,opponent_ranking:lastMatch.opponent_ranking,opponent_country:lastMatch.opponent_country,tournament:lastMatch.tournament_name,date:lastMatch.date,result:lastMatch.result,score:lastMatch.score}),{ex:86400*7});
           await kv.set("fn:lastStatsEventId",String(lastResult.match.id));log.push("stats: "+Object.keys(fS).length+" metrics");
         }else{log.push("stats: not available");}
       }else{
-        // FIX v10: Even if stats are cached, update opponent_ranking if missing
+        // Log cached stats for debugging
+        try{
+          var cachedStats=await kv.get("fn:matchStats");
+          if(cachedStats){var cs=typeof cachedStats==="string"?JSON.parse(cachedStats):cachedStats;
+            if(cs.fonseca){console.log("[cron] CACHED STATS KEYS:", Object.keys(cs.fonseca).join(","));console.log("[cron] CACHED STATS FONSECA:", JSON.stringify(cs.fonseca));console.log("[cron] CACHED STATS OPPONENT:", JSON.stringify(cs.opponent));}
+          }
+        }catch(e){}
         try{
           var existingStats=await kv.get("fn:matchStats");
           if(existingStats){
