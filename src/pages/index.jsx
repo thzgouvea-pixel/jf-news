@@ -1400,6 +1400,7 @@ export default function JoaoFonsecaNews() {
   var _showFeedback = useState(false); var showFeedback = _showFeedback[0]; var setShowFeedback = _showFeedback[1];
   var _showMaisMenu = useState(false); var showMaisMenu = _showMaisMenu[0]; var setShowMaisMenu = _showMaisMenu[1];
   var _tabBarHidden = useState(false); var tabBarHidden = _tabBarHidden[0]; var setTabBarHidden = _tabBarHidden[1];
+  var _headerCompact = useState(false); var headerCompact = _headerCompact[0]; var setHeaderCompact = _headerCompact[1];
 
   useEffect(function() {
     var lastScrollY = window.scrollY;
@@ -1407,6 +1408,7 @@ export default function JoaoFonsecaNews() {
       var currentY = window.scrollY;
       if (currentY > lastScrollY && currentY > 100) { setTabBarHidden(true); setShowMaisMenu(false); }
       else if (currentY < lastScrollY) { setTabBarHidden(false); }
+      setHeaderCompact(currentY > 60);
       lastScrollY = currentY;
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
@@ -1627,24 +1629,24 @@ export default function JoaoFonsecaNews() {
         "@media(min-width:769px){.mobile-tab-bar{display:none!important}}"
       }</style>
 
-      <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
-        <div style={{ maxWidth: 640, margin: "0 auto", padding: "10px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 800, letterSpacing: "-0.04em" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
+      <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER, transition: "all 0.3s ease" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto", padding: headerCompact ? "8px 16px" : "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, transition: "padding 0.3s ease" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: headerCompact ? 10 : 12, minWidth: 0 }}>
+            <div style={{ width: headerCompact ? 32 : 42, height: headerCompact ? 32 : 42, borderRadius: headerCompact ? 8 : 12, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
+              <span style={{ fontFamily: SERIF, fontSize: headerCompact ? 13 : 17, fontWeight: 800, letterSpacing: "-0.04em", transition: "font-size 0.3s ease" }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
             </div>
             <div style={{ minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontFamily: SERIF, fontSize: 19, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
-                {dp && <span style={{ fontSize: 11, fontWeight: 700, color: "#132440", fontFamily: SANS, whiteSpace: "nowrap" }}>#{dp.ranking}</span>}
+                <span style={{ fontFamily: SERIF, fontSize: headerCompact ? 16 : 22, fontWeight: 800, letterSpacing: "-0.02em", whiteSpace: "nowrap", transition: "font-size 0.3s ease" }}><span style={{ color: GREEN }}>Fonseca</span> <span style={{ color: YELLOW }}>News</span></span>
+                {dp && <span style={{ fontSize: headerCompact ? 10 : 12, fontWeight: 700, color: "#132440", fontFamily: SANS, whiteSpace: "nowrap", transition: "font-size 0.3s ease" }}>{"#" + dp.ranking}</span>}
               </div>
-              <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, display: "flex", alignItems: "center", gap: 4, marginTop: -1 }}>
+              <span style={{ fontSize: 10, color: DIM, fontFamily: SANS, display: "flex", alignItems: "center", gap: 4, marginTop: -1, overflow: "hidden", maxHeight: headerCompact ? 0 : 16, opacity: headerCompact ? 0 : 1, transition: "all 0.3s ease" }}>
                 {lastUpdate && (function() {
                   var minAgo = Math.floor((Date.now() - new Date(lastUpdate).getTime()) / 60000);
                   var isFresh = minAgo < 30;
                   return <span style={{ width: 5, height: 5, borderRadius: "50%", background: isFresh ? GREEN : "#ccc", display: "inline-block", flexShrink: 0, animation: isFresh ? "pulse 2s ease-in-out infinite" : "none" }} />;
                 })()}
-                <span>Guia de bolso{lastUpdate ? " · " + formatTimeAgo(lastUpdate) : ""}</span>
+                <span>{"Guia de bolso" + (lastUpdate ? " · " + formatTimeAgo(lastUpdate) : "")}</span>
               </span>
             </div>
           </div>
