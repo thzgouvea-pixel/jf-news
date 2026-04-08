@@ -696,19 +696,24 @@ export default async function handler(req,res){
         }catch(e){log.push("stats: patch error "+e.message);}
       }
 
-      // FIX v10: recentForm — scan 30 days, store up to 10 matches
+      // FIX v11: recentForm via team/events/last (confiável)
       try{
-        var existingForm=await kv.get("fn:recentForm");var form=existingForm?(typeof existingForm==="string"?JSON.parse(existingForm):existingForm):[];
-        var inForm=form.some(function(f){return f.event_id===lastMatch.event_id;});
-        if(!inForm||form.length<10){
-          var allF=[];var td=new Date();
-          for(var fd=0;fd<30;fd++){var sd=new Date(td);sd.setDate(sd.getDate()-fd);var dm=await findFonsecaMatches(sd,apiKey);totalRequests++;var fin=dm.filter(function(m){return m.status&&(m.status.type==="finished"||m.status.isFinished);});allF=allF.concat(fin);if(allF.length>=10)break;}
-          allF.sort(function(a,b){return(b.timestamp||0)-(a.timestamp||0);});
-          var seen={},uniq=[];for(var ui=0;ui<allF.length;ui++){var mid=allF[ui].id;if(!seen[mid]){seen[mid]=true;uniq.push(allF[ui]);}}
-          form=uniq.slice(0,10).map(function(m){return parseMatch(m,false);});
+        var allFinished=[];
+        for(var pg=0;pg<3;pg++){
+          var evData=await sofaFetch("/v1/team/events/last?team_id="+FONSECA_TEAM_ID+"&page="+pg,apiKey);totalRequests++;
+          if(!evData)break;
+          var evArr=[];if(Array.isArray(evData))evArr=evData;else if(evData.events)evArr=evData.events;else{for(var ek of Object.keys(evData)){if(Array.isArray(evData[ek])){evArr=evData[ek];break;}}}
+          if(evArr.length===0)break;
+          for(var ei=0;ei<evArr.length;ei++){if(evArr[ei].status&&(evArr[ei].status.type==="finished"||evArr[ei].status.isFinished)){allFinished.push(evArr[ei]);}}
+          if(allFinished.length>=10)break;
+        }
+        if(allFinished.length>0){
+          allFinished.sort(function(a,b){return(b.startTimestamp||b.timestamp||0)-(a.startTimestamp||a.timestamp||0);});
+          var seen={},uniq=[];for(var ui=0;ui<allFinished.length;ui++){var mid=allFinished[ui].id;if(!seen[mid]){seen[mid]=true;uniq.push(allFinished[ui]);}}
+          var form=uniq.slice(0,10).map(function(m){return parseMatch(m,false);});
           await kv.set("fn:recentForm",JSON.stringify(form),{ex:86400*7});
-          log.push("form: "+form.map(function(m){return m.result;}).join("")+" ("+form.length+" matches, scanned "+Math.min(fd+1,30)+"d)");
-        }else{log.push("form: cache ok ("+form.length+" matches)");}
+          log.push("form: "+form.map(function(m){return m.result;}).join("")+" ("+form.length+" matches)");
+        }else{log.push("form: no finished matches found");}
       }catch(e){log.push("form: error "+e.message);}
     }else{log.push("lastMatch: none in 7 days");}
     var nextResult=await findNextMatch(apiKey);totalRequests+=nextResult.requestsUsed;var nextMatch=null;
