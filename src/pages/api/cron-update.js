@@ -718,7 +718,8 @@ export default async function handler(req,res){
         try{
           var anthropicKey = process.env.ANTHROPIC_API_KEY;
           if(anthropicKey){
-            var courtPrompt = "What specific court is the Fonseca vs " + nextMatch.opponent_name + " match scheduled on at " + nextMatch.tournament_name + " ATP 2026? Search the order of play.";
+            var matchDate = nextMatch.date ? new Date(nextMatch.date).toISOString().split("T")[0] : "";
+            var courtPrompt = "Search for the official order of play for " + nextMatch.tournament_name + " on " + matchDate + ". On which specific court is Joao Fonseca playing" + (nextMatch.opponent_name ? " against " + nextMatch.opponent_name : "") + (nextMatch.round ? " in the " + nextMatch.round : "") + "? Check atptour.com, rolandgarros.com, or official tournament sites for today's order of play schedule.";
             var aiRes = await fetch("https://api.anthropic.com/v1/messages", {
               method: "POST",
               headers: {
