@@ -709,7 +709,7 @@ export default async function handler(req,res){
         try{
           var anthropicKey = process.env.ANTHROPIC_API_KEY;
           if(anthropicKey){
-            var courtPrompt = "What court (venue/stadium name) is the tennis match between Joao Fonseca and " + nextMatch.opponent_name + " being played on at the " + nextMatch.tournament_name + " ATP tournament? Search for the order of play or match schedule. Reply with ONLY the court name like 'Court Des Princes' or 'Centre Court'. If you cannot find it, reply only: unknown";
+            var courtPrompt = "What specific court is the Fonseca vs " + nextMatch.opponent_name + " match scheduled on at " + nextMatch.tournament_name + " ATP 2026? Search the order of play.";
             var aiRes = await fetch("https://api.anthropic.com/v1/messages", {
               method: "POST",
               headers: {
@@ -719,7 +719,8 @@ export default async function handler(req,res){
               },
               body: JSON.stringify({
                 model: "claude-haiku-4-5-20251001",
-                max_tokens: 100,
+                max_tokens: 30,
+                system: "You are a tennis data bot. Reply with ONLY the court name (e.g. 'Court Des Princes'). No other text. If unknown, reply 'unknown'.",
                 tools: [{ type: "web_search_20250305", name: "web_search" }],
                 messages: [{ role: "user", content: courtPrompt }]
               })
