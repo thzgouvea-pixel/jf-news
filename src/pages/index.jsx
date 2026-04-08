@@ -636,17 +636,19 @@ var NextDuelCard = function(props) {
   var pushEnabled = props.pushEnabled;
   var pushLoading = props.pushLoading;
   var oppProfile = props.oppProfile;
+  var liveData = props.liveData || null;
   var countdown = useCountdown(match ? match.date : null);
   if (!match) return null;
 
-  var oppName = match.opponent_name || "A definir";
+  var isLive = liveData && liveData.live;
+
+  var oppName = isLive ? (liveData.opponent && liveData.opponent.name || match.opponent_name || "A definir") : (match.opponent_name || "A definir");
   var oppRanking = match.opponent_ranking || (oppProfile && oppProfile.ranking ? oppProfile.ranking : null);
   var oppCountry = match.opponent_country || (oppProfile && oppProfile.country ? oppProfile.country : "");
   var oppFlag = countryFlags[oppCountry] || "";
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { var fp = findPlayer(oppName); if (fp && fp.data.slug) oppAtpSlug = fp.data.slug; }
 
-  // FIX 2: Foto do oponente via ATP Tour (funciona pra todos)
   var oppImg = getATPImage(oppName);
   var oppImgFallback = getESPNImage(oppName);
 
@@ -676,7 +678,6 @@ var NextDuelCard = function(props) {
     return { weekday: diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1), date: diaNum, time: h };
   })() : null;
 
-  // ICS calendar download function
   var downloadICS = function() {
     if (!match.date) return;
     var d = new Date(match.date);
@@ -695,14 +696,12 @@ var NextDuelCard = function(props) {
     URL.revokeObjectURL(url);
   };
 
-  // Short date format: "qua, 8 abr"
   var shortDate = match.date ? (function() {
     var d = new Date(match.date);
     var dia = d.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short", timeZone: "America/Sao_Paulo" });
     return dia.replace(/\.$/, "");
   })() : "";
 
-  // Countdown text: "Faltam: 1 dia, 13 horas e 23 minutos"
   var countdownText = "";
   if (!countdown.expired) {
     var parts = [];
@@ -714,33 +713,52 @@ var NextDuelCard = function(props) {
     else countdownText = "Faltam: " + parts[0] + ", " + parts[1] + " e " + parts[2];
   }
 
+  // === LIVE SCORE DATA ===
+  var liveScore = isLive ? liveData.score || {} : {};
+  var fSets = liveScore.fonseca_sets || [];
+  var oSets = liveScore.opponent_sets || [];
+  var setsWon = liveScore.sets_won || {};
+
   return (
     <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, " + sc + "10 0%, transparent 65%)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, " + (isLive ? "#ef4444" : sc) + "10 0%, transparent 65%)", pointerEvents: "none" }} />
 
-      {/* Top bar: surface · category · round + push */}
+      {/* Top bar */}
       <div style={{ padding: "18px 18px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em" }}>{surfaceLabel}</span>
-          <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-            {match.tournament_category || ""}
-            {match.round ? " · " + match.round : ""}
-          </span>
+          {isLive ? (
+            <>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
+              <span style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ao vivo</span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em" }}>{surfaceLabel}</span>
+              <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                {match.tournament_category || ""}
+                {match.round ? " · " + match.round : ""}
+              </span>
+            </>
+          )}
         </div>
-        {!pushEnabled && onPushClick && (
+        {isLive && (
+          <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 8px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em" }}>{surfaceLabel}</span>
+        )}
+        {!isLive && !pushEnabled && onPushClick && (
           <button onClick={onPushClick} disabled={pushLoading} style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={pushLoading ? "rgba(255,255,255,0.15)" : YELLOW} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </button>
         )}
-        {pushEnabled && (
+        {!isLive && pushEnabled && (
           <div style={{ width: 30, height: 30, borderRadius: 8, background: GREEN + "12", border: "1px solid " + GREEN + "25", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill={GREEN} stroke={GREEN} strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </div>
         )}
       </div>
 
-      {/* Tournament title with points */}
+      {/* Tournament title */}
       <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
+        {isLive && <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 4 }}>Jogo em andamento</span>}
         <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{(function() {
           var name = (match.tournament_name || "Próxima Partida").split(",")[0].trim();
           var cat = (match.tournament_category || "").toLowerCase();
@@ -753,23 +771,40 @@ var NextDuelCard = function(props) {
         })()}</h2>
       </div>
 
-      {/* Players — the hero */}
+      {/* Players */}
       <div style={{ padding: "20px 18px 0" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, alignItems: "center" }}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 68, height: 68, borderRadius: "50%", margin: "0 auto 6px", background: "#152035", border: "2.5px solid " + GREEN + "35", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 68, height: 68, borderRadius: "50%", margin: "0 auto 6px", background: "#152035", border: "2.5px solid " + (isLive ? GREEN + "60" : GREEN + "35"), overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:16px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; } }} />
             </div>
             <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
             <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
           </div>
-          <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS, letterSpacing: "0.05em" }}>VS</span>
+          {isLive ? (
+            <div style={{ textAlign: "center", minWidth: 80 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <span style={{ fontSize: 28, fontWeight: 800, color: GREEN, fontFamily: SANS }}>{setsWon.fonseca || 0}</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS }}>-</span>
+                <span style={{ fontSize: 28, fontWeight: 800, color: "#ef4444", fontFamily: SANS }}>{setsWon.opponent || 0}</span>
+              </div>
+              {fSets.length > 0 && (
+                <div style={{ display: "flex", justifyContent: "center", gap: 4, marginTop: 4 }}>
+                  {fSets.map(function(s, i) {
+                    return (<span key={i} style={{ fontSize: 10, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{s}-{oSets[i]}</span>);
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS, letterSpacing: "0.05em" }}>VS</span>
+          )}
           <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
             <div style={{ position: "relative", width: 68, height: 68, margin: "0 auto 6px" }}>
               <div style={{ width: 68, height: 68, borderRadius: "50%", background: "#152035", border: "2.5px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default" }}>
                 {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
               </div>
-              {onOppClick && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
+              {!isLive && onOppClick && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
             </div>
             <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppName}</span>
             {oppCountry ? <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 2 }}>chave pendente</span>}
@@ -777,45 +812,64 @@ var NextDuelCard = function(props) {
         </div>
       </div>
 
-      {/* Probability bar */}
-      {fPct !== null && oPct !== null && (
-        <div style={{ padding: "20px 18px 0" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{fPct}%</span>
-            <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Probabilidade de vitória</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{oPct}%</span>
+      {isLive ? (
+        <>
+          {/* Live: Assista ao vivo */}
+          <div style={{ padding: "22px 18px 24px" }}>
+            <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+              padding: "16px", background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+              borderRadius: 14, textDecoration: "none", width: "100%", boxSizing: "border-box",
+            }}>
+              <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#fff", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
+              <span style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.02em" }}>Assista ao vivo</span>
+            </a>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 10 }}>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>ESPN 2 · Disney+</span>
+            </div>
           </div>
-          <div style={{ display: "flex", height: 4, borderRadius: 2, overflow: "hidden", gap: 2 }}>
-            <div style={{ width: fPct + "%", background: GREEN, borderRadius: 2, transition: "width 0.8s ease" }} />
-            <div style={{ width: oPct + "%", background: "#ef4444", borderRadius: 2, transition: "width 0.8s ease" }} />
-          </div>
-        </div>
-      )}
+        </>
+      ) : (
+        <>
+          {/* Normal: Probability + Date + Buttons */}
+          {fPct !== null && oPct !== null && (
+            <div style={{ padding: "20px 18px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{fPct}%</span>
+                <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Probabilidade de vitória</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{oPct}%</span>
+              </div>
+              <div style={{ display: "flex", height: 4, borderRadius: 2, overflow: "hidden", gap: 2 }}>
+                <div style={{ width: fPct + "%", background: GREEN, borderRadius: 2, transition: "width 0.8s ease" }} />
+                <div style={{ width: oPct + "%", background: "#ef4444", borderRadius: 2, transition: "width 0.8s ease" }} />
+              </div>
+            </div>
+          )}
 
-      {/* Date + time */}
-      {dateInfo && (
-        <div style={{ padding: "22px 18px 0", textAlign: "center" }}>
-          <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{dateInfo.weekday + ", " + dateInfo.date}</span>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <span style={{ fontSize: 22, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.04em" }}>{dateInfo.time}</span>
-            <span style={{ fontSize: 10, color: "rgba(79,195,247,0.45)", fontFamily: SANS }}>BRT</span>
-          </div>
-          {countdownText && <span style={{ display: "block", marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{countdownText}</span>}
-        </div>
-      )}
+          {dateInfo && (
+            <div style={{ padding: "22px 18px 0", textAlign: "center" }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>{dateInfo.weekday + ", " + dateInfo.date}</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 6 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span style={{ fontSize: 22, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.04em" }}>{dateInfo.time}</span>
+                <span style={{ fontSize: 10, color: "rgba(79,195,247,0.45)", fontFamily: SANS }}>BRT</span>
+              </div>
+              {countdownText && <span style={{ display: "block", marginTop: 8, fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS }}>{countdownText}</span>}
+            </div>
+          )}
 
-      {/* Bottom: two buttons side by side */}
-      <div style={{ padding: "20px 18px 24px", display: "flex", gap: 8 }}>
-        <button onClick={downloadICS} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, fontFamily: SANS }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          Calendário
-        </button>
-        <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(79,195,247,0.08)", border: "1px solid rgba(79,195,247,0.15)", borderRadius: 12, textDecoration: "none", fontSize: 12, fontWeight: 600, fontFamily: SANS, color: "#4FC3F7" }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-          ESPN 2 · Disney+
-        </a>
-      </div>
+          <div style={{ padding: "20px 18px 24px", display: "flex", gap: 8 }}>
+            <button onClick={downloadICS} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 12, fontWeight: 600, fontFamily: SANS }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              Calendário
+            </button>
+            <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(79,195,247,0.08)", border: "1px solid rgba(79,195,247,0.15)", borderRadius: 12, textDecoration: "none", fontSize: 12, fontWeight: 600, fontFamily: SANS, color: "#4FC3F7" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              ESPN 2 · Disney+
+            </a>
+          </div>
+        </>
+      )}
     </section>
   );
 };
@@ -1332,7 +1386,7 @@ export default function JoaoFonsecaNews() {
     pollLive();
     var iv = setInterval(function() {
       if (!document.hidden) pollLive();
-    }, 60000);
+    }, 30000);
     return function() { clearInterval(iv); };
   }, []);
 
@@ -1506,17 +1560,10 @@ export default function JoaoFonsecaNews() {
           </div>
         )}
 
-        {liveMatch ? (
-          <section style={{ padding: "20px 0 0" }}>
-            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Ao vivo</p>
-            <LiveScoreCard data={liveMatch} />
-          </section>
-        ) : (
-          <section style={{ padding: "20px 0 0" }}>
-            <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Próximo duelo</p>
-            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} />
-          </section>
-        )}
+        <section style={{ padding: "20px 0 0" }}>
+          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>{liveMatch ? "Ao vivo" : "Próximo duelo"}</p>
+          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} />
+        </section>
 
         {/* Curiosidades do torneio — carrossel automático */}
         {tournamentFacts && tournamentFacts.facts && tournamentFacts.facts.length > 0 && (
