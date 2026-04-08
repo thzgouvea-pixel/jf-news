@@ -870,7 +870,7 @@ var NextDuelCard = function(props) {
             </a>
           </div>
           <div style={{ padding: "0 18px 22px", textAlign: "center" }}>
-            <span style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>{match.court ? "Quadra " + match.court : "Quadra ainda desconhecida"}</span>
+            <span style={{ fontSize: 12, color: "rgba(79,195,247,0.6)", fontFamily: SANS, fontWeight: 600, letterSpacing: "0.02em" }}>{match.court ? match.court : "Quadra ainda desconhecida"}</span>
           </div>
         </>
       )}
@@ -1862,4 +1862,9 @@ export default function JoaoFonsecaNews() {
 
     </div>
   );
+}
+
+// Prevent static prerendering — render dynamically on each request
+export async function getServerSideProps() {
+  return { props: {} };
 }
