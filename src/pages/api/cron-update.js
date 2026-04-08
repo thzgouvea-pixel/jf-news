@@ -428,17 +428,21 @@ function parseMatch(m, isNext) {
     else if (typeof m.venue === "object") courtName = m.venue.stadium || m.venue.name || m.venue.court || null;
   }
   if (!courtName && m.courtName) courtName = m.courtName;
-  // Round translation — try multiple field names
+  // Round translation
   var roundName = "";
   if (roundInfo && roundInfo.name) roundName = roundInfo.name;
   else if (m.round !== undefined && m.round !== null) {
-    // m.round can be a number (4 = Round of 16) or string
     var rVal = m.round;
+    if (typeof rVal === "object") {
+      // round is an object like {round: 8, name: "Round of 16", slug: "round-of-16"}
+      console.log("[cron] round object:", JSON.stringify(rVal));
+      rVal = rVal.round || rVal.name || rVal.slug || rVal.cupRoundType || "";
+    }
     if (typeof rVal === "number") {
       var roundNumMap = {1:"Final",2:"Semifinal",4:"Quartas de final",8:"Oitavas de final",16:"2ª Rodada",32:"2ª Rodada",64:"1ª Rodada",128:"1ª Rodada"};
       roundName = roundNumMap[rVal] || "Rodada " + rVal;
-    } else {
-      roundName = String(rVal);
+    } else if (typeof rVal === "string" && rVal) {
+      roundName = rVal;
     }
   }
   var roundTranslate = {"Round of 128":"1ª Rodada","Round of 64":"2ª Rodada","Round of 32":"2ª Rodada","Round of 16":"Oitavas de final","Quarterfinals":"Quartas de final","Semifinals":"Semifinal","Final":"Final","Qualification":"Qualificatório","1st round":"1ª Rodada","2nd round":"2ª Rodada","3rd round":"3ª Rodada"};
