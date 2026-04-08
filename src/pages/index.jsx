@@ -906,10 +906,12 @@ var LiveScoreCard = function(props) {
   var fStats = stats.fonseca || {};
   var oStats = stats.opponent || {};
 
+  var fST = (fStats.firstserveaccuracy||0) + (fStats.secondserveaccuracy||0) + (fStats.doublefaults||0);
+  var oST = (oStats.firstserveaccuracy||0) + (oStats.secondserveaccuracy||0) + (oStats.doublefaults||0);
   var liveStatRows = [
     { label: "Aces", f: fStats.aces || 0, o: oStats.aces || 0 },
     { label: "D. Faltas", f: fStats.doublefaults || 0, o: oStats.doublefaults || 0, invert: true },
-    { label: "1o Saque %", f: fStats.firstserveaccuracy || 0, o: oStats.firstserveaccuracy || 0, pct: true },
+    { label: "1o Saque %", f: fST > 0 ? Math.round((fStats.firstserveaccuracy||0)/fST*100) : 0, o: oST > 0 ? Math.round((oStats.firstserveaccuracy||0)/oST*100) : 0, pct: true },
     { label: "Winners", f: fStats.winners || 0, o: oStats.winners || 0 },
     { label: "Break Points", f: fStats.breakpointsscored || 0, o: oStats.breakpointsscored || 0 },
     { label: "Pontos", f: fStats.pointstotal || 0, o: oStats.pointstotal || 0 },
@@ -1115,12 +1117,23 @@ var PlayerBlock = function(props) {
       {matchStats && matchStats.fonseca && (function() {
         var f = matchStats.fonseca;
         var o = matchStats.opponent;
+        // Calculate correct percentages from raw counts
+        var fServTotal = (f.firstserveaccuracy||0) + (f.secondserveaccuracy||0) + (f.doublefaults||0);
+        var oServTotal = (o.firstserveaccuracy||0) + (o.secondserveaccuracy||0) + (o.doublefaults||0);
+        var f1stPct = fServTotal > 0 ? Math.round((f.firstserveaccuracy||0) / fServTotal * 100) : 0;
+        var o1stPct = oServTotal > 0 ? Math.round((o.firstserveaccuracy||0) / oServTotal * 100) : 0;
+        var fPts1st = (f.firstserveaccuracy||0) > 0 ? Math.round((f.firstservepointsaccuracy||0) / (f.firstserveaccuracy||1) * 100) : 0;
+        var oPts1st = (o.firstserveaccuracy||0) > 0 ? Math.round((o.firstservepointsaccuracy||0) / (o.firstserveaccuracy||1) * 100) : 0;
+        var f2ndTotal = (f.secondserveaccuracy||0) + (f.doublefaults||0);
+        var o2ndTotal = (o.secondserveaccuracy||0) + (o.doublefaults||0);
+        var fPts2nd = f2ndTotal > 0 ? Math.round((f.secondservepointsaccuracy||0) / f2ndTotal * 100) : 0;
+        var oPts2nd = o2ndTotal > 0 ? Math.round((o.secondservepointsaccuracy||0) / o2ndTotal * 100) : 0;
         var statRows = [
           { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0, icon: "A" },
           { label: "Duplas faltas", fVal: f.doublefaults || 0, oVal: o.doublefaults || 0, invert: true, icon: "DF" },
-          { label: "1o saque", fVal: f.firstserveaccuracy || 0, oVal: o.firstserveaccuracy || 0, pct: true, icon: "1S" },
-          { label: "Pts no 1o saque", fVal: f.firstservepointsaccuracy || 0, oVal: o.firstservepointsaccuracy || 0, pct: true, icon: "P1" },
-          { label: "Pts no 2o saque", fVal: f.secondservepointsaccuracy || 0, oVal: o.secondservepointsaccuracy || 0, pct: true, icon: "P2" },
+          { label: "1o saque", fVal: f1stPct, oVal: o1stPct, pct: true, icon: "1S" },
+          { label: "Pts no 1o saque", fVal: fPts1st, oVal: oPts1st, pct: true, icon: "P1" },
+          { label: "Pts no 2o saque", fVal: fPts2nd, oVal: oPts2nd, pct: true, icon: "P2" },
           { label: "Breaks salvos", fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0, icon: "BP" },
           { label: "Total de pontos", fVal: f.pointstotal || 0, oVal: o.pointstotal || 0, icon: "TP" },
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
