@@ -286,85 +286,15 @@ async function fetchSeasonStats(apiKey, log) {
   try {
     var currentYear = new Date().getFullYear();
     var wins = 0; var losses = 0;
-    var allMatches = [];
-
-    // Fetch last events — try multiple endpoint formats
-    var seasonEndpoints = [
-      "/v1/team/" + FONSECA_TEAM_ID + "/events/last/",
-      "/v1/team/" + FONSECA_TEAM_ID + "/events/previous/",
-      "/v1/team/events/last?team_id=" + FONSECA_TEAM_ID + "&page="
-    ];
-    var workingEndpoint = null;
-    for (var page = 0; page < 5; page++) {
-      var data = null;
-      if (workingEndpoint) {
-        data = await sofaFetch(workingEndpoint + page, apiKey);
-      } else {
-        for (var se = 0; se < seasonEndpoints.length; se++) {
-          data = await sofaFetch(seasonEndpoints[se] + page, apiKey);
-          if (data) { workingEndpoint = seasonEndpoints[se]; break; }
-        }
-      }
-      if (!data) break;
-      var events = [];
-      if (Array.isArray(data)) events = data;
-      else if (data.events && Array.isArray(data.events)) events = data.events;
-      else { for (var k of Object.keys(data)) { if (Array.isArray(data[k])) { events = data[k]; break; } } }
-      if (events.length === 0) break;
-
-      var foundOlderYear = false;
-      for (var i = 0; i < events.length; i++) {
-        var ev = events[i];
-        if (!ev.timestamp && !ev.startTimestamp) continue;
-        var ts = ev.startTimestamp || ev.timestamp;
-        var matchDate = new Date(typeof ts === "number" ? ts * 1000 : ts);
-        var matchYear = matchDate.getFullYear();
-
-        // Stop scanning if we hit previous year
-        if (matchYear < currentYear) { foundOlderYear = true; continue; }
-        if (matchYear !== currentYear) continue;
-
-        // Only count finished matches
-        if (!ev.status || (ev.status.type !== "finished" && !ev.status.isFinished)) continue;
-
-        // Determine if Fonseca won
-        var homeTeam = ev.homeTeam || {};
-        var awayTeam = ev.awayTeam || {};
-        var isFonsecaHome = (homeTeam.slug || homeTeam.name || "").toLowerCase().includes("fonseca");
-        var homeScore = ev.homeScore || {};
-        var awayScore = ev.awayScore || {};
-        var fSetsWon = 0; var oSetsWon = 0;
-        for (var si = 1; si <= 5; si++) {
-          var sk = "period" + si;
-          if (homeScore[sk] !== undefined && awayScore[sk] !== undefined) {
-            if (isFonsecaHome) { if (homeScore[sk] > awayScore[sk]) fSetsWon++; else oSetsWon++; }
-            else { if (awayScore[sk] > homeScore[sk]) fSetsWon++; else oSetsWon++; }
-          }
-        }
-        var won = fSetsWon > oSetsWon;
-        if (fSetsWon === oSetsWon && ev.winnerCode) {
-          won = (ev.winnerCode === 1 && isFonsecaHome) || (ev.winnerCode === 2 && !isFonsecaHome);
-        }
-        if (won) wins++; else losses++;
-        allMatches.push({ date: matchDate.toISOString(), result: won ? "V" : "D" });
-      }
-      if (foundOlderYear) break;
+    var existingForm = await kv.get("fn:recentForm");
+    var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
+    for (var fi = 0; fi < form.length; fi++) {
+      if (!form[fi].date) continue;
+      if (new Date(form[fi].date).getFullYear() !== currentYear) continue;
+      if (form[fi].result === "V") wins++; else if (form[fi].result === "D") losses++;
     }
-
-    if (wins === 0 && losses === 0) {
-      // Fallback: use recentForm if team events failed
-      var existingForm = await kv.get("fn:recentForm");
-      var form = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
-      for (var fi = 0; fi < form.length; fi++) {
-        if (!form[fi].date) continue;
-        if (new Date(form[fi].date).getFullYear() !== currentYear) continue;
-        if (form[fi].result === "V") wins++; else if (form[fi].result === "D") losses++;
-      }
-      if (wins === 0 && losses === 0) { log.push("season: no " + currentYear + " matches found"); return null; }
-      log.push("season: " + wins + "W-" + losses + "L (" + currentYear + ") [from form fallback]");
-    } else {
-      log.push("season: " + wins + "W-" + losses + "L (" + currentYear + ") [" + allMatches.length + " matches scanned]");
-    }
+    if (wins === 0 && losses === 0) { log.push("season: no " + currentYear + " matches in form"); return null; }
+    log.push("season: " + wins + "W-" + losses + "L (" + currentYear + ") [from " + form.length + " form matches]");
     return { wins: wins, losses: losses, year: currentYear };
   } catch (e) { log.push("season: error " + e.message); return null; }
 }
@@ -725,30 +655,19 @@ export default async function handler(req,res){
         }catch(e){log.push("stats: patch error "+e.message);}
       }
 
-      // FIX v12: recentForm — tenta team events com múltiplos formatos, fallback day-scan 45d
+      // FIX v13: recentForm — adiciona lastMatch à forma existente (sem scan pesado)
       try{
-        var allFinished=[];
-        var endpoints=["/v1/team/"+FONSECA_TEAM_ID+"/events/last/0","/v1/team/"+FONSECA_TEAM_ID+"/events/previous/0","/v1/team/events/last?team_id="+FONSECA_TEAM_ID+"&page=0"];
-        for(var ep=0;ep<endpoints.length;ep++){
-          var evData=await sofaFetch(endpoints[ep],apiKey);totalRequests++;
-          if(!evData)continue;
-          var evArr=[];if(Array.isArray(evData))evArr=evData;else if(evData.events)evArr=evData.events;else{for(var ek of Object.keys(evData)){if(Array.isArray(evData[ek])){evArr=evData[ek];break;}}}
-          if(evArr.length===0)continue;
-          for(var ei=0;ei<evArr.length;ei++){if(evArr[ei].status&&(evArr[ei].status.type==="finished"||evArr[ei].status.isFinished)){allFinished.push(evArr[ei]);}}
-          if(allFinished.length>0){log.push("form: endpoint "+endpoints[ep]+" worked");break;}
-        }
-        if(allFinished.length===0){
-          var td=new Date();
-          for(var fd=0;fd<45;fd++){var sd=new Date(td);sd.setDate(sd.getDate()-fd);var dm=await findFonsecaMatches(sd,apiKey);totalRequests++;var fin=dm.filter(function(m){return m.status&&(m.status.type==="finished"||m.status.isFinished);});allFinished=allFinished.concat(fin);if(allFinished.length>=10)break;}
-          if(allFinished.length>0)log.push("form: day-scan fallback ("+allFinished.length+" in "+Math.min(fd+1,45)+"d)");
-        }
-        if(allFinished.length>0){
-          allFinished.sort(function(a,b){return(b.startTimestamp||b.timestamp||0)-(a.startTimestamp||a.timestamp||0);});
-          var seen={},uniq=[];for(var ui=0;ui<allFinished.length;ui++){var mid=allFinished[ui].id;if(!seen[mid]){seen[mid]=true;uniq.push(allFinished[ui]);}}
-          var form=uniq.slice(0,10).map(function(m){return parseMatch(m,false);});
+        var existingForm=await kv.get("fn:recentForm");
+        var form=existingForm?(typeof existingForm==="string"?JSON.parse(existingForm):existingForm):[];
+        var alreadyInForm=form.some(function(f){return String(f.event_id)===String(lastMatch.event_id);});
+        if(!alreadyInForm){
+          form.unshift(lastMatch);
+          if(form.length>10)form=form.slice(0,10);
           await kv.set("fn:recentForm",JSON.stringify(form),{ex:86400*7});
-          log.push("form: "+form.map(function(m){return m.result;}).join("")+" ("+form.length+" matches saved)");
-        }else{log.push("form: no finished matches found anywhere");}
+          log.push("form: added "+lastMatch.result+" vs "+lastMatch.opponent_name+" ("+form.length+" total: "+form.map(function(m){return m.result;}).join("")+")");
+        }else{
+          log.push("form: already has "+lastMatch.opponent_name+" ("+form.length+" total: "+form.map(function(m){return m.result;}).join("")+")");
+        }
       }catch(e){log.push("form: error "+e.message);}
     }else{log.push("lastMatch: none in 7 days");}
     var nextResult=await findNextMatch(apiKey);totalRequests+=nextResult.requestsUsed;var nextMatch=null;
