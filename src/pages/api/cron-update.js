@@ -703,19 +703,17 @@ export default async function handler(req,res){
         if(od){nextMatch=enrichMatch(nextMatch,od);totalRequests++;}
         await kv.set("fn:prevOpponentId",String(nextMatch.opponent_id));
       }
-      // Preserve court from previous KV data if same match AND valid
+      await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
+      // Court: check 4h cache first, then fetch via Claude AI
+      var courtCacheKey = "fn:court:" + nextMatch.event_id;
       try{
-        var prevNext = await kv.get("fn:nextMatch");
-        var prevParsed = prevNext ? (typeof prevNext === "string" ? JSON.parse(prevNext) : prevNext) : null;
-        if(prevParsed && prevParsed.court && String(prevParsed.event_id) === String(nextMatch.event_id)){
-          var prevCourt = String(prevParsed.court).replace(/\n/g,"").trim();
-          if(prevCourt.length > 4 && !prevCourt.toLowerCase().includes("unknown") && !prevCourt.includes(".")){
-            nextMatch.court = prevCourt;
-          }
+        var cachedCourt = await kv.get(courtCacheKey);
+        if(cachedCourt && typeof cachedCourt === "string" && cachedCourt.length > 4 && !cachedCourt.toLowerCase().includes("unknown")){
+          nextMatch.court = cachedCourt;
+          await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
+          log.push("court: " + cachedCourt + " (cached 4h)");
         }
       }catch(e){}
-      await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-      // Court: fetch via Claude AI if still missing
       if(!nextMatch.court){
         try{
           var anthropicKey = process.env.ANTHROPIC_API_KEY;
@@ -754,7 +752,8 @@ export default async function handler(req,res){
               if(courtAnswer && courtAnswer.length > 4 && courtAnswer.length < 40 && !courtAnswer.toLowerCase().includes("unknown") && !courtAnswer.toLowerCase().includes("desconhecida") && !courtAnswer.toLowerCase().includes("cannot") && !courtAnswer.toLowerCase().includes("unable") && !courtAnswer.toLowerCase().includes("i'll") && !courtAnswer.toLowerCase().includes("let me") && !courtAnswer.toLowerCase().includes("search") && !courtAnswer.toLowerCase().includes("not found")){
                 nextMatch.court = courtAnswer;
                 await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
-                log.push("court: " + courtAnswer + " (via Claude AI)");
+                await kv.set(courtCacheKey, courtAnswer, {ex:14400});
+                log.push("court: " + courtAnswer + " (via Claude AI, cached 4h)");
               } else { log.push("court: AI could not find"); }
             } else { log.push("court: AI HTTP " + aiRes.status); }
           } else { log.push("court: no ANTHROPIC_API_KEY"); }
