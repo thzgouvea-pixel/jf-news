@@ -1108,7 +1108,7 @@ var PlayerBlock = function(props) {
   if (!hasAnyData) return null;
 
   return (
-    <div style={{ margin: "12px 0 4px" }}>
+    <div>
 
       {matchStats && matchStats.fonseca && (function() {
         var f = matchStats.fonseca;
