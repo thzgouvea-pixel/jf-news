@@ -464,7 +464,7 @@ function parseMatch(m, isNext) {
   if(detectedSurface.toLowerCase()==="clay") detectedSurface="Saibro";
   else if(detectedSurface.toLowerCase()==="grass") detectedSurface="Grama";
   else if(detectedSurface.toLowerCase()==="hard"||detectedSurface.toLowerCase()==="hardcourt") detectedSurface="Duro";
-  var result = { event_id:m.id, tournament_name:tournament.name||"", tournament_category:season.name||tournament.name||"", surface:detectedSurface, city:(tournament.name||"").split(",")[0]||"", round:roundInfo.name||"", date:m.timestamp?new Date(m.timestamp*1000).toISOString():null, opponent_name:opponent.shortName||opponent.name||"A definir", opponent_id:opponent.id||null, opponent_ranking:opponent.ranking||null, opponent_country:opponent.country?opponent.country.name:"", isFonsecaHome };
+  var result = { event_id:m.id, tournament_name:tournament.name||"", tournament_category:season.name||tournament.name||"", surface:detectedSurface, city:(tournament.name||"").split(",")[0]||"", round:roundInfo.name||"", date:m.timestamp?new Date(m.timestamp*1000).toISOString():(m.startTimestamp?new Date(m.startTimestamp*1000).toISOString():null), opponent_name:opponent.shortName||opponent.name||"A definir", opponent_id:opponent.id||null, opponent_ranking:opponent.ranking||null, opponent_country:opponent.country?opponent.country.name:"", court:m.venue||m.courtName||null, isFonsecaHome };
   if (!isNext) {
     var fScore=isFonsecaHome?homeScore:awayScore, oScore=isFonsecaHome?awayScore:homeScore, sets=[];
     for(var i=1;i<=5;i++){var key="period"+i;if(fScore[key]!==undefined&&oScore[key]!==undefined)sets.push(fScore[key]+"-"+oScore[key]);}
