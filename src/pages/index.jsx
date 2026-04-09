@@ -642,7 +642,7 @@ var NextDuelCard = function(props) {
   var _factIdx = useState(0); var factIdx = _factIdx[0]; var setFactIdx = _factIdx[1];
   useEffect(function() {
     if (!facts || !facts.length) return;
-    var iv = setInterval(function() { setFactIdx(function(p) { return (p + 1) % facts.length; }); }, 5000);
+    var iv = setInterval(function() { setFactIdx(function(p) { return (p + 1) % (facts.length + 1); }); }, 5000);
     return function() { clearInterval(iv); };
   }, [facts]);
   if (!match) return null;
@@ -732,7 +732,7 @@ var NextDuelCard = function(props) {
       <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, " + (isLive ? "#ef4444" : sc) + "10 0%, transparent 65%)", pointerEvents: "none" }} />
 
       {/* Section label with icon */}
-      <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ padding: "18px 20px 6px", display: "flex", alignItems: "center", gap: 8 }}>
         {isLive ? (
           <>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
@@ -882,7 +882,7 @@ var NextDuelCard = function(props) {
             </div>
           </div>
           {/* Countdown */}
-          {countdownText && <div style={{ textAlign: "center", padding: "6px 0 6px" }}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span></div>}
+          {countdownText && <div style={{ textAlign: "center", padding: "4px 0 4px" }}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span></div>}
           {/* Action buttons */}
           <div style={{ padding: "4px 20px 18px", display: "flex", gap: 10 }}>
             <button onClick={downloadICS} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, fontFamily: SANS }}>
@@ -898,10 +898,13 @@ var NextDuelCard = function(props) {
       )}
       {/* Curiosidade strip integrada */}
       {facts && facts.length > 0 && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
-          <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#4FC3F7", flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: "rgba(79,195,247,0.6)", fontFamily: SANS, fontWeight: 500, textAlign: "center" }}>{facts[factIdx % facts.length].text}</span>
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, flexShrink: 0 }}>{(factIdx % facts.length + 1) + "/" + facts.length}</span>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "14px 20px", textAlign: "center" }}>
+          {factIdx % (facts.length + 1) === 0 ? (
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: SANS, fontWeight: 600 }}>{"Curiosidades sobre " + (match.tournament_name || "o torneio")}</span>
+          ) : (
+            <span style={{ fontSize: 12, color: "rgba(79,195,247,0.6)", fontFamily: SANS, fontWeight: 500 }}>{facts[(factIdx - 1) % facts.length].text}</span>
+          )}
+          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 4 }}>{factIdx % (facts.length + 1) === 0 ? "" : ((factIdx - 1) % facts.length + 1) + "/" + facts.length}</span>
         </div>
       )}
     </section>
@@ -1725,7 +1728,7 @@ export default function JoaoFonsecaNews() {
           </div>
         )}
 
-        <section style={{ padding: "20px 0 0" }}>
+        <section style={{ padding: "8px 0 0" }}>
           <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
         </section>
 
