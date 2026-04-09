@@ -927,7 +927,7 @@ export default async function handler(req,res){
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                tools: [{ google_search_retrieval: {} }],
+                tools: [{ google_search: {} }],
                 contents: [{ parts: [{ text: courtPrompt }] }]
               })
             });
