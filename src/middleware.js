@@ -5,7 +5,7 @@ export function middleware(request) {
 
   if (pathname === '/') {
     const url = request.nextUrl.clone();
-    url.pathname = '/home-matchday-v6';
+    url.pathname = '/home-matchday-v7';
     return NextResponse.rewrite(url);
   }
 
