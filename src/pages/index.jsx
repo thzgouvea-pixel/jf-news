@@ -13,7 +13,7 @@ const RED = "#c0392b";
 const SERIF = "'Source Serif 4', Georgia, serif";
 const SANS = "'Inter', -apple-system, sans-serif";
 
-const CACHE_DURATION_MS = 30 * 60 * 1000;
+const CACHE_DURATION_MS = 5 * 60 * 1000;
 const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
 
 // ===== PLAYER DATABASE — unified map (ATP slug, ESPN ID, SofaScore ID) =====
