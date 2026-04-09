@@ -69,7 +69,7 @@ var Navigation = function(props) {
           <div style={{ position: "absolute", bottom: "100%", right: 16, background: "white", borderRadius: 16, boxShadow: "0 8px 30px rgba(0,0,0,0.15)", border: "1px solid " + BORDER, padding: "8px 0", minWidth: 180, marginBottom: 6 }}>
             {[
               { label: "Biografia", action: function(){ window.location.href="/biografia"; } },
-              { label: "Feedback", action: function(){ onShowFeedback(); onToggleMaisMenu(); } },
+              { label: "Feedback", action: function(){ onShowFeedback(); onToggleMaisMenu(false); } },
               { label: "Sobre", action: function(){ window.location.href="/sobre"; } },
             ].map(function(item, i) {
               return <button key={i} onClick={item.action} style={{ display: "block", width: "100%", textAlign: "left", padding: "13px 20px", background: "none", border: "none", fontSize: 15, fontWeight: 500, color: TEXT, fontFamily: SANS, cursor: "pointer" }}>{item.label}</button>;
