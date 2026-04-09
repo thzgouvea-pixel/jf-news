@@ -31,20 +31,19 @@ var ODDS_TOURNAMENT_MAP = {
   "miami open": "tennis_atp_miami_open",
 };
 
-var ATP_SLUGS = {
-  "Alcaraz": "a0e2", "Sinner": "s0ag", "Djokovic": "d643", "Medvedev": "mm58",
-  "Zverev": "z355", "Rublev": "re44", "Ruud": "rh16", "Tsitsipas": "te51",
-  "Fritz": "fb98", "Rune": "r0dg", "Hurkacz": "hb71", "Khachanov": "ke29",
-  "Berrettini": "bk40", "Diallo": "d0f6", "Shelton": "s0jy", "Draper": "d0bi",
-  "Tiafoe": "td51", "Musetti": "m0ej", "Fils": "f0gx", "Cerundolo": "c0aq",
-  "Davidovich Fokina": "d0au", "Auger-Aliassime": "ag37", "de Minaur": "dh58",
-  "Paul": "pl56", "Tabilo": "t0ag", "Machac": "m0eo", "Mpetshi Perricard": "m0je",
-  "Mensik": "m0ij", "Shapovalov": "su55", "Munar": "mf53", "Fonseca": "f0fv",
-  "Nakashima": "n0ae", "Baez": "b0dc", "Etcheverry": "e0ar", "Jarry": "j0ab",
-  "Norrie": "nb73", "Dimitrov": "dg88", "Bublik": "ba32", "Thompson": "tc94",
-  "Humbert": "h0bj", "Giron": "g0bi", "Korda": "k0bh", "Popyrin": "p0bh",
-  "Safiullin": "s0bf", "Nishikori": "n358", "Wawrinka": "wa48",
-  "Rinderknech": "rc91",
+var ESPN_IDS = {
+  "Alcaraz": "4686", "Sinner": "4375", "Djokovic": "777", "Medvedev": "3367",
+  "Zverev": "3098", "Rublev": "3523", "Fritz": "2981", "Hurkacz": "3264",
+  "Berrettini": "3316", "Diallo": "3885", "Shelton": "11712", "Draper": "4580",
+  "Tiafoe": "3263", "Musetti": "4228", "Fils": "11716", "Cerundolo": "11689",
+  "Davidovich Fokina": "4579", "Auger-Aliassime": "3270", "de Minaur": "3313",
+  "Paul": "3117", "Tabilo": "4684", "Machac": "11709", "Mensik": "11746",
+  "Shapovalov": "3086", "Munar": "4229", "Rinderknech": "3511", "Fonseca": "11745",
+  "Nakashima": "4581", "Baez": "11690", "Etcheverry": "11700", "Jarry": "3539",
+  "Bublik": "3540", "Korda": "4578", "Dimitrov": "1629", "Monfils": "716",
+  "Wawrinka": "536", "Nishikori": "1058", "Coric": "2435", "Norrie": "3266",
+  "Mpetshi Perricard": "11747", "Popyrin": "3541", "Thompson": "3099", "Giron": "3116",
+  "Kotov": "11706", "Khachanov": "3112", "Rune": "4685", "Kokkinakis": "3124",
 };
 
 async function sofaFetch(path, apiKey) {
@@ -66,9 +65,12 @@ async function fetchRankingFromESPN(opponentName, log) {
   if (!opponentName || opponentName === "A definir") return null;
   try {
     var cachedId = null;
-    try { cachedId = await kv.get("fn:espnId:" + opponentName); } catch (e) {}
-    var espnId = cachedId ? String(cachedId) : null;
-    if (!espnId) {
+try { cachedId = await kv.get("fn:espnId:" + opponentName); } catch (e) {}
+var espnId = cachedId ? String(cachedId) : null;
+if (!espnId) {
+  for (var ek in ESPN_IDS) { if (opponentName.indexOf(ek) !== -1) { espnId = ESPN_IDS[ek]; break; } }
+}
+if (!espnId) {
       var searchName = opponentName.replace(/^[A-Z]\.\s*/, "").trim();
       var lastName = searchName.split(" ").pop().toLowerCase();
       try {
