@@ -767,7 +767,7 @@ async function fetchATPRankings(apiKey, log) {
         // Only refetch on Mondays (day 1) and if cache is older than 6 days
         var isMonday = new Date().getDay() === 1;
         var age = Date.now() - new Date(p.updatedAt).getTime();
-        if (!isMonday || age < 86400000 * 6) {
+        if (p.rankings.length >= 100 && (!isMonday || age < 86400000 * 6)) {
           log.push("rankings: cache ok (" + p.rankings.length + " players, updates Mon)");
           return;
         }
@@ -782,7 +782,7 @@ async function fetchATPRankings(apiKey, log) {
     try {
       var data = await sofaFetch(endpoints[ei], apiKey);
       if (data && data.rankings && Array.isArray(data.rankings)) {
-        rankings = data.rankings.slice(0, 50).map(function(r) {
+        rankings = data.rankings.slice(0, 100).map(function(r) {
           return {
             rank: r.ranking || r.position || (ei + 1),
             name: r.team ? (r.team.shortName || r.team.name) : (r.player ? r.player.name : ""),
@@ -804,7 +804,7 @@ async function fetchATPRankings(apiKey, log) {
       if (espnRes.ok) {
         var espnData = await espnRes.json();
         if (espnData && espnData.rankings && espnData.rankings[0] && espnData.rankings[0].ranks) {
-          rankings = espnData.rankings[0].ranks.slice(0, 50).map(function(r) {
+          rankings = espnData.rankings[0].ranks.slice(0, 100).map(function(r) {
             var ath = r.athlete || {};
             return {
               rank: r.current || r.rank,
