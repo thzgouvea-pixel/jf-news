@@ -769,7 +769,7 @@ var NextDuelCard = function(props) {
             <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em" }}>{surfaceLabel}</span>
             <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS, fontWeight: 600 }}>{match.tournament_category || ""}</span>
           </div>
-          {match.round && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(79,195,247,0.7)", fontFamily: SANS, background: "rgba(79,195,247,0.08)", padding: "4px 12px", borderRadius: 999 }}>{match.round}</span>}
+          {match.round && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(79,195,247,0.7)", fontFamily: SANS, background: "rgba(79,195,247,0.08)", padding: "4px 12px", whiteSpace: "nowrap", borderRadius: 999 }}>{match.round}</span>}
         </div>
       )}
 
@@ -896,7 +896,7 @@ var NextDuelCard = function(props) {
             </div>
           </div>
           {/* Countdown */}
-          {countdownText && <div style={{ textAlign: "center", padding: "4px 0 8px" }}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span></div>}
+          {countdownText && <div style={{ textAlign: "center", padding: "10px 0 10px" }}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span></div>}
           {/* Action buttons */}
           <div style={{ padding: "4px 20px 18px", display: "flex", gap: 10 }}>
             <button onClick={downloadICS} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, fontFamily: SANS }}>
@@ -1938,7 +1938,7 @@ export default function JoaoFonsecaNews() {
       )}
 
       {/* Mobile Tab Bar */}
-      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "#fff", borderTop: "1px solid " + BORDER, transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)", transform: tabBarHidden ? "translateY(100%)" : "translateY(0)", paddingBottom: "env(safe-area-inset-bottom, 8px)" }}>
+      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "#fff", borderTop: "1px solid " + BORDER, transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)", transform: tabBarHidden ? "translateY(100%)" : "translateY(0)", paddingBottom: "env(safe-area-inset-bottom, 20px)" }}>
         {showMaisMenu && (
           <div style={{ position: "absolute", bottom: "100%", right: 16, background: "white", borderRadius: 16, boxShadow: "0 8px 30px rgba(0,0,0,0.15)", border: "1px solid " + BORDER, padding: "8px 0", minWidth: 180, marginBottom: 6 }}>
             {[
