@@ -278,69 +278,116 @@ async function fetchRanking(apiKey, log) {
 
     var careerData = { wins: careerWins, losses: careerLosses, winPct: (careerWins && careerLosses) ? Math.round((careerWins / (careerWins + careerLosses)) * 100) : null, surface: surfaceStats, titles: titlesCount, vsTop10: vsTop10, updatedAt: new Date().toISOString() };
 
-    // If Wikipedia parsing failed for W-L or surface, use Claude AI
-    var needsAI = !careerWins || !surfaceStats.hard || !surfaceStats.clay;
-    if (needsAI) {
+    // === CAREER STATS: Baseline + Increment approach ===
+    // 1. If Wikipedia failed, try to get baseline from AI (one-time, cached 30 days)
+    // 2. Then increment from recentForm matches added after baseline
+    var needsBaseline = !careerWins || !surfaceStats.hard || !surfaceStats.clay;
+    var baseline = null;
+    try {
+      var cachedBaseline = await kv.get("fn:careerBaseline");
+      if (cachedBaseline) baseline = typeof cachedBaseline === "string" ? JSON.parse(cachedBaseline) : cachedBaseline;
+    } catch(e){}
+
+    if (needsBaseline && !baseline) {
+      // Fetch baseline via Claude AI (one-time, cached 30 days)
       try {
         var aiKey = process.env.ANTHROPIC_API_KEY;
         if (aiKey) {
-          var cachedAiStats = await kv.get("fn:careerStatsAI");
-          if (cachedAiStats) {
-            var aiParsed = typeof cachedAiStats === "string" ? JSON.parse(cachedAiStats) : cachedAiStats;
-            if (aiParsed.wins) { careerData.wins = aiParsed.wins; careerData.losses = aiParsed.losses; careerData.winPct = Math.round((aiParsed.wins / (aiParsed.wins + aiParsed.losses)) * 100); }
-            if (aiParsed.surface) careerData.surface = aiParsed.surface;
-            if (aiParsed.titles !== undefined) careerData.titles = aiParsed.titles;
-            if (aiParsed.vsTop10) careerData.vsTop10 = aiParsed.vsTop10;
-            log.push("career-ai: cached stats W" + careerData.wins + "-L" + careerData.losses);
-          } else {
-            var statsPrompt = "Search atptour.com for João Fonseca's current career statistics. Reply ONLY in this exact format:\nWINS: [number]\nLOSSES: [number]\nTITLES: [number]\nHARD: [wins]-[losses]\nCLAY: [wins]-[losses]\nGRASS: [wins]-[losses]\nVS_TOP10: [wins]-[losses]";
-            var aiStatsRes = await fetch("https://api.anthropic.com/v1/messages", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "x-api-key": aiKey, "anthropic-version": "2023-06-01" },
-              body: JSON.stringify({
-                model: "claude-haiku-4-5-20251001", max_tokens: 200,
-                system: "You are a tennis stats bot. Reply ONLY in the exact format requested. Use numbers only, no text.",
-                tools: [{ type: "web_search_20250305", name: "web_search" }],
-                messages: [{ role: "user", content: statsPrompt }]
-              })
-            });
-            if (aiStatsRes.ok) {
-              var aiStatsData = await aiStatsRes.json();
-              var aiText = "";
-              if (aiStatsData.content) {
-                for (var ci = aiStatsData.content.length - 1; ci >= 0; ci--) {
-                  if (aiStatsData.content[ci].type === "text" && aiStatsData.content[ci].text) { aiText = aiStatsData.content[ci].text; break; }
-                }
+          var statsPrompt = "Search atptour.com for João Fonseca's current career statistics. Reply ONLY in this exact format:\nWINS: [number]\nLOSSES: [number]\nTITLES: [number]\nHARD: [wins]-[losses]\nCLAY: [wins]-[losses]\nGRASS: [wins]-[losses]\nVS_TOP10: [wins]-[losses]";
+          var aiStatsRes = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-api-key": aiKey, "anthropic-version": "2023-06-01" },
+            body: JSON.stringify({
+              model: "claude-haiku-4-5-20251001", max_tokens: 200,
+              system: "You are a tennis stats bot. Reply ONLY in the exact format requested. Use numbers only, no text.",
+              tools: [{ type: "web_search_20250305", name: "web_search" }],
+              messages: [{ role: "user", content: statsPrompt }]
+            })
+          });
+          if (aiStatsRes.ok) {
+            var aiStatsData = await aiStatsRes.json();
+            var aiText = "";
+            if (aiStatsData.content) {
+              for (var ci = aiStatsData.content.length - 1; ci >= 0; ci--) {
+                if (aiStatsData.content[ci].type === "text" && aiStatsData.content[ci].text) { aiText = aiStatsData.content[ci].text; break; }
               }
-              var wm = aiText.match(/WINS:\s*(\d+)/i);
-              var lm = aiText.match(/LOSSES:\s*(\d+)/i);
-              var tm = aiText.match(/TITLES:\s*(\d+)/i);
-              var hm = aiText.match(/HARD:\s*(\d+)\s*-\s*(\d+)/i);
-              var clm = aiText.match(/CLAY:\s*(\d+)\s*-\s*(\d+)/i);
-              var grm = aiText.match(/GRASS:\s*(\d+)\s*-\s*(\d+)/i);
-              var t10m2 = aiText.match(/VS_TOP10:\s*(\d+)\s*-\s*(\d+)/i);
-              var aiStats = {};
-              if (wm && lm) { aiStats.wins = parseInt(wm[1]); aiStats.losses = parseInt(lm[1]); careerData.wins = aiStats.wins; careerData.losses = aiStats.losses; careerData.winPct = Math.round((aiStats.wins / (aiStats.wins + aiStats.losses)) * 100); }
-              if (tm) { aiStats.titles = parseInt(tm[1]); careerData.titles = aiStats.titles; }
-              if (hm && clm) {
-                aiStats.surface = {
-                  hard: { w: parseInt(hm[1]), l: parseInt(hm[2]) },
-                  clay: { w: parseInt(clm[1]), l: parseInt(clm[2]) },
+            }
+            var wm = aiText.match(/WINS:\s*(\d+)/i);
+            var lm = aiText.match(/LOSSES:\s*(\d+)/i);
+            var tm = aiText.match(/TITLES:\s*(\d+)/i);
+            var hm = aiText.match(/HARD:\s*(\d+)\s*-\s*(\d+)/i);
+            var clm = aiText.match(/CLAY:\s*(\d+)\s*-\s*(\d+)/i);
+            var grm = aiText.match(/GRASS:\s*(\d+)\s*-\s*(\d+)/i);
+            var t10m2 = aiText.match(/VS_TOP10:\s*(\d+)\s*-\s*(\d+)/i);
+            if (wm && lm) {
+              baseline = {
+                wins: parseInt(wm[1]), losses: parseInt(lm[1]),
+                titles: tm ? parseInt(tm[1]) : titlesCount,
+                surface: {
+                  hard: hm ? { w: parseInt(hm[1]), l: parseInt(hm[2]) } : null,
+                  clay: clm ? { w: parseInt(clm[1]), l: parseInt(clm[2]) } : null,
                   grass: grm ? { w: parseInt(grm[1]), l: parseInt(grm[2]) } : null
-                };
-                careerData.surface = aiStats.surface;
-              }
-              if (t10m2) { aiStats.vsTop10 = { w: parseInt(t10m2[1]), l: parseInt(t10m2[2]) }; careerData.vsTop10 = aiStats.vsTop10; }
-              if (aiStats.wins) {
-                await kv.set("fn:careerStatsAI", JSON.stringify(aiStats), { ex: 86400 * 7 });
-                log.push("career-ai: W" + aiStats.wins + "-L" + aiStats.losses + " (via Claude AI, cached 7d)");
-              } else {
-                log.push("career-ai: could not parse response");
-              }
+                },
+                vsTop10: t10m2 ? { w: parseInt(t10m2[1]), l: parseInt(t10m2[2]) } : vsTop10,
+                countedEventIds: [],
+                fetchedAt: new Date().toISOString()
+              };
+              await kv.set("fn:careerBaseline", JSON.stringify(baseline), { ex: 86400 * 30 });
+              log.push("career-ai: baseline W" + baseline.wins + "-L" + baseline.losses + " (cached 30d)");
+            } else {
+              log.push("career-ai: could not parse AI response");
             }
           }
         }
       } catch (e) { log.push("career-ai: error " + e.message); }
+    } else if (baseline) {
+      log.push("career-baseline: cached W" + baseline.wins + "-L" + baseline.losses);
+    }
+
+    // 2. Increment from recentForm
+    if (baseline) {
+      var form = [];
+      try {
+        var fRaw = await kv.get("fn:recentForm");
+        form = fRaw ? (typeof fRaw === "string" ? JSON.parse(fRaw) : fRaw) : [];
+      } catch(e){}
+      var counted = baseline.countedEventIds || [];
+      var deltaW = 0, deltaL = 0;
+      var deltaSurface = { hard: { w: 0, l: 0 }, clay: { w: 0, l: 0 }, grass: { w: 0, l: 0 } };
+      var newCounted = counted.slice();
+      for (var fi = 0; fi < form.length; fi++) {
+        var fm = form[fi];
+        var eid = String(fm.event_id || "");
+        if (!eid || counted.indexOf(eid) !== -1) continue;
+        if (fm.result === "V") deltaW++;
+        else if (fm.result === "D") deltaL++;
+        var surf = (fm.surface || "").toLowerCase();
+        if (surf.indexOf("clay") !== -1 || surf.indexOf("saibro") !== -1) {
+          if (fm.result === "V") deltaSurface.clay.w++; else deltaSurface.clay.l++;
+        } else if (surf.indexOf("grass") !== -1 || surf.indexOf("grama") !== -1) {
+          if (fm.result === "V") deltaSurface.grass.w++; else deltaSurface.grass.l++;
+        } else {
+          if (fm.result === "V") deltaSurface.hard.w++; else deltaSurface.hard.l++;
+        }
+        newCounted.push(eid);
+      }
+      if (deltaW + deltaL > 0) {
+        baseline.countedEventIds = newCounted;
+        await kv.set("fn:careerBaseline", JSON.stringify(baseline), { ex: 86400 * 30 });
+        log.push("career-increment: +" + deltaW + "W +" + deltaL + "L from form");
+      }
+      careerData.wins = baseline.wins + deltaW;
+      careerData.losses = baseline.losses + deltaL;
+      careerData.winPct = Math.round((careerData.wins / (careerData.wins + careerData.losses)) * 100);
+      careerData.titles = baseline.titles || titlesCount;
+      if (baseline.surface) {
+        careerData.surface = {
+          hard: baseline.surface.hard ? { w: baseline.surface.hard.w + deltaSurface.hard.w, l: baseline.surface.hard.l + deltaSurface.hard.l } : null,
+          clay: baseline.surface.clay ? { w: baseline.surface.clay.w + deltaSurface.clay.w, l: baseline.surface.clay.l + deltaSurface.clay.l } : null,
+          grass: baseline.surface.grass ? { w: baseline.surface.grass.w + deltaSurface.grass.w, l: baseline.surface.grass.l + deltaSurface.grass.l } : null,
+        };
+      }
+      if (baseline.vsTop10) careerData.vsTop10 = baseline.vsTop10;
     }
 
     await kv.set("fn:careerStats", JSON.stringify(careerData), { ex: 86400 * 7 });
