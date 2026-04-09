@@ -912,9 +912,9 @@ var NextDuelCard = function(props) {
       )}
       {/* Curiosidade strip integrada */}
       {facts && facts.length > 0 && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
           <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#4FC3F7", flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: "rgba(79,195,247,0.6)", fontFamily: SANS, fontWeight: 500, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{facts[factIdx % facts.length].text}</span>
+          <span style={{ fontSize: 12, color: "rgba(79,195,247,0.6)", fontFamily: SANS, fontWeight: 500, textAlign: "center" }}>{facts[factIdx % facts.length].text}</span>
           <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, flexShrink: 0 }}>{(factIdx % facts.length + 1) + "/" + facts.length}</span>
         </div>
       )}
