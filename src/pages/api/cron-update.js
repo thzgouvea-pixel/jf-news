@@ -289,29 +289,22 @@ async function fetchRanking(apiKey, log) {
     } catch(e){}
 
     if (needsBaseline && !baseline) {
-      // Fetch baseline via Claude AI (one-time, cached 30 days)
+      // Fetch baseline via Gemini AI (one-time, cached 30 days)
       try {
-        var aiKey = process.env.ANTHROPIC_API_KEY;
+        var aiKey = process.env.GEMINI_API_KEY;
         if (aiKey) {
-          var statsPrompt = "Search atptour.com for João Fonseca's current career statistics. Reply ONLY in this exact format:\nWINS: [number]\nLOSSES: [number]\nTITLES: [number]\nHARD: [wins]-[losses]\nCLAY: [wins]-[losses]\nGRASS: [wins]-[losses]\nVS_TOP10: [wins]-[losses]";
-          var aiStatsRes = await fetch("https://api.anthropic.com/v1/messages", {
+          var statsPrompt = "You are a tennis stats bot. Reply ONLY in the exact format requested. Use numbers only, no text.\n\nSearch atptour.com for João Fonseca's current career statistics. Reply ONLY in this exact format:\nWINS: [number]\nLOSSES: [number]\nTITLES: [number]\nHARD: [wins]-[losses]\nCLAY: [wins]-[losses]\nGRASS: [wins]-[losses]\nVS_TOP10: [wins]-[losses]";
+          var aiStatsRes = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + aiKey, {
             method: "POST",
-            headers: { "Content-Type": "application/json", "x-api-key": aiKey, "anthropic-version": "2023-06-01" },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              model: "claude-haiku-4-5-20251001", max_tokens: 200,
-              system: "You are a tennis stats bot. Reply ONLY in the exact format requested. Use numbers only, no text.",
-              tools: [{ type: "web_search_20250305", name: "web_search" }],
-              messages: [{ role: "user", content: statsPrompt }]
+              contents: [{ parts: [{ text: statsPrompt }] }]
             })
           });
           if (aiStatsRes.ok) {
             var aiStatsData = await aiStatsRes.json();
             var aiText = "";
-            if (aiStatsData.content) {
-              for (var ci = aiStatsData.content.length - 1; ci >= 0; ci--) {
-                if (aiStatsData.content[ci].type === "text" && aiStatsData.content[ci].text) { aiText = aiStatsData.content[ci].text; break; }
-              }
-            }
+            try { aiText = aiStatsData.candidates[0].content.parts[0].text || ""; } catch(e2){}
             var wm = aiText.match(/WINS:\s*(\d+)/i);
             var lm = aiText.match(/LOSSES:\s*(\d+)/i);
             var tm = aiText.match(/TITLES:\s*(\d+)/i);
@@ -880,34 +873,22 @@ export default async function handler(req,res){
       await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
       if(!nextMatch.court || !hasAiRanking){
         try{
-          var anthropicKey = process.env.ANTHROPIC_API_KEY;
-          if(anthropicKey){
+          var geminiKey = process.env.GEMINI_API_KEY;
+          if(geminiKey){
             var matchDate = nextMatch.date ? new Date(nextMatch.date).toISOString().split("T")[0] : "";
-            var courtPrompt = "Two questions about tennis:\n1. Search for the official order of play for " + nextMatch.tournament_name + " on " + matchDate + ". On which specific court is Joao Fonseca playing" + (nextMatch.opponent_name ? " against " + nextMatch.opponent_name : "") + (nextMatch.round ? " in the " + nextMatch.round : "") + "?\n2. What is " + (nextMatch.opponent_name || "the opponent") + "'s current ATP singles ranking?\nReply in this exact format:\nCOURT: [name]\nRANKING: [number]";
-            var aiRes = await fetch("https://api.anthropic.com/v1/messages", {
+            var courtPrompt = "You are a tennis data bot. Reply ONLY in this format:\nCOURT: [court name]\nRANKING: [number]\nExample:\nCOURT: Court Des Princes\nRANKING: 90\nIf unknown, use 'unknown' for that field.\n\nTwo questions about tennis:\n1. Search for the official order of play for " + nextMatch.tournament_name + " on " + matchDate + ". On which specific court is Joao Fonseca playing" + (nextMatch.opponent_name ? " against " + nextMatch.opponent_name : "") + (nextMatch.round ? " in the " + nextMatch.round : "") + "?\n2. What is " + (nextMatch.opponent_name || "the opponent") + "'s current ATP singles ranking?\nReply in this exact format:\nCOURT: [name]\nRANKING: [number]";
+            var aiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + geminiKey, {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "x-api-key": anthropicKey,
-                "anthropic-version": "2023-06-01"
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                model: "claude-haiku-4-5-20251001",
-                max_tokens: 300,
-                system: "You are a tennis data bot. Reply ONLY in this format:\nCOURT: [court name]\nRANKING: [number]\nExample:\nCOURT: Court Des Princes\nRANKING: 90\nIf unknown, use 'unknown' for that field.",
-                tools: [{ type: "web_search_20250305", name: "web_search" }],
-                messages: [{ role: "user", content: courtPrompt }]
+                tools: [{ google_search_retrieval: {} }],
+                contents: [{ parts: [{ text: courtPrompt }] }]
               })
             });
             if(aiRes.ok){
               var aiData = await aiRes.json();
-              console.log("[cron] AI stop_reason:", aiData.stop_reason);
-              console.log("[cron] AI content blocks:", (aiData.content||[]).length, (aiData.content||[]).map(function(c){return c.type;}).join(","));
               var courtAnswer = "";
-              // Get LAST text block (first ones are narration, last is the answer)
-              for(var ci=0;ci<(aiData.content||[]).length;ci++){
-                if(aiData.content[ci].type === "text" && aiData.content[ci].text) courtAnswer = aiData.content[ci].text;
-              }
+              try { courtAnswer = aiData.candidates[0].content.parts.map(function(p){return p.text||"";}).join(" "); } catch(e2){}
               courtAnswer = courtAnswer.trim().replace(/^["'\.\s]+|["'\.\s]+$/g, "").replace(/\n/g, " ").trim();
               console.log("[cron] AI court raw response:", courtAnswer);
               // Extract COURT
@@ -923,7 +904,7 @@ export default async function handler(req,res){
                 nextMatch.court = finalCourt;
                 await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
                 await kv.set(courtCacheKey, finalCourt, {ex:14400});
-                log.push("court: " + finalCourt + " (via Claude AI, cached 4h)");
+                log.push("court: " + finalCourt + " (via Gemini AI, cached 4h)");
               } else { log.push("court: AI could not find court"); }
               // Apply ranking from AI if found and we don't have a reliable one
               if (rankExtract) {
@@ -932,11 +913,11 @@ export default async function handler(req,res){
                   nextMatch.opponent_ranking = aiRanking;
                   await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});
                   await kv.set(rankCacheKey, String(aiRanking), {ex:14400});
-                  log.push("ranking-ai: #" + aiRanking + " (via Claude AI, cached 4h)");
+                  log.push("ranking-ai: #" + aiRanking + " (via Gemini AI, cached 4h)");
                 }
               }
             } else { log.push("court: AI HTTP " + aiRes.status); }
-          } else { log.push("court: no ANTHROPIC_API_KEY"); }
+          } else { log.push("court: no GEMINI_API_KEY"); }
         }catch(e){log.push("court: AI error " + e.message);}
       } else { log.push("court: " + nextMatch.court); }
       if(!nextMatch.opponent_ranking){try{var op=await kv.get("fn:opponentProfile");if(op){var opp=typeof op==="string"?JSON.parse(op):op;if(opp&&opp.ranking){nextMatch.opponent_ranking=opp.ranking;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("nextMatch: ranking fallback #"+opp.ranking);}}}catch(e){}}
