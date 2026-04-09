@@ -923,8 +923,37 @@ export default async function handler(req,res){
       if(!nextMatch.opponent_ranking){try{var op=await kv.get("fn:opponentProfile");if(op){var opp=typeof op==="string"?JSON.parse(op):op;if(opp&&opp.ranking){nextMatch.opponent_ranking=opp.ranking;await kv.set("fn:nextMatch",JSON.stringify(nextMatch),{ex:86400});log.push("nextMatch: ranking fallback #"+opp.ranking);}}}catch(e){}}
       log.push("nextMatch: vs "+nextMatch.opponent_name+(nextMatch.opponent_ranking?" #"+nextMatch.opponent_ranking:"")+" @ "+nextMatch.tournament_name+(nextMatch.round?" · "+nextMatch.round:"")+(nextMatch.court?" · "+nextMatch.court:""));
     }else{
-      var mn=await kv.get("fn:nextMatch");if(mn){var mp=typeof mn==="string"?JSON.parse(mn):mn;if(mp&&mp.opponent_name){if(mp.opponent_id&&(!mp.opponent_ranking||!mp.opponent_country)){var mod=await fetchOpponentDetails(mp.opponent_id,mp.opponent_name,apiKey,log);if(mod){mp=enrichMatch(mp,mod);await kv.set("fn:nextMatch",JSON.stringify(mp),{ex:86400*7});totalRequests++;}}log.push("nextMatch: manual ("+mp.opponent_name+")");nextMatch=mp;}else{log.push("nextMatch: none");}}else{log.push("nextMatch: none");}
-    }
+  // No scheduled next match — build placeholder from last match context
+  var placeholder = null;
+  if(lastMatch && lastMatch.result === "V" && lastResult.daysAgo <= 2 && lastMatch.tournament_name){
+    var roundProgression = {"1ª Rodada":"2ª Rodada","2ª Rodada":"Oitavas de final","Oitavas de final":"Quartas de final","Quartas de final":"Semifinal","Semifinal":"Final","R1":"R2","R2":"R3","R3":"QF","QF":"SF","SF":"F","Round of 128":"Round of 64","Round of 64":"Round of 32","Round of 32":"Round of 16","Round of 16":"Quarterfinals","Quarterfinals":"Semifinals","Semifinals":"Final"};
+    var nextRound = roundProgression[lastMatch.round] || "";
+    placeholder = {
+      opponent_name: "A definir",
+      opponent_id: null,
+      opponent_ranking: null,
+      opponent_country: "",
+      tournament_name: lastMatch.tournament_name,
+      tournament_category: lastMatch.tournament_category || "",
+      surface: lastMatch.surface || "",
+      city: lastMatch.city || "",
+      round: nextRound,
+      date: null,
+      court: null,
+      isFonsecaHome: true
+    };
+    log.push("nextMatch: placeholder — " + lastMatch.tournament_name + " " + nextRound + " (opponent TBD)");
+  } else if(lastMatch && lastMatch.result === "D" && lastResult.daysAgo <= 2){
+    // Lost — no next match in this tournament
+    placeholder = { opponent_name: "A definir", tournament_name: "", date: null };
+    log.push("nextMatch: cleared — lost last match");
+  } else {
+    placeholder = { opponent_name: "A definir", tournament_name: "", date: null };
+    log.push("nextMatch: cleared — no upcoming match");
+  }
+  await kv.set("fn:nextMatch", JSON.stringify(placeholder), { ex: 86400 });
+  nextMatch = placeholder;
+}
     await fetchOdds(nextMatch,apiKey,log);
     var seasonData=await fetchSeasonStats(apiKey,log);if(seasonData)await kv.set("fn:season",JSON.stringify(seasonData),{ex:86400});
     await fetchBiography(log);
