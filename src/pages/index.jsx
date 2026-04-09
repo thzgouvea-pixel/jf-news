@@ -1693,16 +1693,7 @@ export default function JoaoFonsecaNews() {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
           </button>
         </div>
-<div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
-            <button onClick={handlePushSubscribe} disabled={pushLoading || pushEnabled} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: pushEnabled ? GREEN : (pushLoading ? DIM : SUB), display: "flex", alignItems: "center", justifyContent: "center", cursor: pushEnabled ? "default" : (pushLoading ? "default" : "pointer"), padding: 0, position: "relative" }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill={pushEnabled ? GREEN : "none"} stroke={pushEnabled ? GREEN : "currentColor"} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              {pushEnabled && <span style={{ position: "absolute", top: 5, right: 5, width: 6, height: 6, borderRadius: "50%", background: GREEN, border: "1.5px solid #fff" }} />}
-              {pushLoading && <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="2.5" style={{ animation: "spin 1s linear infinite" }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg></span>}
-            </button>
-            <button onClick={handleRefresh} disabled={loading} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, padding: 0 }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
-            </button>
-          </div>
+
         <div className="desktop-nav" style={{ position: "relative" }}>
           <nav style={{ maxWidth: 640, margin: "0 auto", overflowX: "auto", overflowY: "hidden", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none", padding: "2px 16px 12px", paddingRight: 48, display: "flex", alignItems: "center", gap: 24 }}>
             {[
