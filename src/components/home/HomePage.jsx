@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Head from "next/head";
 import NextDuelCard from "./NextDuelCard";
 import MatchCarousel from "./MatchCarousel";
 import NewsCard from "./NewsCard";
 import Modal from "../ui/Modal";
 import { formatTimeAgo } from "../../lib/formatters";
+import useHomeData from "../../hooks/useHomeData";
 
 const GREEN = "#00A859";
 const YELLOW = "#FFCB05";
@@ -47,58 +48,24 @@ function Skeleton() {
 }
 
 export default function HomePage({ preview = false }) {
-  const [news, setNews] = useState([]);
-  const [nextMatch, setNextMatch] = useState(null);
-  const [player, setPlayer] = useState(null);
-  const [lastMatch, setLastMatch] = useState(null);
-  const [matchStats, setMatchStats] = useState(null);
-  const [recentForm, setRecentForm] = useState(null);
-  const [prizeMoney, setPrizeMoney] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState(null);
-  const [allLikes, setAllLikes] = useState({});
-  const [highlightVideo, setHighlightVideo] = useState(null);
-  const [opponentProfile, setOpponentProfile] = useState(null);
   const [showOppPopup, setShowOppPopup] = useState(false);
-  const [winProb, setWinProb] = useState(null);
-  const [liveMatch, setLiveMatch] = useState(null);
-  const [tournamentFacts, setTournamentFacts] = useState(null);
-
-  useEffect(() => {
-    Promise.allSettled([
-      fetch("/api/news").then((r) => r.json()),
-      fetch("/api/sofascore-data").then((r) => r.json()),
-      fetch("/api/stats").then((r) => r.json()),
-      fetch("/api/manual-video").then((r) => r.json()),
-      fetch("/api/live").then((r) => r.json()),
-    ]).then((results) => {
-      const [newsRes, sofaRes, statsRes, videoRes, liveRes] = results;
-      if (newsRes.status === "fulfilled" && newsRes.value) {
-        const data = newsRes.value;
-        if (data.news?.length) setNews(data.news);
-        if (data.nextMatch) setNextMatch(data.nextMatch);
-        if (data.lastMatch) setLastMatch(data.lastMatch);
-        if (data.player) setPlayer(data.player);
-      }
-      if (sofaRes.status === "fulfilled" && sofaRes.value) {
-        const data = sofaRes.value;
-        if (data.matchStats) setMatchStats(data.matchStats);
-        if (data.recentForm) setRecentForm(data.recentForm);
-        if (data.prizeMoney) setPrizeMoney(data.prizeMoney);
-        if (data.winProb) setWinProb(data.winProb);
-        if (data.opponentProfile) setOpponentProfile(data.opponentProfile);
-        if (data.tournamentFacts) setTournamentFacts(data.tournamentFacts);
-        if (data.lastMatch?.result) setLastMatch(data.lastMatch);
-        if (data.nextMatch?.date) setNextMatch(data.nextMatch);
-        if (data.ranking?.ranking) setPlayer((prev) => (prev ? { ...prev, ranking: data.ranking.ranking } : { ranking: data.ranking.ranking }));
-      }
-      if (statsRes.status === "fulfilled" && statsRes.value?.likes) setAllLikes(statsRes.value.likes);
-      if (videoRes.status === "fulfilled" && videoRes.value?.videoId) setHighlightVideo(videoRes.value);
-      if (liveRes.status === "fulfilled" && liveRes.value?.live) setLiveMatch(liveRes.value);
-      setLastUpdate(new Date().toISOString());
-      setLoading(false);
-    });
-  }, []);
+  const {
+    news,
+    nextMatch,
+    player,
+    lastMatch,
+    matchStats,
+    recentForm,
+    prizeMoney,
+    loading,
+    lastUpdate,
+    allLikes,
+    highlightVideo,
+    opponentProfile,
+    winProb,
+    liveMatch,
+    tournamentFacts,
+  } = useHomeData();
 
   const displayNews = news.length ? news : SAMPLE_NEWS;
   const displayMatch = nextMatch || SAMPLE_NEXT_MATCH;
@@ -156,7 +123,7 @@ export default function HomePage({ preview = false }) {
             <div style={{ background: BG_ALT, borderRadius: 14, padding: "16px 18px", border: `1px solid ${BORDER}` }}>
               <p style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>O que esta rota prova</p>
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {["NextDuelCard já está desacoplado da home principal","MatchCarousel e PlayerBlock já funcionam como módulos independentes","NewsCard saiu do arquivo monolítico","Modal compartilhado e utilitários base já estão extraídos"].map((text, index) => (
+                {["NextDuelCard já está desacoplado da home principal","MatchCarousel e PlayerBlock já funcionam como módulos independentes","NewsCard saiu do arquivo monolítico","Modal compartilhado e utilitários base já estão extraídos","Busca de dados da home agora está centralizada em hook"].map((text, index) => (
                   <div key={index} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}><span style={{ color: GREEN, fontSize: 12, fontWeight: 700, fontFamily: SANS, marginTop: 1 }}>•</span><span style={{ fontSize: 12, color: SUB, fontFamily: SANS, lineHeight: 1.5 }}>{text}</span></div>
                 ))}
               </div>
