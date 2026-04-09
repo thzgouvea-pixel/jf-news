@@ -743,7 +743,7 @@ var NextDuelCard = function(props) {
             <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(79,195,247,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg>
             </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.1em" }}>Próximo duelo</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.1em" }}>Próximo jogo</span>
           </>
         )}
       </div>
@@ -865,7 +865,7 @@ var NextDuelCard = function(props) {
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(79,195,247,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                 </div>
-                <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Horário</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>{dateInfo.time + " BRT"}</div></div>
+                <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Horário</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>{dateInfo.time}</div></div>
               </div>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "10px 12px" }}>
@@ -1732,162 +1732,6 @@ export default function JoaoFonsecaNews() {
   <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
 </section>
 
-<section style={{ padding: "14px 0 0" }}>
-  <div style={{
-    background: BG_ALT,
-    borderRadius: 16,
-    padding: "16px",
-    border: "1px solid " + BORDER
-  }}>
-    <div style={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: 12
-    }}>
-      <span style={{
-        fontSize: 11,
-        fontWeight: 700,
-        color: DIM,
-        fontFamily: SANS,
-        textTransform: "uppercase",
-        letterSpacing: "0.06em"
-      }}>
-        Resumo do próximo jogo
-      </span>
-      {dm && dm.round ? (
-        <span style={{
-          fontSize: 11,
-          fontWeight: 700,
-          color: GREEN,
-          fontFamily: SANS
-        }}>
-          {dm.round}
-        </span>
-      ) : null}
-    </div>
-
-    <div style={{
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 10
-    }}>
-      <div style={{
-        background: "#fff",
-        border: "1px solid " + BORDER,
-        borderRadius: 12,
-        padding: "12px"
-      }}>
-        <div style={{
-          fontSize: 10,
-          color: DIM,
-          fontFamily: SANS,
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          marginBottom: 4
-        }}>
-          Torneio
-        </div>
-        <div style={{
-          fontSize: 14,
-          fontWeight: 700,
-          color: TEXT,
-          fontFamily: SERIF,
-          lineHeight: 1.25
-        }}>
-          {dm && dm.tournament_name ? dm.tournament_name.split(",")[0] : "A definir"}
-        </div>
-      </div>
-
-      <div style={{
-        background: "#fff",
-        border: "1px solid " + BORDER,
-        borderRadius: 12,
-        padding: "12px"
-      }}>
-        <div style={{
-          fontSize: 10,
-          color: DIM,
-          fontFamily: SANS,
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          marginBottom: 4
-        }}>
-          Horário
-        </div>
-        <div style={{
-          fontSize: 14,
-          fontWeight: 700,
-          color: TEXT,
-          fontFamily: SERIF,
-          lineHeight: 1.25
-        }}>
-          {dm && dm.date ? new Date(dm.date).toLocaleTimeString("pt-BR", {
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "America/Sao_Paulo"
-          }) : "A definir"}
-        </div>
-      </div>
-
-      <div style={{
-        background: "#fff",
-        border: "1px solid " + BORDER,
-        borderRadius: 12,
-        padding: "12px"
-      }}>
-        <div style={{
-          fontSize: 10,
-          color: DIM,
-          fontFamily: SANS,
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          marginBottom: 4
-        }}>
-          Superfície
-        </div>
-        <div style={{
-          fontSize: 14,
-          fontWeight: 700,
-          color: TEXT,
-          fontFamily: SERIF,
-          lineHeight: 1.25
-        }}>
-          {dm && dm.surface ? dm.surface : "A definir"}
-        </div>
-      </div>
-
-      <div style={{
-        background: "#fff",
-        border: "1px solid " + BORDER,
-        borderRadius: 12,
-        padding: "12px"
-      }}>
-        <div style={{
-          fontSize: 10,
-          color: DIM,
-          fontFamily: SANS,
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          marginBottom: 4
-        }}>
-          Adversário
-        </div>
-        <div style={{
-          fontSize: 14,
-          fontWeight: 700,
-          color: TEXT,
-          fontFamily: SERIF,
-          lineHeight: 1.25
-        }}>
-          {dm && dm.opponent_name ? dm.opponent_name : "A definir"}
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-{/* Última Partida + Melhores Momentos — carrossel swipável */}
 <section style={{ padding: "20px 0 0" }}>
   <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Última partida</p>
   {highlightVideo && highlightVideo.videoId ? (
