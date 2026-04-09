@@ -732,7 +732,7 @@ var NextDuelCard = function(props) {
       <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, " + (isLive ? "#ef4444" : sc) + "10 0%, transparent 65%)", pointerEvents: "none" }} />
 
       {/* Section label with icon */}
-      <div style={{ padding: "16px 18px 0", display: "flex", alignItems: "center", gap: 6 }}>
+      <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", gap: 8 }}>
         {isLive ? (
           <>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
@@ -749,27 +749,27 @@ var NextDuelCard = function(props) {
       </div>
       {/* Push notification button */}
       {!isLive && !pushEnabled && onPushClick && (
-        <div style={{ position: "absolute", top: 16, right: 18, zIndex: 2 }}>
-          <button onClick={onPushClick} disabled={pushLoading} style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, color: "rgba(255,255,255,0.4)" }}>
+        <div style={{ position: "absolute", top: 18, right: 20, zIndex: 2 }}>
+          <button onClick={onPushClick} disabled={pushLoading} style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, color: "rgba(255,255,255,0.4)" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </button>
         </div>
       )}
       {!isLive && pushEnabled && (
-        <div style={{ position: "absolute", top: 16, right: 18, zIndex: 2 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ position: "absolute", top: 18, right: 20, zIndex: 2 }}>
+          <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </div>
         </div>
       )}
       {/* Tournament bar */}
       {!isLive && (
-        <div style={{ padding: "10px 18px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ padding: "14px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em" }}>{surfaceLabel}</span>
             <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS, fontWeight: 600 }}>{match.tournament_category || ""}</span>
           </div>
-          {match.round && <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(79,195,247,0.7)", fontFamily: SANS, background: "rgba(79,195,247,0.08)", padding: "3px 10px", borderRadius: 999 }}>{match.round}</span>}
+          {match.round && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(79,195,247,0.7)", fontFamily: SANS, background: "rgba(79,195,247,0.08)", padding: "4px 12px", borderRadius: 999 }}>{match.round}</span>}
         </div>
       )}
 
@@ -852,8 +852,8 @@ var NextDuelCard = function(props) {
         <>
           {/* Probability */}
           {fPct !== null && oPct !== null && (
-            <div style={{ padding: "16px 18px 0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+            <div style={{ padding: "22px 20px 0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <span style={{ fontSize: 20, fontWeight: 900, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{fPct + "%"}</span>
                 <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Probabilidade de vitória</span>
                 <span style={{ fontSize: 20, fontWeight: 900, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{oPct + "%"}</span>
@@ -865,13 +865,13 @@ var NextDuelCard = function(props) {
             </div>
           )}
           {/* Info grid 2x2 */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, padding: "14px 18px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "18px 20px" }}>
             {dateInfo && (
               <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "10px 12px" }}>
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(79,195,247,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 </div>
-                <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Data</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>{shortDate}</div></div>
+                <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Data</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>{dateInfo.weekday + ", " + dateInfo.date}</div></div>
               </div>
             )}
             {dateInfo && (
@@ -896,9 +896,9 @@ var NextDuelCard = function(props) {
             </div>
           </div>
           {/* Countdown */}
-          {countdownText && <div style={{ textAlign: "center", paddingBottom: 4 }}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span></div>}
+          {countdownText && <div style={{ textAlign: "center", padding: "4px 0 8px" }}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span></div>}
           {/* Action buttons */}
-          <div style={{ padding: "4px 18px 16px", display: "flex", gap: 8 }}>
+          <div style={{ padding: "4px 20px 18px", display: "flex", gap: 10 }}>
             <button onClick={downloadICS} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, fontFamily: SANS }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
               Adicionar ao Calendário
@@ -912,7 +912,7 @@ var NextDuelCard = function(props) {
       )}
       {/* Curiosidade strip integrada */}
       {facts && facts.length > 0 && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "12px 18px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ width: 4, height: 4, borderRadius: "50%", background: "#4FC3F7", flexShrink: 0 }} />
           <span style={{ fontSize: 12, color: "rgba(79,195,247,0.6)", fontFamily: SANS, fontWeight: 500, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{facts[factIdx % facts.length].text}</span>
           <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, flexShrink: 0 }}>{(factIdx % facts.length + 1) + "/" + facts.length}</span>
