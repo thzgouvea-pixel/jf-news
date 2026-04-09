@@ -808,7 +808,7 @@ export default async function handler(req,res){
     var lastResult=await findLastMatch(apiKey);totalRequests+=lastResult.requestsUsed;var lastMatch=null;
     if(lastResult.match){
       lastMatch=parseMatch(lastResult.match,false);
-      if(lastMatch.opponent_id&&(!lastMatch.opponent_ranking||!lastMatch.opponent_country)){var lod=await fetchOpponentDetails(lastMatch.opponent_id,lastMatch.opponent_name,apiKey,log);if(lod){lastMatch=enrichMatch(lastMatch,lod);totalRequests++;}}
+      if(lastMatch.opponent_id){try{await kv.del("fn:oppCache:"+lastMatch.opponent_id);}catch(e){}var lod=await fetchOpponentDetails(lastMatch.opponent_id,lastMatch.opponent_name,apiKey,log);if(lod){lastMatch=enrichMatch(lastMatch,lod);totalRequests++;}}
       await kv.set("fn:lastMatch",JSON.stringify(lastMatch),{ex:86400*3});
       log.push("lastMatch: "+lastMatch.result+" vs "+lastMatch.opponent_name+" #"+(lastMatch.opponent_ranking||"?")+" ("+lastResult.daysAgo+"d ago)");
       var prevStatsId=null;try{prevStatsId=await kv.get("fn:lastStatsEventId");}catch(e){}
