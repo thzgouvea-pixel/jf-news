@@ -29,6 +29,8 @@ function findFonsecaInList(matchData) {
 
 function isMatchLive(status) {
   if (!status) return false;
+  if (status.isInProgress === true) return true;
+  if (status.isStarted === true && !status.isFinished) return true;
   var t = (status.type || "").toLowerCase();
   var d = (status.description || "").toLowerCase();
   return t === "inprogress" || t === "in_progress" || t === "live" || t === "started" ||
