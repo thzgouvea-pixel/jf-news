@@ -1722,15 +1722,180 @@ export default function JoaoFonsecaNews() {
       <main className="mobile-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
 
         {!loading && news.length === 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#FEF3C7", borderRadius: 10, margin: "12px 0 0", border: "1px solid #F59E0B33" }}>
-            <span style={{ fontSize: 13 }}>⚠️</span>
-            <span style={{ fontSize: 11, color: "#92400E", fontFamily: SANS }}>Dados offline — mostrando informações de exemplo. Toque em atualizar.</span>
-          </div>
-        )}
+  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#FEF3C7", borderRadius: 10, margin: "12px 0 0", border: "1px solid #F59E0B33" }}>
+    <span style={{ fontSize: 13 }}>⚠️</span>
+    <span style={{ fontSize: 11, color: "#92400E", fontFamily: SANS }}>Dados offline — mostrando informações de exemplo. Toque em atualizar.</span>
+  </div>
+)}
 
-        <section style={{ padding: "8px 0 0" }}>
-          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
-        </section>
+<section style={{ padding: "8px 0 0" }}>
+  <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
+</section>
+
+<section style={{ padding: "14px 0 0" }}>
+  <div style={{
+    background: BG_ALT,
+    borderRadius: 16,
+    padding: "16px",
+    border: "1px solid " + BORDER
+  }}>
+    <div style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 12
+    }}>
+      <span style={{
+        fontSize: 11,
+        fontWeight: 700,
+        color: DIM,
+        fontFamily: SANS,
+        textTransform: "uppercase",
+        letterSpacing: "0.06em"
+      }}>
+        Resumo do próximo jogo
+      </span>
+      {dm && dm.round ? (
+        <span style={{
+          fontSize: 11,
+          fontWeight: 700,
+          color: GREEN,
+          fontFamily: SANS
+        }}>
+          {dm.round}
+        </span>
+      ) : null}
+    </div>
+
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "1fr 1fr",
+      gap: 10
+    }}>
+      <div style={{
+        background: "#fff",
+        border: "1px solid " + BORDER,
+        borderRadius: 12,
+        padding: "12px"
+      }}>
+        <div style={{
+          fontSize: 10,
+          color: DIM,
+          fontFamily: SANS,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          marginBottom: 4
+        }}>
+          Torneio
+        </div>
+        <div style={{
+          fontSize: 14,
+          fontWeight: 700,
+          color: TEXT,
+          fontFamily: SERIF,
+          lineHeight: 1.25
+        }}>
+          {dm && dm.tournament_name ? dm.tournament_name.split(",")[0] : "A definir"}
+        </div>
+      </div>
+
+      <div style={{
+        background: "#fff",
+        border: "1px solid " + BORDER,
+        borderRadius: 12,
+        padding: "12px"
+      }}>
+        <div style={{
+          fontSize: 10,
+          color: DIM,
+          fontFamily: SANS,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          marginBottom: 4
+        }}>
+          Horário
+        </div>
+        <div style={{
+          fontSize: 14,
+          fontWeight: 700,
+          color: TEXT,
+          fontFamily: SERIF,
+          lineHeight: 1.25
+        }}>
+          {dm && dm.date ? new Date(dm.date).toLocaleTimeString("pt-BR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "America/Sao_Paulo"
+          }) : "A definir"}
+        </div>
+      </div>
+
+      <div style={{
+        background: "#fff",
+        border: "1px solid " + BORDER,
+        borderRadius: 12,
+        padding: "12px"
+      }}>
+        <div style={{
+          fontSize: 10,
+          color: DIM,
+          fontFamily: SANS,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          marginBottom: 4
+        }}>
+          Superfície
+        </div>
+        <div style={{
+          fontSize: 14,
+          fontWeight: 700,
+          color: TEXT,
+          fontFamily: SERIF,
+          lineHeight: 1.25
+        }}>
+          {dm && dm.surface ? dm.surface : "A definir"}
+        </div>
+      </div>
+
+      <div style={{
+        background: "#fff",
+        border: "1px solid " + BORDER,
+        borderRadius: 12,
+        padding: "12px"
+      }}>
+        <div style={{
+          fontSize: 10,
+          color: DIM,
+          fontFamily: SANS,
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          marginBottom: 4
+        }}>
+          Adversário
+        </div>
+        <div style={{
+          fontSize: 14,
+          fontWeight: 700,
+          color: TEXT,
+          fontFamily: SERIF,
+          lineHeight: 1.25
+        }}>
+          {dm && dm.opponent_name ? dm.opponent_name : "A definir"}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* Última Partida + Melhores Momentos — carrossel swipável */}
+<section style={{ padding: "20px 0 0" }}>
+  <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Última partida</p>
+  {highlightVideo && highlightVideo.videoId ? (
+    <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
+  ) : (
+    <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
+  )}
+</section>
 
         {/* Última Partida + Melhores Momentos — carrossel swipável */}
         <section style={{ padding: "20px 0 0" }}>
