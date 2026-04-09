@@ -425,7 +425,23 @@ async function findFonsecaMatches(date, apiKey) {
 
 async function findLastMatch(apiKey) {
   var today = new Date();
-  for (var i = 0; i < 7; i++) { var d = new Date(today); d.setDate(d.getDate() - i); var matches = await findFonsecaMatches(d, apiKey); if (matches.length > 0) { var finished = matches.filter(function (m) { return m.status && (m.status.type === "finished" || m.status.isFinished); }); if (finished.length > 0) return { match: finished[0], daysAgo: i, requestsUsed: i + 1 }; } }
+  for (var i = 0; i < 7; i++) {
+    var d = new Date(today); d.setDate(d.getDate() - i);
+    var matches = await findFonsecaMatches(d, apiKey);
+    if (matches.length > 0) {
+      var finished = matches.filter(function (m) {
+        return m.status && (m.status.type === "finished" || m.status.isFinished);
+      });
+      if (finished.length > 0) {
+        finished.sort(function(a, b) {
+          var ta = a.startTimestamp || a.timestamp || 0;
+          var tb = b.startTimestamp || b.timestamp || 0;
+          return tb - ta;
+        });
+        return { match: finished[0], daysAgo: i, requestsUsed: i + 1 };
+      }
+    }
+  }
   return { match: null, daysAgo: -1, requestsUsed: 7 };
 }
 
