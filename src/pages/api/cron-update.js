@@ -277,6 +277,72 @@ async function fetchRanking(apiKey, log) {
     } catch (e) { log.push("vsTop10: parse error " + e.message); }
 
     var careerData = { wins: careerWins, losses: careerLosses, winPct: (careerWins && careerLosses) ? Math.round((careerWins / (careerWins + careerLosses)) * 100) : null, surface: surfaceStats, titles: titlesCount, vsTop10: vsTop10, updatedAt: new Date().toISOString() };
+
+    // If Wikipedia parsing failed for W-L or surface, use Claude AI
+    var needsAI = !careerWins || !surfaceStats.hard || !surfaceStats.clay;
+    if (needsAI) {
+      try {
+        var aiKey = process.env.ANTHROPIC_API_KEY;
+        if (aiKey) {
+          var cachedAiStats = await kv.get("fn:careerStatsAI");
+          if (cachedAiStats) {
+            var aiParsed = typeof cachedAiStats === "string" ? JSON.parse(cachedAiStats) : cachedAiStats;
+            if (aiParsed.wins) { careerData.wins = aiParsed.wins; careerData.losses = aiParsed.losses; careerData.winPct = Math.round((aiParsed.wins / (aiParsed.wins + aiParsed.losses)) * 100); }
+            if (aiParsed.surface) careerData.surface = aiParsed.surface;
+            if (aiParsed.titles !== undefined) careerData.titles = aiParsed.titles;
+            if (aiParsed.vsTop10) careerData.vsTop10 = aiParsed.vsTop10;
+            log.push("career-ai: cached stats W" + careerData.wins + "-L" + careerData.losses);
+          } else {
+            var statsPrompt = "Search atptour.com for João Fonseca's current career statistics. Reply ONLY in this exact format:\nWINS: [number]\nLOSSES: [number]\nTITLES: [number]\nHARD: [wins]-[losses]\nCLAY: [wins]-[losses]\nGRASS: [wins]-[losses]\nVS_TOP10: [wins]-[losses]";
+            var aiStatsRes = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "x-api-key": aiKey, "anthropic-version": "2023-06-01" },
+              body: JSON.stringify({
+                model: "claude-haiku-4-5-20251001", max_tokens: 200,
+                system: "You are a tennis stats bot. Reply ONLY in the exact format requested. Use numbers only, no text.",
+                tools: [{ type: "web_search_20250305", name: "web_search" }],
+                messages: [{ role: "user", content: statsPrompt }]
+              })
+            });
+            if (aiStatsRes.ok) {
+              var aiStatsData = await aiStatsRes.json();
+              var aiText = "";
+              if (aiStatsData.content) {
+                for (var ci = aiStatsData.content.length - 1; ci >= 0; ci--) {
+                  if (aiStatsData.content[ci].type === "text" && aiStatsData.content[ci].text) { aiText = aiStatsData.content[ci].text; break; }
+                }
+              }
+              var wm = aiText.match(/WINS:\s*(\d+)/i);
+              var lm = aiText.match(/LOSSES:\s*(\d+)/i);
+              var tm = aiText.match(/TITLES:\s*(\d+)/i);
+              var hm = aiText.match(/HARD:\s*(\d+)\s*-\s*(\d+)/i);
+              var clm = aiText.match(/CLAY:\s*(\d+)\s*-\s*(\d+)/i);
+              var grm = aiText.match(/GRASS:\s*(\d+)\s*-\s*(\d+)/i);
+              var t10m2 = aiText.match(/VS_TOP10:\s*(\d+)\s*-\s*(\d+)/i);
+              var aiStats = {};
+              if (wm && lm) { aiStats.wins = parseInt(wm[1]); aiStats.losses = parseInt(lm[1]); careerData.wins = aiStats.wins; careerData.losses = aiStats.losses; careerData.winPct = Math.round((aiStats.wins / (aiStats.wins + aiStats.losses)) * 100); }
+              if (tm) { aiStats.titles = parseInt(tm[1]); careerData.titles = aiStats.titles; }
+              if (hm && clm) {
+                aiStats.surface = {
+                  hard: { w: parseInt(hm[1]), l: parseInt(hm[2]) },
+                  clay: { w: parseInt(clm[1]), l: parseInt(clm[2]) },
+                  grass: grm ? { w: parseInt(grm[1]), l: parseInt(grm[2]) } : null
+                };
+                careerData.surface = aiStats.surface;
+              }
+              if (t10m2) { aiStats.vsTop10 = { w: parseInt(t10m2[1]), l: parseInt(t10m2[2]) }; careerData.vsTop10 = aiStats.vsTop10; }
+              if (aiStats.wins) {
+                await kv.set("fn:careerStatsAI", JSON.stringify(aiStats), { ex: 86400 * 7 });
+                log.push("career-ai: W" + aiStats.wins + "-L" + aiStats.losses + " (via Claude AI, cached 7d)");
+              } else {
+                log.push("career-ai: could not parse response");
+              }
+            }
+          }
+        }
+      } catch (e) { log.push("career-ai: error " + e.message); }
+    }
+
     await kv.set("fn:careerStats", JSON.stringify(careerData), { ex: 86400 * 7 });
     log.push("career: " + (careerWins || "?") + "-" + (careerLosses || "?") + " (" + (careerData.winPct || "?") + "%)");
     return { ranking: ranking, points: null, previousRanking: null, bestRanking: bestRanking, rankingChange: 0, prizeMoney: prizeMoney };
