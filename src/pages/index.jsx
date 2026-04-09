@@ -747,21 +747,7 @@ var NextDuelCard = function(props) {
           </>
         )}
       </div>
-      {/* Push notification button */}
-      {!isLive && !pushEnabled && onPushClick && (
-        <div style={{ position: "absolute", top: 18, right: 20, zIndex: 2 }}>
-          <button onClick={onPushClick} disabled={pushLoading} style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0, color: "rgba(255,255,255,0.4)" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          </button>
-        </div>
-      )}
-      {!isLive && pushEnabled && (
-        <div style={{ position: "absolute", top: 18, right: 20, zIndex: 2 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 8, background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          </div>
-        </div>
-      )}
+
       {/* Tournament bar */}
       {!isLive && (
         <div style={{ padding: "14px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -896,7 +882,7 @@ var NextDuelCard = function(props) {
             </div>
           </div>
           {/* Countdown */}
-          {countdownText && <div style={{ textAlign: "center", padding: "10px 0 10px" }}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span></div>}
+          {countdownText && <div style={{ textAlign: "center", padding: "6px 0 6px" }}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span></div>}
           {/* Action buttons */}
           <div style={{ padding: "4px 20px 18px", display: "flex", gap: 10 }}>
             <button onClick={downloadICS} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, fontFamily: SANS }}>
@@ -1938,7 +1924,7 @@ export default function JoaoFonsecaNews() {
       )}
 
       {/* Mobile Tab Bar */}
-      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "#fff", borderTop: "1px solid " + BORDER, transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)", transform: tabBarHidden ? "translateY(100%)" : "translateY(0)", paddingBottom: "env(safe-area-inset-bottom, 20px)" }}>
+      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "#fff", borderTop: "1px solid " + BORDER, transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)", transform: tabBarHidden ? "translateY(100%)" : "translateY(0)", paddingBottom: 28 }}>
         {showMaisMenu && (
           <div style={{ position: "absolute", bottom: "100%", right: 16, background: "white", borderRadius: 16, boxShadow: "0 8px 30px rgba(0,0,0,0.15)", border: "1px solid " + BORDER, padding: "8px 0", minWidth: 180, marginBottom: 6 }}>
             {[
