@@ -173,7 +173,21 @@ async function fetchOpponentDetails(opponentId, opponentName, apiKey, log) {
       log.push("opp: rankings endpoint gave #" + ranking);
     }
   }
-
+if (!ranking || ranking === "?" || ranking === "#?") {
+    try {
+      var atpData = await kv.get("fn:atpRankings");
+      if (atpData) {
+        var atp = typeof atpData === "string" ? JSON.parse(atpData) : atpData;
+        if (atp.rankings) {
+          for (var ri = 0; ri < atp.rankings.length; ri++) {
+            var rName = (atp.rankings[ri].name || "").toLowerCase();
+            var oppLast = (opponentName || "").replace(/^[A-Z]\.\s*/, "").split(" ").pop().toLowerCase();
+            if (rName.includes(oppLast)) { ranking = atp.rankings[ri].rank; log.push("opp: ranking #" + ranking + " from ATP Top 50 cache"); break; }
+          }
+        }
+      }
+    } catch (e) {}
+  }
   if (!ranking || ranking === "?" || ranking === "#?") {
     var espnRank = await fetchRankingFromESPN(opponentName, log);
     if (espnRank) ranking = espnRank;
