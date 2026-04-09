@@ -1876,7 +1876,7 @@ export default function JoaoFonsecaNews() {
               <span style={{ fontSize: 20, fontWeight: 800, color: "#fff", fontFamily: SERIF, display: "block", letterSpacing: "-0.01em" }}>{opponentProfile.name || "Oponente"}</span>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginTop: 4 }}>
                 {opponentProfile.country && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", fontFamily: SANS }}>{countryFlags[opponentProfile.country] || ""} {opponentProfile.country}</span>}
-                {opponentProfile.ranking && <span style={{ fontSize: 12, fontWeight: 700, color: "#4FC3F7", fontFamily: SANS }}>#{opponentProfile.ranking}</span>}
+                {(dm && dm.opponent_ranking || opponentProfile.ranking) && <span style={{ fontSize: 12, fontWeight: 700, color: "#4FC3F7", fontFamily: SANS }}>{"#" + (dm && dm.opponent_ranking || opponentProfile.ranking)}</span>}
               </div>
             </div>
             {/* Stats row */}
