@@ -334,6 +334,9 @@ if (form.length) {
         if (ef) {
           var old = typeof ef === "string" ? JSON.parse(ef) : ef;
           if (Array.isArray(old)) {
+            var oldLookup = {};
+            old.forEach(function(m){ var k = m.opponent_name + "|" + m.score; oldLookup[k] = m; });
+            form.forEach(function(m){ var k = m.opponent_name + "|" + m.score; var oldEntry = oldLookup[k]; if (oldEntry && !m.opponent_ranking && oldEntry.opponent_ranking) m.opponent_ranking = oldEntry.opponent_ranking; });
             var keys = new Set(form.map(function(m){ return m.opponent_name + "|" + m.score; }));
             old.forEach(function(m){
               var k = m.opponent_name + "|" + m.score;
@@ -348,17 +351,13 @@ if (form.length) {
     }
     if (ms) {
       var skipMs = false;
-      try {
-        var eLM2 = await kv.get("fn:lastMatch");
-        if (eLM2) {
-          var pLM2 = typeof eLM2 === "string" ? JSON.parse(eLM2) : eLM2;
-          if (pLM2.opponent_name && ms.opponent_name && pLM2.opponent_name.split(" ").pop() !== ms.opponent_name.split(" ").pop()) {
-            log("matchStats opponent (" + ms.opponent_name + ") differs from lastMatch (" + pLM2.opponent_name + "), skipping");
-            skipMs = true;
-          }
-        }
-      } catch(e) {}
+      if (lm && lm.opponent_name && ms.opponent_name && lm.opponent_name.split(" ").pop() !== ms.opponent_name.split(" ").pop()) {
+        log("matchStats opponent (" + ms.opponent_name + ") differs from lastMatch (" + lm.opponent_name + "), skipping");
+        skipMs = true;
+      }
       if (!skipMs) w.push(kv.set("fn:matchStats",JSON.stringify(ms),{ex:T7}));
+    } else if (lm) {
+      try { await kv.del("fn:matchStats"); } catch(e) {}
     }
     if (wiki) {
       if (wiki.ranking) w.push(kv.set("fn:ranking",JSON.stringify({ranking:wiki.ranking,bestRanking:wiki.bestRanking||null,updatedAt:new Date().toISOString()}),{ex:T2}));
