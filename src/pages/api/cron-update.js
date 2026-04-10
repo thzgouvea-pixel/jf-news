@@ -55,11 +55,44 @@ async function fetchRankingWikipedia() {
     var text = data && data.parse && data.parse.wikitext && data.parse.wikitext["*"];
     if (!text) return null;
     var result = {};
+
+    // Helper: extract W-L from "16–11" or "{{tennis record|wins=16|losses=11}}"
+    function extractWL(field) {
+      var pattern1 = new RegExp("\\|\\s*" + field + "\\s*=\\s*\\{\\{[^}]*wins\\s*=\\s*(\\d+)\\s*\\|\\s*losses\\s*=\\s*(\\d+)", "i");
+      var pattern2 = new RegExp("\\|\\s*" + field + "\\s*=\\s*(\\d+)\\s*[–\\-]\\s*(\\d+)", "i");
+      var m = text.match(pattern1) || text.match(pattern2);
+      if (m) return { w: parseInt(m[1]), l: parseInt(m[2]) };
+      return null;
+    }
+
+    // Overall record
+    var overall = extractWL("singlesrecord");
+    if (overall) { result.wins = overall.w; result.losses = overall.l; }
+
+    // Surface records
+    var hard = extractWL("singlesrecord_hard");
+    var clay = extractWL("singlesrecord_clay");
+    var grass = extractWL("singlesrecord_grass");
+    if (hard || clay || grass) {
+      result.surface = {
+        hard: hard || { w: 0, l: 0 },
+        clay: clay || { w: 0, l: 0 },
+        grass: grass || { w: 0, l: 0 },
+      };
+    }
+
+    // Ranking
     var rm = text.match(/\|\s*current_ranking\s*=\s*(?:No\.\s*)?(\d+)/i); if (rm) result.ranking = parseInt(rm[1]);
     var hm = text.match(/\|\s*highest_ranking\s*=\s*(?:No\.\s*)?(\d+)/i); if (hm) result.bestRanking = parseInt(hm[1]);
+
+    // Prize money
     var pm = text.match(/\|\s*prize\s*=\s*\$?([\d,]+)/i); if (pm) result.prizeMoney = parseInt(pm[1].replace(/,/g, ""));
-    var wl = text.match(/\|\s*singlesrecord\s*=\s*(\d+)[–-](\d+)/i); if (wl) { result.wins = parseInt(wl[1]); result.losses = parseInt(wl[2]); }
-    log("Ranking: #" + (result.ranking || "?")); return result;
+
+    // Titles
+    var tm = text.match(/\|\s*titles\s*=\s*(\d+)/i); if (tm) result.titles = parseInt(tm[1]);
+
+    log("Ranking: #" + (result.ranking || "?") + " | Surface: " + (result.surface ? "yes" : "no"));
+    return result;
   } catch (e) { log("Wikipedia error: " + e.message); return null; }
 }
 
@@ -166,7 +199,7 @@ export default async function handler(req, res) {
     if (wiki) {
       if (wiki.ranking) w.push(kv.set("fn:ranking",JSON.stringify({ranking:wiki.ranking,bestRanking:wiki.bestRanking||null,updatedAt:new Date().toISOString()}),{ex:T2}));
       if (wiki.prizeMoney) w.push(kv.set("fn:prizeMoney",JSON.stringify({amount:wiki.prizeMoney}),{ex:T7}));
-      if (wiki.wins!==undefined) { var pct=(wiki.wins+wiki.losses)>0?Math.round(wiki.wins/(wiki.wins+wiki.losses)*100):0; w.push(kv.set("fn:season",JSON.stringify({wins:wiki.wins,losses:wiki.losses,winPct:pct}),{ex:T2})); w.push(kv.set("fn:careerStats",JSON.stringify({wins:wiki.wins,losses:wiki.losses,winPct:pct}),{ex:T7})); }
+      if (wiki.wins!==undefined) { var pct=(wiki.wins+wiki.losses)>0?Math.round(wiki.wins/(wiki.wins+wiki.losses)*100):0; w.push(kv.set("fn:season",JSON.stringify({wins:wiki.wins,losses:wiki.losses,winPct:pct}),{ex:T2})); w.push(kv.set("fn:careerStats",JSON.stringify({wins:wiki.wins,losses:wiki.losses,winPct:pct,surface:wiki.surface||null,titles:wiki.titles||null}),{ex:T7})); }
     }
     if (op) w.push(kv.set("fn:opponentProfile",JSON.stringify(op),{ex:T2}));
     if (wp) w.push(kv.set("fn:winProb",JSON.stringify(wp),{ex:T2}));
