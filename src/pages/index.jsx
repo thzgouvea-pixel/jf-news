@@ -7,6 +7,7 @@ import NextDuelCard from "../components/NextDuelCard";
 import LiveScoreCard from "../components/LiveScoreCard";
 import PlayerBlock from "../components/PlayerBlock";
 import MatchCarousel from "../components/MatchCarousel";
+import Fonsecometro from "../components/Fonsecometro";
 import NewsCard from "../components/NewsCard";
 import DailyPoll from "../components/DailyPoll";
 import QuizGame from "../components/QuizGame";
@@ -373,6 +374,8 @@ export default function JoaoFonsecaNews() {
     <span style={{ fontSize: 12, color: "#92400E", fontFamily: SANS, fontWeight: 500 }}>Dados offline — mostrando informações de exemplo.</span>
   </div>
 )}
+
+<Fonsecometro recentForm={recentForm} lastMatch={dl} />
 
 {/* When no next match, show última partida first */}
 {!hasNextMatch && (
