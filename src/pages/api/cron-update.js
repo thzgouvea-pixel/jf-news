@@ -23,6 +23,7 @@ async function sofaFetch(path) {
 
 function isFinished(m) { var s = m.status || {}; return s.type === "finished" || s.isFinished === true; }
 function isUpcoming(m) { var s = m.status || {}; var t = (s.type || "").toLowerCase(); return t === "notstarted" || t === "not_started" || (!s.isFinished && !s.isStarted); }
+function isSingles(m) { var slug = (m.slug||"").toLowerCase(); var tName = (m.tournament&&m.tournament.name||"").toLowerCase(); if (slug.includes("doubles")||slug.includes("double")||tName.includes("doubles")||tName.includes("double")) return false; var h = (m.homeTeam&&(m.homeTeam.name||"")).toLowerCase(); if (h.includes(" / ")||h.includes(" & ")) return false; return true; }
 function isFonseca(m) { var s = (m.slug || "").toLowerCase(); var h = (m.homeTeam && (m.homeTeam.slug || m.homeTeam.name || "")).toLowerCase(); var a = (m.awayTeam && (m.awayTeam.slug || m.awayTeam.name || "")).toLowerCase(); return s.includes("fonseca") || h.includes("fonseca") || a.includes("fonseca"); }
 
 function extractMatch(match) {
@@ -162,8 +163,8 @@ export default async function handler(req, res) {
   var start = Date.now(); var steps = {};
   try {
     var matches = await scanMatches(req.query && req.query.deep === "1");
-    var fin = matches.filter(isFinished).sort(function(a,b){return (b.startTimestamp||0)-(a.startTimestamp||0);});
-    var upc = matches.filter(isUpcoming).sort(function(a,b){return (a.startTimestamp||0)-(b.startTimestamp||0);});
+    var fin = matches.filter(function(m){return isFinished(m)&&isSingles(m);}).sort(function(a,b){return (b.startTimestamp||0)-(a.startTimestamp||0);});
+    var upc = matches.filter(function(m){return isUpcoming(m)&&isSingles(m);}).sort(function(a,b){return (a.startTimestamp||0)-(b.startTimestamp||0);});
     var lm = fin.length > 0 ? extractMatch(fin[0]) : null;
     var nm = upc.length > 0 ? extractMatch(upc[0]) : null;
     var form = fin.slice(0,10).map(function(m){var d=extractMatch(m);return{result:d.result,score:d.score,opponent_name:d.opponent_name,tournament:d.tournament_name,date:d.date};});
