@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     var [
       matchStats, recentForm, prizeMoney, careerStats,
       ranking, season, lastMatch, nextMatch, winProb,
-      biography, tournamentFacts, opponentProfile
+      biography, tournamentFacts, opponentProfile, nextTournament
     ] = await Promise.all([
       getKV("fn:matchStats"),
       getKV("fn:recentForm"),
@@ -28,6 +28,7 @@ export default async function handler(req, res) {
       getKV("fn:biography"),
       getKV("fn:tournamentFacts"),
       getKV("fn:opponentProfile"),
+      getKV("fn:nextTournament"),
     ]);
 
     var result = {};
@@ -43,6 +44,7 @@ export default async function handler(req, res) {
     if (tournamentFacts) result.tournamentFacts = tournamentFacts;
     if (opponentProfile) result.opponentProfile = opponentProfile;
     if (prizeMoney && prizeMoney.amount) result.prizeMoney = prizeMoney.amount;
+    if (nextTournament) result.nextTournament = nextTournament;
 
     res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
     return res.status(200).json(result);
