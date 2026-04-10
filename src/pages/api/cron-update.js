@@ -199,6 +199,8 @@ export default async function handler(req, res) {
 
     if (nm) nm = await mergeWithKV("fn:nextMatch", nm);
     if (lm) lm = await mergeWithKV("fn:lastMatch", lm);
+    if (!nm) { try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){} }
+if (lm) { try { var eLM = await kv.get("fn:lastMatch"); if (eLM) { var pLM = typeof eLM === "string" ? JSON.parse(eLM) : eLM; if (pLM.date && lm.date && new Date(pLM.date) > new Date(lm.date)) lm = null; } } catch(e){} }
     steps.merge = "done";
 
     var w = []; var T7=604800; var T2=172800;
