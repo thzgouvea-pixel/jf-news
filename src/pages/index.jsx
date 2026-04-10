@@ -238,8 +238,10 @@ export default function JoaoFonsecaNews() {
   };
 
   var handleRefresh = function() {
-    fetchNews();
-    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
+    try { localStorage.removeItem("jf-news-v5"); } catch(e) {}
+    if ("caches" in window) { caches.keys().then(function(names) { names.forEach(function(n) { caches.delete(n); }); }); }
+    fetchNews(true);
+    fetch("/api/sofascore-data?t=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
