@@ -34,6 +34,14 @@ export default function NextDuelCard(props) {
     var iv = setInterval(function() { setFactIdx(function(p) { return (p + 1) % (facts.length + 1); }); }, 5000);
     return function() { clearInterval(iv); };
   }, [facts]);
+
+  // Timer for "updated ago" (must be before early return to keep hook order)
+  var _now = useState(Date.now()); var now = _now[0]; var setNow = _now[1];
+  useEffect(function() {
+    var iv = setInterval(function() { setNow(Date.now()); }, 5000);
+    return function() { clearInterval(iv); };
+  }, []);
+
   if (!match) return (
     <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
       <div style={{ padding: "32px 24px", textAlign: "center" }}>
@@ -125,12 +133,7 @@ export default function NextDuelCard(props) {
   // Live stats extraction
   var liveStats = isLive && liveData.stats ? liveData.stats : null;
 
-  // Time since last update
-  var _now = useState(Date.now()); var now = _now[0]; var setNow = _now[1];
-  useEffect(function() {
-    var iv = setInterval(function() { setNow(Date.now()); }, 5000);
-    return function() { clearInterval(iv); };
-  }, []);
+  // Time since last update (hooks already declared above)
   var checkedSecsAgo = isLive && liveData.checkedAt ? Math.floor((now - new Date(liveData.checkedAt).getTime()) / 1000) : null;
 
   // Live court from liveData or match
