@@ -132,6 +132,32 @@ export default async function handler(req, res) {
     var wp = nm ? await fetchWinProb(nm) : null; steps.odds = wp ? wp.fonseca+"%" : "skip";
     var tf = nm ? await fetchFacts(nm) : null; steps.facts = tf ? tf.facts.length+"" : "skip";
 
+    // ===== MERGE with existing KV (preserve manual overrides) =====
+    async function mergeWithKV(key, newData) {
+      if (!newData) return newData;
+      try {
+        var existing = await kv.get(key);
+        if (!existing) return newData;
+        var old = typeof existing === "string" ? JSON.parse(existing) : existing;
+        if (!old) return newData;
+        // Only merge if same match (same opponent or same id)
+        var sameMatch = (old.opponent_name && newData.opponent_name && old.opponent_name === newData.opponent_name) || (old.id && newData.id && old.id === newData.id);
+        if (!sameMatch) return newData;
+        // Keep manual fields if cron has empty/null
+        var fields = ["date","round","surface","court","opponent_ranking","opponent_country","opponent_id","tournament_category","startTimestamp"];
+        fields.forEach(function(f) {
+          if ((!newData[f] || newData[f] === "" || newData[f] === "Hard") && old[f] && old[f] !== "") {
+            newData[f] = old[f];
+          }
+        });
+      } catch(e) { log("Merge error: " + e.message); }
+      return newData;
+    }
+
+    if (nm) nm = await mergeWithKV("fn:nextMatch", nm);
+    if (lm) lm = await mergeWithKV("fn:lastMatch", lm);
+    steps.merge = "done";
+
     var w = []; var T7=604800; var T2=172800;
     if (lm) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
     if (nm) w.push(kv.set("fn:nextMatch",JSON.stringify(nm),{ex:T7}));
