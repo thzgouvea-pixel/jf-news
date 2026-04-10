@@ -260,7 +260,7 @@ export default async function handler(req, res) {
     var upc = matches.filter(function(m){if(!isUpcoming(m)||!isSingles(m)) return false; var ex=extractMatch(m); if(ex.score&&ex.score.length>2) return false; return true;}).sort(function(a,b){return (a.startTimestamp||0)-(b.startTimestamp||0);});
     var lm = fin.length > 0 ? extractMatch(fin[0]) : null;
     var nm = upc.length > 0 ? extractMatch(upc[0]) : null;
-    var form = fin.slice(0,10).map(function(m){var d=extractMatch(m);return{result:d.result,score:d.score,opponent_name:d.opponent_name,tournament:d.tournament_name,date:d.date};});
+    var form = fin.slice(0,10).map(function(m){var d=extractMatch(m);return{result:d.result,score:d.score,opponent_name:d.opponent_name,opponent_ranking:d.opponent_ranking||null,tournament:d.tournament_name,date:d.date};});
     steps.scan = matches.length + " matches";
     steps.last = lm ? lm.opponent_name : "none";
     steps.next = nm ? nm.opponent_name : "none";
