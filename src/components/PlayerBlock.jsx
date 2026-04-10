@@ -142,7 +142,6 @@ export default function PlayerBlock(props) {
                     })}
                   </div>
                   {/* Result badge */}
-                  <span style={{ fontSize: 10, fontWeight: 800, color: isWin ? GREEN : "#ef4444", fontFamily: SANS, background: isWin ? GREEN + "18" : "#ef444418", padding: "4px 14px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>{isWin ? "Vitória" : "Derrota"}</span>
                   {/* Duration */}
                   {durationStr && <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, display: "block", marginTop: 8 }}>{durationStr}</span>}
                 </div>
