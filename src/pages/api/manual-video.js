@@ -21,6 +21,15 @@
 // ╚════════════════════════════════════════════════════════════╝
 
 import { kv } from "@vercel/kv";
+import crypto from "crypto";
+
+function safeCompare(a, b) {
+  if (!a || !b) return false;
+  var bufA = Buffer.from(String(a));
+  var bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 function extractYouTubeId(url) {
   if (!url) return null;
@@ -53,7 +62,7 @@ export default async function handler(req, res) {
 
   // GET ou POST com secret → atualizar vídeo
   var secret = req.query.secret || (req.body && req.body.secret);
-  if (secret !== process.env.PUSH_SECRET) {
+  if (!safeCompare(secret, process.env.PUSH_SECRET)) {
     return res.status(401).json({ error: "Senha errada" });
   }
 
@@ -71,9 +80,12 @@ export default async function handler(req, res) {
   }
 
   var videoId = extractYouTubeId(videoUrl);
-  if (!videoId) {
+  if (!videoId || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
     return res.status(400).json({ error: "Link do YouTube inválido. Use o link de compartilhamento do YouTube." });
   }
+
+  // Sanitize title
+  title = String(title).substring(0, 200).replace(/[<>"'&]/g, "");
 
   var payload = {
     videoId: videoId,

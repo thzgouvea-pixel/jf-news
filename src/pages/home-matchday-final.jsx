@@ -355,10 +355,10 @@ function MatchHero({ nextMatch, playerRanking, probability, factText }) {
         </div>
 
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.30)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
-            Contexto do jogo
+          <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.30)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            Curiosidade de {(nextMatch?.tournament_name || "Torneio").split(",")[0]}
           </div>
-          <div style={{ fontSize: 15, color: "#5CC8FF", fontFamily: SANS, lineHeight: 1.45 }}>{factText || "Atualização em breve"}</div>
+          <div style={{ fontSize: 15, color: "#5CC8FF", fontFamily: SANS, lineHeight: 1.45, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{factText || "Atualização em breve"}</div>
         </div>
       </div>
     </section>
@@ -413,10 +413,10 @@ function InfoBox({ label, value }) {
         padding: "14px 16px",
       }}
     >
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.34)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.34)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {label}
       </div>
-      <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: SANS, lineHeight: 1.2 }}>{value}</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: SANS, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</div>
     </div>
   );
 }
@@ -465,17 +465,17 @@ function LastMatchCard({ lastMatch, form }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.2fr .8fr", gap: 12 }}>
-        <div style={{ background: BG_ALT, border: `1px solid ${BORDER}`, borderRadius: 18, padding: 16 }}>
-          <div style={{ fontSize: 10, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Adversário</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: TEXT, fontFamily: SERIF, lineHeight: 1.1 }}>{lastMatch?.opponent_name || "A definir"}</div>
-          <p style={{ margin: "12px 0 0", fontSize: 14, color: SUB, fontFamily: SANS, lineHeight: 1.55 }}>
+        <div style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 16 }}>
+          <div style={{ fontSize: 10, color: COLORS.dim, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Adversário</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: COLORS.text, fontFamily: SERIF, lineHeight: 1.1 }}>{lastMatch?.opponent_name || "A definir"}</div>
+          <p style={{ margin: "12px 0 0", fontSize: 14, color: COLORS.sub, fontFamily: SANS, lineHeight: 1.55 }}>
             {won ? "João venceu" : "João foi superado por"} <strong>{lastMatch?.opponent_name || "o adversário"}</strong>
             {lastMatch?.score ? ` por ${lastMatch.score}` : ""}
             {lastMatch?.round ? `, em ${lastMatch.round.toLowerCase()}` : ""}.
           </p>
         </div>
-        <div style={{ background: BG_ALT, border: `1px solid ${BORDER}`, borderRadius: 18, padding: 16 }}>
-          <div style={{ fontSize: 10, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Forma recente</div>
+        <div style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 16 }}>
+          <div style={{ fontSize: 10, color: COLORS.dim, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Forma recente</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {form.map((m, i) => (
               <span

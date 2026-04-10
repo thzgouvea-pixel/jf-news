@@ -82,7 +82,7 @@ async function fetchGoogleNews() {
     try {
       const res = await fetch(
         `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`,
-        { headers: { "User-Agent": "FonsecaNews/1.0" } }
+        { headers: { "User-Agent": "FonsecaNews/1.0" }, signal: AbortSignal.timeout(8000) }
       );
       if (!res.ok) continue;
       const xml = await res.text();
