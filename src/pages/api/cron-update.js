@@ -200,7 +200,10 @@ export default async function handler(req, res) {
       return newData;
     }
 
-    if (nm) nm = await mergeWithKV("fn:nextMatch", nm);
+    if (nm) {
+      try { var eLM3 = await kv.get("fn:lastMatch"); if (eLM3) { var pLM3 = typeof eLM3 === "string" ? JSON.parse(eLM3) : eLM3; if (pLM3.opponent_name && nm.opponent_name && pLM3.opponent_name === nm.opponent_name && pLM3.tournament_name && nm.tournament_name && pLM3.tournament_name === nm.tournament_name) nm = null; } } catch(e){}
+      if (nm) nm = await mergeWithKV("fn:nextMatch", nm);
+    }
     if (lm) lm = await mergeWithKV("fn:lastMatch", lm);
     if (!nm) { try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){} }
 if (lm) { try { var eLM = await kv.get("fn:lastMatch"); if (eLM) { var pLM = typeof eLM === "string" ? JSON.parse(eLM) : eLM; if (pLM.date && lm.date && new Date(pLM.date) > new Date(lm.date)) { lm = null; } else if (pLM.date && !lm.date) { lm = null; } else if (pLM.opponent_name && lm.opponent_name && pLM.opponent_name !== lm.opponent_name && pLM.round && !lm.round) { lm = null; } } } catch(e){} }
