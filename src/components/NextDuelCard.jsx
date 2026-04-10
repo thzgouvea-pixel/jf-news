@@ -42,7 +42,7 @@ export default function NextDuelCard(props) {
     return function() { clearInterval(iv); };
   }, []);
 
-  if (!match || !match.opponent_name || match.opponent_name === "A definir" || match.opponent_name === "A+definir") return (
+  if (!match || !match.opponent_name || match.opponent_name === "A definir" || match.opponent_name === "A+definir") return null;   if (false) return (
     <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
       <div style={{ position: "absolute", top: -40, left: -40, width: 140, height: 140, borderRadius: "50%", background: "radial-gradient(circle, rgba(79,195,247,0.06) 0%, transparent 65%)", pointerEvents: "none" }} />
 
