@@ -7,7 +7,6 @@ import NextDuelCard from "../components/NextDuelCard";
 import LiveScoreCard from "../components/LiveScoreCard";
 import PlayerBlock from "../components/PlayerBlock";
 import MatchCarousel from "../components/MatchCarousel";
-import Fonsecometro from "../components/Fonsecometro";
 import NewsCard from "../components/NewsCard";
 import DailyPoll from "../components/DailyPoll";
 import QuizGame from "../components/QuizGame";
@@ -205,7 +204,7 @@ export default function JoaoFonsecaNews() {
     pollLive();
     var iv = setInterval(function() {
       if (!document.hidden) pollLive();
-    }, 30000);
+    }, 120000);
     return function() { clearInterval(iv); };
   }, []);
 
@@ -233,17 +232,14 @@ export default function JoaoFonsecaNews() {
   };
   var saveCache = function(d) { try { localStorage.setItem("jf-news-v5", JSON.stringify(Object.assign({}, d, { timestamp: Date.now() }))); } catch(e) {} };
 
-  var fetchNews = function(bustCache) {
+  var fetchNews = function() {
     setLoading(true);
-    var url = "/api/news" + (bustCache ? "?t=" + Date.now() : "");
-    fetch(url, bustCache ? { cache: "no-store" } : {}).then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch || null); setLastMatch(p.lastMatch || null); setPlayer(p.player || null); setSeason(p.season || null); setLastUpdate(new Date().toISOString()); saveCache({ news: p.news, nextMatch: p.nextMatch, lastMatch: p.lastMatch, player: p.player, season: p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
+    fetch("/api/news").then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
   };
 
   var handleRefresh = function() {
-    // Clear localStorage cache so stale data is gone
-    try { localStorage.removeItem("jf-news-v5"); } catch(e) {}
-    fetchNews(true);
-    fetch("/api/sofascore-data?t=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); }).then(function(d) {
+    fetchNews();
+    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
@@ -251,9 +247,8 @@ export default function JoaoFonsecaNews() {
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
-      // Clear nextMatch if not present in KV (match ended)
-      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
-      if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
+      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
+      if (d.winProb) setWinProb(d.winProb);
       if (d.biography) setBiography(d.biography);
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
@@ -262,7 +257,8 @@ export default function JoaoFonsecaNews() {
 
   useEffect(function() {
     if (initDone.current) return; initDone.current = true;
-    loadCache(); fetchNews(true);
+    loadCache();
+    fetchNews();
   }, []);
 
   useEffect(function() {
@@ -305,8 +301,7 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
-  var dm = nextMatch || null;
-  var hasNextMatch = !!(nextMatch && nextMatch.opponent_name && nextMatch.opponent_name !== "A definir");
+  var dm = nextMatch || SAMPLE_NEXT_MATCH;
   var dl = lastMatch || null;
   var dp = player || (news.length === 0 ? SAMPLE_PLAYER : null);
   var ds = season || null;
@@ -370,12 +365,6 @@ export default function JoaoFonsecaNews() {
 
       <main className="mobile-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
 
-        {recentForm && recentForm.length > 0 && (
-          <section style={{ padding: "12px 0 0" }}>
-            <Fonsecometro recentForm={recentForm} />
-          </section>
-        )}
-
         {!loading && news.length === 0 && (
   <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", background: "#FFFBEB", borderRadius: 12, margin: "12px 0 0", border: "1px solid #F59E0B22", boxShadow: "0 1px 4px rgba(245,158,11,0.06)" }}>
     <span style={{ fontSize: 13 }}>⚠️</span>
@@ -383,33 +372,18 @@ export default function JoaoFonsecaNews() {
   </div>
 )}
 
-{/* When no next match, show última partida first */}
-{!hasNextMatch && (
-        <section style={{ padding: "8px 0 0" }}>
-
-          {highlightVideo && highlightVideo.videoId ? (
-            <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
-          ) : (
-            <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
-          )}
-        </section>
-)}
-
-<section style={{ padding: hasNextMatch ? "8px 0 0" : "24px 0 0" }}>
+<section style={{ padding: "8px 0 0" }}>
   <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
 </section>
 
-{/* When there IS a next match, show última partida below */}
-{hasNextMatch && (
         <section style={{ padding: "24px 0 0" }}>
-
+          <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: GREEN, display: "inline-block" }} />Última partida</p>
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
             <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
           )}
         </section>
-)}
 
         <section style={{ padding: "28px 0 0" }}>
           <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#2563EB", display: "inline-block" }} />Notícias</p>
@@ -624,7 +598,4 @@ export default function JoaoFonsecaNews() {
   );
 }
 
-// Prevent static prerendering — render dynamically on each request
-export async function getServerSideProps() {
-  return { props: {} };
-}
+// Static page — no server cost per visit
