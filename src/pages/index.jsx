@@ -232,14 +232,17 @@ export default function JoaoFonsecaNews() {
   };
   var saveCache = function(d) { try { localStorage.setItem("jf-news-v5", JSON.stringify(Object.assign({}, d, { timestamp: Date.now() }))); } catch(e) {} };
 
-  var fetchNews = function() {
+  var fetchNews = function(bustCache) {
     setLoading(true);
-    fetch("/api/news").then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
+    var url = "/api/news" + (bustCache ? "?t=" + Date.now() : "");
+    fetch(url, bustCache ? { cache: "no-store" } : {}).then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch || null); setLastMatch(p.lastMatch || null); setPlayer(p.player || null); setSeason(p.season || null); setLastUpdate(new Date().toISOString()); saveCache({ news: p.news, nextMatch: p.nextMatch, lastMatch: p.lastMatch, player: p.player, season: p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
   };
 
   var handleRefresh = function() {
-    fetchNews();
-    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
+    // Clear localStorage cache so stale data is gone
+    try { localStorage.removeItem("jf-news-v5"); } catch(e) {}
+    fetchNews(true);
+    fetch("/api/sofascore-data?t=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
@@ -247,8 +250,9 @@ export default function JoaoFonsecaNews() {
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
-      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
-      if (d.winProb) setWinProb(d.winProb);
+      // Clear nextMatch if not present in KV (match ended)
+      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
+      if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
