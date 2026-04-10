@@ -149,12 +149,12 @@ export default function NextDuelCard(props) {
       </div>
 
       {/* ===== TOURNAMENT TITLE ===== */}
-      <div style={{ textAlign: "center", padding: "12px 18px 0" }}>
-        {isLive && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS, display: "block", marginBottom: 4 }}>{(liveData.tournament || match.tournament_name || "")}</span>}
-        <h2 style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.03em" }}>{(function() {
-          var name = (isLive && liveData.tournament ? liveData.tournament : (match.tournament_name || "Partida")).split(",")[0].trim();
-          return name;
-        })()}</h2>
+      <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
+        {isLive ? (
+          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(liveData.tournament || match.tournament_name || "Partida ao vivo")}</h2>
+        ) : (
+          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(match.tournament_category ? match.tournament_category + " · " : "") + (match.tournament_name || "Próxima Partida")}</h2>
+        )}
       </div>
 
       {/* ===== PLAYERS + SCORE ===== */}
@@ -407,7 +407,7 @@ export default function NextDuelCard(props) {
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "16px 20px 18px", marginTop: 16, textAlign: "center" }}>
           <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>{"Curiosidades de " + (match.tournament_name || "").split(",")[0].trim()}</span>
           {factIdx % (facts.length + 1) === 0 ? null : (
-            <span style={{ fontSize: 13, color: "rgba(79,195,247,0.65)", fontFamily: SANS, fontWeight: 500, lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}>{facts[(factIdx - 1) % facts.length].text}</span>
+            <span style={{ fontSize: 11, color: "rgba(79,195,247,0.65)", fontFamily: SANS, fontWeight: 500, whiteSpace: "nowrap", display: "block" }}>{facts[(factIdx - 1) % facts.length].text}</span>
           )}
           <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 6 }}>{factIdx % (facts.length + 1) === 0 ? "" : ((factIdx - 1) % facts.length + 1) + "/" + facts.length}</span>
         </div>
