@@ -100,9 +100,18 @@ async function scanMatches() {
   log("Scanning matches...");
   var all = []; var seen = new Set();
   function add(data) { if (!data) return; var ev = data.events || data; if (!Array.isArray(ev)) { for (var k in data) { if (Array.isArray(data[k])) { ev = data[k]; break; } } } if (!Array.isArray(ev)) return; ev.forEach(function(m) { if (m.id && !seen.has(m.id)) { seen.add(m.id); all.push(m); } }); }
+  function addFiltered(data) { if (!data) return; var ev = data.events || data; if (!Array.isArray(ev)) { for (var k in data) { if (Array.isArray(data[k])) { ev = data[k]; break; } } } if (Array.isArray(ev)) ev.forEach(function(m) { if (isFonseca(m) && m.id && !seen.has(m.id)) { seen.add(m.id); all.push(m); } }); }
+
+  // Team events (bulk, fast)
   add(await sofaFetch("/v1/team/events/last/0?team_id=" + FONSECA_TEAM_ID));
   add(await sofaFetch("/v1/team/events/next/0?team_id=" + FONSECA_TEAM_ID));
-  if (all.length === 0) { log("Fallback: today ± 1 day"); for (var d = -1; d <= 1; d++) { var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0]; var dd = await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds); if (dd) { var ev = dd.events || dd; if (!Array.isArray(ev)) { for (var k in dd) { if (Array.isArray(dd[k])) { ev = dd[k]; break; } } } if (Array.isArray(ev)) ev.forEach(function(m) { if (isFonseca(m) && m.id && !seen.has(m.id)) { seen.add(m.id); all.push(m); } }); } } }
+
+  // ALWAYS also check today + yesterday + tomorrow (catches fresh results team events misses)
+  for (var d = -2; d <= 1; d++) {
+    var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
+    addFiltered(await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds));
+  }
+
   log(all.length + " matches"); return all;
 }
 
