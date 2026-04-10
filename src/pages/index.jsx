@@ -406,7 +406,6 @@ export default function JoaoFonsecaNews() {
           </div>
         </section>
 )}
-)}
 <section style={{ padding: "28px 0 0" }}>
           <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#2563EB", display: "inline-block" }} />Notícias</p>
           {loading && news.length === 0 && <Skeleton />}
