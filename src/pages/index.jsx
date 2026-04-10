@@ -734,59 +734,43 @@ var NextDuelCard = function(props) {
     <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
       <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, " + (isLive ? "#ef4444" : sc) + "10 0%, transparent 65%)", pointerEvents: "none" }} />
 
-      {/* Section label with icon */}
-      <div style={{ padding: "18px 20px 6px", display: "flex", alignItems: "center", gap: 8 }}>
-        {isLive ? (
-          <>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
-            <span style={{ fontSize: 10, fontWeight: 800, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ao vivo{match.round ? " · " + match.round : ""}</span>
-          </>
-        ) : (
-          <>
-            <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(79,195,247,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg>
-            </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.1em" }}>Próximo jogo</span>
-          </>
-        )}
+      {/* Top bar */}
+      <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {isLive ? (
+            <>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
+              <span style={{ fontSize: 11, fontWeight: 800, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ao vivo</span>
+            </>
+          ) : (
+            <>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(79,195,247,0.7)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próximo jogo</span>
+            </>
+          )}
+          {match.round && <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: SANS }}>{match.round}</span>}
+        </div>
+        <span style={{ fontSize: 10, fontWeight: 800, color: sc, fontFamily: SANS, background: sc + "20", padding: "5px 14px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{surfaceLabel}</span>
       </div>
 
-      {/* Tournament bar */}
-      {!isLive && (
-        <div style={{ padding: "14px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ fontSize: 9, fontWeight: 700, color: sc, fontFamily: SANS, background: sc + "18", padding: "3px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.05em" }}>{surfaceLabel}</span>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS, fontWeight: 600 }}>{match.tournament_category || ""}</span>
-          </div>
-          {match.round && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(79,195,247,0.7)", fontFamily: SANS, background: "rgba(79,195,247,0.08)", padding: "4px 12px", whiteSpace: "nowrap", borderRadius: 999 }}>{match.round}</span>}
-        </div>
-      )}
-
-
       {/* Tournament title */}
-      <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
+      <div style={{ textAlign: "center", padding: "16px 18px 0" }}>
         {isLive && <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 4 }}>Jogo em andamento</span>}
-        <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{(function() {
+        {!isLive && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS, display: "block", marginBottom: 4 }}>{(match.tournament_category ? match.tournament_category + " · " : "") + (match.tournament_name || "")}</span>}
+        <h2 style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.03em" }}>{(function() {
           var name = (match.tournament_name || "Próxima Partida").split(",")[0].trim();
-          var cat = (match.tournament_category || "").toLowerCase();
-          var pts = "";
-          if (cat.includes("grand slam") || ["australian open","roland garros","french open","wimbledon","us open"].some(function(gs) { return name.toLowerCase().includes(gs); })) pts = " 2000";
-          else if (cat.includes("masters 1000") || cat.includes("1000") || ["monte carlo","madrid","roma","indian wells","miami","canadian","cincinnati","shanghai","paris"].some(function(m) { return name.toLowerCase().includes(m); })) pts = " 1000";
-          else if (cat.includes("500") || ["rio open","basel","barcelona","vienna","hamburg","queen","halle"].some(function(m) { return name.toLowerCase().includes(m); })) pts = " 500";
-          else if (cat.includes("250")) pts = " 250";
-          return name + pts;
+          return name;
         })()}</h2>
       </div>
 
       {/* Players */}
-      <div style={{ padding: "20px 18px 0" }}>
+      <div style={{ padding: "24px 18px 0" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, alignItems: "center" }}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ width: 68, height: 68, borderRadius: "50%", margin: "0 auto 6px", background: "#152035", border: "2.5px solid " + (isLive ? GREEN + "60" : GREEN + "35"), overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid " + (isLive ? GREEN + "60" : GREEN + "40"), overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = '<span style="font-size:16px;font-weight:800;color:#00A859;font-family:Inter,sans-serif">JF</span>'; } }} />
             </div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
-            {isLive && liveServing === "fonseca" ? <span style={{ fontSize: 10, color: YELLOW, fontFamily: SANS, display: "block", marginTop: 2 }}>🇧🇷 Sacando</span> : <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>}
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
+            {isLive && liveServing === "fonseca" ? <span style={{ fontSize: 11, color: YELLOW, fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 Sacando</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>}
           </div>
           {isLive ? (
             <div style={{ textAlign: "center", minWidth: 80 }}>
@@ -804,17 +788,17 @@ var NextDuelCard = function(props) {
               )}
             </div>
           ) : (
-            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS, letterSpacing: "0.05em" }}>VS</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS, letterSpacing: "0.05em" }}>VS</span>
           )}
           <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
-            <div style={{ position: "relative", width: 68, height: 68, margin: "0 auto 6px" }}>
-              <div style={{ width: 68, height: 68, borderRadius: "50%", background: "#152035", border: "2.5px solid rgba(255,255,255,0.1)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default" }}>
+            <div style={{ position: "relative", width: 72, height: 72, margin: "0 auto 8px" }}>
+              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#152035", border: "2.5px solid rgba(255,255,255,0.12)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default" }}>
                 {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
               </div>
               {!isLive && onOppClick && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
             </div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppName}</span>
-            {isLive && liveServing === "opponent" ? <span style={{ fontSize: 10, color: YELLOW, fontFamily: SANS, display: "block", marginTop: 2 }}>{oppFlag} Sacando</span> : (oppCountry ? <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 10, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 2 }}>chave pendente</span>)}
+            <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppName}</span>
+            {isLive && liveServing === "opponent" ? <span style={{ fontSize: 11, color: YELLOW, fontFamily: SANS, display: "block", marginTop: 3 }}>{oppFlag} Sacando</span> : (oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 3 }}>chave pendente</span>)}
           </div>
         </div>
       </div>
@@ -839,81 +823,104 @@ var NextDuelCard = function(props) {
         </>
       ) : (
         <>
+          {/* Info grid 2x2 */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "22px 20px 0" }}>
+            {dateInfo && (
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Data do jogo</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS, lineHeight: 1.3 }}>{dateInfo.weekday + ", " + dateInfo.date}</div>
+              </div>
+            )}
+            {dateInfo && (
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{dateInfo.time}</div>
+              </div>
+            )}
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Quadra</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.court || "A definir"}</div>
+            </div>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Transmissão</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>ESPN 2 · Disney+</div>
+            </div>
+          </div>
+
+          {/* Countdown */}
+          {countdownText && (
+            <div style={{ margin: "14px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 18px", textAlign: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(79,195,247,0.6)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>Contagem regressiva</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.02em" }}>{(function() {
+                if (countdown.expired) return "";
+                var p = [];
+                if (countdown.days > 0) p.push(countdown.days + "d");
+                p.push(String(countdown.hours).padStart(2, "0") + "h");
+                p.push(String(countdown.minutes).padStart(2, "0") + "m");
+                p.push(String(countdown.seconds).padStart(2, "0") + "s");
+                return p.join(" ");
+              })()}</div>
+            </div>
+          )}
+
+          {/* Action buttons — stacked */}
+          <div style={{ padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: 10 }}>
+            <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: "16px", background: "linear-gradient(135deg, #E8A838 0%, #D4922A 100%)",
+              borderRadius: 14, textDecoration: "none", width: "100%", boxSizing: "border-box",
+            }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.01em" }}>► Assistir</span>
+            </a>
+            <button onClick={downloadICS} style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
+            }}>
+              Adicionar ao calendário
+            </button>
+          </div>
+
           {/* Probability */}
           {fPct !== null && oPct !== null && (
-            <div style={{ padding: "22px 20px 0" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                <span style={{ fontSize: 20, fontWeight: 900, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{fPct + "%"}</span>
-                <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Probabilidade de vitória</span>
-                <span style={{ fontSize: 20, fontWeight: 900, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.25)", fontFamily: SANS }}>{oPct + "%"}</span>
+            <div style={{ margin: "16px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 18px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
+                <div>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: GREEN, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 2 }}>João</span>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.3)", fontFamily: SANS, lineHeight: 1 }}>{fPct + "%"}</span>
+                </div>
+                <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center", paddingBottom: 4 }}>Probabilidade de{"\n"}vitória</span>
+                <div style={{ textAlign: "right" }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 2 }}>{oppName.split(" ").pop()}</span>
+                  <span style={{ fontSize: 26, fontWeight: 900, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.3)", fontFamily: SANS, lineHeight: 1 }}>{oPct + "%"}</span>
+                </div>
               </div>
-              <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden", gap: 2 }}>
-                <div style={{ width: fPct + "%", background: "linear-gradient(90deg, " + GREEN + ", #22c55e)", borderRadius: 3, transition: "width 0.8s ease" }} />
-                <div style={{ width: oPct + "%", background: "linear-gradient(90deg, #ef4444, #f87171)", borderRadius: 3, transition: "width 0.8s ease" }} />
+              <div style={{ display: "flex", height: 6, borderRadius: 4, overflow: "hidden", gap: 2 }}>
+                <div style={{ width: fPct + "%", background: "linear-gradient(90deg, " + GREEN + ", #22c55e)", borderRadius: 4, transition: "width 0.8s ease" }} />
+                <div style={{ width: oPct + "%", background: "linear-gradient(90deg, #ef4444, #f87171)", borderRadius: 4, transition: "width 0.8s ease" }} />
               </div>
             </div>
           )}
-          {/* Info grid 2x2 */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "18px 20px" }}>
-            {dateInfo && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "10px 12px" }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(79,195,247,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                </div>
-                <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Data</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>{dateInfo.weekday + ", " + dateInfo.date}</div></div>
-              </div>
-            )}
-            {dateInfo && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "10px 12px" }}>
-                <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(79,195,247,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                </div>
-                <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Horário</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>{dateInfo.time}</div></div>
-              </div>
-            )}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "10px 12px" }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(79,195,247,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              </div>
-              <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Quadra</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>{match.court || "A definir"}</div></div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "10px 12px" }}>
-              <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(79,195,247,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              </div>
-              <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Transmissão</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>ESPN 2 · Disney+</div></div>
-            </div>
-          </div>
-          {/* Countdown */}
-          {countdownText && <div style={{ textAlign: "center", padding: "4px 0 4px" }}><span style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{countdownText}</span></div>}
-          {/* Action buttons */}
-          <div style={{ padding: "4px 20px 18px", display: "flex", gap: 10 }}>
-            <button onClick={downloadICS} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, cursor: "pointer", color: "rgba(255,255,255,0.5)", fontSize: 11, fontWeight: 600, fontFamily: SANS }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              Adicionar ao Calendário
-            </button>
-            <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "12px 8px", background: "rgba(79,195,247,0.08)", border: "1px solid rgba(79,195,247,0.15)", borderRadius: 12, textDecoration: "none", fontSize: 12, fontWeight: 600, fontFamily: SANS, color: "#4FC3F7" }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-              Assistir
-            </a>
-          </div>
         </>
       )}
-      {/* Curiosidade strip integrada */}
+
+      {/* Curiosidade strip */}
       {facts && facts.length > 0 && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "14px 20px", textAlign: "center" }}>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "16px 20px 18px", marginTop: 16, textAlign: "center" }}>
           {factIdx % (facts.length + 1) === 0 ? (
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: SANS, fontWeight: 600 }}>{"Curiosidades sobre " + (match.tournament_name || "o torneio")}</span>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: SANS, fontWeight: 600 }}>{"Contexto do jogo"}</span>
           ) : (
-            <span style={{ fontSize: 12, color: "rgba(79,195,247,0.6)", fontFamily: SANS, fontWeight: 500 }}>{facts[(factIdx - 1) % facts.length].text}</span>
+            <>
+              <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Contexto do jogo</span>
+              <span style={{ fontSize: 13, color: "rgba(79,195,247,0.65)", fontFamily: SANS, fontWeight: 500, lineHeight: 1.5 }}>{facts[(factIdx - 1) % facts.length].text}</span>
+            </>
           )}
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 4 }}>{factIdx % (facts.length + 1) === 0 ? "" : ((factIdx - 1) % facts.length + 1) + "/" + facts.length}</span>
+          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 6 }}>{factIdx % (facts.length + 1) === 0 ? "" : ((factIdx - 1) % facts.length + 1) + "/" + facts.length}</span>
         </div>
       )}
     </section>
   );
 };
-
 
 // ===== LIVE SCORE CARD =====
 var LiveScoreCard = function(props) {
