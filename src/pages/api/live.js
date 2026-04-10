@@ -128,6 +128,22 @@ export default async function handler(req, res) {
               kv.del("fn:nextMatch"),
               kv.del("fn:winProb"),
             ]);
+
+            // Update recentForm — prepend this match, keep last 10
+            try {
+              var existingForm = await kv.get("fn:recentForm");
+              var formArr = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
+              if (!Array.isArray(formArr)) formArr = [];
+              var newEntry = { result: lastMatchData.result, score: lastMatchData.score, opponent_name: lastMatchData.opponent_name, tournament: lastMatchData.tournament_name, date: lastMatchData.date };
+              // Don't duplicate
+              var alreadyExists = formArr.some(function(f) { return f.opponent_name === newEntry.opponent_name && f.score === newEntry.score; });
+              if (!alreadyExists) {
+                formArr.push(newEntry);
+                if (formArr.length > 10) formArr = formArr.slice(-10);
+                await kv.set("fn:recentForm", JSON.stringify(formArr), { ex: 604800 });
+                console.log("[live] recentForm updated: " + formArr.length + " entries");
+              }
+            } catch(formErr) { console.log("[live] recentForm error: " + formErr.message); }
             console.log("[live] lastMatch saved: " + lastMatchData.result + " " + lastMatchData.score + " vs " + lastMatchData.opponent_name);
 
             // Also try to fetch and save match stats
