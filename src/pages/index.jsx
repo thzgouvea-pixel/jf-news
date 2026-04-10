@@ -393,7 +393,6 @@ export default function JoaoFonsecaNews() {
           </div>
         </section>
 )}
-)}
 
 {hasNextMatch && (
         <section style={{ padding: "24px 0 0" }}>
@@ -404,7 +403,20 @@ export default function JoaoFonsecaNews() {
           )}
         </section>
 )}
-
+<section style={{ padding: "28px 0 0" }}>
+          <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#2563EB", display: "inline-block" }} />Notícias</p>
+          {loading && news.length === 0 && <Skeleton />}
+          {dn.length > 0 && !(loading && news.length === 0) && (
+            <>
+              <div>{buildFeed(dn.slice(0, visibleCount), allLikes, dm)}</div>
+              {visibleCount < dn.length && (
+                <button onClick={function() { setVisibleCount(function(v) { return Math.min(v + 10, dn.length); }); }} style={{ width: "100%", padding: "14px", background: "#fff", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", fontSize: 13, fontWeight: 700, color: GREEN, fontFamily: SANS, boxShadow: CARD_SHADOW, marginTop: 4 }}>
+                  Carregar mais ({dn.length - visibleCount} restantes)
+                </button>
+              )}
+            </>
+          )}
+        </section>
         <section style={{ padding: "28px 0 0" }}>
           <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#7C3AED", display: "inline-block" }} />João em números</p>
           {(function() {
