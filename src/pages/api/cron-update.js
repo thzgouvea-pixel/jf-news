@@ -109,7 +109,7 @@ async function scanMatches(deep) {
   add(await sofaFetch("/v1/team/events/next/0?team_id=" + FONSECA_TEAM_ID));
 
   // Check recent dates — deep scan if ?deep=1
-  var scanDays = deep ? 75 : 2;
+  var scanDays = deep ? 30 : 2;
   for (var d = -scanDays; d <= 1; d++) {
     var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
     addFiltered(await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds));
