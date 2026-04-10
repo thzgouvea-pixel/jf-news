@@ -240,6 +240,7 @@ export default function JoaoFonsecaNews() {
   };
 
   var handleRefresh = function() {
+    // Clear localStorage cache so stale data is gone
     try { localStorage.removeItem("jf-news-v5"); } catch(e) {}
     fetchNews(true);
     fetch("/api/sofascore-data?t=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); }).then(function(d) {
@@ -250,8 +251,9 @@ export default function JoaoFonsecaNews() {
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
+      // Clear nextMatch if not present in KV (match ended)
       if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
-      if (d.winProb) setWinProb(d.winProb);
+      if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
@@ -368,6 +370,12 @@ export default function JoaoFonsecaNews() {
 
       <main className="mobile-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
 
+        {recentForm && recentForm.length > 0 && (
+          <section style={{ padding: "12px 0 0" }}>
+            <Fonsecometro recentForm={recentForm} />
+          </section>
+        )}
+
         {!loading && news.length === 0 && (
   <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", background: "#FFFBEB", borderRadius: 12, margin: "12px 0 0", border: "1px solid #F59E0B22", boxShadow: "0 1px 4px rgba(245,158,11,0.06)" }}>
     <span style={{ fontSize: 13 }}>⚠️</span>
@@ -375,11 +383,10 @@ export default function JoaoFonsecaNews() {
   </div>
 )}
 
-<Fonsecometro recentForm={recentForm} lastMatch={dl} />
-
 {/* When no next match, show última partida first */}
 {!hasNextMatch && (
         <section style={{ padding: "8px 0 0" }}>
+
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
@@ -395,6 +402,7 @@ export default function JoaoFonsecaNews() {
 {/* When there IS a next match, show última partida below */}
 {hasNextMatch && (
         <section style={{ padding: "24px 0 0" }}>
+
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
