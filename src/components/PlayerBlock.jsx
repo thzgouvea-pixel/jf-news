@@ -39,7 +39,7 @@ export default function PlayerBlock(props) {
           { label: "Breaks salvos", fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0 },
           { label: "Total de pontos", fVal: fTotalPts, oVal: oTotalPts },
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
-        if (statRows.length === 0) return null;
+        var showStats = statRows.length > 0;
 
         var oppName = (matchStats && matchStats.opponent_name) || (lastMatch && lastMatch.opponent_name) || "Adv.";
         var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
@@ -158,7 +158,7 @@ var matchDate = (matchStats && matchStats.date) || (lastMatch && lastMatch.date)
             </div>
 
             {/* STAT BARS */}
-            <div style={{ padding: "22px 20px 0" }}>
+            {showStats && <div style={{ padding: "22px 20px 0" }}>
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 16 }}>
                 {statRows.map(function(row, i) {
                   var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
@@ -183,7 +183,7 @@ var matchDate = (matchStats && matchStats.date) || (lastMatch && lastMatch.date)
                   );
                 })}
               </div>
-            </div>
+            </div>}
 
             {/* RECENT FORM */}
             {formMatches.length > 0 && (
