@@ -34,7 +34,20 @@ export default function NextDuelCard(props) {
     var iv = setInterval(function() { setFactIdx(function(p) { return (p + 1) % (facts.length + 1); }); }, 5000);
     return function() { clearInterval(iv); };
   }, [facts]);
-  if (!match) return null;
+  if (!match) return (
+    <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
+      <div style={{ padding: "32px 24px", textAlign: "center" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 16px", background: "#152035", border: "2.5px solid " + GREEN + "30", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } }} />
+        </div>
+        <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: "0 0 8px", letterSpacing: "-0.02em" }}>Próximo torneio a definir</h2>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", fontFamily: SANS, margin: "0 0 20px", lineHeight: 1.5 }}>Aguardando confirmação do próximo jogo do João Fonseca</p>
+        <a href="https://www.atptour.com/en/players/joao-fonseca/f0fv/player-activity" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.2)", borderRadius: 10, textDecoration: "none", fontSize: 12, fontWeight: 600, fontFamily: SANS, color: "#4FC3F7" }}>
+          Ver calendário ATP
+        </a>
+      </div>
+    </section>
+  );
 
   var isLive = liveData && liveData.live;
 
