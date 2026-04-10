@@ -54,8 +54,16 @@ export default async function handler(req, res) {
     // Ensure tournament fields exist (use query params or keep existing)
     var tournament = req.query.tournament || (req.body && req.body.tournament);
     var date = req.query.date || (req.body && req.body.date);
+    var round = req.query.round || (req.body && req.body.round);
+    var surface = req.query.surface || (req.body && req.body.surface);
+    var court = req.query.court || (req.body && req.body.court);
+    var category = req.query.category || (req.body && req.body.category);
     if (tournament) nextMatch.tournament_name = tournament;
     if (date) nextMatch.date = date;
+    if (round) nextMatch.round = round;
+    if (surface) nextMatch.surface = surface;
+    if (court) nextMatch.court = court;
+    if (category) nextMatch.tournament_category = category;
 
     // Defaults if no tournament data exists
     if (!nextMatch.tournament_name) nextMatch.tournament_name = "Monte Carlo Masters";
@@ -72,7 +80,11 @@ export default async function handler(req, res) {
         opponent_ranking: nextMatch.opponent_ranking,
         opponent_country: nextMatch.opponent_country,
         opponent_id: nextMatch.opponent_id,
-        tournament: nextMatch.tournament_name || "unknown"
+        tournament: nextMatch.tournament_name || "unknown",
+        round: nextMatch.round || "",
+        surface: nextMatch.surface || "",
+        court: nextMatch.court || "",
+        date: nextMatch.date || "",
       }
     });
   } catch (e) {
