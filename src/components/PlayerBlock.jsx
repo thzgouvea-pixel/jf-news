@@ -49,7 +49,7 @@ export default function PlayerBlock(props) {
         var oppImgFallback = getESPNImage(oppName);
         var oppProfileMatch = opponentProfile && opponentProfile.name && oppName.indexOf(opponentProfile.name.split(" ").pop()) !== -1;
         var oppRanking = (matchStats && matchStats.opponent_ranking) || (lastMatch && lastMatch.opponent_ranking) || (oppProfileMatch ? opponentProfile.ranking : null);
-        var formMatches = recentForm ? recentForm.slice(-5) : [];
+        var formMatches = recentForm ? recentForm.slice(0, 5) : [];
 
         // ===== PARSE SCORE into sets =====
         var scoreStr = (matchStats && matchStats.score) || (lastMatch && lastMatch.score) || "";
@@ -191,7 +191,7 @@ var matchDate = (matchStats && matchStats.date) || (lastMatch && lastMatch.date)
                 <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: 14 }}>
                   <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 10 }}>Forma recente</span>
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    {formMatches.slice().reverse().map(function(m, i) {
+                    {formMatches.map(function(m, i) {
                       var w = m.result === "V";
                       return (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.04)" }}>
