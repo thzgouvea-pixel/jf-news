@@ -8,6 +8,8 @@ const nextConfig = {
     remotePatterns: [
       { protocol: 'https', hostname: 'api.sofascore.app' },
       { protocol: 'https', hostname: '**.googleusercontent.com' },
+      { protocol: 'https', hostname: 'www.atptour.com' },
+      { protocol: 'https', hostname: 'a.espncdn.com' },
     ],
   },
   async headers() {
