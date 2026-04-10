@@ -465,17 +465,17 @@ function LastMatchCard({ lastMatch, form }) {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.2fr .8fr", gap: 12 }}>
-        <div style={{ background: BG_ALT, border: `1px solid ${BORDER}`, borderRadius: 18, padding: 16 }}>
-          <div style={{ fontSize: 10, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Adversário</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: TEXT, fontFamily: SERIF, lineHeight: 1.1 }}>{lastMatch?.opponent_name || "A definir"}</div>
-          <p style={{ margin: "12px 0 0", fontSize: 14, color: SUB, fontFamily: SANS, lineHeight: 1.55 }}>
+        <div style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 16 }}>
+          <div style={{ fontSize: 10, color: COLORS.dim, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Adversário</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: COLORS.text, fontFamily: SERIF, lineHeight: 1.1 }}>{lastMatch?.opponent_name || "A definir"}</div>
+          <p style={{ margin: "12px 0 0", fontSize: 14, color: COLORS.sub, fontFamily: SANS, lineHeight: 1.55 }}>
             {won ? "João venceu" : "João foi superado por"} <strong>{lastMatch?.opponent_name || "o adversário"}</strong>
             {lastMatch?.score ? ` por ${lastMatch.score}` : ""}
             {lastMatch?.round ? `, em ${lastMatch.round.toLowerCase()}` : ""}.
           </p>
         </div>
-        <div style={{ background: BG_ALT, border: `1px solid ${BORDER}`, borderRadius: 18, padding: 16 }}>
-          <div style={{ fontSize: 10, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Forma recente</div>
+        <div style={{ background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 16 }}>
+          <div style={{ fontSize: 10, color: COLORS.dim, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Forma recente</div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {form.map((m, i) => (
               <span
