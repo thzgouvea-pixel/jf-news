@@ -105,6 +105,7 @@ async function scanMatches() {
   // Team events (bulk, fast) — pages 0-3 for enough history (5+ matches)
   add(await sofaFetch("/v1/team/events/last/0?team_id=" + FONSECA_TEAM_ID));
   add(await sofaFetch("/v1/team/events/last/1?team_id=" + FONSECA_TEAM_ID));
+  add(await sofaFetch("/v1/team/events/last/2?team_id=" + FONSECA_TEAM_ID));
   add(await sofaFetch("/v1/team/events/next/0?team_id=" + FONSECA_TEAM_ID));
 
   // ALWAYS also check today + yesterday + tomorrow (catches fresh results team events misses)
