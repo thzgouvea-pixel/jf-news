@@ -54,6 +54,9 @@ export default function NextDuelCard(props) {
     var endD = nextTournament.end_date ? new Date(nextTournament.end_date) : null;
     var monthsShort = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
     var formattedDateRange = startD.getUTCDate() + " " + monthsShort[startD.getUTCMonth()] + (endD ? " - " + endD.getUTCDate() + " " + monthsShort[endD.getUTCMonth()] : "");
+    var todayPrev = new Date();
+    var endDMidnight = endD ? new Date(endD.getUTCFullYear(), endD.getUTCMonth(), endD.getUTCDate(), 23, 59, 59, 999) : null;
+    var isOngoingPrev = todayPrev >= startD && (!endDMidnight || todayPrev <= endDMidnight);
 
     return (
       <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
@@ -61,13 +64,13 @@ export default function NextDuelCard(props) {
 
         {/* Top bar */}
         <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(79,195,247,0.7)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próximo torneio</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(79,195,247,0.7)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>🎾 Próximo torneio</span>
           <span style={{ fontSize: 9, fontWeight: 800, color: scPrev, fontFamily: SANS, background: scPrev + "20", padding: "4px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{surfaceLabelPrev}</span>
         </div>
 
         {/* Tournament name */}
         <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
-          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>
             {nextTournament.tournament_category + " · " + nextTournament.tournament_name}
           </h2>
         </div>
@@ -97,8 +100,8 @@ export default function NextDuelCard(props) {
           </div>
         </div>
 
-        {/* Info grid: Data + Cidade */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "22px 20px 0" }}>
+        {/* Info grid: Data + Cidade + País */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, padding: "22px 20px 0" }}>
           <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Período</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{formattedDateRange}</div>
@@ -107,11 +110,18 @@ export default function NextDuelCard(props) {
             <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Local</div>
             <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{nextTournament.city}</div>
           </div>
+          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>País</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{nextTournament.country}</div>
+          </div>
         </div>
 
         {/* Message + link */}
         <div style={{ padding: "20px 24px 22px", textAlign: "center" }}>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontFamily: SANS, margin: "0 0 14px", lineHeight: 1.5 }}>Aguardando confirmação do adversário</p>
+          {isOngoingPrev
+            ? <p style={{ fontSize: 13, color: GREEN, fontFamily: SANS, margin: "0 0 14px", lineHeight: 1.5, fontWeight: 700 }}>🟢 Fonseca está neste torneio</p>
+            : <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontFamily: SANS, margin: "0 0 14px", lineHeight: 1.5 }}>Aguardando confirmação do adversário</p>
+          }
           <a href="https://www.atptour.com/en/players/joao-fonseca/f0fv/player-activity" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.2)", borderRadius: 12, color: "#4FC3F7", fontSize: 12, fontWeight: 700, fontFamily: SANS, textDecoration: "none" }}>
             Ver calendário ATP
           </a>
