@@ -209,8 +209,24 @@ if (lm) { try { var eLM = await kv.get("fn:lastMatch"); if (eLM) { var pLM = typ
     var w = []; var T7=604800; var T2=172800;
     if (lm) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
     if (nm) w.push(kv.set("fn:nextMatch",JSON.stringify(nm),{ex:T7}));
-    if (form.length) {       try {         var ef = await kv.get("fn:recentForm");         if (ef) {           var old = typeof ef === "string" ? JSON.parse(ef) : ef;           if (Array.isArray(old)) {             var dates = new Set(form.map(function(m){return m.date;}));             old.forEach(function(m){if(m.date && !dates.has(m.date)){form.push(m);}});             form.sort(function(a,b){return new Date(b.date)-new Date(a.date);});             form = form.slice(0,10);           }         }       } catch(e){}       w.push(kv.set("fn:recentForm",JSON.stringify(form),{ex:T7}));     }
-    if (ms) w.push(kv.set("fn:matchStats",JSON.stringify(ms),{ex:T7}));
+if (form.length) {
+      try {
+        var ef = await kv.get("fn:recentForm");
+        if (ef) {
+          var old = typeof ef === "string" ? JSON.parse(ef) : ef;
+          if (Array.isArray(old)) {
+            var keys = new Set(form.map(function(m){ return m.opponent_name + "|" + m.score; }));
+            old.forEach(function(m){
+              var k = m.opponent_name + "|" + m.score;
+              if (!keys.has(k)) { form.push(m); keys.add(k); }
+            });
+            form.sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
+            form = form.slice(0,10);
+          }
+        }
+      } catch(e){}
+      w.push(kv.set("fn:recentForm",JSON.stringify(form),{ex:T7}));
+    }    if (ms) w.push(kv.set("fn:matchStats",JSON.stringify(ms),{ex:T7}));
     if (wiki) {
       if (wiki.ranking) w.push(kv.set("fn:ranking",JSON.stringify({ranking:wiki.ranking,bestRanking:wiki.bestRanking||null,updatedAt:new Date().toISOString()}),{ex:T2}));
       if (wiki.prizeMoney) w.push(kv.set("fn:prizeMoney",JSON.stringify({amount:wiki.prizeMoney}),{ex:T7}));
