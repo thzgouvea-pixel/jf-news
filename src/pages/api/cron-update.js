@@ -306,6 +306,25 @@ export default async function handler(req, res) {
       try { await kv.del("fn:nextTournament"); } catch(e){}
     }
     if (lm) {
+      // Check manual lock FIRST
+      try {
+        var manualLock = await kv.get("fn:lastMatchManualLock");
+        if (manualLock) {
+          var eLM2 = await kv.get("fn:lastMatch");
+          if (eLM2) {
+            var pLM2 = typeof eLM2 === "string" ? JSON.parse(eLM2) : eLM2;
+            if (pLM2.date && lm.date && new Date(lm.date) > new Date(pLM2.date)) {
+              log("Cron has newer match than manual lock, clearing lock");
+              await kv.del("fn:lastMatchManualLock");
+              // Continue with normal logic below
+            } else {
+              log("Manual lock active, keeping manual lastMatch (" + (pLM2.opponent_name || "?") + ")");
+              lm = pLM2; // Use the manually set lastMatch
+            }
+          }
+        }
+      } catch(e) { log("Lock check error: " + e.message); }
+
       try {
         var eLM = await kv.get("fn:lastMatch");
         if (eLM) {
