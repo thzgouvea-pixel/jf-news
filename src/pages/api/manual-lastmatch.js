@@ -6,26 +6,30 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "unauthorized" });
   }
   try {
-    var opponent = req.query.opponent;
-    var score = req.query.score;
-    var result = req.query.result || "V";
-    if (!opponent || !score) return res.status(400).json({ error: "opponent and score required" });
-    var existing = await kv.get("fn:lastMatch");
-    var lastMatch = existing ? (typeof existing === "string" ? JSON.parse(existing) : existing) : {};
-    lastMatch.opponent_name = decodeURIComponent(opponent);
-    lastMatch.score = decodeURIComponent(score);
-    lastMatch.result = result;
-    if (req.query.tournament) lastMatch.tournament_name = decodeURIComponent(req.query.tournament);
-    if (req.query.round) lastMatch.round = decodeURIComponent(req.query.round);
-    if (req.query.surface) lastMatch.surface = req.query.surface;
-    if (req.query.country) lastMatch.opponent_country = req.query.country;
-    if (req.query.ranking) lastMatch.opponent_ranking = parseInt(req.query.ranking);
-    if (req.query.id) lastMatch.opponent_id = parseInt(req.query.id);
-    if (req.query.category) lastMatch.tournament_category = req.query.category;
-    lastMatch.date = req.query.date || new Date().toISOString();
-    lastMatch.finished = true;
-    await kv.set("fn:lastMatch", JSON.stringify(lastMatch), { ex: 86400 * 7 });
-    return res.status(200).json({ ok: true, updated: lastMatch });
+    var match;
+    if (req.method === "POST" && req.body) {
+      match = req.body;
+    } else {
+      // GET: set the verified correct last match (Fonseca vs Zverev, Monte Carlo QF)
+      match = {
+        result: "D",
+        score: "5-7 7-6 3-6",
+        opponent_name: "A. Zverev",
+        opponent_ranking: 3,
+        opponent_country: "Germany",
+        tournament_name: "Monte Carlo, Monaco",
+        tournament_category: "Masters 1000",
+        surface: "Clay",
+        round: "Quartas de final",
+        date: "2026-04-10T06:15:00Z"
+      };
+    }
+    match.finished = true;
+    var T7 = 86400 * 7;
+    var T3 = 86400 * 3;
+    await kv.set("fn:lastMatch", JSON.stringify(match), { ex: T7 });
+    await kv.set("fn:lastMatchManualLock", new Date().toISOString(), { ex: T3 });
+    return res.status(200).json({ ok: true, updated: match });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
