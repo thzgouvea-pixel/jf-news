@@ -72,6 +72,7 @@ export default async function handler(req, res) {
     if (!nextMatch.surface) nextMatch.surface = "Clay";
 
     await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 * 7 });
+    await kv.set("fn:nextMatchManualLock", new Date().toISOString(), { ex: 86400 * 3 });
 
     return res.status(200).json({
       ok: true,

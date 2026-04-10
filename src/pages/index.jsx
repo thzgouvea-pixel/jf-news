@@ -252,8 +252,8 @@ export default function JoaoFonsecaNews() {
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
-      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
-      if (d.winProb) setWinProb(d.winProb);
+      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
+      if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
@@ -288,8 +288,8 @@ export default function JoaoFonsecaNews() {
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
-      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
-      if (d.winProb) setWinProb(d.winProb);
+      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
+      if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
