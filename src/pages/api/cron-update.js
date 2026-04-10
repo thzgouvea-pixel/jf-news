@@ -164,7 +164,7 @@ export default async function handler(req, res) {
   try {
     var matches = await scanMatches(req.query && req.query.deep === "1");
     var fin = matches.filter(function(m){return isFinished(m)&&isSingles(m);}).sort(function(a,b){return (b.startTimestamp||0)-(a.startTimestamp||0);});
-    var upc = matches.filter(function(m){return isUpcoming(m)&&isSingles(m);}).sort(function(a,b){return (a.startTimestamp||0)-(b.startTimestamp||0);});
+    var upc = matches.filter(function(m){if(!isUpcoming(m)||!isSingles(m)) return false; var ex=extractMatch(m); if(ex.score&&ex.score.length>2) return false; return true;}).sort(function(a,b){return (a.startTimestamp||0)-(b.startTimestamp||0);});
     var lm = fin.length > 0 ? extractMatch(fin[0]) : null;
     var nm = upc.length > 0 ? extractMatch(upc[0]) : null;
     var form = fin.slice(0,10).map(function(m){var d=extractMatch(m);return{result:d.result,score:d.score,opponent_name:d.opponent_name,tournament:d.tournament_name,date:d.date};});
@@ -203,7 +203,7 @@ export default async function handler(req, res) {
     if (nm) nm = await mergeWithKV("fn:nextMatch", nm);
     if (lm) lm = await mergeWithKV("fn:lastMatch", lm);
     if (!nm) { try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){} }
-if (lm) { try { var eLM = await kv.get("fn:lastMatch"); if (eLM) { var pLM = typeof eLM === "string" ? JSON.parse(eLM) : eLM; if (pLM.date && lm.date && new Date(pLM.date) > new Date(lm.date)) lm = null; } } catch(e){} }
+if (lm) { try { var eLM = await kv.get("fn:lastMatch"); if (eLM) { var pLM = typeof eLM === "string" ? JSON.parse(eLM) : eLM; if (pLM.date && lm.date && new Date(pLM.date) > new Date(lm.date)) { lm = null; } else if (pLM.date && !lm.date) { lm = null; } else if (pLM.opponent_name && lm.opponent_name && pLM.opponent_name !== lm.opponent_name && pLM.round && !lm.round) { lm = null; } } } catch(e){} }
     steps.merge = "done";
 
     var w = []; var T7=604800; var T2=172800;
@@ -226,7 +226,7 @@ if (form.length) {
         }
       } catch(e){}
       w.push(kv.set("fn:recentForm",JSON.stringify(form),{ex:T7}));
-    }    if (ms) w.push(kv.set("fn:matchStats",JSON.stringify(ms),{ex:T7}));
+    }    if (ms) { var skipMs = false; try { var eLM2 = await kv.get("fn:lastMatch"); if (eLM2) { var pLM2 = typeof eLM2 === "string" ? JSON.parse(eLM2) : eLM2; if (pLM2.opponent_name && ms.opponent_name && pLM2.opponent_name !== ms.opponent_name) skipMs = true; } } catch(e){} if (!skipMs) w.push(kv.set("fn:matchStats",JSON.stringify(ms),{ex:T7})); }
     if (wiki) {
       if (wiki.ranking) w.push(kv.set("fn:ranking",JSON.stringify({ranking:wiki.ranking,bestRanking:wiki.bestRanking||null,updatedAt:new Date().toISOString()}),{ex:T2}));
       if (wiki.prizeMoney) w.push(kv.set("fn:prizeMoney",JSON.stringify({amount:wiki.prizeMoney}),{ex:T7}));
