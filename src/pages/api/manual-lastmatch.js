@@ -38,6 +38,7 @@ export default async function handler(req, res) {
     var T3 = 86400 * 3;
     await kv.set("fn:lastMatch", JSON.stringify(match), { ex: T7 });
     await kv.set("fn:lastMatchManualLock", new Date().toISOString(), { ex: T3 });
+    await kv.del("fn:matchStats");
     return res.status(200).json({ ok: true, updated: match });
   } catch (e) {
     return res.status(500).json({ error: e.message });

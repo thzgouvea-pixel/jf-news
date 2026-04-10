@@ -316,8 +316,9 @@ export default async function handler(req, res) {
     } else {
       try { await kv.del("fn:nextTournament"); } catch(e){}
     }
+    // ===== LAST MATCH with manual lock protection =====
+    var skipLastMatchWrite = false;
     if (lm) {
-      // Check manual lock FIRST
       try {
         var manualLock = await kv.get("fn:lastMatchManualLock");
         if (manualLock) {
@@ -327,36 +328,40 @@ export default async function handler(req, res) {
             if (pLM2.date && lm.date && new Date(lm.date) > new Date(pLM2.date)) {
               log("Cron has newer match than manual lock, clearing lock");
               await kv.del("fn:lastMatchManualLock");
-              // Continue with normal logic below
+              // lm stays as cron data, will be written below
             } else {
               log("Manual lock active, keeping manual lastMatch (" + (pLM2.opponent_name || "?") + ")");
-              lm = pLM2; // Use the manually set lastMatch
+              lm = pLM2;
+              skipLastMatchWrite = true; // Skip KV overwrite to preserve manual lock
             }
           }
         }
       } catch(e) { log("Lock check error: " + e.message); }
 
-      try {
-        var eLM = await kv.get("fn:lastMatch");
-        if (eLM) {
-          var pLM = typeof eLM === "string" ? JSON.parse(eLM) : eLM;
-          if (pLM.date && lm.date && new Date(pLM.date) > new Date(lm.date)) {
-            log("Existing lastMatch is newer, keeping it");
-            lm = pLM;
-          } else if (pLM.round && !lm.round && pLM.opponent_name && lm.opponent_name && pLM.opponent_name.split(" ").pop() === lm.opponent_name.split(" ").pop()) {
-            log("Existing lastMatch has round info, merging");
-            lm.round = pLM.round;
-            if (pLM.tournament_category && !lm.tournament_category) lm.tournament_category = pLM.tournament_category;
-            if (pLM.opponent_ranking && !lm.opponent_ranking) lm.opponent_ranking = pLM.opponent_ranking;
-            if (pLM.opponent_country && !lm.opponent_country) lm.opponent_country = pLM.opponent_country;
+      // Only do merge logic if lock is NOT active
+      if (!skipLastMatchWrite) {
+        try {
+          var eLM = await kv.get("fn:lastMatch");
+          if (eLM) {
+            var pLM = typeof eLM === "string" ? JSON.parse(eLM) : eLM;
+            if (pLM.date && lm.date && new Date(pLM.date) > new Date(lm.date)) {
+              log("Existing lastMatch is newer, keeping it");
+              lm = pLM;
+            } else if (pLM.round && !lm.round && pLM.opponent_name && lm.opponent_name && pLM.opponent_name.split(" ").pop() === lm.opponent_name.split(" ").pop()) {
+              log("Existing lastMatch has round info, merging");
+              lm.round = pLM.round;
+              if (pLM.tournament_category && !lm.tournament_category) lm.tournament_category = pLM.tournament_category;
+              if (pLM.opponent_ranking && !lm.opponent_ranking) lm.opponent_ranking = pLM.opponent_ranking;
+              if (pLM.opponent_country && !lm.opponent_country) lm.opponent_country = pLM.opponent_country;
+            }
           }
-        }
-      } catch(e) {}
+        } catch(e) {}
+      }
     }
     steps.merge = "done";
 
     var w = []; var T7=604800; var T2=172800;
-    if (lm) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
+    if (lm && !skipLastMatchWrite) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
     if (nm) w.push(kv.set("fn:nextMatch",JSON.stringify(nm),{ex:T7}));
 if (form.length) {
       // Check manual lock before overwriting recentForm
