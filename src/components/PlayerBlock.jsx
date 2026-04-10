@@ -63,8 +63,8 @@ export default function PlayerBlock(props) {
         });
 
         // ===== TOURNAMENT NAME cleanup =====
-        var tournament = matchStats.tournament || "";
-        var tournamentCategory = matchStats.tournament_category || (lastMatch && lastMatch.tournament_category) || "";
+        var tournament = (matchStats && matchStats.tournament) || (lastMatch && lastMatch.tournament_name) || "";
+        var tournamentCategory = (matchStats && matchStats.tournament_category) || (lastMatch && lastMatch.tournament_category) || "";
         // Clean: "Monte Carlo, Monaco" -> "Monte Carlo"
         var tournamentClean = tournament.split(",")[0].trim();
         // Build display: "Masters 1000 \u00b7 Monte Carlo"
