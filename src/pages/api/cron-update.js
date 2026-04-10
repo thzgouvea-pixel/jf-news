@@ -219,16 +219,18 @@ async function fetchNextTournament(upcomingMatches) {
   var gk = process.env.GEMINI_API_KEY;
   if (gk) {
     try {
-      var prompt = "Confirme ou corrija as informações do torneio de tênis ATP \"" + nextT.name + "\" 2026. Responda APENAS JSON: {\"tournament_name\":\"...\",\"tournament_category\":\"...\",\"surface\":\"...\",\"city\":\"...\",\"country\":\"...\",\"start_date\":\"YYYY-MM-DD\",\"end_date\":\"YYYY-MM-DD\"}. Se não tiver informação precisa, mantenha os valores: " + JSON.stringify({ tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface, city: nextT.city, country: nextT.country, start_date: nextT.start, end_date: nextT.end });
+      var prompt = "Confirme ou corrija as informações do torneio de tênis ATP " + JSON.stringify(nextT.name) + " 2026. Responda APENAS JSON: {\"tournament_name\":\"...\",\"tournament_category\":\"...\",\"surface\":\"...\",\"city\":\"...\",\"country\":\"...\",\"start_date\":\"YYYY-MM-DD\",\"end_date\":\"YYYY-MM-DD\"}. Se não tiver informação precisa, mantenha os valores: " + JSON.stringify({ tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface, city: nextT.city, country: nextT.country, start_date: nextT.start, end_date: nextT.end });
       var gr = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 200 } }) });
       if (gr.ok) {
         var gd = await gr.json();
         var gt = gd.candidates && gd.candidates[0] && gd.candidates[0].content && gd.candidates[0].content.parts && gd.candidates[0].content.parts[0] && gd.candidates[0].content.parts[0].text;
         if (gt) {
-          var enriched = JSON.parse(gt.replace(/```json|```/g, "").trim());
-          if (enriched && enriched.tournament_name) {
-            result = Object.assign({}, result, enriched, { source: "gemini", updatedAt: new Date().toISOString() });
-          }
+          try {
+            var enriched = JSON.parse(gt.replace(/```json|```/g, "").trim());
+            if (enriched && enriched.tournament_name) {
+              result = Object.assign({}, result, enriched, { source: "gemini", updatedAt: new Date().toISOString() });
+            }
+          } catch(parseErr) { log("Gemini parse error: " + parseErr.message + " | raw: " + gt.slice(0, 200)); }
         }
       }
     } catch(e) { log("Gemini enrichment error: " + e.message); }
@@ -298,7 +300,7 @@ export default async function handler(req, res) {
     if (lm) lm = await mergeWithKV("fn:lastMatch", lm);
     if (!nm) {
       try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){}
-      var nt = await fetchNextTournament(upc.map(function(m){ return m; }));
+      var nt = await fetchNextTournament(upc);
       if (nt) { try { await kv.set("fn:nextTournament", JSON.stringify(nt), { ex: 172800 }); } catch(e){ log("KV nextTournament error: " + e.message); } }
     } else {
       try { await kv.del("fn:nextTournament"); } catch(e){}
