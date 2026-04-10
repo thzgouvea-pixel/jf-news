@@ -96,7 +96,7 @@ async function fetchRankingWikipedia() {
   } catch (e) { log("Wikipedia error: " + e.message); return null; }
 }
 
-async function scanMatches() {
+async function scanMatches(deep) {
   log("Scanning matches...");
   var all = []; var seen = new Set();
   function add(data) { if (!data) return; var ev = data.events || data; if (!Array.isArray(ev)) { for (var k in data) { if (Array.isArray(data[k])) { ev = data[k]; break; } } } if (!Array.isArray(ev)) return; ev.forEach(function(m) { if (m.id && !seen.has(m.id)) { seen.add(m.id); all.push(m); } }); }
@@ -109,8 +109,7 @@ async function scanMatches() {
   add(await sofaFetch("/v1/team/events/next/0?team_id=" + FONSECA_TEAM_ID));
 
   // Check recent dates — deep scan if ?deep=1
-  var deepMode = typeof req !== "undefined" && req.query && req.query.deep === "1";
-  var scanDays = deepMode ? 75 : 2;
+  var scanDays = deep ? 75 : 2;
   for (var d = -scanDays; d <= 1; d++) {
     var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
     addFiltered(await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds));
@@ -162,7 +161,7 @@ async function fetchFacts(nm) {
 export default async function handler(req, res) {
   var start = Date.now(); var steps = {};
   try {
-    var matches = await scanMatches();
+    var matches = await scanMatches(req.query && req.query.deep === "1");
     var fin = matches.filter(isFinished).sort(function(a,b){return (b.startTimestamp||0)-(a.startTimestamp||0);});
     var upc = matches.filter(isUpcoming).sort(function(a,b){return (a.startTimestamp||0)-(b.startTimestamp||0);});
     var lm = fin.length > 0 ? extractMatch(fin[0]) : null;
