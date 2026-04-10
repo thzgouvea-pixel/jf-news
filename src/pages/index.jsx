@@ -262,7 +262,7 @@ export default function JoaoFonsecaNews() {
 
   useEffect(function() {
     if (initDone.current) return; initDone.current = true;
-    if (!loadCache()) fetchNews();
+    loadCache(); fetchNews(true);
   }, []);
 
   useEffect(function() {
