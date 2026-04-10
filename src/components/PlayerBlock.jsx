@@ -101,7 +101,7 @@ var matchDate = (lastMatch && lastMatch.date) ? new Date(lastMatch.date).toLocal
                 <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Última partida</span>
                 </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {round && <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{round}</span>}
+                {round && <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.65)", fontFamily: SANS }}>{round}</span>}
                 {matchDate && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{matchDate}</span>}
                 {surfaceLabel && <span style={{ fontSize: 9, fontWeight: 800, color: sc, fontFamily: SANS, background: sc + "20", padding: "4px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{surfaceLabel}</span>}
               </div>
@@ -197,7 +197,10 @@ var matchDate = (lastMatch && lastMatch.date) ? new Date(lastMatch.date).toLocal
                       return (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.04)" }}>
                           <span style={{ fontSize: 10, fontWeight: 800, color: w ? GREEN : "#ef4444", fontFamily: SANS, width: 16, textAlign: "center" }}>{w ? "V" : "D"}</span>
-                          <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.7)", fontFamily: SANS, flex: 1 }}>{m.opponent_name}</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.7)", fontFamily: SANS, flex: 1 }}>
+                            {m.opponent_name}
+                            {m.opponent_ranking && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS, marginLeft: 4 }}>{"#" + m.opponent_ranking}</span>}
+                          </span>
                           <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{m.score}</span>
                         </div>
                       );

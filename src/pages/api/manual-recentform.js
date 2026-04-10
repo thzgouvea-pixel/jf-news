@@ -14,16 +14,16 @@ export default async function handler(req, res) {
 
     // GET: set the verified correct recent form
     var form = [
-      { result: "D", score: "5-7 7-6 3-6", opponent_name: "A. Zverev", tournament: "Monte Carlo, Monaco", date: "2026-04-10T06:15:00Z" },
-      { result: "V", score: "6-3 6-2", opponent_name: "M. Berrettini", tournament: "Monte Carlo, Monaco", date: "2026-04-09T06:10:00Z" },
-      { result: "V", score: "7-5 4-6 6-3", opponent_name: "A. Rinderknech", tournament: "Monte Carlo, Monaco", date: "2026-04-08T07:45:00Z" },
-      { result: "V", score: "6-2 6-3", opponent_name: "G. Diallo", tournament: "Monte Carlo, Monaco", date: "2026-04-06T11:25:00Z" },
-      { result: "D", score: "4-6 4-6", opponent_name: "C. Alcaraz", tournament: "Miami, USA", date: "2026-03-20T21:25:00Z" },
-      { result: "V", score: "6-4 3-6 6-2", opponent_name: "F. Marozsán", tournament: "Miami, USA", date: "2026-03-19T17:00:00Z" },
-      { result: "D", score: "6-7 6-7", opponent_name: "J. Sinner", tournament: "Indian Wells, USA", date: "2026-03-10T22:10:00Z" },
-      { result: "V", score: "6-2 6-3", opponent_name: "T. Paul", tournament: "Indian Wells, USA", date: "2026-03-08T23:40:00Z" },
-      { result: "V", score: "4-6 7-6 6-4", opponent_name: "K. Khachanov", tournament: "Indian Wells, USA", date: "2026-03-07T18:00:00Z" },
-      { result: "V", score: "7-6 6-4", opponent_name: "R. Collignon", tournament: "Indian Wells, USA", date: "2026-03-04T23:55:00Z" },
+      { result: "D", score: "5-7 7-6 3-6", opponent_name: "A. Zverev", opponent_ranking: 2, tournament: "Monte Carlo, Monaco", date: "2026-04-10T06:15:00Z" },
+      { result: "V", score: "6-3 6-2", opponent_name: "M. Berrettini", opponent_ranking: 35, tournament: "Monte Carlo, Monaco", date: "2026-04-09T06:10:00Z" },
+      { result: "V", score: "7-5 4-6 6-3", opponent_name: "A. Rinderknech", opponent_ranking: 56, tournament: "Monte Carlo, Monaco", date: "2026-04-08T07:45:00Z" },
+      { result: "V", score: "6-2 6-3", opponent_name: "G. Diallo", opponent_ranking: 72, tournament: "Monte Carlo, Monaco", date: "2026-04-06T11:25:00Z" },
+      { result: "D", score: "4-6 4-6", opponent_name: "C. Alcaraz", opponent_ranking: 1, tournament: "Miami, USA", date: "2026-03-20T21:25:00Z" },
+      { result: "V", score: "6-4 3-6 6-2", opponent_name: "F. Marozsán", opponent_ranking: 55, tournament: "Miami, USA", date: "2026-03-19T17:00:00Z" },
+      { result: "D", score: "6-7 6-7", opponent_name: "J. Sinner", opponent_ranking: 1, tournament: "Indian Wells, USA", date: "2026-03-10T22:10:00Z" },
+      { result: "V", score: "6-2 6-3", opponent_name: "T. Paul", opponent_ranking: 12, tournament: "Indian Wells, USA", date: "2026-03-08T23:40:00Z" },
+      { result: "V", score: "4-6 7-6 6-4", opponent_name: "K. Khachanov", opponent_ranking: 18, tournament: "Indian Wells, USA", date: "2026-03-07T18:00:00Z" },
+      { result: "V", score: "7-6 6-4", opponent_name: "R. Collignon", opponent_ranking: 120, tournament: "Indian Wells, USA", date: "2026-03-04T23:55:00Z" },
     ];
 
     await kv.set("fn:recentForm", JSON.stringify(form), { ex: 86400 * 7 });
