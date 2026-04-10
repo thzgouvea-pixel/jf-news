@@ -102,9 +102,10 @@ async function scanMatches() {
   function add(data) { if (!data) return; var ev = data.events || data; if (!Array.isArray(ev)) { for (var k in data) { if (Array.isArray(data[k])) { ev = data[k]; break; } } } if (!Array.isArray(ev)) return; ev.forEach(function(m) { if (m.id && !seen.has(m.id)) { seen.add(m.id); all.push(m); } }); }
   function addFiltered(data) { if (!data) return; var ev = data.events || data; if (!Array.isArray(ev)) { for (var k in data) { if (Array.isArray(data[k])) { ev = data[k]; break; } } } if (Array.isArray(ev)) ev.forEach(function(m) { if (isFonseca(m) && m.id && !seen.has(m.id)) { seen.add(m.id); all.push(m); } }); }
 
-  // Team events (bulk, fast) — page 0 and 1 for more history
+  // Team events (bulk, fast) — pages 0-3 for enough history (5+ matches)
   add(await sofaFetch("/v1/team/events/last/0?team_id=" + FONSECA_TEAM_ID));
   add(await sofaFetch("/v1/team/events/last/1?team_id=" + FONSECA_TEAM_ID));
+  add(await sofaFetch("/v1/team/events/last/2?team_id=" + FONSECA_TEAM_ID));
   add(await sofaFetch("/v1/team/events/next/0?team_id=" + FONSECA_TEAM_ID));
 
   // ALWAYS also check today + yesterday + tomorrow (catches fresh results team events misses)
