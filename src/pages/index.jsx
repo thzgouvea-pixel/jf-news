@@ -236,7 +236,7 @@ export default function JoaoFonsecaNews() {
   var fetchNews = function(bustCache) {
     setLoading(true);
     var url = "/api/news" + (bustCache ? "?t=" + Date.now() : "");
-    fetch(url, bustCache ? { cache: "no-store" } : {}).then(
+    fetch(url, bustCache ? { cache: "no-store" } : {}).then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
   };
 
   var handleRefresh = function() {
@@ -380,10 +380,6 @@ export default function JoaoFonsecaNews() {
     <span style={{ fontSize: 12, color: "#92400E", fontFamily: SANS, fontWeight: 500 }}>Dados offline — mostrando informações de exemplo.</span>
   </div>
 )}
-
-<section style={{ padding: "8px 0 0" }}>
-  <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
-</section>
 
        {!hasNextMatch && (
         <section style={{ padding: "8px 0 0" }}>
