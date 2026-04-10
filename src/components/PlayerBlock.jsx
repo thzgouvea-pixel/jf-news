@@ -16,8 +16,9 @@ export default function PlayerBlock(props) {
   return (
     <div>
       {(matchStats && matchStats.fonseca || lastMatch) && (function() {
-        var f = matchStats && matchStats.fonseca ? matchStats.fonseca : {};
-        var o = matchStats && matchStats.opponent ? matchStats.opponent : {};
+        var msValid = matchStats && matchStats.fonseca && (!lastMatch || !lastMatch.opponent_name || !matchStats.opponent_name || matchStats.opponent_name.split(" ").pop() === lastMatch.opponent_name.split(" ").pop());
+        var f = msValid ? matchStats.fonseca : {};
+        var o = msValid ? matchStats.opponent : {};
         var fServTotal = (f.firstserveaccuracy||0) + (f.secondserveaccuracy||0) + (f.doublefaults||0);
         var oServTotal = (o.firstserveaccuracy||0) + (o.secondserveaccuracy||0) + (o.doublefaults||0);
         var f1stPct = fServTotal > 0 ? Math.round((f.firstserveaccuracy||0) / fServTotal * 100) : 0;
@@ -41,7 +42,7 @@ export default function PlayerBlock(props) {
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
         var showStats = statRows.length > 0;
 
-        var oppName = (matchStats && matchStats.opponent_name) || (lastMatch && lastMatch.opponent_name) || "Adv.";
+        var oppName = (lastMatch && lastMatch.opponent_name) || (msValid && matchStats.opponent_name) || "Adv.";
         var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
         var isWin = (matchStats && matchStats.result) === "V" || (lastMatch && lastMatch.result) === "V";
         var oppFlag = countryFlags[(matchStats && matchStats.opponent_country) || (lastMatch && lastMatch.opponent_country) || ""] || "";
