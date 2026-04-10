@@ -19,10 +19,8 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-      var count = (await kv.get(key)) || 0;
-      var newCount = count + 1;
-      await kv.set(key, newCount);
-      return res.status(200).json({ visitors: newCount });
+      var count = await kv.incr(key);
+      return res.status(200).json({ visitors: count });
     }
 
     return res.status(405).json({ error: "Method not allowed" });

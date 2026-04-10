@@ -15,7 +15,7 @@ export default async function handler(req, res) {
     if (req.method === "POST") {
       var body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
       var token = body.token;
-      if (!token || token.length < 20) {
+      if (!token || typeof token !== "string" || token.length < 100 || token.length > 500) {
         return res.status(400).json({ error: "Invalid token" });
       }
 

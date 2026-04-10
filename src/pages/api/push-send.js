@@ -5,6 +5,15 @@
 // Uses Google OAuth2 to get access token from service account credentials.
 
 import { kv } from "@vercel/kv";
+import crypto from "crypto";
+
+function safeCompare(a, b) {
+  if (!a || !b) return false;
+  var bufA = Buffer.from(String(a));
+  var bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 // Get access token from service account for FCM v1 API
 async function getAccessToken() {
@@ -57,15 +66,20 @@ export default async function handler(req, res) {
 
   // Simple auth: check secret header
   var secret = req.headers["x-push-secret"] || req.query.secret;
-  if (secret !== process.env.PUSH_SECRET) {
+  if (!safeCompare(secret, process.env.PUSH_SECRET)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {
     var body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-    var title = body.title || "Fonseca News";
-    var msgBody = body.body || "";
+    var title = String(body.title || "Fonseca News").substring(0, 200);
+    var msgBody = String(body.body || "").substring(0, 500);
     var url = body.url || "https://fonsecanews.com.br";
+
+    // Validate URL starts with allowed domain
+    if (!/^https:\/\/(www\.)?fonsecanews\.com\.br(\/|$)/.test(url)) {
+      url = "https://fonsecanews.com.br";
+    }
 
     // Get all tokens
     var tokens = (await kv.get("push:tokens")) || [];

@@ -30,6 +30,16 @@ export default async function handler(req, res) {
     var name = (body.name || "Anônimo").trim();
     var rating = body.rating || null;
 
+    // Validate rating is a number between 1 and 5
+    if (rating !== null) {
+      rating = Number(rating);
+      if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+        rating = null;
+      } else {
+        rating = Math.round(rating);
+      }
+    }
+
     if (!message || message.length < 3) return res.status(400).json({ error: "Mensagem muito curta" });
     if (message.length > 2000) return res.status(400).json({ error: "Mensagem muito longa (max 2000)" });
 

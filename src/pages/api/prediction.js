@@ -23,6 +23,10 @@ export default async function handler(req, res) {
       var matchKey = req.query.match;
       if (!matchKey) return res.status(400).json({ error: "Missing match param" });
 
+      // Validate matchKey
+      matchKey = String(matchKey).substring(0, 50);
+      if (!/^[a-zA-Z0-9_-]+$/.test(matchKey)) return res.status(400).json({ error: "Invalid match format" });
+
       var key = "pred:" + visitorId + ":" + matchKey;
       var prediction = await kv.get(key);
       var streakKey = "pred_streak:" + visitorId;
@@ -42,6 +46,10 @@ export default async function handler(req, res) {
       var matchKey = body.match;
       var pred = body.prediction;
       if (!matchKey || !pred) return res.status(400).json({ error: "Missing data" });
+
+      // Validate inputs
+      matchKey = String(matchKey).substring(0, 50);
+      if (!/^[a-zA-Z0-9_-]+$/.test(matchKey)) return res.status(400).json({ error: "Invalid match format" });
 
       var key = "pred:" + visitorId + ":" + matchKey;
       var existing = await kv.get(key);

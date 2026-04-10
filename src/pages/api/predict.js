@@ -9,6 +9,12 @@ export default async function handler(req, res) {
       var matchId = body.matchId || "next";
       if (!score) return res.status(400).json({ error: "score required" });
 
+      // Validate inputs
+      score = String(score).substring(0, 50);
+      matchId = String(matchId).substring(0, 50);
+      if (!/^[a-zA-Z0-9\s\-_]+$/.test(score)) return res.status(400).json({ error: "invalid score format" });
+      if (!/^[a-zA-Z0-9_-]+$/.test(matchId)) return res.status(400).json({ error: "invalid matchId format" });
+
       var key = "fn:predict:" + matchId;
       var current = await kv.get(key);
       var data = current ? (typeof current === "string" ? JSON.parse(current) : current) : {};
@@ -25,6 +31,8 @@ export default async function handler(req, res) {
 
     if (req.method === "GET") {
       var matchId = req.query.matchId || "next";
+      matchId = String(matchId).substring(0, 50);
+      if (!/^[a-zA-Z0-9_-]+$/.test(matchId)) return res.status(400).json({ error: "invalid matchId format" });
       var key = "fn:predict:" + matchId;
       var current = await kv.get(key);
       var data = current ? (typeof current === "string" ? JSON.parse(current) : current) : {};

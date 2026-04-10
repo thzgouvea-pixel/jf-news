@@ -5,10 +5,19 @@
 // Reutiliza o PUSH_SECRET como autenticação
 
 import { kv } from "@vercel/kv";
+import crypto from "crypto";
+
+function safeCompare(a, b) {
+  if (!a || !b) return false;
+  var bufA = Buffer.from(String(a));
+  var bufB = Buffer.from(String(b));
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
 
 export default async function handler(req, res) {
   var secret = req.query.secret || req.headers["x-secret"];
-  if (!secret || secret !== process.env.PUSH_SECRET) {
+  if (!safeCompare(secret, process.env.PUSH_SECRET)) {
     return res.status(401).json({ error: "unauthorized" });
   }
 
@@ -21,6 +30,12 @@ export default async function handler(req, res) {
     var atpSlug = req.query.atp || (req.body && req.body.atp_slug) || null;
 
     if (!name) return res.status(400).json({ error: "name required. Use ?name=Gabriel+Diallo&ranking=36&country=Canada&id=280151" });
+
+    // Sanitize inputs
+    name = String(name).substring(0, 100).replace(/[<>"'&]/g, "");
+    country = String(country).substring(0, 60).replace(/[<>"'&]/g, "");
+    if (ranking !== null && (ranking < 1 || ranking > 5000)) ranking = null;
+    if (atpSlug) atpSlug = String(atpSlug).substring(0, 20).replace(/[^a-zA-Z0-9]/g, "");
 
     // Get existing nextMatch from KV or create with tournament defaults
     var existing = await kv.get("fn:nextMatch");

@@ -3,11 +3,16 @@
 // Preview: fonsecanews.com.br/api/og
 import { ImageResponse } from "@vercel/og";
 export const config = { runtime: "edge" };
+function sanitizeParam(val, maxLen) {
+  if (!val) return null;
+  return val.substring(0, maxLen).replace(/[<>"'&]/g, "");
+}
+
 export default async function handler(req) {
   var url = new URL(req.url);
-  var title = url.searchParams.get("title") || "Fonseca News";
-  var subtitle = url.searchParams.get("subtitle") || "Tudo sobre João Fonseca";
-  var ranking = url.searchParams.get("ranking") || "#40";
+  var title = sanitizeParam(url.searchParams.get("title"), 120) || "Fonseca News";
+  var subtitle = sanitizeParam(url.searchParams.get("subtitle"), 120) || "Tudo sobre João Fonseca";
+  var ranking = sanitizeParam(url.searchParams.get("ranking"), 20) || "#40";
   return new ImageResponse(
     (
       <div

@@ -331,8 +331,12 @@ export default async function handler(req, res) {
     }
 
     // ===== 2. NEWS =====
-    var protocol = req.headers["x-forwarded-proto"] || "https";
+    var allowedHosts = ["fonsecanews.com.br", "www.fonsecanews.com.br", "localhost:3000"];
     var host = req.headers.host;
+    if (!host || !allowedHosts.some(function(h) { return host === h || host.endsWith(".vercel.app"); })) {
+      host = "fonsecanews.com.br";
+    }
+    var protocol = req.headers["x-forwarded-proto"] === "http" ? "http" : "https";
     var newsRes = await fetch(protocol + "://" + host + "/api/news");
     if (!newsRes.ok) throw new Error("Failed to fetch news");
     var newsData = await newsRes.json();
