@@ -1,120 +1,60 @@
-import { SANS } from '../lib/constants';
-
-// Fonsecômetro — rolling win% over last N matches as a mini line chart
-// Each point = cumulative win% up to that match (oldest→newest, left→right)
-// Green when hot, red when cold, emoji at the end
+import { GREEN, RED, TEXT, DIM, SANS, SERIF, BORDER } from '../lib/constants';
 
 export default function Fonsecometro(props) {
   var recentForm = props.recentForm;
-  var lastMatch = props.lastMatch;
+  if (!recentForm || recentForm.length === 0) return null;
 
-  // Build match list: recentForm + lastMatch (deduplicated)
-  var matches = [];
-  if (recentForm && recentForm.length > 0) {
-    recentForm.forEach(function(m) { matches.push(m); });
-  }
-  // Add lastMatch if not already in the list
-  if (lastMatch && lastMatch.result) {
-    var isDupe = matches.some(function(m) {
-      return m.opponent_name === lastMatch.opponent_name && m.score === lastMatch.score;
-    });
-    if (!isDupe) matches.push({ result: lastMatch.result, opponent_name: lastMatch.opponent_name, score: lastMatch.score });
-  }
+  var last10 = recentForm.slice(-10);
+  var wins = last10.filter(function(m) { return m.result === "V"; }).length;
+  var losses = last10.length - wins;
+  var pct = last10.length > 0 ? Math.round((wins / last10.length) * 100) : 0;
+  var total = wins + losses;
+  var wPct = total > 0 ? Math.max(Math.round((wins / total) * 100), 5) : 50;
+  var lPct = 100 - wPct;
 
-  if (matches.length < 2) return null;
-
-  // Take last 10, oldest first
-  var last10 = matches.slice(-10);
-
-  // Calculate rolling win% at each point
-  var points = [];
-  var wins = 0;
-  for (var i = 0; i < last10.length; i++) {
-    if (last10[i].result === "V") wins++;
-    var pct = Math.round((wins / (i + 1)) * 100);
-    points.push(pct);
-  }
-
-  var currentPct = points[points.length - 1];
-
-  // Emoji based on current form
-  var emoji = "😐";
-  if (currentPct >= 80) emoji = "🔥";
-  else if (currentPct >= 60) emoji = "😎";
-  else if (currentPct >= 50) emoji = "💪";
-  else if (currentPct >= 40) emoji = "😐";
-  else if (currentPct >= 20) emoji = "😰";
-  else emoji = "🥶";
-
-  // Color based on current pct (green → yellow → red)
-  function getColor(pct) {
-    if (pct >= 70) return "#22C55E";
-    if (pct >= 50) return "#F59E0B";
-    if (pct >= 30) return "#F97316";
-    return "#EF4444";
-  }
-  var lineColor = getColor(currentPct);
-
-  // SVG dimensions
-  var W = 280;
-  var H = 32;
-  var padX = 4;
-  var padY = 6;
-  var chartW = W - padX * 2;
-  var chartH = H - padY * 2;
-
-  // Build path
-  var pathParts = [];
-  for (var j = 0; j < points.length; j++) {
-    var x = padX + (points.length > 1 ? (j / (points.length - 1)) * chartW : chartW / 2);
-    var y = padY + chartH - (points[j] / 100) * chartH;
-    pathParts.push((j === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1));
-  }
-  var pathD = pathParts.join(" ");
-
-  // Last point coordinates for dot + emoji
-  var lastX = padX + (points.length > 1 ? ((points.length - 1) / (points.length - 1)) * chartW : chartW / 2);
-  var lastY = padY + chartH - (currentPct / 100) * chartH;
-
-  // Area fill path (path + close to bottom)
-  var areaD = pathD + " L" + lastX.toFixed(1) + "," + (H - 1) + " L" + padX.toFixed(1) + "," + (H - 1) + " Z";
-
-  // Label
-  var label = currentPct + "%";
-  var formText = wins + "V " + (last10.length - wins) + "D";
+  var emoji = pct >= 80 ? "🔥" : (pct >= 60 ? "😎" : (pct >= 40 ? "😐" : "😤"));
 
   return (
-    <div style={{ padding: "0 16px 0", margin: "0 0 4px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        {/* Label */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 0, flexShrink: 0 }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: "#9CA3AF", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>Forma</span>
-          <span style={{ fontSize: 11, fontWeight: 800, color: lineColor, fontFamily: SANS }}>{label}</span>
-          <span style={{ fontSize: 9, fontWeight: 600, color: "#9CA3AF", fontFamily: SANS }}>({formText})</span>
+    <div style={{ background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 16, padding: "16px 20px", boxShadow: "0 2px 12px rgba(10,18,32,0.15)" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: GREEN, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Fonsecômetro</span>
+          <span style={{ fontSize: 10, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>Últimas {last10.length} partidas</span>
         </div>
+        <span style={{ fontSize: 18 }}>{emoji}</span>
+      </div>
 
-        {/* Chart */}
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <svg viewBox={"0 0 " + W + " " + H} style={{ width: "100%", height: 32, display: "block" }} preserveAspectRatio="none">
-            {/* Area fill */}
-            <path d={areaD} fill={lineColor + "12"} />
-            {/* Line */}
-            <path d={pathD} fill="none" stroke={lineColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            {/* Dots */}
-            {points.map(function(pct, idx) {
-              var dx = padX + (points.length > 1 ? (idx / (points.length - 1)) * chartW : chartW / 2);
-              var dy = padY + chartH - (pct / 100) * chartH;
-              var dotColor = getColor(pct);
-              var isLast = idx === points.length - 1;
-              return (
-                <circle key={idx} cx={dx} cy={dy} r={isLast ? 3.5 : 2} fill={isLast ? dotColor : dotColor + "80"} stroke={isLast ? "#fff" : "none"} strokeWidth={isLast ? 1.5 : 0} />
-              );
-            })}
-          </svg>
-        </div>
+      {/* Big percentage */}
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 12 }}>
+        <span style={{ fontSize: 28, fontWeight: 900, color: pct >= 50 ? GREEN : "#ef4444", fontFamily: SANS, lineHeight: 1 }}>{pct}%</span>
+        <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS }}>{wins}V {losses}D</span>
+      </div>
 
-        {/* Emoji */}
-        <span style={{ fontSize: 18, flexShrink: 0 }}>{emoji}</span>
+      {/* Bar — green vs red like stat bars */}
+      <div style={{ display: "flex", height: 6, borderRadius: 3, overflow: "hidden", gap: 1, marginBottom: 14 }}>
+        <div style={{ width: wPct + "%", height: 6, background: "linear-gradient(90deg, " + GREEN + ", #34D399)", borderRadius: "3px 0 0 3px", transition: "width 0.8s ease" }} />
+        <div style={{ width: lPct + "%", height: 6, background: "linear-gradient(90deg, #EF4444, #F87171)", borderRadius: "0 3px 3px 0", transition: "width 0.8s ease" }} />
+      </div>
+
+      {/* Match dots */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+        {last10.map(function(m, i) {
+          var w = m.result === "V";
+          return (
+            <div key={i} title={m.opponent_name + " " + m.score} style={{ flex: 1, height: 22, borderRadius: 4, background: w ? GREEN + "15" : "#ef4444" + "15", border: "1px solid " + (w ? GREEN + "30" : "#ef4444" + "30"), display: "flex", alignItems: "center", justifyContent: "center", cursor: "default" }}>
+              <span style={{ fontSize: 8, fontWeight: 700, color: w ? GREEN : "#ef4444", fontFamily: SANS }}>{w ? "V" : "D"}</span>
+            </div>
+          );
+        })}
+        {/* Placeholders for missing matches to reach 10 */}
+        {Array.from({ length: Math.max(0, 10 - last10.length) }).map(function(_, i) {
+          return (
+            <div key={"p" + i} style={{ flex: 1, height: 22, borderRadius: 4, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontSize: 8, color: "rgba(255,255,255,0.1)", fontFamily: SANS }}>—</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
