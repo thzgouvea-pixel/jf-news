@@ -97,10 +97,10 @@ var matchDate = (matchStats && matchStats.date) || (lastMatch && lastMatch.date)
             {/* TOP BAR */}
             <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: isWin ? GREEN : "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Última partida</span>
-                {round && <span style={{ fontSize: 12, fontWeight: 800, color: "#fff", fontFamily: SANS }}>{round}</span>}
-              </div>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Última partida</span>
+                </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {round && <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{round}</span>}
                 {matchDate && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{matchDate}</span>}
                 {surfaceLabel && <span style={{ fontSize: 9, fontWeight: 800, color: sc, fontFamily: SANS, background: sc + "20", padding: "4px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{surfaceLabel}</span>}
               </div>
