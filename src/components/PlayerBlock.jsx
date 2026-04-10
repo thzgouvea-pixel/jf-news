@@ -16,7 +16,7 @@ export default function PlayerBlock(props) {
   return (
     <div>
       {(matchStats && matchStats.fonseca || lastMatch) && (function() {
-        var msValid = matchStats && matchStats.fonseca && (!lastMatch || !lastMatch.opponent_name || !matchStats.opponent_name || matchStats.opponent_name.split(" ").pop() === lastMatch.opponent_name.split(" ").pop());
+        var msValid = matchStats && matchStats.fonseca && lastMatch && lastMatch.opponent_name && matchStats.opponent_name && matchStats.opponent_name.split(" ").pop() === lastMatch.opponent_name.split(" ").pop();
         var f = msValid ? matchStats.fonseca : {};
         var o = msValid ? matchStats.opponent : {};
         var fServTotal = (f.firstserveaccuracy||0) + (f.secondserveaccuracy||0) + (f.doublefaults||0);
@@ -42,18 +42,18 @@ export default function PlayerBlock(props) {
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
         var showStats = statRows.length > 0;
 
-        var oppName = (lastMatch && lastMatch.opponent_name) || (msValid && matchStats.opponent_name) || "Adv.";
+        var oppName = (lastMatch && lastMatch.opponent_name) || "Adv.";
         var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
-        var isWin = (matchStats && matchStats.result) === "V" || (lastMatch && lastMatch.result) === "V";
-        var oppFlag = countryFlags[(matchStats && matchStats.opponent_country) || (lastMatch && lastMatch.opponent_country) || ""] || "";
+        var isWin = (lastMatch && lastMatch.result) === "V";
+        var oppFlag = countryFlags[(lastMatch && lastMatch.opponent_country) || ""] || "";
         var oppImg = getATPImage(oppName);
         var oppImgFallback = getESPNImage(oppName);
         var oppProfileMatch = opponentProfile && opponentProfile.name && oppName.indexOf(opponentProfile.name.split(" ").pop()) !== -1;
-        var oppRanking = (matchStats && matchStats.opponent_ranking) || (lastMatch && lastMatch.opponent_ranking) || (oppProfileMatch ? opponentProfile.ranking : null);
+        var oppRanking = (lastMatch && lastMatch.opponent_ranking) || (oppProfileMatch ? opponentProfile.ranking : null);
         var formMatches = recentForm ? recentForm.slice(0, 5) : [];
 
         // ===== PARSE SCORE into sets =====
-        var scoreStr = (matchStats && matchStats.score) || (lastMatch && lastMatch.score) || "";
+        var scoreStr = (lastMatch && lastMatch.score) || "";
         var sets = scoreStr.split(" ").filter(function(s) { return s.includes("-"); });
         var fSetsWon = 0; var oSetsWon = 0;
         sets.forEach(function(s) {
@@ -64,26 +64,26 @@ export default function PlayerBlock(props) {
         });
 
         // ===== TOURNAMENT NAME cleanup =====
-        var tournament = (matchStats && matchStats.tournament) || (lastMatch && lastMatch.tournament_name) || "";
-        var tournamentCategory = (matchStats && matchStats.tournament_category) || (lastMatch && lastMatch.tournament_category) || "";
+        var tournament = (lastMatch && lastMatch.tournament_name) || "";
+        var tournamentCategory = (lastMatch && lastMatch.tournament_category) || "";
         // Clean: "Monte Carlo, Monaco" -> "Monte Carlo"
         var tournamentClean = tournament.split(",")[0].trim();
         // Build display: "Masters 1000 \u00b7 Monte Carlo"
         var tournamentDisplay = tournamentCategory ? (tournamentCategory + " \u00b7 " + tournamentClean) : tournamentClean;
 
         // ===== ROUND =====
-        var round = (matchStats && matchStats.round) || (lastMatch && lastMatch.round) || "";
+        var round = (lastMatch && lastMatch.round) || "";
 
 
         // ===== SURFACE =====
-        var surface = (matchStats && matchStats.surface) || (lastMatch && lastMatch.surface) || "";
+        var surface = (lastMatch && lastMatch.surface) || "";
         var surfaceTranslateMap = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
         var surfaceLabel = surfaceTranslateMap[surface] || surface || "";
         var sc = surfaceColorMap[surface] || surfaceColorMap[surfaceLabel] || "#999";
         var tournLow = tournament.toLowerCase();
         if (["monte carlo","roland garros","barcelona","madrid","roma","buenos aires","rio open","lyon","hamburg","gstaad","umag","bucharest","estoril"].some(function(t) { return tournLow.includes(t); }) && surface === "Hard") { surfaceLabel = "Saibro"; sc = surfaceColorMap["Clay"]; }
 
-var matchDate = (matchStats && matchStats.date) || (lastMatch && lastMatch.date) ? new Date((matchStats && matchStats.date) || lastMatch.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
+var matchDate = (lastMatch && lastMatch.date) ? new Date(lastMatch.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : null;
         // Duration formatted as Xh Ymin
         var fGames = f.gameswon || 0; var oGames = o.gameswon || 0;
         var totalGames = fGames + oGames;
