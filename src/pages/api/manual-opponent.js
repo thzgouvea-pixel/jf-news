@@ -33,8 +33,11 @@ export default async function handler(req, res) {
 
     // Sanitize inputs
     name = String(name).substring(0, 100).replace(/[<>"'&]/g, "");
+    if (!name.trim()) return res.status(400).json({ error: "name required after sanitization" });
     country = String(country).substring(0, 60).replace(/[<>"'&]/g, "");
-    if (ranking !== null && (ranking < 1 || ranking > 5000)) ranking = null;
+    if (ranking !== null && (ranking < 1 || ranking > 5000)) {
+      return res.status(400).json({ error: "ranking must be between 1 and 5000" });
+    }
     if (atpSlug) atpSlug = String(atpSlug).substring(0, 20).replace(/[^a-zA-Z0-9]/g, "");
 
     // Get existing nextMatch from KV or create with tournament defaults

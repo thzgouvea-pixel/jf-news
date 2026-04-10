@@ -27,6 +27,7 @@ export default async function handler(req, res) {
 
   // Sanitize opponent name
   oppName = oppName.replace(/\+/g, " ").replace(/[<>"'&]/g, "").substring(0, 100);
+  if (!oppName.trim()) oppName = "Oponente";
 
   // Convert decimal odds to implied probability (remove vig)
   var implF = 1 / fOdds;
