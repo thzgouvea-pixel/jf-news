@@ -50,14 +50,6 @@ export default function PlayerBlock(props) {
         var oppProfileMatch = opponentProfile && opponentProfile.name && oppName.indexOf(opponentProfile.name.split(" ").pop()) !== -1;
         var oppRanking = matchStats.opponent_ranking || (oppProfileMatch ? opponentProfile.ranking : null);
         var formMatches = recentForm ? recentForm.slice(-5) : [];
-        // Auto-include current match if not already in form
-        if (matchStats.opponent_name && matchStats.score) {
-          var alreadyInForm = formMatches.some(function(m) { return m.opponent_name === matchStats.opponent_name && m.score === matchStats.score; });
-          if (!alreadyInForm) {
-            formMatches.push({ result: matchStats.result, score: matchStats.score, opponent_name: matchStats.opponent_name, tournament: matchStats.tournament });
-          }
-        }
-        formMatches = formMatches.slice(-5);
 
         // ===== PARSE SCORE into sets =====
         var scoreStr = matchStats.score || "";
@@ -140,17 +132,19 @@ export default function PlayerBlock(props) {
                     <span style={{ fontSize: 32, fontWeight: 900, color: !isWin ? "#ef4444" : "rgba(255,255,255,0.5)", fontFamily: SANS, lineHeight: 1 }}>{oSetsWon}</span>
                   </div>
                   {/* Individual set scores */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: durationStr ? 6 : 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 8 }}>
                     {sets.map(function(s, i) {
                       var parts = s.split("-");
                       var fWon = (parseInt(parts[0]) || 0) > (parseInt(parts[1]) || 0);
                       return (
-                        <span key={i} style={{ fontSize: 12, fontWeight: 700, color: fWon ? GREEN : "#ef4444", fontFamily: SANS, background: fWon ? GREEN + "12" : "#ef444412", padding: "2px 8px", borderRadius: 6 }}>{s}</span>
+                        <span key={i} style={{ fontSize: 10, fontWeight: 600, color: fWon ? GREEN + "90" : "#ef4444" + "80", fontFamily: SANS, background: fWon ? GREEN + "08" : "#ef4444" + "08", padding: "2px 6px", borderRadius: 4, letterSpacing: "0.02em" }}>{s}</span>
                       );
                     })}
                   </div>
+                  {/* Result badge */}
+                  <span style={{ fontSize: 10, fontWeight: 800, color: isWin ? GREEN : "#ef4444", fontFamily: SANS, background: isWin ? GREEN + "18" : "#ef444418", padding: "4px 14px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>{isWin ? "Vitória" : "Derrota"}</span>
                   {/* Duration */}
-                  {durationStr && <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, display: "block", marginTop: 0 }}>{durationStr}</span>}
+                  {durationStr && <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, display: "block", marginTop: 8 }}>{durationStr}</span>}
                 </div>
 
                 {/* Opponent */}
