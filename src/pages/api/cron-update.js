@@ -147,6 +147,97 @@ async function fetchWinProb(nm) {
   try { var r = await fetch("https://api.the-odds-api.com/v4/sports/tennis_atp_singles/odds/?apiKey=" + ok + "&regions=eu&markets=h2h&oddsFormat=decimal"); if (!r.ok) return null; var d = await r.json(); if (!Array.isArray(d)) return null; var g = d.find(function(x) { return [x.home_team||"",x.away_team||""].some(function(n){return n.toLowerCase().includes("fonseca");}); }); if (!g||!g.bookmakers||!g.bookmakers.length) return null; var mk = g.bookmakers[0].markets && g.bookmakers[0].markets.find(function(m){return m.key==="h2h";}); if (!mk||!mk.outcomes) return null; var fo=null,oo=null; mk.outcomes.forEach(function(o){if(o.name.toLowerCase().includes("fonseca"))fo=o.price;else oo=o.price;}); if(!fo||!oo) return null; var iF=1/fo,iO=1/oo,tot=iF+iO; return { fonseca: Math.round((iF/tot)*100), opponent: Math.round((iO/tot)*100), opponent_name: nm.opponent_name, source: "odds-api", updatedAt: new Date().toISOString() }; } catch(e) { return null; }
 }
 
+var ATP_CALENDAR_2026 = [
+  { name: "Australian Open", cat: "Grand Slam", surface: "Hard", city: "Melbourne", country: "Austrália", start: "2026-01-18", end: "2026-02-01" },
+  { name: "Buenos Aires", cat: "ATP 250", surface: "Clay", city: "Buenos Aires", country: "Argentina", start: "2026-02-09", end: "2026-02-15" },
+  { name: "Rio Open", cat: "ATP 500", surface: "Clay", city: "Rio de Janeiro", country: "Brasil", start: "2026-02-16", end: "2026-02-22" },
+  { name: "Indian Wells", cat: "Masters 1000", surface: "Hard", city: "Indian Wells", country: "EUA", start: "2026-03-04", end: "2026-03-15" },
+  { name: "Miami Open", cat: "Masters 1000", surface: "Hard", city: "Miami", country: "EUA", start: "2026-03-18", end: "2026-03-29" },
+  { name: "Monte Carlo", cat: "Masters 1000", surface: "Clay", city: "Monte Carlo", country: "Mônaco", start: "2026-04-05", end: "2026-04-12" },
+  { name: "Barcelona Open", cat: "ATP 500", surface: "Clay", city: "Barcelona", country: "Espanha", start: "2026-04-13", end: "2026-04-19" },
+  { name: "Madrid Open", cat: "Masters 1000", surface: "Clay", city: "Madri", country: "Espanha", start: "2026-04-22", end: "2026-05-03" },
+  { name: "Roma Masters", cat: "Masters 1000", surface: "Clay", city: "Roma", country: "Itália", start: "2026-05-06", end: "2026-05-17" },
+  { name: "Roland Garros", cat: "Grand Slam", surface: "Clay", city: "Paris", country: "França", start: "2026-05-24", end: "2026-06-07" },
+  { name: "Wimbledon", cat: "Grand Slam", surface: "Grass", city: "Londres", country: "Reino Unido", start: "2026-06-29", end: "2026-07-12" },
+  { name: "US Open", cat: "Grand Slam", surface: "Hard", city: "Nova York", country: "EUA", start: "2026-08-31", end: "2026-09-13" },
+  { name: "ATP Finals", cat: "Finals", surface: "Hard", city: "Turim", country: "Itália", start: "2026-11-15", end: "2026-11-22" },
+];
+
+async function fetchNextTournament(upcomingMatches) {
+  log("fetchNextTournament...");
+  var now = new Date();
+
+  // a) Try SofaScore: look for an upcoming match that has tournament info but no confirmed opponent
+  if (upcomingMatches && upcomingMatches.length > 0) {
+    for (var i = 0; i < upcomingMatches.length; i++) {
+      var m = upcomingMatches[i];
+      if (!isSingles(m)) continue;
+      var t = m.tournament || {};
+      var tName = t.name || (t.uniqueTournament && t.uniqueTournament.name) || "";
+      if (tName) {
+        var ex = extractMatch(m);
+        return {
+          tournament_name: tName,
+          tournament_category: ex.tournament_category || "",
+          surface: ex.surface || "Hard",
+          city: (t.city || ""),
+          country: (t.country ? (t.country.name || "") : ""),
+          start_date: ex.date ? ex.date.split("T")[0] : null,
+          end_date: null,
+          source: "sofascore",
+          updatedAt: new Date().toISOString(),
+        };
+      }
+    }
+  }
+
+  // b) ATP Calendar hardcoded fallback: pick next tournament whose end date is after today
+  var nextT = null;
+  for (var j = 0; j < ATP_CALENDAR_2026.length; j++) {
+    var cal = ATP_CALENDAR_2026[j];
+    var endDate = new Date(cal.end + "T23:59:59Z");
+    if (endDate >= now) {
+      nextT = cal;
+      break;
+    }
+  }
+  if (!nextT) { log("No upcoming tournament in calendar"); return null; }
+
+  var result = {
+    tournament_name: nextT.name,
+    tournament_category: nextT.cat,
+    surface: nextT.surface,
+    city: nextT.city,
+    country: nextT.country,
+    start_date: nextT.start,
+    end_date: nextT.end,
+    source: "calendar",
+    updatedAt: new Date().toISOString(),
+  };
+
+  // c) Gemini enrichment (optional)
+  var gk = process.env.GEMINI_API_KEY;
+  if (gk) {
+    try {
+      var prompt = "Confirme ou corrija as informações do torneio de tênis ATP \"" + nextT.name + "\" 2026. Responda APENAS JSON: {\"tournament_name\":\"...\",\"tournament_category\":\"...\",\"surface\":\"...\",\"city\":\"...\",\"country\":\"...\",\"start_date\":\"YYYY-MM-DD\",\"end_date\":\"YYYY-MM-DD\"}. Se não tiver informação precisa, mantenha os valores: " + JSON.stringify({ tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface, city: nextT.city, country: nextT.country, start_date: nextT.start, end_date: nextT.end });
+      var gr = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 200 } }) });
+      if (gr.ok) {
+        var gd = await gr.json();
+        var gt = gd.candidates && gd.candidates[0] && gd.candidates[0].content && gd.candidates[0].content.parts && gd.candidates[0].content.parts[0] && gd.candidates[0].content.parts[0].text;
+        if (gt) {
+          var enriched = JSON.parse(gt.replace(/```json|```/g, "").trim());
+          if (enriched && enriched.tournament_name) {
+            result = Object.assign({}, result, enriched, { source: "gemini", updatedAt: new Date().toISOString() });
+          }
+        }
+      }
+    } catch(e) { log("Gemini enrichment error: " + e.message); }
+  }
+
+  log("nextTournament: " + result.tournament_name);
+  return result;
+}
+
 async function fetchFacts(nm) {
   if (!nm||!nm.tournament_name) return null; var gk = process.env.GEMINI_API_KEY; if (!gk) return null;
   try { var ef = await kv.get("fn:tournamentFacts"); if (ef) { var p = typeof ef==="string"?JSON.parse(ef):ef; if (p&&p.tournament===nm.tournament_name) return p; } } catch(e) {}
@@ -205,7 +296,13 @@ export default async function handler(req, res) {
       if (nm) nm = await mergeWithKV("fn:nextMatch", nm);
     }
     if (lm) lm = await mergeWithKV("fn:lastMatch", lm);
-    if (!nm) { try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){} }
+    if (!nm) {
+      try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){}
+      var nt = await fetchNextTournament(upc.map(function(m){ return m; }));
+      if (nt) { try { await kv.set("fn:nextTournament", JSON.stringify(nt), { ex: 172800 }); } catch(e){ log("KV nextTournament error: " + e.message); } }
+    } else {
+      try { await kv.del("fn:nextTournament"); } catch(e){}
+    }
     if (lm) {
       try {
         var eLM = await kv.get("fn:lastMatch");

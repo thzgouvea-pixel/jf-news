@@ -42,51 +42,83 @@ export default function NextDuelCard(props) {
     return function() { clearInterval(iv); };
   }, []);
 
-  if (!match || !match.opponent_name || match.opponent_name === "A definir" || match.opponent_name === "A+definir") return null;   if (false) return (
-    <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
-      <div style={{ position: "absolute", top: -40, left: -40, width: 140, height: 140, borderRadius: "50%", background: "radial-gradient(circle, rgba(79,195,247,0.06) 0%, transparent 65%)", pointerEvents: "none" }} />
+  var nextTournament = props.nextTournament || null;
 
-      {/* Top bar */}
-      <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "#4FC3F7", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próximo jogo</span>
-      </div>
+  if (!match || !match.opponent_name || match.opponent_name === "A definir" || match.opponent_name === "A+definir") {
+    if (!nextTournament) return null;
 
-      {/* Players */}
-      <div style={{ padding: "24px 18px 0" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 10, alignItems: "center" }}>
-          {/* Fonseca */}
-          <div style={{ textAlign: "center" }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 10px", background: "#152035", border: "2.5px solid " + GREEN + "40", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } }} />
+    var surfaceTranslatePrev = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama" };
+    var surfaceLabelPrev = surfaceTranslatePrev[nextTournament.surface] || nextTournament.surface || "";
+    var scPrev = surfaceColorMap[nextTournament.surface] || "#999";
+    var startD = new Date(nextTournament.start_date);
+    var endD = nextTournament.end_date ? new Date(nextTournament.end_date) : null;
+    var monthsShort = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+    var formattedDateRange = startD.getUTCDate() + " " + monthsShort[startD.getUTCMonth()] + (endD ? " - " + endD.getUTCDate() + " " + monthsShort[endD.getUTCMonth()] : "");
+
+    return (
+      <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
+        <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, " + scPrev + "10 0%, transparent 65%)", pointerEvents: "none" }} />
+
+        {/* Top bar */}
+        <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(79,195,247,0.7)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próximo torneio</span>
+          <span style={{ fontSize: 9, fontWeight: 800, color: scPrev, fontFamily: SANS, background: scPrev + "20", padding: "4px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{surfaceLabelPrev}</span>
+        </div>
+
+        {/* Tournament name */}
+        <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>
+            {nextTournament.tournament_category + " · " + nextTournament.tournament_name}
+          </h2>
+        </div>
+
+        {/* Players */}
+        <div style={{ padding: "18px 18px 0" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, alignItems: "center" }}>
+            {/* Fonseca */}
+            <div style={{ textAlign: "center" }}>
+              <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid " + GREEN + "40", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } }} />
+              </div>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
             </div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block" }}>J. Fonseca</span>
-            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", fontFamily: SANS, display: "block", marginTop: 2 }}>{"\ud83c\udde7\ud83c\uddf7"} #{(player && player.ranking) || 35}</span>
-          </div>
 
-          {/* VS */}
-          <div style={{ textAlign: "center" }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.15)", fontFamily: SANS }}>VS</span>
-          </div>
+            {/* VS */}
+            <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS, letterSpacing: "0.05em" }}>VS</span>
 
-          {/* Opponent placeholder */}
-          <div style={{ textAlign: "center" }}>
-            <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 10px", background: "#152035", border: "2.5px dashed rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <span style={{ fontSize: 24, color: "rgba(255,255,255,0.12)" }}>?</span>
+            {/* Opponent placeholder */}
+            <div style={{ textAlign: "center" }}>
+              <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px dashed rgba(255,255,255,0.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ fontSize: 24, color: "rgba(255,255,255,0.12)" }}>?</span>
+              </div>
+              <span style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>A definir</span>
             </div>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SERIF, display: "block" }}>A definir</span>
           </div>
         </div>
-      </div>
 
-      {/* Message */}
-      <div style={{ padding: "24px 24px 20px", textAlign: "center" }}>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontFamily: SANS, margin: "0 0 18px", lineHeight: 1.5 }}>Aguardando confirmação do próximo torneio e adversário</p>
-        <a href="https://www.atptour.com/en/players/joao-fonseca/f0fv/player-activity" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "rgba(79,195,247,0.08)", border: "1px solid rgba(79,195,247,0.15)", borderRadius: 10, textDecoration: "none", fontSize: 12, fontWeight: 600, fontFamily: SANS, color: "#4FC3F7" }}>
-          Ver calendário ATP
-        </a>
-      </div>
-    </section>
-  );
+        {/* Info grid: Data + Cidade */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "22px 20px 0" }}>
+          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Período</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{formattedDateRange}</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Local</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{nextTournament.city}</div>
+          </div>
+        </div>
+
+        {/* Message + link */}
+        <div style={{ padding: "20px 24px 22px", textAlign: "center" }}>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontFamily: SANS, margin: "0 0 14px", lineHeight: 1.5 }}>Aguardando confirmação do adversário</p>
+          <a href="https://www.atptour.com/en/players/joao-fonseca/f0fv/player-activity" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.2)", borderRadius: 12, color: "#4FC3F7", fontSize: 12, fontWeight: 700, fontFamily: SANS, textDecoration: "none" }}>
+            Ver calendário ATP
+          </a>
+        </div>
+      </section>
+    );
+  }
 
   var isLive = liveData && liveData.live;
 

@@ -126,6 +126,7 @@ export default function JoaoFonsecaNews() {
   var _biography = useState(null); var biography = _biography[0]; var setBiography = _biography[1];
   var _tournamentFacts = useState(null); var tournamentFacts = _tournamentFacts[0]; var setTournamentFacts = _tournamentFacts[1];
   var _opponentProfile = useState(null); var opponentProfile = _opponentProfile[0]; var setOpponentProfile = _opponentProfile[1];
+  var _nextTournament = useState(null); var nextTournament = _nextTournament[0]; var setNextTournament = _nextTournament[1];
   var _showOppPopup = useState(false); var showOppPopup = _showOppPopup[0]; var setShowOppPopup = _showOppPopup[1];
 
   var initDone = useRef(false);
@@ -256,6 +257,7 @@ export default function JoaoFonsecaNews() {
       if (d.biography) setBiography(d.biography);
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
+      if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
     }).catch(function() {});
   };
 
@@ -291,6 +293,7 @@ export default function JoaoFonsecaNews() {
       if (d.biography) setBiography(d.biography);
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
+      if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
     }).catch(function() {});
   }, []);
 
@@ -389,14 +392,14 @@ export default function JoaoFonsecaNews() {
             <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
           )}
           <div style={{ padding: "24px 0 0" }}>
-            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
+            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} nextTournament={nextTournament} />
           </div>
         </section>
 )}
 
 {hasNextMatch && (
         <section style={{ padding: "8px 0 0" }}>
-          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
+          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} nextTournament={nextTournament} />
           <div style={{ padding: "24px 0 0" }}>
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
