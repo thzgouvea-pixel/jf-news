@@ -149,8 +149,7 @@ export default function NextDuelCard(props) {
       </div>
 
       {/* ===== TOURNAMENT TITLE ===== */}
-      <div style={{ textAlign: "center", padding: "16px 18px 0" }}>
-        {!isLive && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS, display: "block", marginBottom: 4 }}>{(match.tournament_category ? match.tournament_category + " · " : "") + (match.tournament_name || "")}</span>}
+      <div style={{ textAlign: "center", padding: "12px 18px 0" }}>
         {isLive && <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", fontFamily: SANS, display: "block", marginBottom: 4 }}>{(liveData.tournament || match.tournament_name || "")}</span>}
         <h2 style={{ fontFamily: SERIF, fontSize: 28, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.03em" }}>{(function() {
           var name = (isLive && liveData.tournament ? liveData.tournament : (match.tournament_name || "Partida")).split(",")[0].trim();
@@ -159,7 +158,7 @@ export default function NextDuelCard(props) {
       </div>
 
       {/* ===== PLAYERS + SCORE ===== */}
-      <div style={{ padding: "24px 18px 0" }}>
+      <div style={{ padding: "18px 18px 0" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, alignItems: "center" }}>
           {/* Fonseca */}
           <div style={{ textAlign: "center" }}>
@@ -289,11 +288,11 @@ export default function NextDuelCard(props) {
 
           {/* Info grid: Quadra + Transmissão */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "12px 20px 0" }}>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 16px" }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 16px", textAlign: "center" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Quadra</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{liveCourt || "A definir"}</div>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 16px" }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 16px", textAlign: "center" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Transmissão</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>ESPN 2 · Disney+</div>
             </div>
@@ -325,22 +324,22 @@ export default function NextDuelCard(props) {
           {/* Info grid 2x2 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "22px 20px 0" }}>
             {dateInfo && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Data do jogo</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS, lineHeight: 1.3 }}>{dateInfo.weekday + ", " + dateInfo.date}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS, whiteSpace: "nowrap" }}>{dateInfo.weekday + ", " + dateInfo.date}</div>
               </div>
             )}
             {dateInfo && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{dateInfo.time}</div>
               </div>
             )}
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Quadra</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.court || "A definir"}</div>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Transmissão</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>ESPN 2 · Disney+</div>
             </div>
@@ -366,7 +365,7 @@ export default function NextDuelCard(props) {
           <div style={{ padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: 10 }}>
             <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              padding: "16px", background: "linear-gradient(135deg, #E8A838 0%, #D4922A 100%)",
+              padding: "16px", background: "linear-gradient(135deg, #4FC3F7 0%, #39B0E4 100%)",
               borderRadius: 14, textDecoration: "none", width: "100%", boxSizing: "border-box",
             }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.01em" }}>► Assistir</span>
@@ -406,13 +405,9 @@ export default function NextDuelCard(props) {
       {/* ===== CONTEXT FACTS (both modes) ===== */}
       {facts && facts.length > 0 && !isLive && (
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "16px 20px 18px", marginTop: 16, textAlign: "center" }}>
-          {factIdx % (facts.length + 1) === 0 ? (
-            <span style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: SANS, fontWeight: 600 }}>{"Contexto do jogo"}</span>
-          ) : (
-            <>
-              <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>Contexto do jogo</span>
-              <span style={{ fontSize: 13, color: "rgba(79,195,247,0.65)", fontFamily: SANS, fontWeight: 500, lineHeight: 1.5 }}>{facts[(factIdx - 1) % facts.length].text}</span>
-            </>
+          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>{"Curiosidades de " + (match.tournament_name || "").split(",")[0].trim()}</span>
+          {factIdx % (facts.length + 1) === 0 ? null : (
+            <span style={{ fontSize: 13, color: "rgba(79,195,247,0.65)", fontFamily: SANS, fontWeight: 500, lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", display: "block" }}>{facts[(factIdx - 1) % facts.length].text}</span>
           )}
           <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 6 }}>{factIdx % (facts.length + 1) === 0 ? "" : ((factIdx - 1) % facts.length + 1) + "/" + facts.length}</span>
         </div>
