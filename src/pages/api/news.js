@@ -5,52 +5,52 @@
 
 import { kv } from "@vercel/kv";
 
-const FONSECA_TEAM_ID = 403869;
+var FONSECA_TEAM_ID = 403869;
 
 // ===== IN-MEMORY CACHE (news only — RSS is free so no KV needed) =====
-let newsCache = { items: null, at: 0 };
-const NEWS_TTL = 30 * 60 * 1000; // 30 min
+var newsCache = { items: null, at: 0 };
+var NEWS_TTL = 30 * 60 * 1000; // 30 min
 
 // ===== GOOGLE NEWS RSS (FREE, UNLIMITED) =====
 function parseRSS(xml) {
-  const items = [];
-  const itemRegex = /<item>([\s\S]*?)<\/item>/g;
-  let match;
+  var items = [];
+  var itemRegex = /<item>([\s\S]*?)<\/item>/g;
+  var match;
   while ((match = itemRegex.exec(xml)) !== null) {
-    const content = match[1];
-    const get = (tag) => {
-      const m = content.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`));
+    var content = match[1];
+    var get = function(tag) {
+      var m = content.match(new RegExp("<" + tag + "[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/" + tag + ">|<" + tag + "[^>]*>([\\s\\S]*?)<\\/" + tag + ">"));
       return m ? (m[1] || m[2] || "").trim() : "";
     };
-    const title = get("title");
-    const link = get("link");
-    const pubDate = get("pubDate");
-    const source = get("source");
+    var title = get("title");
+    var link = get("link");
+    var pubDate = get("pubDate");
+    var source = get("source");
     if (title && !title.toLowerCase().includes("fonseca")) continue;
-    let category = "Notícia";
-    const t = title.toLowerCase();
+    var category = "Notícia";
+    var t = title.toLowerCase();
     if (t.includes("ranking") || t.includes("posição") || t.includes("atp")) category = "Ranking";
     else if (t.includes("vence") || t.includes("perde") || t.includes("derrota") || t.includes("vitória") || t.includes("elimina")) category = "Resultado";
     else if (t.includes("disse") || t.includes("afirma") || t.includes("elogia") || t.includes("confiante") || t.includes("declarou")) category = "Declaração";
     else if (t.includes("treino") || t.includes("preparação")) category = "Treino";
     else if (t.includes("torneio") || t.includes("open") || t.includes("masters") || t.includes("estreia")) category = "Torneio";
     items.push({
-      title,
+      title: title,
       summary: "",
       source: source || "Google News",
       url: link,
       image: "",
       date: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
-      category
+      category: category
     });
   }
   return items;
 }
 
 async function fetchGoogleNews() {
-  const queries = ["João+Fonseca+tenista", "João+Fonseca+tênis+ATP", "Joao+Fonseca+tennis"];
-  const allItems = [];
-  const seenTitles = new Set();
+  var queries = ["João+Fonseca+tenista", "João+Fonseca+tênis+ATP", "Joao+Fonseca+tennis"];
+  var allItems = [];
+  var seenTitles = new Set();
 
   // Extract significant words from a title (removes common words, keeps nouns/verbs)
   function getKeywords(title) {
@@ -78,17 +78,20 @@ async function fetchGoogleNews() {
 
   var acceptedTitles = [];
 
-  for (const q of queries) {
+  for (var qi = 0; qi < queries.length; qi++) {
+    var q = queries[qi];
     try {
-      const res = await fetch(
-        `https://news.google.com/rss/search?q=${q}&hl=pt-BR&gl=BR&ceid=BR:pt-419`,
+      var rssRes = await fetch(
+        "https://news.google.com/rss/search?q=" + q + "&hl=pt-BR&gl=BR&ceid=BR:pt-419",
         { headers: { "User-Agent": "FonsecaNews/1.0" }, signal: AbortSignal.timeout(8000) }
       );
-      if (!res.ok) continue;
-      const xml = await res.text();
-      for (const item of parseRSS(xml)) {
+      if (!rssRes.ok) continue;
+      var xml = await rssRes.text();
+      var parsed = parseRSS(xml);
+      for (var pi = 0; pi < parsed.length; pi++) {
+        var item = parsed[pi];
         // Skip exact duplicates (same first 50 chars)
-        const exactKey = item.title.toLowerCase().substring(0, 50);
+        var exactKey = item.title.toLowerCase().substring(0, 50);
         if (seenTitles.has(exactKey)) continue;
         seenTitles.add(exactKey);
 
@@ -102,7 +105,7 @@ async function fetchGoogleNews() {
       console.error("RSS error:", e);
     }
   }
-  allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
+  allItems.sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
 
   // Filter out non-Portuguese/English news (Google RSS sometimes returns other languages)
   var commonPtEn = /[àáâãéêíóôõúçÀÁÂÃÉÊÍÓÔÕÚÇ]|the |and |for |with |from |that |has |was |his |her |but |not |are |can |will |about |after |into |over |such |como |para |com |por |que |mais |sobre |seu |sua |dos |das |foi |são |tem |ano |vez |ele |ela /i;
@@ -128,7 +131,7 @@ async function readKVData() {
       "fn:season",
       "fn:cronLastRun"
     ];
-    var values = await kv.mget(...keys);
+    var values = await kv.mget.apply(kv, keys);
 
     var parse = function(val) {
       if (!val) return null;
@@ -151,13 +154,13 @@ async function readKVData() {
 
 // ===== MAIN HANDLER =====
 export default async function handler(req, res) {
-  const now = Date.now();
+  var now = Date.now();
 
   try {
     // ===== 1. NEWS (Google RSS - always free) =====
     if (!newsCache.items || (now - newsCache.at) >= NEWS_TTL) {
       console.log("[news] Fetching Google RSS...");
-      const fresh = await fetchGoogleNews();
+      var fresh = await fetchGoogleNews();
       if (fresh.length > 0) {
         newsCache.items = fresh;
         newsCache.at = now;

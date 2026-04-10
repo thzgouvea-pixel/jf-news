@@ -16,7 +16,7 @@ function findFonsecaInList(matchData) {
   var matches = [];
   if (Array.isArray(matchData)) matches = matchData;
   else if (matchData && matchData.events) matches = matchData.events;
-  else if (matchData) { for (var k of Object.keys(matchData)) { if (Array.isArray(matchData[k])) { matches = matchData[k]; break; } } }
+  else if (matchData) { var mKeys = Object.keys(matchData); for (var ki = 0; ki < mKeys.length; ki++) { var k = mKeys[ki]; if (Array.isArray(matchData[k])) { matches = matchData[k]; break; } } }
   for (var i = 0; i < matches.length; i++) {
     var m = matches[i];
     var homeSlug = (m.homeTeam && (m.homeTeam.slug || m.homeTeam.name || "")).toLowerCase();
@@ -83,6 +83,11 @@ export default async function handler(req, res) {
         try {
           var prevId = await kv.get("fn:lastStatsEventId");
           if (prevId !== String(fonsecaMatch.id)) {
+            // Check manual lock before overwriting lastMatch
+            var manualLock = await kv.get("fn:lastMatchManualLock");
+            if (manualLock) {
+              console.log("[live] Manual lock active for lastMatch, skipping auto-update");
+            } else {
             console.log("[live] Match finished! Auto-updating lastMatch + clearing nextMatch");
             var homeTeamF = fonsecaMatch.homeTeam || {};
             var awayTeamF = fonsecaMatch.awayTeam || {};
@@ -138,8 +143,8 @@ export default async function handler(req, res) {
               // Don't duplicate
               var alreadyExists = formArr.some(function(f) { return f.opponent_name === newEntry.opponent_name && f.score === newEntry.score; });
               if (!alreadyExists) {
-                formArr.push(newEntry);
-                if (formArr.length > 10) formArr = formArr.slice(-10);
+                formArr.unshift(newEntry);
+                if (formArr.length > 10) formArr = formArr.slice(0, 10);
                 await kv.set("fn:recentForm", JSON.stringify(formArr), { ex: 604800 });
                 console.log("[live] recentForm updated: " + formArr.length + " entries");
               }
@@ -159,6 +164,7 @@ export default async function handler(req, res) {
                 }
               }
             } catch(statsErr) { console.log("[live] stats fetch error: " + statsErr.message); }
+            } // end of manual lock else
           }
         } catch(autoErr) { console.log("[live] auto-update error: " + autoErr.message); }
       }

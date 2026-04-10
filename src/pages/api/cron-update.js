@@ -283,12 +283,16 @@ export default async function handler(req, res) {
         var sameMatch = (old.opponent_name && newData.opponent_name && old.opponent_name === newData.opponent_name) || (old.id && newData.id && old.id === newData.id);
         if (!sameMatch) return newData;
         // Keep manual fields if cron has empty/null
-        var fields = ["date","round","surface","court","opponent_ranking","opponent_country","opponent_id","tournament_category","startTimestamp"];
+        var fields = ["date","round","court","opponent_ranking","opponent_country","opponent_id","tournament_category","startTimestamp"];
         fields.forEach(function(f) {
-          if ((!newData[f] || newData[f] === "" || newData[f] === "Hard") && old[f] && old[f] !== "") {
+          if ((!newData[f] || newData[f] === "") && old[f] && old[f] !== "") {
             newData[f] = old[f];
           }
         });
+        // Surface: only preserve old value if new is empty/null (not if "Hard")
+        if (!newData.surface && old.surface && old.surface !== "") {
+          newData.surface = old.surface;
+        }
       } catch(e) { log("Merge error: " + e.message); }
       return newData;
     }
@@ -299,7 +303,14 @@ export default async function handler(req, res) {
     }
     if (lm) lm = await mergeWithKV("fn:lastMatch", lm);
     if (!nm) {
-      try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){}
+      // Check manual lock before deleting nextMatch
+      var nextMatchLock = null;
+      try { nextMatchLock = await kv.get("fn:nextMatchManualLock"); } catch(e) {}
+      if (nextMatchLock) {
+        log("Manual lock active for nextMatch, skipping deletion");
+      } else {
+        try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){}
+      }
       var nt = await fetchNextTournament(upc);
       if (nt) { try { await kv.set("fn:nextTournament", JSON.stringify(nt), { ex: 172800 }); } catch(e){ log("KV nextTournament error: " + e.message); } }
     } else {
@@ -348,6 +359,12 @@ export default async function handler(req, res) {
     if (lm) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
     if (nm) w.push(kv.set("fn:nextMatch",JSON.stringify(nm),{ex:T7}));
 if (form.length) {
+      // Check manual lock before overwriting recentForm
+      var recentFormLock = null;
+      try { recentFormLock = await kv.get("fn:recentFormManualLock"); } catch(e) {}
+      if (recentFormLock) {
+        log("Manual lock active for recentForm, skipping update");
+      } else {
       try {
         var ef = await kv.get("fn:recentForm");
         if (ef) {
@@ -367,6 +384,7 @@ if (form.length) {
         }
       } catch(e){}
       w.push(kv.set("fn:recentForm",JSON.stringify(form),{ex:T7}));
+      }
     }
     if (ms) {
       var skipMs = false;

@@ -13,7 +13,7 @@ export default function MatchCarousel(props) {
       var h = statsRef.current.offsetHeight;
       if (h > 0) setStatsHeight(h);
     }
-  });
+  }, []);
 
   var handleScroll = function() {
     if (!scrollRef.current) return;
