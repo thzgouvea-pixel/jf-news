@@ -233,11 +233,17 @@ export default function JoaoFonsecaNews() {
     return false;
   };
   var saveCache = function(d) { try { localStorage.setItem("jf-news-v5", JSON.stringify(Object.assign({}, d, { timestamp: Date.now() }))); } catch(e) {} };
+  var pickNewerLastMatch = function(prev, next) {
+    if (!next) return prev || null;
+    if (!prev || !prev.date) return next;
+    if (!next.date) return prev;
+    return new Date(next.date) >= new Date(prev.date) ? next : prev;
+  };
 
   var fetchNews = function(bustCache) {
     setLoading(true);
     var url = "/api/news" + (bustCache ? "?t=" + Date.now() : "");
-    fetch(url, bustCache ? { cache: "no-store" } : {}).then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
+    fetch(url, bustCache ? { cache: "no-store" } : {}).then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(function(prev) { return pickNewerLastMatch(prev, p.lastMatch); }); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
   };
 
   var handleRefresh = function() {
@@ -251,7 +257,7 @@ export default function JoaoFonsecaNews() {
       if (d.careerStats) setCareerStats(d.careerStats);
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
-      if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
+      if (d.lastMatch && d.lastMatch.result) setLastMatch(function(prev) { return pickNewerLastMatch(prev, d.lastMatch); });
       if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
@@ -287,7 +293,7 @@ export default function JoaoFonsecaNews() {
       if (d.careerStats) setCareerStats(d.careerStats);
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
-      if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
+      if (d.lastMatch && d.lastMatch.result) setLastMatch(function(prev) { return pickNewerLastMatch(prev, d.lastMatch); });
       if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
