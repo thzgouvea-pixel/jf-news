@@ -1,3 +1,12 @@
 {
-  "crons": []
+  "crons": [
+    {
+      "path": "/api/cron-update",
+      "schedule": "0 */4 * * *"
+    },
+    {
+      "path": "/api/tweet",
+      "schedule": "30 10,18 * * *"
+    }
+  ]
 }
