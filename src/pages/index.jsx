@@ -7,6 +7,7 @@ import NextDuelCard from "../components/NextDuelCard";
 import LiveScoreCard from "../components/LiveScoreCard";
 import PlayerBlock from "../components/PlayerBlock";
 import MatchCarousel from "../components/MatchCarousel";
+import Fonsecometro from "../components/Fonsecometro";
 import NewsCard from "../components/NewsCard";
 import DailyPoll from "../components/DailyPoll";
 import QuizGame from "../components/QuizGame";
@@ -232,9 +233,10 @@ export default function JoaoFonsecaNews() {
   };
   var saveCache = function(d) { try { localStorage.setItem("jf-news-v5", JSON.stringify(Object.assign({}, d, { timestamp: Date.now() }))); } catch(e) {} };
 
-  var fetchNews = function() {
+  var fetchNews = function(bustCache) {
     setLoading(true);
-    fetch("/api/news").then(function(res) { if (!res.ok) throw new Error("" + res.status); return res.json(); }).then(function(p) { if (p && p.news && p.news.length) { setNews(p.news); setNextMatch(p.nextMatch||null); setLastMatch(p.lastMatch||null); setPlayer(p.player||null); setSeason(p.season||null); setLastUpdate(new Date().toISOString()); saveCache({ news:p.news, nextMatch:p.nextMatch, lastMatch:p.lastMatch, player:p.player, season:p.season }); } }).catch(function() {}).then(function() { setLoading(false); });
+    var url = "/api/news" + (bustCache ? "?t=" + Date.now() : "");
+    fetch(url, bustCache ? { cache: "no-store" } : {}).then(
   };
 
   var handleRefresh = function() {
@@ -249,7 +251,7 @@ export default function JoaoFonsecaNews() {
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
-      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
+      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.winProb) setWinProb(d.winProb);
       if (d.biography) setBiography(d.biography);
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
@@ -284,7 +286,7 @@ export default function JoaoFonsecaNews() {
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(d.lastMatch);
-      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch);
+      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.winProb) setWinProb(d.winProb);
       if (d.biography) setBiography(d.biography);
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
@@ -303,7 +305,7 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
-  var dm = nextMatch || SAMPLE_NEXT_MATCH;
+  var dm = nextMatch || null;   var hasNextMatch = !!(nextMatch && nextMatch.opponent_name && nextMatch.opponent_name !== "A definir");
   var dl = lastMatch || null;
   var dp = player || (news.length === 0 ? SAMPLE_PLAYER : null);
   var ds = season || null;
@@ -363,6 +365,11 @@ export default function JoaoFonsecaNews() {
             <span style={{ fontSize: 14, color: DIM, fontFamily: SANS, fontWeight: 300 }}>›</span>
           </div>
         </div>
+        {recentForm && recentForm.length > 0 && (
+          <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 16px 8px" }}>
+            <Fonsecometro recentForm={recentForm} />
+          </div>
+        )}
       </header>
 
       <main className="mobile-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
@@ -378,6 +385,24 @@ export default function JoaoFonsecaNews() {
   <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
 </section>
 
+       {!hasNextMatch && (
+        <section style={{ padding: "8px 0 0" }}>
+          <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: GREEN, display: "inline-block" }} />Última partida</p>
+          {highlightVideo && highlightVideo.videoId ? (
+            <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
+          ) : (
+            <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
+          )}
+        </section>
+)}
+
+{hasNextMatch && (
+<section style={{ padding: "8px 0 0" }}>
+  <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
+</section>
+)}
+
+{hasNextMatch && (
         <section style={{ padding: "24px 0 0" }}>
           <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: GREEN, display: "inline-block" }} />Última partida</p>
           {highlightVideo && highlightVideo.videoId ? (
@@ -386,21 +411,7 @@ export default function JoaoFonsecaNews() {
             <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
           )}
         </section>
-
-        <section style={{ padding: "28px 0 0" }}>
-          <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#2563EB", display: "inline-block" }} />Notícias</p>
-          {loading && news.length === 0 && <Skeleton />}
-          {dn.length > 0 && !(loading && news.length === 0) && (
-            <>
-              <div>{buildFeed(dn.slice(0, visibleCount), allLikes, dm)}</div>
-              {visibleCount < dn.length && (
-                <button onClick={function() { setVisibleCount(function(v) { return Math.min(v + 10, dn.length); }); }} style={{ width: "100%", padding: "14px", background: "#fff", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", fontSize: 13, fontWeight: 700, color: GREEN, fontFamily: SANS, boxShadow: CARD_SHADOW, marginTop: 4 }}>
-                  Carregar mais ({dn.length - visibleCount} restantes)
-                </button>
-              )}
-            </>
-          )}
-        </section>
+)}
 
         <section style={{ padding: "28px 0 0" }}>
           <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#7C3AED", display: "inline-block" }} />João em números</p>
