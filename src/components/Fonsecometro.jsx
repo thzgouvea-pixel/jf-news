@@ -2,11 +2,11 @@ import { SANS, DIM } from "../lib/constants";
 
 function getTemperature(wins, total) {
   var pct = total > 0 ? Math.round((wins / total) * 100) : 0;
-  if (pct >= 90) return { emoji: "🔥", color: "#EF4444", glow: "rgba(239,68,68,0.12)" };
-  if (pct >= 70) return { emoji: "🔥", color: "#F97316", glow: "rgba(249,115,22,0.08)" };
-  if (pct >= 50) return { emoji: "🌡️", color: "#EAB308", glow: "rgba(234,179,8,0.08)" };
-  if (pct >= 30) return { emoji: "😐", color: "#9CA3AF", glow: "transparent" };
-  return { emoji: "🥶", color: "#60A5FA", glow: "rgba(96,165,250,0.08)" };
+  if (pct >= 90) return { emoji: "🔥", color: "#EF4444" };
+  if (pct >= 70) return { emoji: "🔥", color: "#F97316" };
+  if (pct >= 50) return { emoji: "🌡️", color: "#EAB308" };
+  if (pct >= 30) return { emoji: "😐", color: "#9CA3AF" };
+  return { emoji: "🥶", color: "#60A5FA" };
 }
 
 export default function Fonsecometro({ recentForm }) {
@@ -24,9 +24,7 @@ export default function Fonsecometro({ recentForm }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
-      padding: "8px 14px", borderRadius: 10,
-      background: temp.glow !== "transparent" ? temp.glow : "rgba(0,0,0,0.02)",
-      border: "1px solid rgba(0,0,0,0.04)",
+      padding: "6px 0",
     }}>
       <span style={{ fontSize: 14, lineHeight: 1 }}>{temp.emoji}</span>
       <span style={{ fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", flexShrink: 0 }}>Fonsecômetro</span>
