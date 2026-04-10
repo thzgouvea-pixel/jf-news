@@ -113,8 +113,8 @@ function Player({ image, name, meta, accent }) {
 function MetaBox({ label, value }) {
   return (
     <div style={{ padding: "14px 15px", borderRadius: 16, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.34)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: SANS, lineHeight: 1.25 }}>{value}</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.34)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: SANS, lineHeight: 1.25, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</div>
     </div>
   );
 }
@@ -257,8 +257,8 @@ export default function HomeMatchdayV3() {
               </div>
 
               <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.30)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Contexto do jogo</div>
-                <div style={{ fontSize: 15, color: "#5CC8FF", fontFamily: SANS, lineHeight: 1.45 }}>{tournamentFacts?.facts?.[0]?.text || "Atualização em breve"}</div>
+                <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.30)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Curiosidade de {(nextMatch?.tournament_name || "Torneio").split(",")[0]}</div>
+                <div style={{ fontSize: 15, color: "#5CC8FF", fontFamily: SANS, lineHeight: 1.45, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{tournamentFacts?.facts?.[0]?.text || "Atualização em breve"}</div>
               </div>
             </div>
           </section>

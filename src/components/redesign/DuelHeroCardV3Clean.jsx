@@ -48,6 +48,9 @@ function InfoChip({ label, value, icon }) {
             fontFamily: SANS,
             textTransform: "uppercase",
             letterSpacing: "0.06em",
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
           {label}
@@ -267,8 +270,8 @@ export default function DuelHeroCardV3Clean({
 
       {factLabel ? (
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.05)", marginTop: 16, padding: "14px 18px", textAlign: "center" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.22)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Contexto do jogo</div>
-          <div style={{ fontSize: 12, color: "rgba(79,195,247,0.78)", fontFamily: SANS, lineHeight: 1.5 }}>{factLabel}</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.22)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>Curiosidade de {tournamentName || "Torneio"}</div>
+          <div style={{ fontSize: 12, color: "rgba(79,195,247,0.78)", fontFamily: SANS, lineHeight: 1.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{factLabel}</div>
         </div>
       ) : null}
     </section>
