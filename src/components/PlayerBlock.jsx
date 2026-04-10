@@ -10,14 +10,14 @@ export default function PlayerBlock(props) {
   var playerRanking = props.playerRanking;
   var opponentProfile = props.opponentProfile;
 
-  var hasAnyData = (matchStats && matchStats.fonseca) || (recentForm && recentForm.length > 0) || season || prizeMoney;
+  var hasAnyData = (matchStats && matchStats.fonseca) || lastMatch || (recentForm && recentForm.length > 0) || season || prizeMoney;
   if (!hasAnyData) return null;
 
   return (
     <div>
-      {matchStats && matchStats.fonseca && (function() {
-        var f = matchStats.fonseca;
-        var o = matchStats.opponent;
+      {(matchStats && matchStats.fonseca || lastMatch) && (function() {
+        var f = matchStats && matchStats.fonseca ? matchStats.fonseca : {};
+        var o = matchStats && matchStats.opponent ? matchStats.opponent : {};
         var fServTotal = (f.firstserveaccuracy||0) + (f.secondserveaccuracy||0) + (f.doublefaults||0);
         var oServTotal = (o.firstserveaccuracy||0) + (o.secondserveaccuracy||0) + (o.doublefaults||0);
         var f1stPct = fServTotal > 0 ? Math.round((f.firstserveaccuracy||0) / fServTotal * 100) : 0;
@@ -41,18 +41,18 @@ export default function PlayerBlock(props) {
         ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
         if (statRows.length === 0) return null;
 
-        var oppName = matchStats.opponent_name || "Adv.";
+        var oppName = (matchStats && matchStats.opponent_name) || (lastMatch && lastMatch.opponent_name) || "Adv.";
         var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
-        var isWin = matchStats.result === "V";
-        var oppFlag = countryFlags[matchStats.opponent_country || ""] || "";
+        var isWin = (matchStats && matchStats.result) === "V" || (lastMatch && lastMatch.result) === "V";
+        var oppFlag = countryFlags[(matchStats && matchStats.opponent_country) || (lastMatch && lastMatch.opponent_country) || ""] || "";
         var oppImg = getATPImage(oppName);
         var oppImgFallback = getESPNImage(oppName);
         var oppProfileMatch = opponentProfile && opponentProfile.name && oppName.indexOf(opponentProfile.name.split(" ").pop()) !== -1;
-        var oppRanking = matchStats.opponent_ranking || (oppProfileMatch ? opponentProfile.ranking : null);
+        var oppRanking = (matchStats && matchStats.opponent_ranking) || (lastMatch && lastMatch.opponent_ranking) || (oppProfileMatch ? opponentProfile.ranking : null);
         var formMatches = recentForm ? recentForm.slice(-5) : [];
 
         // ===== PARSE SCORE into sets =====
-        var scoreStr = matchStats.score || "";
+        var scoreStr = (matchStats && matchStats.score) || (lastMatch && lastMatch.score) || "";
         var sets = scoreStr.split(" ").filter(function(s) { return s.includes("-"); });
         var fSetsWon = 0; var oSetsWon = 0;
         sets.forEach(function(s) {
@@ -71,18 +71,18 @@ export default function PlayerBlock(props) {
         var tournamentDisplay = tournamentCategory ? (tournamentCategory + " \u00b7 " + tournamentClean) : tournamentClean;
 
         // ===== ROUND =====
-        var round = matchStats.round || (lastMatch && lastMatch.round) || "";
+        var round = (matchStats && matchStats.round) || (lastMatch && lastMatch.round) || "";
+
 
         // ===== SURFACE =====
-        var surface = matchStats.surface || (lastMatch && lastMatch.surface) || "";
+        var surface = (matchStats && matchStats.surface) || (lastMatch && lastMatch.surface) || "";
         var surfaceTranslateMap = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
         var surfaceLabel = surfaceTranslateMap[surface] || surface || "";
         var sc = surfaceColorMap[surface] || surfaceColorMap[surfaceLabel] || "#999";
         var tournLow = tournament.toLowerCase();
         if (["monte carlo","roland garros","barcelona","madrid","roma","buenos aires","rio open","lyon","hamburg","gstaad","umag","bucharest","estoril"].some(function(t) { return tournLow.includes(t); }) && surface === "Hard") { surfaceLabel = "Saibro"; sc = surfaceColorMap["Clay"]; }
 
-        var matchDate = matchStats.date ? new Date(matchStats.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
-
+var matchDate = (matchStats && matchStats.date) || (lastMatch && lastMatch.date) ? new Date((matchStats && matchStats.date) || lastMatch.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : "";
         // Duration formatted as Xh Ymin
         var fGames = f.gameswon || 0; var oGames = o.gameswon || 0;
         var totalGames = fGames + oGames;
