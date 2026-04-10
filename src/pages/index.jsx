@@ -4,14 +4,17 @@ import Head from "next/head";
 
 const GREEN = "#00A859";
 const YELLOW = "#FFCB05";
-const BG_ALT = "#F7F8F9";
-const TEXT = "#1a1a1a";
-const SUB = "#6b6b6b";
-const DIM = "#a0a0a0";
-const BORDER = "#e8e8e8";
-const RED = "#c0392b";
+const BG_ALT = "#FAFBFC";
+const TEXT = "#111827";
+const SUB = "#4B5563";
+const DIM = "#9CA3AF";
+const BORDER = "#E5E7EB";
+const RED = "#DC2626";
 const SERIF = "'Source Serif 4', Georgia, serif";
 const SANS = "'Inter', -apple-system, sans-serif";
+const CARD_SHADOW = "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)";
+const CARD_SHADOW_MD = "0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)";
+const CARD_RADIUS = 18;
 
 const CACHE_DURATION_MS = 5 * 60 * 1000;
 const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
@@ -728,7 +731,7 @@ var NextDuelCard = function(props) {
   var liveServing = liveScore.serving || "";
 
   return (
-    <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 20, position: "relative", overflow: "hidden" }}>
+    <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
       <div style={{ position: "absolute", top: -50, right: -50, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, " + (isLive ? "#ef4444" : sc) + "10 0%, transparent 65%)", pointerEvents: "none" }} />
 
       {/* Section label with icon */}
@@ -743,7 +746,7 @@ var NextDuelCard = function(props) {
             <div style={{ width: 20, height: 20, borderRadius: 6, background: "rgba(79,195,247,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="12" x2="16" y2="14"/></svg>
             </div>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.1em" }}>Próximo duelo</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.1em" }}>Próximo jogo</span>
           </>
         )}
       </div>
@@ -865,7 +868,7 @@ var NextDuelCard = function(props) {
                 <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(79,195,247,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
                 </div>
-                <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Horário</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>{dateInfo.time + " BRT"}</div></div>
+                <div><div style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Horário</div><div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, marginTop: 1 }}>{dateInfo.time}</div></div>
               </div>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "10px 12px" }}>
@@ -1188,7 +1191,7 @@ var PlayerBlock = function(props) {
 
         return (
           <div>
-            <div style={{ background: BG_ALT, borderRadius: 16, padding: "20px", overflow: "hidden", border: "1px solid " + BORDER }}>
+            <div style={{ background: "#fff", borderRadius: CARD_RADIUS, padding: "22px 20px", overflow: "hidden", border: "1px solid " + BORDER, boxShadow: CARD_SHADOW }}>
 
               {/* Header: torneio + forma atual */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -1273,9 +1276,9 @@ var PlayerBlock = function(props) {
                       <span style={{ fontSize: 10, fontWeight: 600, color: SUB, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: "center", flex: 1 }}>{row.label}</span>
                       <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? "#e74c3c" : "#e8a9a1", fontFamily: SANS, minWidth: 40, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
                     </div>
-                    <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden" }}>
-                      <div style={{ width: fPct + "%", height: 5, background: GREEN, transition: "width 0.8s ease" }} />
-                      <div style={{ width: oPct + "%", height: 5, background: "#e74c3c", transition: "width 0.8s ease" }} />
+                    <div style={{ display: "flex", height: 6, borderRadius: 4, overflow: "hidden" }}>
+                      <div style={{ width: fPct + "%", height: 6, background: "linear-gradient(90deg, " + GREEN + ", #34D399)", borderRadius: "4px 0 0 4px", transition: "width 0.8s ease" }} />
+                      <div style={{ width: oPct + "%", height: 6, background: "linear-gradient(90deg, #EF4444, #F87171)", borderRadius: "0 4px 4px 0", transition: "width 0.8s ease" }} />
                     </div>
                   </div>
                 );
@@ -1311,7 +1314,7 @@ var NewsCard = function(props) {
   var cleanTitle = item.source && item.title ? item.title.replace(" - " + item.source, "").replace(" | " + item.source, "").replace(" · " + item.source, "") : item.title;
   return (
     <article onClick={function() { if (hasUrl) window.open(item.url, "_blank", "noopener,noreferrer"); }} onMouseEnter={function() { setH(true); }} onMouseLeave={function() { setH(false); }}
-      style={{ padding: "20px 0", borderBottom: noBorder ? "none" : "1px solid " + BORDER, cursor: "pointer", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0 }}>
+      style={{ padding: "16px 18px", marginBottom: 10, background: "#fff", borderRadius: 14, border: "1px solid " + BORDER, boxShadow: h ? CARD_SHADOW_MD : CARD_SHADOW, cursor: "pointer", animation: "fadeIn 0.35s ease forwards", animationDelay: (index * 0.04) + "s", opacity: 0, transition: "box-shadow 0.2s" }}>
       <div style={{ display: "flex", gap: 14 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -1654,14 +1657,14 @@ export default function JoaoFonsecaNews() {
         <meta name="description" content="Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas, próximos jogos e mais." />
       </Head>
       <style>{
-        "@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');" +
+        "@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');" +
         "*{box-sizing:border-box;margin:0;padding:0}" +
-        "body{background:#fff;-webkit-font-smoothing:antialiased}" +
+        "body{background:#F8FAFB;-webkit-font-smoothing:antialiased}" +
         "nav::-webkit-scrollbar{display:none}" +
         "[data-match-carousel]::-webkit-scrollbar{display:none}" +
         "@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}" +
         "@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}" +
-        "@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}" +
+        "@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}" +
         "@keyframes slideU{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}" +
         "@keyframes fadeInO{from{opacity:0}to{opacity:1}}" +
         "@keyframes factProgress{from{width:0}to{width:100%}}" +
@@ -1669,7 +1672,7 @@ export default function JoaoFonsecaNews() {
         "@media(min-width:769px){.mobile-tab-bar{display:none!important}}"
       }</style>
 
-      <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.97)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER, transition: "all 0.3s ease" }}>
+      <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(248,250,251,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER, boxShadow: headerCompact ? "0 1px 8px rgba(0,0,0,0.04)" : "none", transition: "all 0.3s ease" }}>
         <div style={{ maxWidth: 640, margin: "0 auto", padding: headerCompact ? "8px 16px" : "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, transition: "padding 0.3s ease" }}>
           <div style={{ display: "flex", alignItems: "center", gap: headerCompact ? 10 : 12, minWidth: 0 }}>
             <div style={{ width: headerCompact ? 32 : 42, height: headerCompact ? 32 : 42, borderRadius: headerCompact ? 8 : 12, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.3s ease" }}>
@@ -1722,19 +1725,19 @@ export default function JoaoFonsecaNews() {
       <main className="mobile-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
 
         {!loading && news.length === 0 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "#FEF3C7", borderRadius: 10, margin: "12px 0 0", border: "1px solid #F59E0B33" }}>
-            <span style={{ fontSize: 13 }}>⚠️</span>
-            <span style={{ fontSize: 11, color: "#92400E", fontFamily: SANS }}>Dados offline — mostrando informações de exemplo. Toque em atualizar.</span>
-          </div>
-        )}
+  <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", background: "#FFFBEB", borderRadius: 12, margin: "12px 0 0", border: "1px solid #F59E0B22", boxShadow: "0 1px 4px rgba(245,158,11,0.06)" }}>
+    <span style={{ fontSize: 13 }}>⚠️</span>
+    <span style={{ fontSize: 12, color: "#92400E", fontFamily: SANS, fontWeight: 500 }}>Dados offline — mostrando informações de exemplo.</span>
+  </div>
+)}
 
-        <section style={{ padding: "8px 0 0" }}>
-          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
-        </section>
+<section style={{ padding: "8px 0 0" }}>
+  <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} />
+</section>
 
         {/* Última Partida + Melhores Momentos — carrossel swipável */}
-        <section style={{ padding: "20px 0 0" }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Última partida</p>
+        <section style={{ padding: "24px 0 0" }}>
+          <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: GREEN, display: "inline-block" }} />Última partida</p>
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
@@ -1743,14 +1746,14 @@ export default function JoaoFonsecaNews() {
         </section>
 
         {/* Notícias */}
-        <section style={{ padding: "20px 0 0" }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Notícias</p>
+        <section style={{ padding: "28px 0 0" }}>
+          <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#2563EB", display: "inline-block" }} />Notícias</p>
           {loading && news.length === 0 && <Skeleton />}
           {dn.length > 0 && !(loading && news.length === 0) && (
             <>
               <div>{buildFeed(dn.slice(0, visibleCount), allLikes, dm)}</div>
               {visibleCount < dn.length && (
-                <button onClick={function() { setVisibleCount(function(v) { return Math.min(v + 10, dn.length); }); }} style={{ width: "100%", padding: "14px", background: "transparent", border: "none", borderBottom: "1px solid " + BORDER, cursor: "pointer", fontSize: 13, fontWeight: 600, color: GREEN, fontFamily: SANS }}>
+                <button onClick={function() { setVisibleCount(function(v) { return Math.min(v + 10, dn.length); }); }} style={{ width: "100%", padding: "14px", background: "#fff", border: "1px solid " + BORDER, borderRadius: 12, cursor: "pointer", fontSize: 13, fontWeight: 700, color: GREEN, fontFamily: SANS, boxShadow: CARD_SHADOW, marginTop: 4 }}>
                   Carregar mais ({dn.length - visibleCount} restantes)
                 </button>
               )}
@@ -1759,8 +1762,8 @@ export default function JoaoFonsecaNews() {
         </section>
 
         {/* João em números */}
-        <section style={{ padding: "20px 0 0" }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>João em números</p>
+        <section style={{ padding: "28px 0 0" }}>
+          <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#7C3AED", display: "inline-block" }} />João em números</p>
           {(function() {
             var cs = careerStats || {};
             var cW = cs.wins || 42; var cL = cs.losses || 28;
@@ -1770,7 +1773,7 @@ export default function JoaoFonsecaNews() {
             var clayW = surf.clay ? surf.clay.w : 14; var clayL = surf.clay ? surf.clay.l : 12;
             var grassW = surf.grass ? surf.grass.w : 3; var grassL = surf.grass ? surf.grass.l : 4;
             return (
-          <div style={{ background: BG_ALT, borderRadius: 16, padding: "18px", border: "1px solid " + BORDER }}>
+          <div style={{ background: "#fff", borderRadius: CARD_RADIUS, padding: "22px 20px", border: "1px solid " + BORDER, boxShadow: CARD_SHADOW }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
               {(function() {
                 var t10 = cs.vsTop10 || { w: 1, l: 4 };
@@ -1798,17 +1801,17 @@ export default function JoaoFonsecaNews() {
           })()}
         </section>
 
-        <section style={{ padding: "20px 0" }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Parceiros</p>
-          <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ display: "block", borderRadius: 16, overflow: "hidden", border: "1px solid " + BORDER, textDecoration: "none", background: "#0D1726" }}>
+        <section style={{ padding: "28px 0" }}>
+          <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#b8860b", display: "inline-block" }} />Parceiros</p>
+          <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ display: "block", borderRadius: CARD_RADIUS, overflow: "hidden", border: "1px solid " + BORDER, textDecoration: "none", background: "#0D1726", boxShadow: CARD_SHADOW }}>
             <img src="/partner-banner-1.svg" alt="Fonseca News - Seja parceiro" style={{ width: "100%", height: "auto", display: "block", minHeight: 120 }} />
           </a>
           <p style={{ margin: "10px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>Quer ser parceiro? <a href="mailto:thzgouvea@gmail.com?subject=Parceria Fonseca News" style={{ color: GREEN, textDecoration: "none", fontWeight: 600 }}>Entre em contato</a></p>
         </section>
 
-        <section style={{ padding: "20px 0", borderTop: "1px solid " + BORDER }}>
-          <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Explore também</p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <section style={{ padding: "28px 0", borderTop: "1px solid " + BORDER }}>
+          <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#F59E0B", display: "inline-block" }} />Explore também</p>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {[
               { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, bg: GREEN + "10", title: "Evolução no Ranking", sub: "De #145 ao Top 40 — a ascensão do João", action: function(){setShowRankingChart(true);} },
               { href: "/raquetes", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>, bg: YELLOW + "10", title: "Venda sua raquete", sub: "Anuncie grátis na comunidade do Telegram" },
@@ -1816,22 +1819,22 @@ export default function JoaoFonsecaNews() {
               { href: "/regras", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, bg: "#2563EB10", title: "Regras do Tênis", sub: "Aprenda como funciona o esporte" },
               { href: "https://www.youtube.com/results?search_query=João+Fonseca+tennis+highlights", target: "_blank", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={RED} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>, bg: RED + "10", title: "Momentos do João", sub: "Highlights e jogadas no YouTube" },
             ].map(function(item, i) {
-              var inner = <><div style={{ width: 32, height: 32, borderRadius: 8, background: item.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</div><div><span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{item.title}</span><span style={{ fontSize: 11, color: SUB, fontFamily: SANS }}>{item.sub}</span></div></>;
-              var style = { display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: BG_ALT, borderRadius: 12, textDecoration: "none", border: "1px solid " + BORDER, cursor: "pointer", width: "100%" };
+              var inner = <><div style={{ width: 36, height: 36, borderRadius: 10, background: item.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.icon}</div><div style={{ flex: 1 }}><span style={{ fontSize: 14, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block", lineHeight: 1.3 }}>{item.title}</span><span style={{ fontSize: 12, color: SUB, fontFamily: SANS }}>{item.sub}</span></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={DIM} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg></>;
+              var style = { display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: "#fff", borderRadius: 14, textDecoration: "none", border: "1px solid " + BORDER, cursor: "pointer", width: "100%", boxShadow: CARD_SHADOW, transition: "box-shadow 0.2s, transform 0.2s" };
               if (item.action) return <button key={i} onClick={item.action} style={Object.assign({}, style, { textAlign: "left" })}>{inner}</button>;
               return (<a key={i} href={item.href} target={item.target} rel={item.target ? "noopener noreferrer" : undefined} style={style}>{inner}</a>);
             })}
           </div>
         </section>
 
-        <footer style={{ padding: "28px 0", borderTop: "1px solid " + BORDER, marginTop: 8 }}>
+        <footer style={{ padding: "32px 0", borderTop: "1px solid " + BORDER, marginTop: 12, background: "linear-gradient(180deg, transparent, rgba(0,168,89,0.02))" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16 }}>
             {[
               { href: "https://www.instagram.com/joaoffonseca", icon: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill={SUB} stroke="none"/></svg> },
               { href: "https://x.com/JFonsecaNews", icon: <svg width="13" height="13" viewBox="0 0 24 24" fill={SUB}><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
               { href: "mailto:thzgouvea@gmail.com", icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={SUB} strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg> },
             ].map(function(s, i) {
-              return (<a key={i} href={s.href} target={s.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" style={{ width: 34, height: 34, borderRadius: 8, border: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>{s.icon}</a>);
+              return (<a key={i} href={s.href} target={s.href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" style={{ width: 38, height: 38, borderRadius: 10, border: "1px solid " + BORDER, background: "#fff", boxShadow: CARD_SHADOW, display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>{s.icon}</a>);
             })}
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 16 }}>
@@ -1927,9 +1930,9 @@ export default function JoaoFonsecaNews() {
       )}
 
       {/* Mobile Tab Bar */}
-      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "#fff", borderTop: "1px solid " + BORDER, transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)", transform: tabBarHidden ? "translateY(100%)" : "translateY(0)", paddingBottom: 28 }}>
+      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderTop: "1px solid " + BORDER, boxShadow: "0 -2px 12px rgba(0,0,0,0.04)", transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)", transform: tabBarHidden ? "translateY(100%)" : "translateY(0)", paddingBottom: 28 }}>
         {showMaisMenu && (
-          <div style={{ position: "absolute", bottom: "100%", right: 16, background: "white", borderRadius: 16, boxShadow: "0 8px 30px rgba(0,0,0,0.15)", border: "1px solid " + BORDER, padding: "8px 0", minWidth: 180, marginBottom: 6 }}>
+          <div style={{ position: "absolute", bottom: "100%", right: 16, background: "white", borderRadius: 16, boxShadow: "0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)", border: "1px solid " + BORDER, padding: "6px 0", minWidth: 180, marginBottom: 8 }}>
             {[
               { label: "Biografia", action: function(){ window.location.href="/biografia"; } },
               { label: "Feedback", action: function(){ setShowFeedback(true); setShowMaisMenu(false); } },
