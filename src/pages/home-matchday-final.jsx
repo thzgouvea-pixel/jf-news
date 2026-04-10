@@ -355,10 +355,10 @@ function MatchHero({ nextMatch, playerRanking, probability, factText }) {
         </div>
 
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.30)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>
-            Contexto do jogo
+          <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.30)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, whiteSpace: "nowrap" }}>
+            Curiosidade de {(nextMatch?.tournament_name || "Torneio").split(",")[0]}
           </div>
-          <div style={{ fontSize: 15, color: "#5CC8FF", fontFamily: SANS, lineHeight: 1.45 }}>{factText || "Atualização em breve"}</div>
+          <div style={{ fontSize: 15, color: "#5CC8FF", fontFamily: SANS, lineHeight: 1.45, whiteSpace: "nowrap" }}>{factText || "Atualização em breve"}</div>
         </div>
       </div>
     </section>
@@ -413,10 +413,10 @@ function InfoBox({ label, value }) {
         padding: "14px 16px",
       }}
     >
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.34)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,0.34)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4, whiteSpace: "nowrap" }}>
         {label}
       </div>
-      <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: SANS, lineHeight: 1.2 }}>{value}</div>
+      <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", fontFamily: SANS, lineHeight: 1.2, whiteSpace: "nowrap" }}>{value}</div>
     </div>
   );
 }
