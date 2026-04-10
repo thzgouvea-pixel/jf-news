@@ -1,0 +1,69 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #F8FAFB;
+  -webkit-font-smoothing: antialiased;
+}
+
+nav::-webkit-scrollbar {
+  display: none;
+}
+
+[data-match-carousel]::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideU {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInO {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes factProgress {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@media (max-width: 768px) {
+  .desktop-nav {
+    display: none !important;
+  }
+  .mobile-tab-bar {
+    display: flex !important;
+    flex-direction: column;
+  }
+  .mobile-pad {
+    padding-bottom: 80px !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-tab-bar {
+    display: none !important;
+  }
+}
