@@ -4,8 +4,8 @@ export default function WinProbBar(props) {
   var winProb = props.winProb;
   if (!winProb || !winProb.fonseca) return null;
 
-  var fPct = Math.round(winProb.fonseca);
-  var oPct = Math.round(winProb.opponent);
+  var fPct = winProb.fonseca != null ? Math.round(winProb.fonseca) : 0;
+  var oPct = winProb.opponent != null ? Math.round(winProb.opponent) : (100 - fPct);
   var oppName = (winProb.opponent_name || "Oponente").split(" ").pop();
 
   return (

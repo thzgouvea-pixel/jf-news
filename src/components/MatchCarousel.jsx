@@ -49,6 +49,7 @@ export default function MatchCarousel(props) {
         </div>
 
         <div style={{ flex: "0 0 100%", scrollSnapAlign: "start", minWidth: "100%", display: "flex", flexDirection: "column" }}>
+          {props.highlightVideo && props.highlightVideo.videoId ? (
           <div style={{ borderRadius: 16, overflow: "hidden", background: "#000", border: "1px solid " + BORDER, flex: 1, display: "flex", flexDirection: "column", minHeight: statsHeight > 0 ? statsHeight : undefined }}>
             <div style={{ flex: 1, position: "relative", minHeight: 0 }}>
               <iframe
@@ -65,6 +66,7 @@ export default function MatchCarousel(props) {
               </div>
             )}
           </div>
+          ) : null}
         </div>
       </div>
 
