@@ -163,9 +163,10 @@ export default function NextDuelCard(props) {
   var dateInfo = match.date ? (function() {
     var d = new Date(match.date);
     var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-    var diaSemana = d.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" });
-    var diaNum = d.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
-    return { weekday: diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1), date: diaNum, time: h };
+    var diaSemana = d.toLocaleDateString("pt-BR", { weekday: "short", timeZone: "America/Sao_Paulo" });
+    var diaNum = d.toLocaleDateString("pt-BR", { day: "numeric", month: "short", timeZone: "America/Sao_Paulo" });
+    var weekdayClean = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1).replace(".", "");
+    return { weekday: weekdayClean, date: diaNum.replace(".", ""), time: h };
   })() : null;
 
   var downloadICS = function() {
@@ -176,7 +177,7 @@ export default function NextDuelCard(props) {
     var endDate = new Date(d.getTime() + 3 * 60 * 60 * 1000);
     var title = "J. Fonseca vs " + oppName + " — " + (match.tournament_name || "ATP");
     var location = (match.tournament_name || "") + (match.city ? ", " + match.city : "");
-    var description = (match.tournament_category || "") + (match.round ? " · " + match.round : "") + "\\nESPN 2 · Disney+\\nfonsecanews.com.br";
+    var description = (match.tournament_category || "") + (match.round ? " · " + match.round : "") + "\\nfonsecanews.com.br";
     var ics = ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//FonsecaNews//PT","BEGIN:VEVENT","DTSTART:" + formatICS(d),"DTEND:" + formatICS(endDate),"SUMMARY:" + title,"LOCATION:" + location,"DESCRIPTION:" + description,"BEGIN:VALARM","TRIGGER:-PT30M","ACTION:DISPLAY","DESCRIPTION:Jogo do João Fonseca em 30 minutos!","END:VALARM","END:VEVENT","END:VCALENDAR"].join("\r\n");
     var blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
     var url = URL.createObjectURL(blob);
@@ -383,7 +384,7 @@ export default function NextDuelCard(props) {
             </div>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 16px", textAlign: "center" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Transmissão</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>ESPN 2 · Disney+</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.broadcast || "A confirmar"}</div>
             </div>
           </div>
 
@@ -403,34 +404,34 @@ export default function NextDuelCard(props) {
           {/* Updated ago indicator */}
           <div style={{ textAlign: "center", padding: "12px 20px 16px" }}>
             <span style={{ fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>
-              {checkedSecsAgo !== null ? (checkedSecsAgo < 10 ? "Atualizado agora" : "Atualizado há " + checkedSecsAgo + "s") : "ESPN 2 · Disney+"}
+              {checkedSecsAgo !== null ? (checkedSecsAgo < 10 ? "Atualizado agora" : "Atualizado há " + checkedSecsAgo + "s") : "Ao vivo"}
             </span>
           </div>
         </>
       ) : (
         <>
           {/* ===== PREMATCH CONTENT ===== */}
-          {/* Info grid 2x2 */}
+          {/* Info grid 2x2 — uniform cells */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "22px 20px 0" }}>
             {dateInfo && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Data do jogo</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS, whiteSpace: "nowrap" }}>{dateInfo.weekday + ", " + dateInfo.date}</div>
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Data</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{dateInfo.weekday + ", " + dateInfo.date}</div>
               </div>
             )}
             {dateInfo && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário</div>
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário (BRT)</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{dateInfo.time}</div>
               </div>
             )}
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Quadra</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.court || "A definir"}</div>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{match.court ? "Quadra" : "Local"}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.court || (match.tournament_name ? match.tournament_name.split(",")[0].trim() : "A definir")}</div>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Transmissão</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>ESPN 2 · Disney+</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.broadcast || "A confirmar"}</div>
             </div>
           </div>
 
