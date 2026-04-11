@@ -95,7 +95,7 @@ export default function NextDuelCard(props) {
                 <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } }} />
               </div>
               <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷{player && player.ranking ? " #" + player.ranking : ""}</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷{player && player.ranking != null ? " #" + player.ranking : ""}</span>
             </div>
 
             {/* VS */}
@@ -143,8 +143,8 @@ export default function NextDuelCard(props) {
 
   var isLive = liveData && liveData.live;
 
-  var oppName = isLive ? (liveData.opponent && liveData.opponent.name || match.opponent_name || "A definir") : (match.opponent_name || "A definir");
-  var oppRanking = match.opponent_ranking || (oppProfile && oppProfile.ranking ? oppProfile.ranking : null);
+  var oppName = isLive ? ((liveData.opponent && liveData.opponent.name) || match.opponent_name || "A definir") : (match.opponent_name || "A definir");
+  var oppRanking = match.opponent_ranking != null ? match.opponent_ranking : (oppProfile && oppProfile.ranking != null ? oppProfile.ranking : null);
   var oppCountry = match.opponent_country || (oppProfile && oppProfile.country ? oppProfile.country : "");
   var oppFlag = countryFlags[oppCountry] || "";
   var oppAtpSlug = match.opponent_atp_slug || null;
@@ -173,6 +173,7 @@ export default function NextDuelCard(props) {
 
   var dateInfo = match.date ? (function() {
     var d = new Date(match.date);
+    if (isNaN(d.getTime())) return null;
     var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     var diaSemana = d.toLocaleDateString("pt-BR", { weekday: "long", timeZone: "America/Sao_Paulo" });
     var diaNum = d.toLocaleDateString("pt-BR", { day: "numeric", month: "long", timeZone: "America/Sao_Paulo" });
@@ -245,7 +246,9 @@ export default function NextDuelCard(props) {
           )}
           {(liveRound || match.round) && <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: SANS }}>{liveRound || match.round}</span>}
         </div>
-        <span style={{ fontSize: 10, fontWeight: 800, color: isLive ? liveSc : sc, fontFamily: SANS, background: (isLive ? liveSc : sc) + "20", padding: "5px 14px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{isLive ? liveSurface : surfaceLabel}</span>
+        {(isLive ? liveSurface : surfaceLabel) ? (
+          <span style={{ fontSize: 10, fontWeight: 800, color: isLive ? liveSc : sc, fontFamily: SANS, background: (isLive ? liveSc : sc) + "20", padding: "5px 14px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{isLive ? liveSurface : surfaceLabel}</span>
+        ) : null}
       </div>
 
       {/* ===== TOURNAMENT TITLE ===== */}
@@ -253,7 +256,7 @@ export default function NextDuelCard(props) {
         {isLive ? (
           <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(liveData.tournament || match.tournament_name || "Partida ao vivo")}</h2>
         ) : (
-          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(match.tournament_category ? match.tournament_category + " · " : "") + (match.tournament_name || "Próxima Partida")}</h2>
+          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{((match.tournament_category && match.tournament_category.trim()) ? match.tournament_category.trim() + " · " : "") + (match.tournament_name || "Próxima Partida")}</h2>
         )}
       </div>
 
@@ -272,7 +275,7 @@ export default function NextDuelCard(props) {
                 Sacando
               </span>
             ) : (
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷{player && player.ranking ? " #" + player.ranking : ""}</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷{player && player.ranking != null ? " #" + player.ranking : ""}</span>
             )}
           </div>
 
@@ -304,7 +307,11 @@ export default function NextDuelCard(props) {
                 Sacando
               </span>
             ) : (
-              oppCountry ? <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span> : <span style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 3 }}>chave pendente</span>
+              (oppCountry || oppRanking != null) ? (
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>{oppFlag ? oppFlag + " " : ""}{oppRanking != null ? "#" + oppRanking : ""}</span>
+              ) : (
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 3 }}>chave pendente</span>
+              )
             )}
           </div>
         </div>
@@ -324,7 +331,7 @@ export default function NextDuelCard(props) {
                 </div>
                 {/* Set scores */}
                 {fSets.map(function(fs, i) {
-                  var os = oSets[i];
+                  var os = oSets[i] !== undefined ? oSets[i] : 0;
                   var isCurrentSet = i === fSets.length - 1;
                   var fWon = !isCurrentSet && fs > os;
                   var oWon = !isCurrentSet && os > fs;
@@ -335,7 +342,7 @@ export default function NextDuelCard(props) {
                         <>
                           <div style={{ display: "flex", justifyContent: "center", gap: 0 }}>
                             {fSets.map(function(fss, si) {
-                              var oss = oSets[si];
+                              var oss = oSets[si] !== undefined ? oSets[si] : 0;
                               var isCur = si === fSets.length - 1;
                               var fw = !isCur && fss > oss;
                               return <span key={si} style={{ fontSize: 16, fontWeight: 800, color: fw ? GREEN : (isCur ? "#fff" : "rgba(255,255,255,0.4)"), fontFamily: SANS, minWidth: 32, textAlign: "center" }}>{fss}</span>;
@@ -343,7 +350,7 @@ export default function NextDuelCard(props) {
                           </div>
                           <div style={{ display: "flex", justifyContent: "center", gap: 0 }}>
                             {oSets.map(function(oss, si) {
-                              var fss = fSets[si];
+                              var fss = fSets[si] !== undefined ? fSets[si] : 0;
                               var isCur = si === fSets.length - 1;
                               var ow = !isCur && oss > fss;
                               return <span key={si} style={{ fontSize: 16, fontWeight: 800, color: ow ? "#ef4444" : (isCur ? "#fff" : "rgba(255,255,255,0.4)"), fontFamily: SANS, minWidth: 32, textAlign: "center" }}>{oss}</span>;
@@ -423,18 +430,14 @@ export default function NextDuelCard(props) {
           {/* ===== PREMATCH CONTENT ===== */}
           {/* Info grid 2x2 */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "22px 20px 0" }}>
-            {dateInfo && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Data do jogo</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS, whiteSpace: "nowrap" }}>{dateInfo.weekday + ", " + dateInfo.date}</div>
-              </div>
-            )}
-            {dateInfo && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{dateInfo.time}</div>
-              </div>
-            )}
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Data do jogo</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS, whiteSpace: "nowrap" }}>{dateInfo ? dateInfo.weekday + ", " + dateInfo.date : "A definir"}</div>
+            </div>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{dateInfo ? dateInfo.time : "A definir"}</div>
+            </div>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Quadra</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.court || "A definir"}</div>
@@ -506,10 +509,15 @@ export default function NextDuelCard(props) {
       {facts && facts.length > 0 && !isLive && (
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "16px 20px 18px", marginTop: 16, textAlign: "center" }}>
           <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>{"Curiosidades de " + (match.tournament_name || "").split(",")[0].trim()}</span>
-          {factIdx % (facts.length + 1) === 0 ? null : (
-            <span style={{ fontSize: 11, color: "rgba(79,195,247,0.65)", fontFamily: SANS, fontWeight: 500, whiteSpace: "nowrap", display: "block" }}>{facts[(factIdx - 1) % facts.length].text}</span>
-          )}
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 6 }}>{factIdx % (facts.length + 1) === 0 ? "" : ((factIdx - 1) % facts.length + 1) + "/" + facts.length}</span>
+          {(function() {
+            var safeFactIdx = ((factIdx - 1) % facts.length + facts.length) % facts.length;
+            return factIdx % (facts.length + 1) === 0 ? null : (
+              <>
+                <span style={{ fontSize: 11, color: "rgba(79,195,247,0.65)", fontFamily: SANS, fontWeight: 500, whiteSpace: "nowrap", display: "block" }}>{facts[safeFactIdx].text}</span>
+                <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 6 }}>{(safeFactIdx + 1) + "/" + facts.length}</span>
+              </>
+            );
+          })()}
         </div>
       )}
     </section>
