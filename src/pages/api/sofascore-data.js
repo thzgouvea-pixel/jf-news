@@ -31,20 +31,21 @@ export default async function handler(req, res) {
       getKV("fn:nextTournament"),
     ]);
 
-    var result = {};
-    if (matchStats) result.matchStats = matchStats;
-    if (recentForm) result.recentForm = recentForm;
-    if (careerStats) result.careerStats = careerStats;
-    if (ranking) result.ranking = ranking;
-    if (season) result.season = season;
-    if (lastMatch) result.lastMatch = lastMatch;
-    if (nextMatch) result.nextMatch = nextMatch;
-    if (winProb) result.winProb = winProb;
-    if (biography) result.biography = biography;
-    if (tournamentFacts) result.tournamentFacts = tournamentFacts;
-    if (opponentProfile) result.opponentProfile = opponentProfile;
-    if (prizeMoney && prizeMoney.amount != null) result.prizeMoney = prizeMoney.amount;
-    if (nextTournament) result.nextTournament = nextTournament;
+    var result = {
+      matchStats: matchStats ?? null,
+      recentForm: recentForm ?? null,
+      careerStats: careerStats ?? null,
+      ranking: ranking ?? null,
+      season: season ?? null,
+      lastMatch: lastMatch ?? null,
+      nextMatch: nextMatch ?? null,
+      winProb: winProb ?? null,
+      biography: biography ?? null,
+      tournamentFacts: tournamentFacts ?? null,
+      opponentProfile: opponentProfile ?? null,
+      prizeMoney: (prizeMoney && prizeMoney.amount != null) ? prizeMoney.amount : null,
+      nextTournament: nextTournament ?? null,
+    };
 
     res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
     return res.status(200).json(result);
