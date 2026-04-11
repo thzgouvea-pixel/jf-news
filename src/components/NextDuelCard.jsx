@@ -261,7 +261,7 @@ export default function NextDuelCard(props) {
                 Sacando
               </span>
             ) : (
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 #{player && player.ranking ? player.ranking : 40}</span>
             )}
           </div>
 
