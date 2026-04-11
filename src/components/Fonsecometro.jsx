@@ -24,6 +24,8 @@ export default function Fonsecometro({ recentForm }) {
   var pct = total > 0 ? Math.round((wins / total) * 100) : 0;
   var temp = getTemperature(wins, total);
 
+  var closePopup = function() { setShowInfo(false); };
+
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
@@ -35,12 +37,12 @@ export default function Fonsecometro({ recentForm }) {
       </div>
 
       {showInfo && (
-        <div onClick={function(){ setShowInfo(false); }} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fadeInO 0.2s ease" }}>
-          <div onClick={function(e){ e.stopPropagation(); }} style={{ background: "#111827", borderRadius: 18, padding: "24px 22px 22px", maxWidth: 300, width: "100%", animation: "slideU 0.25s ease" }}>
+        <div onTouchStart={closePopup} onClick={closePopup} style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 9000, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 24, cursor: "pointer" }}>
+          <div onTouchStart={function(e){ e.stopPropagation(); }} onClick={function(e){ e.stopPropagation(); }} style={{ background: "#111827", borderRadius: 18, padding: "24px 22px 22px", maxWidth: 300, width: "100%", cursor: "default" }}>
 
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: SERIF }}>Fonsecômetro</span>
-              <button onClick={function(){ setShowInfo(false); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+              <button onClick={closePopup} onTouchStart={function(e){ e.stopPropagation(); closePopup(); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 8 }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
