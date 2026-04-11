@@ -49,6 +49,11 @@ nav::-webkit-scrollbar {
   to { width: 100%; }
 }
 
+@keyframes slideUpSheet {
+  from { opacity: 0; transform: translateY(100%); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (max-width: 768px) {
   .desktop-nav {
     display: none !important;
