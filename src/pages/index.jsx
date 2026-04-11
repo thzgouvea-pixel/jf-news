@@ -194,26 +194,34 @@ export default function JoaoFonsecaNews() {
   };
 
   useEffect(function() {
+    var liveInterval = 300000; // 5 min default (no match)
+    var iv = null;
     var pollLive = function() {
       fetch("/api/live").then(function(r) { return r.json(); }).then(function(d) {
         if (d && d.live) {
           setLiveMatch(d);
+          // Switch to fast polling when live
+          if (liveInterval !== 30000) {
+            liveInterval = 30000;
+            clearInterval(iv);
+            iv = setInterval(function() { if (!document.hidden) pollLive(); }, liveInterval);
+          }
         } else {
           setLiveMatch(null);
+          // Switch to slow polling when not live
+          if (liveInterval !== 300000) {
+            liveInterval = 300000;
+            clearInterval(iv);
+            iv = setInterval(function() { if (!document.hidden) pollLive(); }, liveInterval);
+          }
         }
       }).catch(function() {});
     };
     pollLive();
-    var iv = setInterval(function() {
+    iv = setInterval(function() {
       if (!document.hidden) pollLive();
-    }, 120000);
+    }, liveInterval);
     return function() { clearInterval(iv); };
-  }, []);
-
-  useEffect(function() {
-    fetch("/api/manual-video").then(function(r) { return r.json(); }).then(function(d) {
-      if (d && d.videoId) setHighlightVideo(d);
-    }).catch(function() {});
   }, []);
 
   useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 60000); return function() { clearTimeout(t); }; }, [popupDismissed]);
@@ -264,6 +272,7 @@ export default function JoaoFonsecaNews() {
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
+      if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
     }).catch(function() {});
   };
 
@@ -290,8 +299,8 @@ export default function JoaoFonsecaNews() {
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
+      if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
     }).catch(function() {});
-    fetch("/api/visitors").then(function(r) { return r.json(); }).then(function(d) { if (d.standalone) { var el = document.getElementById("fn-standalone"); var wrap = document.getElementById("fn-standalone-wrap"); if (el) el.textContent = d.standalone; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
     var isNew = !localStorage.getItem("fn_visited");
     if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
     try {
