@@ -317,7 +317,8 @@ export default function JoaoFonsecaNews() {
     try {
       var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
       var wasDismissed = localStorage.getItem("fn_autoinstall_dismissed");
-      if (isStandalone || wasDismissed) return;
+      var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isStandalone || wasDismissed || !isMobile) return;
     } catch(e) { return; }
     var timer = setTimeout(function() { setShowAutoInstall(true); }, 15000);
     return function() { clearTimeout(timer); };
@@ -634,6 +635,95 @@ export default function JoaoFonsecaNews() {
           })}
         </div>
       </div>
+
+      {/* ===== PWA INSTALL BOTTOM SHEET ===== */}
+      {showAutoInstall && (
+        <div onClick={function(){ setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed", "1"); } catch(e){} }} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", alignItems: "flex-end", justifyContent: "center", animation: "fadeInO 0.3s ease" }}>
+          <div onClick={function(e){ e.stopPropagation(); }} style={{ width: "100%", maxWidth: 420, background: "#111827", borderRadius: "24px 24px 0 0", padding: "0 0 env(safe-area-inset-bottom, 16px) 0", animation: "slideUpSheet 0.4s cubic-bezier(0.16,1,0.3,1)", position: "relative", overflow: "hidden" }}>
+            {/* Drag handle */}
+            <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
+              <div style={{ width: 36, height: 4, borderRadius: 4, background: "rgba(255,255,255,0.2)" }} />
+            </div>
+
+            {/* App preview header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "20px 24px 16px" }}>
+              <div style={{ width: 56, height: 56, borderRadius: 14, background: "linear-gradient(135deg, #00A859 0%, #0D7C48 100%)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 16px rgba(0,168,89,0.3)" }}>
+                <span style={{ fontSize: 24, fontWeight: 900, color: "#fff", fontFamily: SERIF, lineHeight: 1 }}>FN</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: SERIF, letterSpacing: "-0.02em" }}>Fonseca News</h3>
+                <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: SANS, lineHeight: 1.3 }}>fonsecanews.com.br</p>
+              </div>
+              <button onClick={function(){ setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed", "1"); } catch(e){} }} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+
+            {/* Value proposition */}
+            <div style={{ padding: "0 24px 20px", display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {["Placar ao vivo", "Notificações", "Acesso rápido"].map(function(tag) {
+                return <span key={tag} style={{ fontSize: 11, fontWeight: 600, color: "#00A859", background: "rgba(0,168,89,0.12)", padding: "5px 12px", borderRadius: 20, fontFamily: SANS }}>{tag}</span>;
+              })}
+            </div>
+
+            {/* Divider */}
+            <div style={{ height: 1, background: "rgba(255,255,255,0.06)", margin: "0 24px" }} />
+
+            {/* Steps — iOS vs Android */}
+            <div style={{ padding: "20px 24px" }}>
+              <p style={{ margin: "0 0 16px", fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                {(function() { var d = detectDevice(); return d === "ios" ? "Como instalar no iPhone" : "Como instalar"; })()}
+              </p>
+
+              {(function() {
+                var device = detectDevice();
+
+                if (device === "ios") {
+                  return [
+                    { step: 1, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>, text: <span>Toque em <strong style={{ color: "#4FC3F7" }}>Compartilhar</strong> <span style={{ fontSize: 16, verticalAlign: "middle" }}>⬆</span> na barra do Safari</span> },
+                    { step: 2, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>, text: <span>Escolha <strong style={{ color: "#4FC3F7" }}>Adicionar à Tela de Início</strong></span> },
+                    { step: 3, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00A859" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>, text: <span>Toque em <strong style={{ color: "#00A859" }}>Adicionar</strong> e pronto!</span> },
+                  ];
+                }
+
+                if (deferredPrompt) {
+                  return [
+                    { step: 1, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00A859" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, text: <span>Toque no botão abaixo para <strong style={{ color: "#00A859" }}>instalar direto</strong></span> },
+                  ];
+                }
+
+                return [
+                  { step: 1, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>, text: <span>Toque em <strong style={{ color: "#4FC3F7" }}>⋮</strong> (menu) no canto superior</span> },
+                  { step: 2, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4FC3F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>, text: <span>Escolha <strong style={{ color: "#4FC3F7" }}>Adicionar à tela inicial</strong></span> },
+                  { step: 3, icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00A859" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>, text: <span>Confirme e <strong style={{ color: "#00A859" }}>pronto!</strong></span> },
+                ];
+              })().map(function(s) {
+                return (
+                  <div key={s.step} style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 16 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {s.icon}
+                    </div>
+                    <p style={{ margin: 0, fontSize: 14, color: "rgba(255,255,255,0.75)", fontFamily: SANS, lineHeight: 1.5 }}>{s.text}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Action buttons */}
+            <div style={{ padding: "0 24px 24px", display: "flex", gap: 10 }}>
+              {deferredPrompt && detectDevice() === "android" ? (
+                <button onClick={function(){ handleInstall(); setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed","1"); } catch(e){} }} style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #00A859 0%, #0D7C48 100%)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: SANS, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,168,89,0.3)", letterSpacing: "-0.01em" }}>
+                  Instalar App
+                </button>
+              ) : (
+                <button onClick={function(){ setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed","1"); } catch(e){} }} style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #00A859 0%, #0D7C48 100%)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: SANS, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,168,89,0.3)", letterSpacing: "-0.01em" }}>
+                  Entendi!
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
