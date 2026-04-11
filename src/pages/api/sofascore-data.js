@@ -43,7 +43,7 @@ export default async function handler(req, res) {
     if (biography) result.biography = biography;
     if (tournamentFacts) result.tournamentFacts = tournamentFacts;
     if (opponentProfile) result.opponentProfile = opponentProfile;
-    if (prizeMoney && prizeMoney.amount) result.prizeMoney = prizeMoney.amount;
+    if (prizeMoney && prizeMoney.amount != null) result.prizeMoney = prizeMoney.amount;
     if (nextTournament) result.nextTournament = nextTournament;
 
     res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");

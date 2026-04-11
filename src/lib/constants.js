@@ -13,7 +13,7 @@ export const CARD_SHADOW_MD = "0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0
 export const CARD_RADIUS = 18;
 export const CACHE_DURATION_MS = 5 * 60 * 1000;
 
-export const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
+export const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Duro": "#3B82F6", "Piso duro": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
 
 export const catColors = {
   "Torneio": "#c0392b", "Treino": "#2A9D8F", "Declaração": "#b8860b",
@@ -32,6 +32,15 @@ export const countryFlags = {
   "Taiwan": "🇹🇼", "Austria": "🇦🇹", "Hungary": "🇭🇺", "Romania": "🇷🇴",
   "Sweden": "🇸🇪", "Finland": "🇫🇮", "Kazakhstan": "🇰🇿", "Georgia": "🇬🇪",
   "Tunisia": "🇹🇳", "Monaco": "🇲🇨", "Mônaco": "🇲🇨",
+  "Morocco": "🇲🇦", "Slovakia": "🇸🇰", "New Zealand": "🇳🇿",
+  "India": "🇮🇳", "Uruguay": "🇺🇾", "Ecuador": "🇪🇨",
+  "Bolivia": "🇧🇴", "Thailand": "🇹🇭", "Belarus": "🇧🇾",
+  "Ukraine": "🇺🇦", "Turkey": "🇹🇷", "Türkiye": "🇹🇷",
+  "South Africa": "🇿🇦", "Israel": "🇮🇱", "Ireland": "🇮🇪",
+  "Great Britain": "🇬🇧", "Slovenia": "🇸🇮", "Lithuania": "🇱🇹",
+  "Latvia": "🇱🇻", "Estonia": "🇪🇪", "Bosnia and Herzegovina": "🇧🇦",
+  "Bosnia": "🇧🇦", "Chinese Taipei": "🇹🇼", "Uzbekistan": "🇺🇿",
+  "Egypt": "🇪🇬", "Algeria": "🇩🇿",
 };
 
 export const PLAYER_DB = {

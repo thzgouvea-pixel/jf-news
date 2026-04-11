@@ -1,8 +1,9 @@
 import { GREEN, RED, BG_ALT, TEXT, DIM, BORDER, SANS, SERIF } from '../lib/constants';
 
-export default function NextGenComparator() {
+export default function NextGenComparator(props) {
+  var currentRanking = props.currentRanking || null;
   var players = [
-    { name: "J. Fonseca", country: "🇧🇷", age: 19, ranking: 40, titles: 2, style: "Agressivo", forehand: 95, serve: 88, movement: 85, mental: 90, color: GREEN },
+    { name: "J. Fonseca", country: "🇧🇷", age: 19, ranking: currentRanking || "—", titles: 2, style: "Agressivo", forehand: 95, serve: 88, movement: 85, mental: 90, color: GREEN },
     { name: "L. Tien", country: "🇺🇸", age: 20, ranking: 21, titles: 1, style: "Contra-atacante", forehand: 82, serve: 80, movement: 92, mental: 88, color: RED },
     { name: "J. Mensik", country: "🇨🇿", age: 19, ranking: 30, titles: 2, style: "Saque e voleio", forehand: 85, serve: 94, movement: 78, mental: 82, color: "#3B82F6" },
     { name: "A. Fils", country: "🇫🇷", age: 20, ranking: 28, titles: 2, style: "Completo", forehand: 88, serve: 86, movement: 90, mental: 84, color: "#8B5CF6" },

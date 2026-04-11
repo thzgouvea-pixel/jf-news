@@ -49,14 +49,25 @@ export default function NextDuelCard(props) {
 
     var surfaceTranslatePrev = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama" };
     var surfaceLabelPrev = surfaceTranslatePrev[nextTournament.surface] || nextTournament.surface || "";
-    var scPrev = surfaceColorMap[nextTournament.surface] || "#999";
-    var startD = new Date(nextTournament.start_date);
-    var endD = nextTournament.end_date ? new Date(nextTournament.end_date) : null;
-    var monthsShort = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
-    var formattedDateRange = startD.getUTCDate() + " " + monthsShort[startD.getUTCMonth()] + (endD ? " - " + endD.getUTCDate() + " " + monthsShort[endD.getUTCMonth()] : "");
+    var scPrev = surfaceColorMap[nextTournament.surface] || surfaceColorMap[surfaceLabelPrev] || "#999";
+    var formattedDateRange = "";
+    if (nextTournament.start_date) {
+      var startD = new Date(nextTournament.start_date);
+      if (!isNaN(startD.getTime())) {
+        var endD = nextTournament.end_date ? new Date(nextTournament.end_date) : null;
+        var monthsShort = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+        formattedDateRange = startD.getUTCDate() + " " + monthsShort[startD.getUTCMonth()] + (endD && !isNaN(endD.getTime()) ? " - " + endD.getUTCDate() + " " + monthsShort[endD.getUTCMonth()] : "");
+      }
+    }
+    if (!formattedDateRange) formattedDateRange = "A definir";
     var todayPrev = new Date();
-    var endDMidnight = endD ? new Date(endD.getUTCFullYear(), endD.getUTCMonth(), endD.getUTCDate(), 23, 59, 59, 999) : null;
-    var isOngoingPrev = todayPrev >= startD && (!endDMidnight || todayPrev <= endDMidnight);
+    var isOngoingPrev = false;
+    if (nextTournament.start_date) {
+      var startDCheck = new Date(nextTournament.start_date);
+      var endDCheck = nextTournament.end_date ? new Date(nextTournament.end_date) : null;
+      var endDMidnight = endDCheck ? new Date(endDCheck.getUTCFullYear(), endDCheck.getUTCMonth(), endDCheck.getUTCDate(), 23, 59, 59, 999) : null;
+      isOngoingPrev = todayPrev >= startDCheck && (!endDMidnight || todayPrev <= endDMidnight);
+    }
 
     return (
       <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
@@ -84,7 +95,7 @@ export default function NextDuelCard(props) {
                 <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } }} />
               </div>
               <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 #{player && player.ranking ? player.ranking : 40}</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷{player && player.ranking ? " #" + player.ranking : ""}</span>
             </div>
 
             {/* VS */}
@@ -108,11 +119,11 @@ export default function NextDuelCard(props) {
           </div>
           <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Local</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{nextTournament.city}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{nextTournament.city || "A definir"}</div>
           </div>
           <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px", textAlign: "center" }}>
             <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>País</div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{nextTournament.country}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{nextTournament.country || "A definir"}</div>
           </div>
         </div>
 
@@ -142,7 +153,7 @@ export default function NextDuelCard(props) {
   var oppImg = getATPImage(oppName);
   var oppImgFallback = getESPNImage(oppName);
 
-  var sc = surfaceColorMap[match.surface] || "#999";
+  var sc = surfaceColorMap[match.surface] || surfaceColorMap[surfaceLabel] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
   var surfaceLabel = surfaceTranslate[match.surface] || match.surface || "";
 
@@ -261,7 +272,7 @@ export default function NextDuelCard(props) {
                 Sacando
               </span>
             ) : (
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 #{player && player.ranking ? player.ranking : 40}</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷{player && player.ranking ? " #" + player.ranking : ""}</span>
             )}
           </div>
 

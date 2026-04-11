@@ -25,15 +25,15 @@ export default function LiveScoreCard(props) {
   var fStats = stats.fonseca || {};
   var oStats = stats.opponent || {};
 
-  var fST = (fStats.firstserveaccuracy||0) + (fStats.secondserveaccuracy||0) + (fStats.doublefaults||0);
-  var oST = (oStats.firstserveaccuracy||0) + (oStats.secondserveaccuracy||0) + (oStats.doublefaults||0);
+  var fST = (fStats.firstserveaccuracy || fStats.first_serve_accuracy || 0) + (fStats.secondserveaccuracy || fStats.second_serve_accuracy || 0) + (fStats.doublefaults || fStats.double_faults || 0);
+  var oST = (oStats.firstserveaccuracy || oStats.first_serve_accuracy || 0) + (oStats.secondserveaccuracy || oStats.second_serve_accuracy || 0) + (oStats.doublefaults || oStats.double_faults || 0);
   var liveStatRows = [
     { label: "Aces", f: fStats.aces || 0, o: oStats.aces || 0 },
-    { label: "D. Faltas", f: fStats.doublefaults || 0, o: oStats.doublefaults || 0, invert: true },
-    { label: "1o Saque %", f: fST > 0 ? Math.round((fStats.firstserveaccuracy||0)/fST*100) : 0, o: oST > 0 ? Math.round((oStats.firstserveaccuracy||0)/oST*100) : 0, pct: true },
+    { label: "D. Faltas", f: fStats.doublefaults || fStats.double_faults || 0, o: oStats.doublefaults || oStats.double_faults || 0, invert: true },
+    { label: "1o Saque %", f: fST > 0 ? Math.round((fStats.firstserveaccuracy || fStats.first_serve_accuracy || 0)/fST*100) : 0, o: oST > 0 ? Math.round((oStats.firstserveaccuracy || oStats.first_serve_accuracy || 0)/oST*100) : 0, pct: true },
     { label: "Winners", f: fStats.winners || 0, o: oStats.winners || 0 },
-    { label: "Break Points", f: fStats.breakpointsscored || 0, o: oStats.breakpointsscored || 0 },
-    { label: "Pontos", f: (fStats.servicepointsscored||0) + (fStats.receiverpointsscored||0) || fStats.pointstotal || 0, o: (oStats.servicepointsscored||0) + (oStats.receiverpointsscored||0) || oStats.pointstotal || 0 },
+    { label: "Break Points", f: fStats.breakpointsscored || fStats.break_points_scored || 0, o: oStats.breakpointsscored || oStats.break_points_scored || 0 },
+    { label: "Pontos", f: (fStats.servicepointsscored || fStats.service_points_scored || 0) + (fStats.receiverpointsscored || fStats.receiver_points_scored || 0) || fStats.pointstotal || fStats.points_total || 0, o: (oStats.servicepointsscored || oStats.service_points_scored || 0) + (oStats.receiverpointsscored || oStats.receiver_points_scored || 0) || oStats.pointstotal || oStats.points_total || 0 },
   ].filter(function(r) { return r.f > 0 || r.o > 0; });
 
   return (
