@@ -28,8 +28,9 @@ export default async function handler(req, res) {
     var now = new Date();
     var brasilia = new Date(now.getTime() - 3 * 60 * 60 * 1000);
     var today = brasilia.toISOString().split("T")[0];
+    var dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
 
-    // Fetch all KV data in parallel — single function invocation instead of 3
+    // Fetch all KV data in parallel — single function invocation instead of 10
     var results = await Promise.all([
       // sofascore-data keys (13 reads)
       getKV("fn:matchStats"),
@@ -49,6 +50,11 @@ export default async function handler(req, res) {
       getKV("fn:atpRankings"),
       // stats keys — mget batches 4 reads into a single round-trip
       kv.mget("visitors:total", "site:feedback", "poll:" + today, "likes:all"),
+      // interactive features (saves 3 separate API calls)
+      getKV("fn:quizCount"),
+      getKV("fn:poll:" + dayOfYear),
+      getKV("fn:predict:next"),
+      getKV("fn:highlightVideo"),
     ]);
 
     var matchStats = results[0];
@@ -66,12 +72,27 @@ export default async function handler(req, res) {
     var nextTournament = results[12];
     var atpRankings = results[13];
     var statsValues = results[14] || [];
+    var quizCount = results[15];
+    var pollData = results[16];
+    var predictData = results[17];
+    var highlightVideo = results[18];
 
     var parse = function(val) {
       if (!val) return null;
       if (typeof val === "string") { try { return JSON.parse(val); } catch(e) { return val; } }
       return val;
     };
+
+    // Build poll response (same shape as /api/vote GET)
+    var pollParsed = pollData || { a: 0, b: 0 };
+    var pollTotal = (pollParsed.a || 0) + (pollParsed.b || 0);
+
+    // Build predict response (same shape as /api/predict GET)
+    var predParsed = predictData || {};
+    var predTotal = 0;
+    var predictions = {};
+    for (var pk in predParsed) { predTotal += predParsed[pk]; }
+    for (var pk2 in predParsed) { predictions[pk2] = { count: predParsed[pk2], pct: predTotal > 0 ? Math.round((predParsed[pk2] / predTotal) * 100) : 0 }; }
 
     return res.status(200).json({
       // sofascore-data fields (same shape as /api/sofascore-data)
@@ -96,7 +117,12 @@ export default async function handler(req, res) {
         feedback: parse(statsValues[1]) || { up: 0, down: 0 },
         poll: parse(statsValues[2]) || { a: 0, b: 0, total: 0 },
         likes: parse(statsValues[3]) || {}
-      }
+      },
+      // interactive features (saves 3-4 separate API calls)
+      quizCount: quizCount ? parseInt(quizCount, 10) || 0 : 0,
+      pollResults: { a: pollParsed.a || 0, b: pollParsed.b || 0, total: pollTotal, pctA: pollTotal > 0 ? Math.round(((pollParsed.a||0) / pollTotal) * 100) : 50, pctB: pollTotal > 0 ? Math.round(((pollParsed.b||0) / pollTotal) * 100) : 50 },
+      predictResults: { predictions: predictions, total: predTotal },
+      highlightVideo: highlightVideo || null,
     });
   } catch (e) {
     return res.status(500).json({ error: e.message });
