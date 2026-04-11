@@ -446,7 +446,7 @@ export default function JoaoFonsecaNews() {
                 var t10 = cs.vsTop10 || null;
                 var items = [{v:cW+"V "+cL+"D",l:"Carreira",c:TEXT},{v:cPct+"%",l:"Aprov.",c:GREEN}];
                 if (t10) { items.push({v:t10.w+"V "+t10.l+"D",l:"vs Top 10",c:TEXT}); }
-                items.push({v:prizeMoney ? (prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "N/D",l:"Prize Money",c:prizeMoney ? GREEN : DIM});
+                items.push({v:prizeMoney != null ? (prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "N/D",l:"Prize Money",c:prizeMoney != null ? GREEN : DIM});
                 return items;
               })().map(function(s,i){return(<div key={i} style={{textAlign:"center"}}><span style={{fontSize:17,fontWeight:800,color:s.c,fontFamily:SANS,display:"block",lineHeight:1}}>{s.v}</span><span style={{fontSize:9,fontWeight:600,color:DIM,fontFamily:SANS,textTransform:"uppercase",letterSpacing:"0.04em",marginTop:2,display:"block"}}>{s.l}</span></div>);})}
             </div>

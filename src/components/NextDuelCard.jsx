@@ -153,9 +153,9 @@ export default function NextDuelCard(props) {
   var oppImg = getATPImage(oppName);
   var oppImgFallback = getESPNImage(oppName);
 
-  var sc = surfaceColorMap[match.surface] || surfaceColorMap[surfaceLabel] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
   var surfaceLabel = surfaceTranslate[match.surface] || match.surface || "";
+  var sc = surfaceColorMap[match.surface] || surfaceColorMap[surfaceLabel] || "#999";
 
   var fPct = winProb && winProb.fonseca ? Math.round(winProb.fonseca) : null;
   var oPct = winProb && winProb.opponent ? Math.round(winProb.opponent) : null;
