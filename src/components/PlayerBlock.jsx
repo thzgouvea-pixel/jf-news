@@ -98,7 +98,7 @@ var matchDate = (lastMatch && lastMatch.date) ? new Date(lastMatch.date).toLocal
             {/* TOP BAR */}
             <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Última partida</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.45)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Última partida</span>
                 </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {round && <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.65)", fontFamily: SANS }}>{round}</span>}
@@ -108,20 +108,20 @@ var matchDate = (lastMatch && lastMatch.date) ? new Date(lastMatch.date).toLocal
             </div>
 
             {/* TOURNAMENT */}
-            <div style={{ textAlign: "center", padding: "12px 18px 0" }}>
-              <h3 style={{ fontFamily: SERIF, fontSize: 18, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em" }}>{tournamentDisplay}</h3>
+            <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
+              <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{tournamentDisplay}</h2>
             </div>
 
             {/* PLAYERS + SCORE (new layout) */}
-            <div style={{ padding: "22px 18px 0" }}>
+            <div style={{ padding: "18px 18px 0" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, alignItems: "center" }}>
                 {/* Fonseca */}
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid " + GREEN + "50", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid " + GREEN + "50", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <img src={FONSECA_IMG} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } }} />
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>{"\ud83c\udde7\ud83c\uddf7"}{playerRanking ? " #" + playerRanking : ""}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>{"\ud83c\udde7\ud83c\uddf7"}{playerRanking ? " #" + playerRanking : ""}</span>
                 </div>
 
                 {/* Score center */}
@@ -149,11 +149,11 @@ var matchDate = (lastMatch && lastMatch.date) ? new Date(lastMatch.date).toLocal
 
                 {/* Opponent */}
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ width: 64, height: 64, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid rgba(255,255,255,0.12)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ width: 72, height: 72, borderRadius: "50%", margin: "0 auto 8px", background: "#152035", border: "2.5px solid rgba(255,255,255,0.12)", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {oppImg ? (<img src={oppImg} alt={oppShort} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; } }} />) : (<span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppShort.charAt(0)}</span>)}
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppShort}</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span>
+                  <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppShort}</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>{oppFlag} {oppRanking ? "#" + oppRanking : ""}</span>
                 </div>
               </div>
             </div>
