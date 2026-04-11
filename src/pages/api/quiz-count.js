@@ -14,6 +14,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
+      res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
       var current = await kv.get(key);
       var count = current ? parseInt(current, 10) : 0;
       return res.status(200).json({ count: count });

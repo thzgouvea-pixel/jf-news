@@ -30,6 +30,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "GET") {
+      res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
       var matchId = req.query.matchId || "next";
       matchId = String(matchId).substring(0, 50);
       if (!/^[a-zA-Z0-9_-]+$/.test(matchId)) return res.status(400).json({ error: "invalid matchId format" });

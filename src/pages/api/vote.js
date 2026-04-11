@@ -31,6 +31,7 @@ export default async function handler(req, res) {
 
     // GET — return current results without voting
     if (req.method === "GET") {
+      res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
       var key = "fn:poll:" + dayOfYear;
       var current = await kv.get(key);
       var data = current ? (typeof current === "string" ? JSON.parse(current) : current) : { a: 0, b: 0 };

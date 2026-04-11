@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     var key = "poll:" + today;
 
     if (req.method === "GET") {
-      res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
+      res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
       var data = await kv.get(key);
       return res.status(200).json(data || { a: 0, b: 0, total: 0 });
     }
