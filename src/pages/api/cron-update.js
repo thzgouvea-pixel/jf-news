@@ -91,8 +91,35 @@ function extractMatch(match) {
   return { id: match.id, result: fW > oW ? "V" : "D", score: scoreStr, opponent_name: opp.shortName || opp.name || "Oponente", opponent_id: opp.id || null, opponent_country: opp.country ? opp.country.name : "", tournament_name: tName, tournament_category: cat, surface: surface, round: round.name || "", date: match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : null, startTimestamp: match.startTimestamp || null, court: match.courtName || (match.venue && match.venue.name) || "", isFonsecaHome: isFHome, finished: isFinished(match) };
 }
 
-async function fetchRankingWikipedia() {
-  log("Wikipedia ranking...");
+// ===== PLAYER DATA: Gemini (primary) → Wikipedia (fallback) =====
+async function fetchPlayerData() {
+  log("Fetching player data...");
+
+  // CAMADA 1: Gemini com google_search (primary)
+  var gTxt = await geminiSearch(
+    "Busque dados ATUALIZADOS de abril 2026 sobre o tenista brasileiro João Fonseca. " +
+    "Preciso de: ranking ATP atual, career-high ranking, record de carreira em singles (vitórias-derrotas total), " +
+    "record por superfície (hard, clay, grass), prize money total de carreira em USD, número de títulos ATP. " +
+    "Responda APENAS JSON: {\"ranking\":NUMBER,\"bestRanking\":NUMBER,\"wins\":NUMBER,\"losses\":NUMBER," +
+    "\"surface\":{\"hard\":{\"w\":NUMBER,\"l\":NUMBER},\"clay\":{\"w\":NUMBER,\"l\":NUMBER},\"grass\":{\"w\":NUMBER,\"l\":NUMBER}}," +
+    "\"prizeMoney\":NUMBER,\"titles\":NUMBER}"
+  );
+  if (gTxt) {
+    try {
+      var cleaned = gTxt.replace(/```json|```/g, "").trim();
+      var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        var result = JSON.parse(jsonMatch[0]);
+        if (result && result.ranking) {
+          log("Gemini player data: #" + result.ranking + " | " + (result.wins||0) + "W-" + (result.losses||0) + "L | $" + (result.prizeMoney||0));
+          return result;
+        }
+      }
+    } catch (e) { log("Gemini player parse error: " + e.message); }
+  }
+
+  // CAMADA 2: Wikipedia (fallback)
+  log("Gemini failed, trying Wikipedia...");
   try {
     var res = await fetch("https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json&section=0", { headers: { "User-Agent": "FonsecaNews/1.0" } });
     if (!res.ok) return null;
@@ -101,7 +128,6 @@ async function fetchRankingWikipedia() {
     if (!text) return null;
     var result = {};
 
-    // Helper: extract W-L from "16–11" or "{{tennis record|wins=16|losses=11}}"
     function extractWL(field) {
       var pattern1 = new RegExp("\\|\\s*" + field + "\\s*=\\s*\\{\\{[^}]*wins\\s*=\\s*(\\d+)\\s*\\|\\s*losses\\s*=\\s*(\\d+)", "i");
       var pattern2 = new RegExp("\\|\\s*" + field + "\\s*=\\s*(\\d+)\\s*[–\\-]\\s*(\\d+)", "i");
@@ -110,52 +136,21 @@ async function fetchRankingWikipedia() {
       return null;
     }
 
-    // Overall record
     var overall = extractWL("singlesrecord");
     if (overall) { result.wins = overall.w; result.losses = overall.l; }
-
-    // Surface records
     var hard = extractWL("singlesrecord_hard");
     var clay = extractWL("singlesrecord_clay");
     var grass = extractWL("singlesrecord_grass");
-    if (hard || clay || grass) {
-      result.surface = {
-        hard: hard || { w: 0, l: 0 },
-        clay: clay || { w: 0, l: 0 },
-        grass: grass || { w: 0, l: 0 },
-      };
-    }
-
-    // Ranking
+    if (hard || clay || grass) { result.surface = { hard: hard || { w: 0, l: 0 }, clay: clay || { w: 0, l: 0 }, grass: grass || { w: 0, l: 0 } }; }
     var rm = text.match(/\|\s*current_ranking\s*=\s*(?:No\.\s*)?(\d+)/i); if (rm) result.ranking = parseInt(rm[1]);
     var hm = text.match(/\|\s*highest_ranking\s*=\s*(?:No\.\s*)?(\d+)/i); if (hm) result.bestRanking = parseInt(hm[1]);
-
-    // Prize money
     var pm = text.match(/\|\s*prize\s*=\s*\$?([\d,]+)/i); if (pm) result.prizeMoney = parseInt(pm[1].replace(/,/g, ""));
-
-    // Titles
     var tm = text.match(/\|\s*titles\s*=\s*(\d+)/i); if (tm) result.titles = parseInt(tm[1]);
 
-    log("Ranking: #" + (result.ranking || "?") + " | Surface: " + (result.surface ? "yes" : "no"));
+    log("Wikipedia: #" + (result.ranking || "?") + " | " + (result.wins||"?") + "W");
     return result;
   } catch (e) { log("Wikipedia error: " + e.message); }
 
-  // Gemini fallback for ranking
-  log("Wikipedia failed, trying Gemini for ranking...");
-  var gTxt = await geminiSearch("Qual é o ranking ATP atual do tenista João Fonseca em abril 2026? E o career-high? Responda APENAS JSON: {\"ranking\":NUMBER,\"bestRanking\":NUMBER}");
-  if (gTxt) {
-    try {
-      var cleaned = gTxt.replace(/```json|```/g, "").trim();
-      var jsonMatch = cleaned.match(/\{[^}]+\}/);
-      if (jsonMatch) {
-        var gRank = JSON.parse(jsonMatch[0]);
-        if (gRank && gRank.ranking) {
-          log("Gemini ranking: #" + gRank.ranking);
-          return { ranking: gRank.ranking, bestRanking: gRank.bestRanking || null };
-        }
-      }
-    } catch (e) { log("Gemini ranking parse error: " + e.message); }
-  }
   return null;
 }
 
@@ -232,8 +227,69 @@ async function fetchOppProfile(nm) {
 }
 
 async function fetchWinProb(nm) {
-  if (!nm) return null; var ok = process.env.ODDS_API_KEY; if (!ok) return null;
-  try { var r = await fetch("https://api.the-odds-api.com/v4/sports/tennis_atp_singles/odds/?apiKey=" + ok + "&regions=eu&markets=h2h&oddsFormat=decimal"); if (!r.ok) return null; var d = await r.json(); if (!Array.isArray(d)) return null; var g = d.find(function(x) { return [x.home_team||"",x.away_team||""].some(function(n){return n.toLowerCase().includes("fonseca");}); }); if (!g||!g.bookmakers||!g.bookmakers.length) return null; var mk = g.bookmakers[0].markets && g.bookmakers[0].markets.find(function(m){return m.key==="h2h";}); if (!mk||!mk.outcomes) return null; var fo=null,oo=null; mk.outcomes.forEach(function(o){if(o.name.toLowerCase().includes("fonseca"))fo=o.price;else oo=o.price;}); if(!fo||!oo) return null; var iF=1/fo,iO=1/oo,tot=iF+iO; return { fonseca: Math.round((iF/tot)*100), opponent: Math.round((iO/tot)*100), opponent_name: nm.opponent_name, source: "odds-api", updatedAt: new Date().toISOString() }; } catch(e) { return null; }
+  if (!nm) return null;
+
+  // Source 1: The Odds API
+  var ok = process.env.ODDS_API_KEY;
+  if (ok) {
+    try {
+      var r = await fetch("https://api.the-odds-api.com/v4/sports/tennis_atp_singles/odds/?apiKey=" + ok + "&regions=eu&markets=h2h&oddsFormat=decimal");
+      if (r.ok) {
+        var d = await r.json();
+        if (Array.isArray(d)) {
+          var g = d.find(function(x) { return [x.home_team||"",x.away_team||""].some(function(n){return n.toLowerCase().includes("fonseca");}); });
+          if (g && g.bookmakers && g.bookmakers.length) {
+            var mk = g.bookmakers[0].markets && g.bookmakers[0].markets.find(function(m){return m.key==="h2h";});
+            if (mk && mk.outcomes) {
+              var fo=null,oo=null;
+              mk.outcomes.forEach(function(o){if(o.name.toLowerCase().includes("fonseca"))fo=o.price;else oo=o.price;});
+              if(fo&&oo) { var iF=1/fo,iO=1/oo,tot=iF+iO; return { fonseca: Math.round((iF/tot)*100), opponent: Math.round((iO/tot)*100), opponent_name: nm.opponent_name, source: "odds-api", updatedAt: new Date().toISOString() }; }
+            }
+          }
+        }
+      }
+    } catch(e) { log("Odds API error: " + e.message); }
+  }
+
+  // Source 2: SofaScore match odds
+  if (nm.id) {
+    try {
+      var sd = await sofaFetch("/v1/match/odds?match_id=" + nm.id);
+      if (sd && sd.markets) {
+        var h2h = sd.markets.find(function(m) { return m.marketName === "Full time" || m.marketName === "1x2" || m.key === "1x2"; });
+        if (h2h && h2h.choices) {
+          var fOdd = null, oOdd = null;
+          h2h.choices.forEach(function(c) {
+            if ((c.name || "").toLowerCase().includes("fonseca") || c.name === "1") fOdd = c.odds || c.fractionalValue;
+            else if (c.name === "2" || c.name !== "X") oOdd = c.odds || c.fractionalValue;
+          });
+          if (fOdd && oOdd) {
+            var fi = 1/fOdd, oi = 1/oOdd, t = fi+oi;
+            return { fonseca: Math.round((fi/t)*100), opponent: Math.round((oi/t)*100), opponent_name: nm.opponent_name, source: "sofascore-odds", updatedAt: new Date().toISOString() };
+          }
+        }
+      }
+    } catch(e) { log("SofaScore odds error: " + e.message); }
+  }
+
+  // Source 3: Gemini search for odds
+  var gTxt = await geminiSearch("Quais são as odds de apostas para João Fonseca vs " + (nm.opponent_name || "adversário") + " no " + (nm.tournament_name || "ATP") + " 2026? Responda APENAS JSON: {\"fonseca_odds\":NUMBER,\"opponent_odds\":NUMBER}. Use odds decimais reais de casas de apostas.");
+  if (gTxt) {
+    try {
+      var cleaned = gTxt.replace(/```json|```/g, "").trim();
+      var jsonMatch = cleaned.match(/\{[^}]+\}/);
+      if (jsonMatch) {
+        var gOdds = JSON.parse(jsonMatch[0]);
+        if (gOdds && gOdds.fonseca_odds && gOdds.opponent_odds) {
+          var gfi = 1/gOdds.fonseca_odds, goi = 1/gOdds.opponent_odds, gt = gfi+goi;
+          log("Gemini odds: Fonseca " + gOdds.fonseca_odds + " / " + (nm.opponent_name||"opp") + " " + gOdds.opponent_odds);
+          return { fonseca: Math.round((gfi/gt)*100), opponent: Math.round((goi/gt)*100), opponent_name: nm.opponent_name, source: "gemini-odds", updatedAt: new Date().toISOString() };
+        }
+      }
+    } catch(e) { log("Gemini odds parse: " + e.message); }
+  }
+
+  return null;
 }
 
 var ATP_CALENDAR_2026 = [
@@ -347,7 +403,7 @@ export default async function handler(req, res) {
     steps.last = lm ? lm.opponent_name : "none";
     steps.next = nm ? nm.opponent_name : "none";
 
-    var wiki = await fetchRankingWikipedia(); steps.ranking = wiki&&wiki.ranking ? "#"+wiki.ranking : "skip";
+    var wiki = await fetchPlayerData(); steps.ranking = wiki&&wiki.ranking ? "#"+wiki.ranking : "skip";
     var ms = lm ? await fetchMatchStats(lm) : null; steps.stats = ms ? "ok" : "skip";
 
     // ===== MERGE with existing KV (preserve manual overrides) =====
@@ -495,6 +551,53 @@ export default async function handler(req, res) {
           }
         } catch(e) { log("Gemini enrich parse: " + e.message); steps.enrich = "error"; }
       }
+    }
+
+    // ===== GEMINI SWEEP: fill ALL remaining gaps in one call =====
+    var gaps = [];
+    if (!wiki || !wiki.ranking) gaps.push("ranking ATP atual do João Fonseca (número)");
+    if (!wiki || wiki.wins === undefined) gaps.push("record de carreira singles do João Fonseca (wins-losses total, wins-losses em hard/clay/grass)");
+    if (!wiki || !wiki.prizeMoney) gaps.push("prize money total de carreira do João Fonseca em USD");
+    if (!wiki || !wiki.titles) gaps.push("número de títulos ATP do João Fonseca");
+    if (nm && !nm.date) gaps.push("data e horário UTC da partida " + (nm.opponent_name||"") + " vs Fonseca no " + (nm.tournament_name||"ATP") + " 2026");
+    if (nm && !wp) gaps.push("odds de apostas para Fonseca vs " + (nm.opponent_name||"adversário") + " (odds decimais)");
+
+    if (gaps.length > 0) {
+      log("Gemini sweep: " + gaps.length + " gaps to fill");
+      var sweepTxt = await geminiSearch(
+        "Busque dados REAIS e ATUALIZADOS sobre o tenista João Fonseca (brasileiro, nascido 2006). Preciso de: " +
+        gaps.join("; ") + ". " +
+        "Responda APENAS JSON: {\"ranking\":NUMBER_OR_NULL,\"wins\":NUMBER_OR_NULL,\"losses\":NUMBER_OR_NULL,\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}},\"prizeMoney\":NUMBER_OR_NULL,\"titles\":NUMBER_OR_NULL,\"matchDate\":\"ISO_STRING_OR_NULL\",\"fonseca_odds\":NUMBER_OR_NULL,\"opponent_odds\":NUMBER_OR_NULL}"
+      );
+      if (sweepTxt) {
+        try {
+          var cleaned = sweepTxt.replace(/```json|```/g, "").trim();
+          var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            var sweep = JSON.parse(jsonMatch[0]);
+            if (sweep) {
+              // Fill wiki gaps
+              if (!wiki) wiki = {};
+              if (!wiki.ranking && sweep.ranking) { wiki.ranking = sweep.ranking; log("Sweep: ranking #" + sweep.ranking); }
+              if (wiki.wins === undefined && sweep.wins !== null && sweep.wins !== undefined) { wiki.wins = sweep.wins; wiki.losses = sweep.losses || 0; }
+              if (!wiki.prizeMoney && sweep.prizeMoney) wiki.prizeMoney = sweep.prizeMoney;
+              if (!wiki.titles && sweep.titles) wiki.titles = sweep.titles;
+              if (sweep.surface && (!wiki.surface || (!wiki.surface.hard.w && !wiki.surface.clay.w))) wiki.surface = sweep.surface;
+              // Fill nextMatch date
+              if (nm && !nm.date && sweep.matchDate) { nm.date = sweep.matchDate; log("Sweep: match date " + sweep.matchDate); }
+              // Fill odds
+              if (!wp && sweep.fonseca_odds && sweep.opponent_odds && nm) {
+                var sfi = 1/sweep.fonseca_odds, soi = 1/sweep.opponent_odds, st = sfi+soi;
+                wp = { fonseca: Math.round((sfi/st)*100), opponent: Math.round((soi/st)*100), opponent_name: nm.opponent_name, source: "gemini-sweep", updatedAt: new Date().toISOString() };
+                log("Sweep: odds " + wp.fonseca + "% / " + wp.opponent + "%");
+              }
+              steps.sweep = gaps.length + " gaps filled";
+            }
+          }
+        } catch(e) { log("Sweep parse error: " + e.message); steps.sweep = "error"; }
+      }
+    } else {
+      steps.sweep = "no gaps";
     }
 
     var w = []; var T7=604800; var T2=172800;
