@@ -40,10 +40,14 @@ function extractMatch(match) {
   var gt = (match.groundType || tournament.groundType || "").toLowerCase();
   var surface = gt === "clay" ? "Clay" : (gt === "grass" ? "Grass" : "Hard");
   var tName = tournament.name || (tournament.uniqueTournament && tournament.uniqueTournament.name) || "";
+  var tLowSurf = tName.toLowerCase();
+  if (surface === "Hard" && ["monte carlo","roland garros","barcelona","madrid","roma","buenos aires","rio open","lyon","hamburg","gstaad","umag","bucharest","estoril","munich","bmw open","kitzbühel","bastad","geneva","marrakech"].some(function(c){return tLowSurf.includes(c);})) surface = "Clay";
+  if (surface === "Hard" && ["wimbledon","halle","queens","queen's","eastbourne","mallorca","newport","s-hertogenbosch"].some(function(g){return tLowSurf.includes(g);})) surface = "Grass";
   var cat = ""; var tLow = tName.toLowerCase();
   if (["australian open","roland garros","french open","wimbledon","us open"].some(function(g){return tLow.includes(g);})) cat = "Grand Slam";
   else if (tLow.includes("1000") || ["monte carlo","madrid","roma","indian wells","miami","canadian","cincinnati","shanghai","paris"].some(function(m){return tLow.includes(m);})) cat = "Masters 1000";
-  else if (tLow.includes("500")) cat = "ATP 500"; else if (tLow.includes("250")) cat = "ATP 250";
+  else if (tLow.includes("500") || ["rio open","barcelona","hamburg","halle","queens","queen's","washington","beijing","basel","vienna","rotterdam","acapulco","dubai","munich","bmw open"].some(function(t){return tLow.includes(t);})) cat = "ATP 500";
+  else if (tLow.includes("250") || ["buenos aires","lyon","estoril","geneva","stuttgart","eastbourne","atlanta","winston-salem","chengdu","antwerp","stockholm","metz"].some(function(t){return tLow.includes(t);})) cat = "ATP 250";
   return { id: match.id, result: fW > oW ? "V" : "D", score: scoreStr, opponent_name: opp.shortName || opp.name || "Oponente", opponent_id: opp.id || null, opponent_country: opp.country ? opp.country.name : "", tournament_name: tName, tournament_category: cat, surface: surface, round: round.name || "", date: match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : null, startTimestamp: match.startTimestamp || null, court: match.courtName || (match.venue && match.venue.name) || "", isFonsecaHome: isFHome, finished: isFinished(match) };
 }
 
@@ -267,9 +271,6 @@ export default async function handler(req, res) {
 
     var wiki = await fetchRankingWikipedia(); steps.ranking = wiki&&wiki.ranking ? "#"+wiki.ranking : "skip";
     var ms = lm ? await fetchMatchStats(lm) : null; steps.stats = ms ? "ok" : "skip";
-    var op = nm ? await fetchOppProfile(nm) : null; steps.opp = op ? op.name : "skip";
-    var wp = nm ? await fetchWinProb(nm) : null; steps.odds = wp ? wp.fonseca+"%" : "skip";
-    var tf = nm ? await fetchFacts(nm) : null; steps.facts = tf ? tf.facts.length+"" : "skip";
 
     // ===== MERGE with existing KV (preserve manual overrides) =====
     async function mergeWithKV(key, newData) {
@@ -359,6 +360,11 @@ export default async function handler(req, res) {
       }
     }
     steps.merge = "done";
+
+    // Fetch opponent profile, win probability, and facts AFTER merge (so nm has opponent_id from manual data)
+    var op = nm ? await fetchOppProfile(nm) : null; steps.opp = op ? op.name : "skip";
+    var wp = nm ? await fetchWinProb(nm) : null; steps.odds = wp ? wp.fonseca+"%" : "skip";
+    var tf = nm ? await fetchFacts(nm) : null; steps.facts = tf ? tf.facts.length+"" : "skip";
 
     var w = []; var T7=604800; var T2=172800;
     if (lm && !skipLastMatchWrite) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
