@@ -2,10 +2,10 @@ import { SANS, DIM } from "../lib/constants";
 
 function getTemperature(wins, total) {
   var pct = total > 0 ? Math.round((wins / total) * 100) : 0;
-  if (pct >= 90) return { emoji: "🔥", color: "#EF4444" };
-  if (pct >= 70) return { emoji: "🔥", color: "#F97316" };
+  if (pct >= 90) return { emoji: "🔥", color: "#22C55E" };
+  if (pct >= 70) return { emoji: "🔥", color: "#4ADE80" };
   if (pct >= 50) return { emoji: "🌡️", color: "#EAB308" };
-  if (pct >= 30) return { emoji: "😐", color: "#9CA3AF" };
+  if (pct >= 30) return { emoji: "😐", color: "#F97316" };
   return { emoji: "🥶", color: "#60A5FA" };
 }
 
