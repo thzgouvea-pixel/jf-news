@@ -1,18 +1,19 @@
-// ===== API: Feedback v2 =====
-// OPTIMIZATION: s-maxage=300 on GET list
+// ===== API: Feedback v3 =====
+// OPTIMIZATION: Uses "feedback:all" index instead of kv.keys() scan.
+// GET list reads a single key. POST appends to the index.
 
 import { kv } from "@vercel/kv";
+
+var FEEDBACK_INDEX_KEY = "feedback:all";
+var MAX_FEEDBACKS = 200;
 
 export default async function handler(req, res) {
   if (req.method === "GET" && req.query.list === "1") {
     res.setHeader("Cache-Control", "s-maxage=300, stale-while-revalidate=600");
     try {
-      var keys = await kv.keys("feedback:*");
-      var feedbacks = [];
-      for (var i = 0; i < Math.min(keys.length, 50); i++) {
-        var fb = await kv.get(keys[i]);
-        if (fb) feedbacks.push(fb);
-      }
+      var raw = await kv.get(FEEDBACK_INDEX_KEY);
+      var feedbacks = raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : [];
+      if (!Array.isArray(feedbacks)) feedbacks = [];
       feedbacks.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
       return res.status(200).json({ total: feedbacks.length, feedbacks: feedbacks });
     } catch (e) {
@@ -53,7 +54,19 @@ export default async function handler(req, res) {
       date: new Date().toISOString(),
     };
 
-    await kv.set(feedbackId, feedbackData, { ex: 60 * 60 * 24 * 90 });
+    // Update the index (single key read + write instead of kv.keys() scan).
+    // Note: low-traffic fan site — occasional concurrent writes may lose one entry,
+    // which is acceptable given the significant cost saving over the kv.keys() scan.
+    var existing = await kv.get(FEEDBACK_INDEX_KEY);
+    var feedbacks = existing ? (typeof existing === "string" ? JSON.parse(existing) : existing) : [];
+    if (!Array.isArray(feedbacks)) feedbacks = [];
+    feedbacks.push(feedbackData);
+    // Keep only the most recent MAX_FEEDBACKS entries
+    if (feedbacks.length > MAX_FEEDBACKS) {
+      feedbacks.sort(function(a, b) { return (b.timestamp || 0) - (a.timestamp || 0); });
+      feedbacks = feedbacks.slice(0, MAX_FEEDBACKS);
+    }
+    await kv.set(FEEDBACK_INDEX_KEY, feedbacks, { ex: 60 * 60 * 24 * 90 });
     await kv.incr("feedback_count");
 
     return res.status(200).json({ success: true, message: "Feedback enviado!" });

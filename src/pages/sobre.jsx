@@ -174,8 +174,9 @@ var ATPRankingList = function(props) {
   var _r = useState(null); var rankings = _r[0]; var setRankings = _r[1];
   var _l = useState(true); var loading = _l[0]; var setLoading = _l[1];
   useEffect(function() {
-    fetch("/api/rankings").then(function(r) { return r.json(); }).then(function(d) {
-      if (d && d.rankings && d.rankings.length > 0) setRankings(d);
+    fetch("/api/all-data").then(function(r) { return r.json(); }).then(function(d) {
+      var rankingsData = d && d.rankings;
+      if (rankingsData && rankingsData.rankings && rankingsData.rankings.length > 0) setRankings(rankingsData);
       setLoading(false);
     }).catch(function() { setLoading(false); });
   }, []);
@@ -1510,7 +1511,7 @@ export default function JoaoFonsecaNews() {
 
   var handleRefresh = function() {
     fetchNews();
-    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/all-data").then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
@@ -1532,19 +1533,9 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   useEffect(function() {
-    fetch("/api/stats").then(function(r) { return r.json(); }).then(function(d) { if (d.likes) setAllLikes(d.likes); if (d.visitors) { var el = document.getElementById("fn-visitors"); var wrap = document.getElementById("fn-visitors-wrap"); if (el) el.textContent = d.visitors; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
-    fetch("/api/visitors").then(function(r) { return r.json(); }).then(function(d) { if (d.standalone) { var el = document.getElementById("fn-standalone"); var wrap = document.getElementById("fn-standalone-wrap"); if (el) el.textContent = d.standalone; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
-    var isNew = !localStorage.getItem("fn_visited");
-    if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
-    try {
-      var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-      var alreadyTracked = localStorage.getItem("fn_standalone_tracked");
-      if (isStandalone && !alreadyTracked) {
-        fetch("/api/visitors?action=standalone", { method: "POST" }).catch(function() {});
-        localStorage.setItem("fn_standalone_tracked", "1");
-      }
-    } catch(e) {}
-    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/all-data").then(function(r) { return r.json(); }).then(function(d) {
+      if (d.stats && d.stats.likes) setAllLikes(d.stats.likes);
+      if (d.stats && d.stats.visitors) { var el = document.getElementById("fn-visitors"); var wrap = document.getElementById("fn-visitors-wrap"); if (el) el.textContent = d.stats.visitors; if (wrap) wrap.style.display = "inline"; }
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
@@ -1558,6 +1549,17 @@ export default function JoaoFonsecaNews() {
       if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
     }).catch(function() {});
+    fetch("/api/visitors").then(function(r) { return r.json(); }).then(function(d) { if (d.standalone) { var el = document.getElementById("fn-standalone"); var wrap = document.getElementById("fn-standalone-wrap"); if (el) el.textContent = d.standalone; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
+    var isNew = !localStorage.getItem("fn_visited");
+    if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
+    try {
+      var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+      var alreadyTracked = localStorage.getItem("fn_standalone_tracked");
+      if (isStandalone && !alreadyTracked) {
+        fetch("/api/visitors?action=standalone", { method: "POST" }).catch(function() {});
+        localStorage.setItem("fn_standalone_tracked", "1");
+      }
+    } catch(e) {}
   }, []);
 
   useEffect(function() {

@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     var visitorId = getVisitorId(req);
 
     if (req.method === "GET") {
-      res.setHeader("Cache-Control", "s-maxage=60, stale-while-revalidate=120");
+      res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
       var matchKey = req.query.match;
       if (!matchKey) return res.status(400).json({ error: "Missing match param" });
 

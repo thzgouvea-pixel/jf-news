@@ -250,7 +250,7 @@ export default function JoaoFonsecaNews() {
     try { localStorage.removeItem("jf-news-v5"); } catch(e) {}
     if ("caches" in window) { caches.keys().then(function(names) { names.forEach(function(n) { caches.delete(n); }); }); }
     fetchNews(true);
-    fetch("/api/sofascore-data?t=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/all-data?t=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
@@ -274,19 +274,9 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   useEffect(function() {
-    fetch("/api/stats").then(function(r) { return r.json(); }).then(function(d) { if (d.likes) setAllLikes(d.likes); if (d.visitors) { var el = document.getElementById("fn-visitors"); var wrap = document.getElementById("fn-visitors-wrap"); if (el) el.textContent = d.visitors; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
-    fetch("/api/visitors").then(function(r) { return r.json(); }).then(function(d) { if (d.standalone) { var el = document.getElementById("fn-standalone"); var wrap = document.getElementById("fn-standalone-wrap"); if (el) el.textContent = d.standalone; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
-    var isNew = !localStorage.getItem("fn_visited");
-    if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
-    try {
-      var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-      var alreadyTracked = localStorage.getItem("fn_standalone_tracked");
-      if (isStandalone && !alreadyTracked) {
-        fetch("/api/visitors?action=standalone", { method: "POST" }).catch(function() {});
-        localStorage.setItem("fn_standalone_tracked", "1");
-      }
-    } catch(e) {}
-    fetch("/api/sofascore-data").then(function(r) { return r.json(); }).then(function(d) {
+    fetch("/api/all-data").then(function(r) { return r.json(); }).then(function(d) {
+      if (d.stats && d.stats.likes) setAllLikes(d.stats.likes);
+      if (d.stats && d.stats.visitors) { var el = document.getElementById("fn-visitors"); var wrap = document.getElementById("fn-visitors-wrap"); if (el) el.textContent = d.stats.visitors; if (wrap) wrap.style.display = "inline"; }
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
       if (d.prizeMoney) setPrizeMoney(d.prizeMoney);
@@ -301,6 +291,17 @@ export default function JoaoFonsecaNews() {
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
     }).catch(function() {});
+    fetch("/api/visitors").then(function(r) { return r.json(); }).then(function(d) { if (d.standalone) { var el = document.getElementById("fn-standalone"); var wrap = document.getElementById("fn-standalone-wrap"); if (el) el.textContent = d.standalone; if (wrap) wrap.style.display = "inline"; } }).catch(function() {});
+    var isNew = !localStorage.getItem("fn_visited");
+    if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
+    try {
+      var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+      var alreadyTracked = localStorage.getItem("fn_standalone_tracked");
+      if (isStandalone && !alreadyTracked) {
+        fetch("/api/visitors?action=standalone", { method: "POST" }).catch(function() {});
+        localStorage.setItem("fn_standalone_tracked", "1");
+      }
+    } catch(e) {}
   }, []);
 
   useEffect(function() {
