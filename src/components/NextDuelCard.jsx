@@ -426,8 +426,8 @@ export default function NextDuelCard(props) {
               </div>
             )}
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{match.court ? "Quadra" : "Local"}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.court || (match.tournament_name ? match.tournament_name.split(",")[0].trim() : "A definir")}</div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Quadra</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.court || "A definir"}</div>
             </div>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Transmissão</div>
