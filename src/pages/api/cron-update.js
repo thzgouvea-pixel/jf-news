@@ -22,9 +22,12 @@ async function sofaFetch(path) {
 }
 
 // Gemini with google_search grounding — searches the web for real-time data
+// Falls back to plain generation if grounding fails
 async function geminiSearch(prompt) {
   var gk = process.env.GEMINI_API_KEY;
   if (!gk) return null;
+
+  // Try with google_search grounding first
   try {
     var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -34,27 +37,33 @@ async function geminiSearch(prompt) {
         generationConfig: { temperature: 0.1, maxOutputTokens: 500 }
       })
     });
-    if (!r.ok) { log("Gemini " + r.status); return null; }
-    var d = await r.json();
-    var txt = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
-    if (!txt) return null;
-    // Gemini with grounding returns multiple parts — find the text one
-    var textPart = "";
-    txt.forEach(function(p) { if (p.text) textPart += p.text; });
-    return textPart || null;
-  } catch (e) { log("Gemini error: " + e.message); return null; }
+    if (r.ok) {
+      var d = await r.json();
+      var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+      if (parts) {
+        var textPart = "";
+        parts.forEach(function(p) { if (p.text) textPart += p.text; });
+        if (textPart) return textPart;
+      }
+    } else {
+      log("Gemini grounding " + r.status + ", falling back to plain generation");
+    }
+  } catch (e) { log("Gemini grounding error: " + e.message); }
+
+  // Fallback: plain generation without grounding
+  return await geminiGenerate(prompt);
 }
 
 // Gemini simple (no grounding, just generation)
 async function geminiGenerate(prompt) {
   var gk = process.env.GEMINI_API_KEY;
-  if (!gk) return null;
+  if (!gk) { log("GEMINI_API_KEY not set!"); return null; }
   try {
     var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 400 } })
     });
-    if (!r.ok) return null;
+    if (!r.ok) { log("Gemini generate " + r.status + ": " + (await r.text()).slice(0, 200)); return null; }
     var d = await r.json();
     var txt = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts && d.candidates[0].content.parts[0] && d.candidates[0].content.parts[0].text;
     return txt || null;
