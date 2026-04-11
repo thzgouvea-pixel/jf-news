@@ -1,6 +1,6 @@
-// ===== FONSECA NEWS — CRON UPDATE v12 =====
-// FAST: max ~6 API calls, target <15 seconds
-// Wikipedia for ranking, SofaScore team events for matches
+// ===== FONSECA NEWS — CRON UPDATE v16 =====
+// Architecture: SofaScore (primary) → Gemini with google_search (fallback)
+// Wikipedia for career stats, Gemini grounding for ranking/opponent/tournament
 
 import { kv } from "@vercel/kv";
 
@@ -19,6 +19,46 @@ async function sofaFetch(path) {
     if (!res.ok) { log("SofaScore " + res.status + " for " + path); return null; }
     return await res.json();
   } catch (e) { log("SofaScore error: " + e.message); return null; }
+}
+
+// Gemini with google_search grounding — searches the web for real-time data
+async function geminiSearch(prompt) {
+  var gk = process.env.GEMINI_API_KEY;
+  if (!gk) return null;
+  try {
+    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ google_search: {} }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 500 }
+      })
+    });
+    if (!r.ok) { log("Gemini " + r.status); return null; }
+    var d = await r.json();
+    var txt = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+    if (!txt) return null;
+    // Gemini with grounding returns multiple parts — find the text one
+    var textPart = "";
+    txt.forEach(function(p) { if (p.text) textPart += p.text; });
+    return textPart || null;
+  } catch (e) { log("Gemini error: " + e.message); return null; }
+}
+
+// Gemini simple (no grounding, just generation)
+async function geminiGenerate(prompt) {
+  var gk = process.env.GEMINI_API_KEY;
+  if (!gk) return null;
+  try {
+    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 400 } })
+    });
+    if (!r.ok) return null;
+    var d = await r.json();
+    var txt = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts && d.candidates[0].content.parts[0] && d.candidates[0].content.parts[0].text;
+    return txt || null;
+  } catch (e) { log("Gemini gen error: " + e.message); return null; }
 }
 
 function isFinished(m) { var s = m.status || {}; return s.type === "finished" || s.isFinished === true; }
@@ -98,7 +138,25 @@ async function fetchRankingWikipedia() {
 
     log("Ranking: #" + (result.ranking || "?") + " | Surface: " + (result.surface ? "yes" : "no"));
     return result;
-  } catch (e) { log("Wikipedia error: " + e.message); return null; }
+  } catch (e) { log("Wikipedia error: " + e.message); }
+
+  // Gemini fallback for ranking
+  log("Wikipedia failed, trying Gemini for ranking...");
+  var gTxt = await geminiSearch("Qual é o ranking ATP atual do tenista João Fonseca em abril 2026? E o career-high? Responda APENAS JSON: {\"ranking\":NUMBER,\"bestRanking\":NUMBER}");
+  if (gTxt) {
+    try {
+      var cleaned = gTxt.replace(/```json|```/g, "").trim();
+      var jsonMatch = cleaned.match(/\{[^}]+\}/);
+      if (jsonMatch) {
+        var gRank = JSON.parse(jsonMatch[0]);
+        if (gRank && gRank.ranking) {
+          log("Gemini ranking: #" + gRank.ranking);
+          return { ranking: gRank.ranking, bestRanking: gRank.bestRanking || null };
+        }
+      }
+    } catch (e) { log("Gemini ranking parse error: " + e.message); }
+  }
+  return null;
 }
 
 async function scanMatches(deep) {
@@ -151,23 +209,26 @@ async function fetchOppProfile(nm) {
     log("SofaScore team API failed for " + nm.opponent_id + ", trying Gemini...");
   }
 
-  // Gemini fallback
-  var gk = process.env.GEMINI_API_KEY;
-  if (!gk) return null;
-  try {
-    var prompt = "Dê informações sobre o tenista " + nm.opponent_name + ". Responda APENAS JSON: {\"name\":\"...\",\"country\":\"...\",\"ranking\":null,\"age\":null,\"height\":\"...\",\"hand\":\"Destro ou Canhoto\",\"titles\":null,\"style\":\"breve descrição do estilo de jogo em português\",\"careerHigh\":null}. Use dados reais e atuais.";
-    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:300}}) });
-    if (!r.ok) return null;
-    var d = await r.json(); var txt = d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&d.candidates[0].content.parts[0].text;
-    if (!txt) return null;
-    var pr = JSON.parse(txt.replace(/```json|```/g,"").trim());
-    if (!pr || !pr.name) return null;
-    pr.ranking = pr.ranking || nm.opponent_ranking || null;
-    pr.country = pr.country || nm.opponent_country || "";
-    log("Gemini oppProfile: " + pr.name + " | " + pr.country);
-    try { await kv.set(ck, JSON.stringify(pr), { ex: 172800 }); } catch(e) {}
-    return pr;
-  } catch(e) { log("Gemini oppProfile error: " + e.message); return null; }
+  // Gemini fallback with google_search grounding
+  log("Trying Gemini with web search for " + nm.opponent_name + "...");
+  var gTxt = await geminiSearch("Busque informações atualizadas sobre o tenista " + nm.opponent_name + ". Responda APENAS JSON: {\"name\":\"nome curto\",\"country\":\"país\",\"ranking\":NUMBER,\"age\":NUMBER,\"height\":\"X.XXm\",\"hand\":\"Destro ou Canhoto\",\"titles\":NUMBER,\"style\":\"breve descrição do estilo de jogo em português\",\"careerHigh\":NUMBER}. Use dados reais e atuais de 2026.");
+  if (gTxt) {
+    try {
+      var cleaned = gTxt.replace(/```json|```/g, "").trim();
+      var jsonMatch = cleaned.match(/\{[^}]+\}/);
+      if (jsonMatch) {
+        var pr = JSON.parse(jsonMatch[0]);
+        if (pr && pr.name) {
+          pr.ranking = pr.ranking || nm.opponent_ranking || null;
+          pr.country = pr.country || nm.opponent_country || "";
+          log("Gemini oppProfile: " + pr.name + " #" + (pr.ranking || "?") + " | " + pr.country);
+          try { await kv.set(ck, JSON.stringify(pr), { ex: 172800 }); } catch(e) {}
+          return pr;
+        }
+      }
+    } catch(e) { log("Gemini oppProfile parse error: " + e.message); }
+  }
+  return null;
 }
 
 async function fetchWinProb(nm) {
@@ -244,24 +305,18 @@ async function fetchNextTournament(upcomingMatches) {
   };
 
   // c) Gemini enrichment (optional)
-  var gk = process.env.GEMINI_API_KEY;
-  if (gk) {
+  var gt = await geminiSearch("Confirme informações do torneio ATP " + nextT.name + " 2026: categoria (Grand Slam, Masters 1000, ATP 500 ou 250), superfície, cidade, país, datas. Responda APENAS JSON: {\"tournament_name\":\"...\",\"tournament_category\":\"...\",\"surface\":\"...\",\"city\":\"...\",\"country\":\"...\",\"start_date\":\"YYYY-MM-DD\",\"end_date\":\"YYYY-MM-DD\"}");
+  if (gt) {
     try {
-      var prompt = "Confirme ou corrija as informações do torneio de tênis ATP " + JSON.stringify(nextT.name) + " 2026. Responda APENAS JSON: {\"tournament_name\":\"...\",\"tournament_category\":\"...\",\"surface\":\"...\",\"city\":\"...\",\"country\":\"...\",\"start_date\":\"YYYY-MM-DD\",\"end_date\":\"YYYY-MM-DD\"}. Se não tiver informação precisa, mantenha os valores: " + JSON.stringify({ tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface, city: nextT.city, country: nextT.country, start_date: nextT.start, end_date: nextT.end });
-      var gr = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 200 } }) });
-      if (gr.ok) {
-        var gd = await gr.json();
-        var gt = gd.candidates && gd.candidates[0] && gd.candidates[0].content && gd.candidates[0].content.parts && gd.candidates[0].content.parts[0] && gd.candidates[0].content.parts[0].text;
-        if (gt) {
-          try {
-            var enriched = JSON.parse(gt.replace(/```json|```/g, "").trim());
-            if (enriched && enriched.tournament_name) {
-              result = Object.assign({}, result, enriched, { source: "gemini", updatedAt: new Date().toISOString() });
-            }
-          } catch(parseErr) { log("Gemini parse error: " + parseErr.message + " | raw: " + gt.slice(0, 200)); }
+      var cleaned = gt.replace(/```json|```/g, "").trim();
+      var jsonMatch = cleaned.match(/\{[^}]+\}/);
+      if (jsonMatch) {
+        var enriched = JSON.parse(jsonMatch[0]);
+        if (enriched && enriched.tournament_name) {
+          result = Object.assign({}, result, enriched, { source: "gemini", updatedAt: new Date().toISOString() });
         }
       }
-    } catch(e) { log("Gemini enrichment error: " + e.message); }
+    } catch(parseErr) { log("Gemini tournament parse: " + parseErr.message); }
   }
 
   log("nextTournament: " + result.tournament_name);
@@ -269,15 +324,14 @@ async function fetchNextTournament(upcomingMatches) {
 }
 
 async function fetchFacts(nm) {
-  if (!nm||!nm.tournament_name) return null; var gk = process.env.GEMINI_API_KEY; if (!gk) return null;
+  if (!nm||!nm.tournament_name) return null;
   try { var ef = await kv.get("fn:tournamentFacts"); if (ef) { var p = typeof ef==="string"?JSON.parse(ef):ef; if (p&&p.tournament===nm.tournament_name) return p; } } catch(e) {}
+  var txt = await geminiGenerate("Gere 5 curiosidades curtas (1 frase, máximo 60 caracteres cada) sobre o torneio de tênis " + nm.tournament_name + ". Português brasileiro. APENAS JSON: [{\"text\":\"...\"}]");
+  if (!txt) return null;
   try {
-    var prompt = "Gere 5 curiosidades curtas (1 frase, máximo 60 caracteres cada) sobre o torneio de tênis " + nm.tournament_name + ". Português brasileiro. APENAS JSON: [{\"text\":\"...\"}]";
-    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:300}}) });
-    if (!r.ok) return null; var d = await r.json(); var t = d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&d.candidates[0].content.parts[0].text; if (!t) return null;
-    var facts = JSON.parse(t.replace(/```json|```/g,"").trim()); if (!Array.isArray(facts)) return null;
+    var facts = JSON.parse(txt.replace(/```json|```/g,"").trim()); if (!Array.isArray(facts)) return null;
     return { tournament: nm.tournament_name, facts: facts.filter(function(f){return f&&f.text;}).slice(0,5), generatedAt: new Date().toISOString() };
-  } catch(e) { log("Gemini: " + e.message); return null; }
+  } catch(e) { log("Facts parse: " + e.message); return null; }
 }
 
 export default async function handler(req, res) {
@@ -324,7 +378,29 @@ export default async function handler(req, res) {
 
     if (nm) {
       try { var eLM3 = await kv.get("fn:lastMatch"); if (eLM3) { var pLM3 = typeof eLM3 === "string" ? JSON.parse(eLM3) : eLM3; if (pLM3.opponent_name && nm.opponent_name && pLM3.opponent_name === nm.opponent_name && pLM3.tournament_name && nm.tournament_name && pLM3.tournament_name === nm.tournament_name) nm = null; } } catch(e){}
-      if (nm) nm = await mergeWithKV("fn:nextMatch", nm);
+      if (nm) {
+        // Check manual lock — if active, preserve ALL manual fields
+        var nmLock = null;
+        try { nmLock = await kv.get("fn:nextMatchManualLock"); } catch(e) {}
+        if (nmLock) {
+          try {
+            var existingNm = await kv.get("fn:nextMatch");
+            if (existingNm) {
+              var oldNm = typeof existingNm === "string" ? JSON.parse(existingNm) : existingNm;
+              if (oldNm && oldNm.opponent_name) {
+                // Preserve all manual fields, only update from cron if manual is empty
+                var manualFields = ["tournament_name","tournament_category","surface","round","court","date","opponent_ranking","opponent_country","opponent_id","opponent_name","startTimestamp"];
+                manualFields.forEach(function(f) {
+                  if (oldNm[f] && oldNm[f] !== "" && oldNm[f] !== "Hard") { nm[f] = oldNm[f]; }
+                });
+                log("Manual lock active for nextMatch, preserving manual fields");
+              }
+            }
+          } catch(e) {}
+        } else {
+          nm = await mergeWithKV("fn:nextMatch", nm);
+        }
+      }
     }
     if (lm) lm = await mergeWithKV("fn:lastMatch", lm);
     if (!nm) {
