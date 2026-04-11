@@ -135,15 +135,39 @@ async function fetchMatchStats(lm) {
 }
 
 async function fetchOppProfile(nm) {
-  if (!nm || !nm.opponent_id) return null;
-  var ck = "fn:oppCache:" + nm.opponent_id;
+  if (!nm || !nm.opponent_name) return null;
+  var ck = nm.opponent_id ? "fn:oppCache:" + nm.opponent_id : "fn:oppCache:" + nm.opponent_name.replace(/\s+/g, "_");
   try { var c = await kv.get(ck); if (c) { var p = typeof c === "string" ? JSON.parse(c) : c; if (p && p.name) return p; } } catch(e) {}
-  var data = await sofaFetch("/v1/team/" + nm.opponent_id);
-  if (!data || !data.team) return null;
-  var t = data.team; var pr = { name: t.shortName || t.name, country: t.country ? t.country.name : nm.opponent_country, ranking: t.ranking || null, age: null, height: null, hand: null };
-  if (t.playerTeamInfo) { if (t.playerTeamInfo.birthDateTimestamp) pr.age = Math.floor((Date.now() - t.playerTeamInfo.birthDateTimestamp * 1000) / (365.25*24*3600000)); if (t.playerTeamInfo.height) pr.height = (t.playerTeamInfo.height / 100).toFixed(2) + "m"; if (t.playerTeamInfo.plays) pr.hand = t.playerTeamInfo.plays === "right-handed" ? "Destro" : "Canhoto"; }
-  try { await kv.set(ck, JSON.stringify(pr), { ex: 172800 }); } catch(e) {}
-  return pr;
+
+  // Try SofaScore API first
+  if (nm.opponent_id) {
+    var data = await sofaFetch("/v1/team/" + nm.opponent_id);
+    if (data && data.team) {
+      var t = data.team; var pr = { name: t.shortName || t.name, country: t.country ? t.country.name : nm.opponent_country, ranking: t.ranking || nm.opponent_ranking || null, age: null, height: null, hand: null, titles: null };
+      if (t.playerTeamInfo) { if (t.playerTeamInfo.birthDateTimestamp) pr.age = Math.floor((Date.now() - t.playerTeamInfo.birthDateTimestamp * 1000) / (365.25*24*3600000)); if (t.playerTeamInfo.height) pr.height = (t.playerTeamInfo.height / 100).toFixed(2) + "m"; if (t.playerTeamInfo.plays) pr.hand = t.playerTeamInfo.plays === "right-handed" ? "Destro" : "Canhoto"; }
+      try { await kv.set(ck, JSON.stringify(pr), { ex: 172800 }); } catch(e) {}
+      return pr;
+    }
+    log("SofaScore team API failed for " + nm.opponent_id + ", trying Gemini...");
+  }
+
+  // Gemini fallback
+  var gk = process.env.GEMINI_API_KEY;
+  if (!gk) return null;
+  try {
+    var prompt = "Dê informações sobre o tenista " + nm.opponent_name + ". Responda APENAS JSON: {\"name\":\"...\",\"country\":\"...\",\"ranking\":null,\"age\":null,\"height\":\"...\",\"hand\":\"Destro ou Canhoto\",\"titles\":null,\"style\":\"breve descrição do estilo de jogo em português\",\"careerHigh\":null}. Use dados reais e atuais.";
+    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + gk, { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:0.1,maxOutputTokens:300}}) });
+    if (!r.ok) return null;
+    var d = await r.json(); var txt = d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts&&d.candidates[0].content.parts[0]&&d.candidates[0].content.parts[0].text;
+    if (!txt) return null;
+    var pr = JSON.parse(txt.replace(/```json|```/g,"").trim());
+    if (!pr || !pr.name) return null;
+    pr.ranking = pr.ranking || nm.opponent_ranking || null;
+    pr.country = pr.country || nm.opponent_country || "";
+    log("Gemini oppProfile: " + pr.name + " | " + pr.country);
+    try { await kv.set(ck, JSON.stringify(pr), { ex: 172800 }); } catch(e) {}
+    return pr;
+  } catch(e) { log("Gemini oppProfile error: " + e.message); return null; }
 }
 
 async function fetchWinProb(nm) {
