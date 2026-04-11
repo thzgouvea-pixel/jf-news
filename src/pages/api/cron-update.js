@@ -466,6 +466,37 @@ export default async function handler(req, res) {
     var wp = nm ? await fetchWinProb(nm) : null; steps.odds = wp ? wp.fonseca+"%" : "skip";
     var tf = nm ? await fetchFacts(nm) : null; steps.facts = tf ? tf.facts.length+"" : "skip";
 
+    // Gemini enrichment for nextMatch — fill gaps (official name, date, broadcast)
+    if (nm && (!nm.date || !nm.tournament_category || (nm.tournament_name && nm.tournament_name.includes(",")))) {
+      log("Enriching nextMatch via Gemini...");
+      var enrichTxt = await geminiSearch(
+        "Busque informações sobre a partida de tênis João Fonseca vs " + (nm.opponent_name || "adversário") +
+        " no torneio " + (nm.tournament_name || "ATP") + " em 2026. " +
+        "Responda APENAS JSON: {\"tournament_official_name\":\"nome oficial do torneio\",\"tournament_category\":\"Grand Slam ou Masters 1000 ou ATP 500 ou ATP 250\",\"surface\":\"Clay ou Hard ou Grass\",\"date\":\"YYYY-MM-DDTHH:MM:SSZ em UTC\",\"round\":\"rodada\",\"broadcast\":\"canal de transmissão no Brasil ou null\",\"city\":\"cidade\"}"
+      );
+      if (enrichTxt) {
+        try {
+          var cleaned = enrichTxt.replace(/```json|```/g, "").trim();
+          var jsonMatch = cleaned.match(/\{[^}]+\}/);
+          if (jsonMatch) {
+            var enrich = JSON.parse(jsonMatch[0]);
+            if (enrich) {
+              if (enrich.tournament_official_name && enrich.tournament_official_name !== nm.tournament_name) {
+                log("Gemini tournament name: " + enrich.tournament_official_name);
+                nm.tournament_name = enrich.tournament_official_name;
+              }
+              if (!nm.date && enrich.date) nm.date = enrich.date;
+              if (!nm.tournament_category && enrich.tournament_category) nm.tournament_category = enrich.tournament_category;
+              if (!nm.surface && enrich.surface) nm.surface = enrich.surface;
+              if (!nm.round && enrich.round) nm.round = enrich.round;
+              if (enrich.broadcast && enrich.broadcast !== "null") nm.broadcast = enrich.broadcast;
+              steps.enrich = "ok";
+            }
+          }
+        } catch(e) { log("Gemini enrich parse: " + e.message); steps.enrich = "error"; }
+      }
+    }
+
     var w = []; var T7=604800; var T2=172800;
     if (lm && !skipLastMatchWrite) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
     if (nm) w.push(kv.set("fn:nextMatch",JSON.stringify(nm),{ex:T7}));
