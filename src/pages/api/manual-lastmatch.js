@@ -38,7 +38,23 @@ export default async function handler(req, res) {
     var T3 = 86400 * 3;
     await kv.set("fn:lastMatch", JSON.stringify(match), { ex: T7 });
     await kv.set("fn:lastMatchManualLock", new Date().toISOString(), { ex: T3 });
-    await kv.del("fn:matchStats");
+    // Only delete matchStats if opponent changed (stale data from different match)
+    try {
+      var existingStats = await kv.get("fn:matchStats");
+      if (existingStats) {
+        var parsedStats = typeof existingStats === "string" ? JSON.parse(existingStats) : existingStats;
+        if (parsedStats && parsedStats.opponent_name && match.opponent_name) {
+          var statsOpp = parsedStats.opponent_name.split(" ").pop().toLowerCase();
+          var newOpp = match.opponent_name.split(" ").pop().toLowerCase();
+          if (statsOpp !== newOpp) {
+            await kv.del("fn:matchStats");
+          }
+          // else: same opponent, keep existing stats
+        }
+      }
+    } catch(e) {
+      // If we can't check, don't delete (safe default)
+    }
     return res.status(200).json({ ok: true, updated: match });
   } catch (e) {
     return res.status(500).json({ error: e.message });
