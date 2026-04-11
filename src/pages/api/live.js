@@ -41,12 +41,16 @@ export default async function handler(req, res) {
   try {
     var apiKey = process.env.RAPIDAPI_KEY;
 
-    // Check KV cache first (25s TTL)
+    // Check KV cache first (respect KV TTL — no need for extra time check since KV ex handles expiry)
     var cached = await kv.get("fn:live");
     if (cached) {
       var data = typeof cached === "string" ? JSON.parse(cached) : cached;
-      if (data.checkedAt && Date.now() - new Date(data.checkedAt).getTime() < 25000) {
-        res.setHeader("Cache-Control", "public, s-maxage=10, stale-while-revalidate=20");
+      var cacheAge = data.checkedAt ? Date.now() - new Date(data.checkedAt).getTime() : Infinity;
+      // If live, use short cache (15s). If not live, trust KV TTL fully.
+      var maxAge = data.live ? 15000 : 90000;
+      if (cacheAge < maxAge) {
+        var smaxage = data.live ? 10 : (data.matchFound ? 120 : 300);
+        res.setHeader("Cache-Control", "public, s-maxage=" + smaxage + ", stale-while-revalidate=" + (smaxage * 2));
         return res.status(200).json(data);
       }
     }
@@ -66,7 +70,8 @@ export default async function handler(req, res) {
 
     if (!fonsecaMatch) {
       var result = { live: false, checkedAt: now.toISOString() };
-      await kv.set("fn:live", JSON.stringify(result), { ex: 60 });
+      await kv.set("fn:live", JSON.stringify(result), { ex: 300 });
+      res.setHeader("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
       return res.status(200).json(result);
     }
 
@@ -177,7 +182,8 @@ export default async function handler(req, res) {
         statusRaw: status,
         checkedAt: now.toISOString(),
       };
-      await kv.set("fn:live", JSON.stringify(result), { ex: 30 });
+      await kv.set("fn:live", JSON.stringify(result), { ex: 120 });
+      res.setHeader("Cache-Control", "public, s-maxage=120, stale-while-revalidate=240");
       return res.status(200).json(result);
     }
 
@@ -248,6 +254,7 @@ export default async function handler(req, res) {
 
   } catch (e) {
     console.error("[live] error:", e.message);
+    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     return res.status(200).json({ live: false, error: e.message, checkedAt: new Date().toISOString() });
   }
 }
