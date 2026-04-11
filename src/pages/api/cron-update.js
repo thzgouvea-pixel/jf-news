@@ -399,7 +399,21 @@ if (form.length) {
       }
       if (!skipMs) w.push(kv.set("fn:matchStats",JSON.stringify(ms),{ex:T7}));
     } else if (lm) {
-      try { await kv.del("fn:matchStats"); } catch(e) {}
+      // Only delete matchStats if it belongs to a DIFFERENT opponent (stale data)
+      // If same opponent, keep existing stats even if API didn't return new ones
+      try {
+        var existingMs = await kv.get("fn:matchStats");
+        if (existingMs) {
+          var parsedMs = typeof existingMs === "string" ? JSON.parse(existingMs) : existingMs;
+          if (parsedMs && parsedMs.opponent_name && lm.opponent_name &&
+              parsedMs.opponent_name.split(" ").pop() !== lm.opponent_name.split(" ").pop()) {
+            log("matchStats belongs to different opponent (" + parsedMs.opponent_name + " vs " + lm.opponent_name + "), clearing");
+            await kv.del("fn:matchStats");
+          } else {
+            log("Keeping existing matchStats (API returned null but same opponent)");
+          }
+        }
+      } catch(e) {}
     }
     if (wiki) {
       if (wiki.ranking) w.push(kv.set("fn:ranking",JSON.stringify({ranking:wiki.ranking,bestRanking:wiki.bestRanking||null,updatedAt:new Date().toISOString()}),{ex:T2}));
