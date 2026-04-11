@@ -84,7 +84,7 @@ export default function NextDuelCard(props) {
                 <img src={FONSECA_IMG} alt="JF" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } }} />
               </div>
               <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
-              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 {player ? "#" + player.ranking : ""}</span>
+              <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 3 }}>🇧🇷 #{player && player.ranking ? player.ranking : 40}</span>
             </div>
 
             {/* VS */}
@@ -451,7 +451,7 @@ export default function NextDuelCard(props) {
           )}
 
           {/* Action buttons */}
-          <div style={{ padding: "16px 20px 0", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
             <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               padding: "16px", background: "linear-gradient(135deg, #4FC3F7 0%, #39B0E4 100%)",
