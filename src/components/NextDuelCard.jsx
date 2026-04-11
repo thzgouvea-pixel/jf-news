@@ -2,6 +2,31 @@ import { useState, useEffect } from 'react';
 import { GREEN, YELLOW, TEXT, DIM, SANS, SERIF, BORDER, CARD_SHADOW, surfaceColorMap, countryFlags, FONSECA_IMG, FONSECA_IMG_FALLBACK } from '../lib/constants';
 import { findPlayer, getATPImage, getESPNImage } from '../lib/utils';
 
+var BROADCAST_URLS = {
+  "disney+": "https://www.disneyplus.com",
+  "disneyplus": "https://www.disneyplus.com",
+  "espn": "https://www.espn.com.br",
+  "espn 2": "https://www.espn.com.br",
+  "espn2": "https://www.espn.com.br",
+  "espn 4": "https://www.espn.com.br",
+  "star+": "https://www.starplus.com",
+  "sportv": "https://ge.globo.com/sportv",
+  "sportv 2": "https://ge.globo.com/sportv",
+  "globoplay": "https://globoplay.globo.com",
+  "tennis tv": "https://www.tennistv.com",
+  "tennistv": "https://www.tennistv.com",
+  "prime video": "https://www.primevideo.com",
+  "amazon prime": "https://www.primevideo.com",
+};
+
+function getBroadcastUrl(broadcast) {
+  if (!broadcast) return null;
+  var key = broadcast.toLowerCase().trim();
+  if (BROADCAST_URLS[key]) return BROADCAST_URLS[key];
+  for (var k in BROADCAST_URLS) { if (key.includes(k)) return BROADCAST_URLS[k]; }
+  return null;
+}
+
 function useCountdown(targetDate) {
   var _s = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
   var countdown = _s[0]; var setCountdown = _s[1];
@@ -388,9 +413,10 @@ export default function NextDuelCard(props) {
             </div>
           </div>
 
-          {/* Assista ao vivo button */}
+          {/* Assista ao vivo button — only if broadcast is known */}
+          {match.broadcast && getBroadcastUrl(match.broadcast) && (
           <div style={{ padding: "14px 20px 0" }}>
-            <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{
+            <a href={getBroadcastUrl(match.broadcast)} target="_blank" rel="noopener noreferrer" style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
               padding: "16px", background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
               borderRadius: 14, textDecoration: "none", width: "100%", boxSizing: "border-box",
@@ -400,6 +426,7 @@ export default function NextDuelCard(props) {
               <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.02em" }}>Assista ao vivo</span>
             </a>
           </div>
+          )}
 
           {/* Updated ago indicator */}
           <div style={{ textAlign: "center", padding: "12px 20px 16px" }}>
@@ -494,13 +521,15 @@ export default function NextDuelCard(props) {
 
           {/* Action buttons */}
           <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
-            <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{
+            {match.broadcast && getBroadcastUrl(match.broadcast) && (
+            <a href={getBroadcastUrl(match.broadcast)} target="_blank" rel="noopener noreferrer" style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               padding: "16px", background: "linear-gradient(135deg, #4FC3F7 0%, #39B0E4 100%)",
               borderRadius: 14, textDecoration: "none", width: "100%", boxSizing: "border-box",
             }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.01em" }}>► Assistir</span>
             </a>
+            )}
             <button onClick={downloadICS} style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
