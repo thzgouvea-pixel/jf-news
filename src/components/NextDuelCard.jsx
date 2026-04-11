@@ -450,6 +450,47 @@ export default function NextDuelCard(props) {
             </div>
           )}
 
+          {/* Probability — always visible */}
+          <div style={{ margin: "16px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 18px" }}>
+            {fPct !== null && oPct !== null ? (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
+                  <div>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: GREEN, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 2 }}>João</span>
+                    <span style={{ fontSize: 26, fontWeight: 900, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.3)", fontFamily: SANS, lineHeight: 1 }}>{fPct + "%"}</span>
+                  </div>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center", paddingBottom: 4 }}>Probabilidade de{"\n"}vitória</span>
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 2 }}>{oppName.split(" ").pop()}</span>
+                    <span style={{ fontSize: 26, fontWeight: 900, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.3)", fontFamily: SANS, lineHeight: 1 }}>{oPct + "%"}</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", height: 6, borderRadius: 4, overflow: "hidden", gap: 2 }}>
+                  <div style={{ width: fPct + "%", background: "linear-gradient(90deg, " + GREEN + ", #22c55e)", borderRadius: 4, transition: "width 0.8s ease" }} />
+                  <div style={{ width: oPct + "%", background: "linear-gradient(90deg, #ef4444, #f87171)", borderRadius: 4, transition: "width 0.8s ease" }} />
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
+                  <div>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 2 }}>João</span>
+                    <span style={{ fontSize: 26, fontWeight: 900, color: "rgba(255,255,255,0.1)", fontFamily: SANS, lineHeight: 1 }}>—</span>
+                  </div>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center", paddingBottom: 4 }}>Probabilidade de{"\n"}vitória</span>
+                  <div style={{ textAlign: "right" }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 2 }}>{oppName.split(" ").pop()}</span>
+                    <span style={{ fontSize: 26, fontWeight: 900, color: "rgba(255,255,255,0.1)", fontFamily: SANS, lineHeight: 1 }}>—</span>
+                  </div>
+                </div>
+                <div style={{ display: "flex", height: 6, borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ width: "100%", height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 4 }} />
+                </div>
+                <p style={{ margin: "10px 0 0", fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textAlign: "center" }}>Probabilidades ainda não disponíveis</p>
+              </>
+            )}
+          </div>
+
           {/* Action buttons */}
           <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
             <a href="https://www.disneyplus.com" target="_blank" rel="noopener noreferrer" style={{
@@ -467,27 +508,6 @@ export default function NextDuelCard(props) {
               Adicionar ao calendário
             </button>
           </div>
-
-          {/* Probability */}
-          {fPct !== null && oPct !== null && (
-            <div style={{ margin: "16px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 18px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
-                <div>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: GREEN, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 2 }}>João</span>
-                  <span style={{ fontSize: 26, fontWeight: 900, color: fPct >= oPct ? GREEN : "rgba(255,255,255,0.3)", fontFamily: SANS, lineHeight: 1 }}>{fPct + "%"}</span>
-                </div>
-                <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", textAlign: "center", paddingBottom: 4 }}>Probabilidade de{"\n"}vitória</span>
-                <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", display: "block", marginBottom: 2 }}>{oppName.split(" ").pop()}</span>
-                  <span style={{ fontSize: 26, fontWeight: 900, color: oPct > fPct ? "#ef4444" : "rgba(255,255,255,0.3)", fontFamily: SANS, lineHeight: 1 }}>{oPct + "%"}</span>
-                </div>
-              </div>
-              <div style={{ display: "flex", height: 6, borderRadius: 4, overflow: "hidden", gap: 2 }}>
-                <div style={{ width: fPct + "%", background: "linear-gradient(90deg, " + GREEN + ", #22c55e)", borderRadius: 4, transition: "width 0.8s ease" }} />
-                <div style={{ width: oPct + "%", background: "linear-gradient(90deg, #ef4444, #f87171)", borderRadius: 4, transition: "width 0.8s ease" }} />
-              </div>
-            </div>
-          )}
         </>
       )}
 
