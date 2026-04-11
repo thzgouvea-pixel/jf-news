@@ -1,6 +1,6 @@
 // /api/manual-opponent.js
 // Atualiza o nextMatch manualmente quando SofaScore ainda não tem os dados
-// GET: /api/manual-opponent?secret=XXX&name=Gabriel+Diallo&ranking=36&country=Canada&id=280151
+// GET: /api/manual-opponent?secret=XXX&name=Gabriel+Diallo&ranking=36&country=Canada&id=280151&broadcast=ESPN+2
 // POST: body JSON { name, ranking, country, sofascore_id }
 // Reutiliza o PUSH_SECRET como autenticação
 
@@ -58,12 +58,14 @@ export default async function handler(req, res) {
     var surface = req.query.surface || (req.body && req.body.surface);
     var court = req.query.court || (req.body && req.body.court);
     var category = req.query.category || (req.body && req.body.category);
+    var broadcast = req.query.broadcast || (req.body && req.body.broadcast);
     if (tournament) nextMatch.tournament_name = tournament;
     if (date) nextMatch.date = date;
     if (round) nextMatch.round = round;
     if (surface) nextMatch.surface = surface;
     if (court) nextMatch.court = court;
     if (category) nextMatch.tournament_category = category;
+    if (broadcast) nextMatch.broadcast = broadcast;
 
     // Defaults if no tournament data exists
     if (!nextMatch.tournament_name) nextMatch.tournament_name = "Monte Carlo Masters";
@@ -86,6 +88,7 @@ export default async function handler(req, res) {
         surface: nextMatch.surface || "",
         court: nextMatch.court || "",
         date: nextMatch.date || "",
+        broadcast: nextMatch.broadcast || null,
       }
     });
   } catch (e) {
