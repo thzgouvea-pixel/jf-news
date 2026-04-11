@@ -121,7 +121,7 @@ var matchDate = (lastMatch && lastMatch.date) ? new Date(lastMatch.date).toLocal
                     <img src={FONSECA_IMG} alt="Fonseca" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = FONSECA_IMG_FALLBACK; } }} />
                   </div>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>J. Fonseca</span>
-                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>{"\ud83c\udde7\ud83c\uddf7"} #{playerRanking || 35}</span>
+                  <span style={{ fontSize: 10, color: "rgba(255,255,255,0.45)", fontFamily: SANS, display: "block", marginTop: 2 }}>{"\ud83c\udde7\ud83c\uddf7"}{playerRanking ? " #" + playerRanking : ""}</span>
                 </div>
 
                 {/* Score center */}

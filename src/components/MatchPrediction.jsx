@@ -8,7 +8,8 @@ export default function MatchPrediction(props) {
   if (now > matchDate) return null;
   var oppName = match.opponent_name || "A definir";
   var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
-  var matchId = (match.event_id || match.tournament_name || "match").toString().replace(/[^a-zA-Z0-9]/g, "_");
+  var rawMatchId = match.event_id || ((match.tournament_name || "") + "_" + (match.date || "").split("T")[0] + "_" + (match.opponent_name || ""));
+  var matchId = (rawMatchId || "match").toString().replace(/[^a-zA-Z0-9]/g, "_");
   var _p = useState(function() { try { return localStorage.getItem("fn_pred_" + matchId); } catch(e) { return null; } });
   var prediction = _p[0]; var setPrediction = _p[1];
   var _res = useState(null); var predResults = _res[0]; var setPredResults = _res[1];

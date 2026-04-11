@@ -22,7 +22,7 @@ export default function ATPRankingList(props) {
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
         {rankings.rankings.map(function(r, i) {
-          var isFonseca = (r.name || "").toLowerCase().includes("fonseca") || r.rank === currentRanking;
+          var isFonseca = (r.name || "").toLowerCase().includes("fonseca");
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: isFonseca ? GREEN + "0A" : (i % 2 === 0 ? "transparent" : BG_ALT), borderRadius: isFonseca ? 10 : 0, border: isFonseca ? "1.5px solid " + GREEN + "30" : "none", borderBottom: isFonseca ? "none" : "1px solid " + BORDER + "80" }}>
               <span style={{ fontSize: 13, fontWeight: 700, color: isFonseca ? GREEN : DIM, fontFamily: SANS, width: 28, textAlign: "right", flexShrink: 0 }}>{r.rank}</span>

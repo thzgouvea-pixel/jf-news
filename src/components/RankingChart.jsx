@@ -1,14 +1,15 @@
 import { GREEN, YELLOW, TEXT, DIM, SANS, SUB } from '../lib/constants';
 
 export default function RankingChart(props) {
-  var currentRanking = props.currentRanking || 40;
+  var currentRanking = props.currentRanking || null;
   var data = [
     { month: "Dez/24", rank: 145, label: "NextGen" }, { month: "Jan/25", rank: 113, label: "Canberra" },
     { month: "Fev/25", rank: 68, label: "1º título" }, { month: "Mar/25", rank: 55, label: "Phoenix" },
     { month: "Mai/25", rank: 49, label: "" }, { month: "Jul/25", rank: 42, label: "Wimbledon R3" },
     { month: "Ago/25", rank: 35, label: "Top 40" }, { month: "Out/25", rank: 24, label: "Basel 500 🏆" },
-    { month: "Jan/26", rank: 29, label: "" }, { month: "Mar/26", rank: currentRanking, label: "Atual" },
+    { month: "Jan/26", rank: 29, label: "" },
   ];
+  if (currentRanking) data.push({ month: "Mar/26", rank: currentRanking, label: "Atual" });
   var W = 600; var H = 260; var padL = 45; var padR = 20; var padT = 30; var padB = 50;
   var chartW = W - padL - padR; var chartH = H - padT - padB;
   var maxRank = 160; var minRank = 10; var rankRange = maxRank - minRank;
