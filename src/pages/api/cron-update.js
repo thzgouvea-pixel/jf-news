@@ -34,7 +34,7 @@ async function geminiSearch(prompt) {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
       })
     });
     if (r.ok) {
@@ -61,7 +61,7 @@ async function geminiGenerate(prompt) {
   try {
     var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 2048 } })
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 8192 } })
     });
     if (!r.ok) { log("Gemini generate " + r.status + ": " + (await r.text()).slice(0, 200)); return null; }
     var d = await r.json();
@@ -391,7 +391,8 @@ async function fetchNextTournament(upcomingMatches) {
 async function fetchFacts(nm) {
   if (!nm||!nm.tournament_name) return null;
   try { var ef = await kv.get("fn:tournamentFacts"); if (ef) { var p = typeof ef==="string"?JSON.parse(ef):ef; if (p&&p.tournament===nm.tournament_name) return p; } } catch(e) {}
-  var txt = await geminiGenerate("Gere 5 curiosidades curtas (1 frase, máximo 60 caracteres cada) sobre o torneio de tênis " + nm.tournament_name + ". Português brasileiro. APENAS JSON: [{\"text\":\"...\"}]");
+  var catInfo = nm.tournament_category ? " (" + nm.tournament_category + ")" : "";
+  var txt = await geminiGenerate("Gere 5 curiosidades curtas (1 frase, máximo 60 caracteres cada) sobre o torneio de tênis " + nm.tournament_name + catInfo + ". Português brasileiro. APENAS JSON: [{\"text\":\"...\"}]");
   if (!txt) return null;
   try {
     var facts = JSON.parse(txt.replace(/```json|```/g,"").trim()); if (!Array.isArray(facts)) return null;
