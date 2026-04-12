@@ -34,7 +34,8 @@ async function geminiSearch(prompt) {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 },
+        thinkingConfig: { thinkingBudget: 0 }
       })
     });
     if (r.ok) {
@@ -61,7 +62,7 @@ async function geminiGenerate(prompt) {
   try {
     var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } })
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }, thinkingConfig: { thinkingBudget: 0 } })
     });
     if (!r.ok) { log("Gemini generate " + r.status + ": " + (await r.text()).slice(0, 200)); return null; }
     var d = await r.json();
@@ -119,6 +120,7 @@ async function fetchPlayerData() {
   if (gTxt) {
     try {
       var cleaned = gTxt.replace(/```json|```/g, "").trim();
+      log("Gemini player raw: " + cleaned.slice(0, 200));
       var jsonMatch = cleaned.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         var result = JSON.parse(jsonMatch[0]);
@@ -128,6 +130,8 @@ async function fetchPlayerData() {
         }
       }
     } catch (e) { log("Gemini player parse error: " + e.message); }
+  } else {
+    log("Gemini player returned null");
   }
 
   // CAMADA 2: Wikipedia (fallback)
