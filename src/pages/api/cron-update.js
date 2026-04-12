@@ -34,8 +34,7 @@ async function geminiSearch(prompt) {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 },
-        thinkingConfig: { thinkingBudget: 0 }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
       })
     });
     if (r.ok) {
@@ -62,7 +61,7 @@ async function geminiGenerate(prompt) {
   try {
     var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }, thinkingConfig: { thinkingBudget: 0 } })
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 2048 } })
     });
     if (!r.ok) { log("Gemini generate " + r.status + ": " + (await r.text()).slice(0, 200)); return null; }
     var d = await r.json();
