@@ -34,7 +34,7 @@ async function geminiSearch(prompt) {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 500 }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } }
       })
     });
     if (r.ok) {
@@ -42,7 +42,7 @@ async function geminiSearch(prompt) {
       var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
       if (parts) {
         var textPart = "";
-        parts.forEach(function(p) { if (p.text) textPart += p.text; });
+        parts.forEach(function(p) { if (p.text && !p.thought) textPart += p.text; });
         if (textPart) return textPart;
       }
     } else {
@@ -61,11 +61,14 @@ async function geminiGenerate(prompt) {
   try {
     var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 400 } })
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } } })
     });
     if (!r.ok) { log("Gemini generate " + r.status + ": " + (await r.text()).slice(0, 200)); return null; }
     var d = await r.json();
-    var txt = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts && d.candidates[0].content.parts[0] && d.candidates[0].content.parts[0].text;
+    var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+    if (!parts) return null;
+    var txt = "";
+    parts.forEach(function(p) { if (p.text && !p.thought) txt += p.text; });
     return txt || null;
   } catch (e) { log("Gemini gen error: " + e.message); return null; }
 }
