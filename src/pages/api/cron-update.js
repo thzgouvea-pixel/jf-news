@@ -175,9 +175,9 @@ async function scanMatches(deep) {
   var all = []; var seen = new Set();
   function addFiltered(data) { if (!data) return; var ev = data.events || data; if (!Array.isArray(ev)) { for (var k in data) { if (Array.isArray(data[k])) { ev = data[k]; break; } } } if (Array.isArray(ev)) ev.forEach(function(m) { if (isFonseca(m) && m.id && !seen.has(m.id)) { seen.add(m.id); all.push(m); } }); }
 
-  // Date scan: 7 days back + 7 forward (normal), 45 days (deep)
-  var backDays = deep ? 45 : 7;
-  var fwdDays = deep ? 45 : 7;
+  // Date scan: 3 days back + 2 forward (normal), 45 days (deep)
+  var backDays = deep ? 45 : 3;
+  var fwdDays = deep ? 45 : 2;
   for (var d = -backDays; d <= fwdDays; d++) {
     var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
     addFiltered(await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds));
@@ -413,8 +413,45 @@ export default async function handler(req, res) {
     steps.last = lm ? lm.opponent_name : "none";
     steps.next = nm ? nm.opponent_name : "none";
 
-    var wiki = await fetchPlayerData(); steps.ranking = wiki&&wiki.ranking ? "#"+wiki.ranking : "skip";
-    var ms = lm ? await fetchMatchStats(lm) : null; steps.stats = ms ? "ok" : "skip";
+    var wiki = null; var ms = null;
+
+    // ===== SMART SCHEDULING: only fetch what's stale =====
+    var H6 = 6 * 3600000; var H24 = 24 * 3600000; var D7 = 7 * H24;
+    var now = Date.now();
+
+    // Read existing KV timestamps in parallel
+    var smartReads = await Promise.all([
+      kv.get("fn:ranking"), kv.get("fn:opponentProfile"), kv.get("fn:tournamentFacts"),
+      kv.get("fn:nextMatch"), kv.get("fn:lastOddsCheck"), kv.get("fn:careerStats"),
+      kv.get("fn:prizeMoney"),
+    ]);
+    var exRanking = smartReads[0] ? (typeof smartReads[0] === "string" ? JSON.parse(smartReads[0]) : smartReads[0]) : null;
+    var exOpp = smartReads[1] ? (typeof smartReads[1] === "string" ? JSON.parse(smartReads[1]) : smartReads[1]) : null;
+    var exFacts = smartReads[2] ? (typeof smartReads[2] === "string" ? JSON.parse(smartReads[2]) : smartReads[2]) : null;
+    var exNm = smartReads[3] ? (typeof smartReads[3] === "string" ? JSON.parse(smartReads[3]) : smartReads[3]) : null;
+    var lastOddsTs = smartReads[4] ? parseInt(smartReads[4]) : 0;
+    var exCareer = smartReads[5] ? (typeof smartReads[5] === "string" ? JSON.parse(smartReads[5]) : smartReads[5]) : null;
+    var exPrize = smartReads[6] ? (typeof smartReads[6] === "string" ? JSON.parse(smartReads[6]) : smartReads[6]) : null;
+
+    // Detect what changed
+    var oppChanged = nm && (!exNm || nm.opponent_name !== exNm.opponent_name);
+    var rankingFresh = exRanking && exRanking.updatedAt && (now - new Date(exRanking.updatedAt).getTime()) < D7;
+    var careerFresh = exCareer && exCareer.wins !== undefined;
+    var oddsFresh = lastOddsTs && (now - lastOddsTs) < H6;
+
+    // Smart: only fetch player data if ranking stale (>7 days) or career stats missing
+    if (!rankingFresh || !careerFresh) {
+      wiki = await fetchPlayerData();
+      steps.ranking = wiki && wiki.ranking ? "#" + wiki.ranking : "skip";
+    } else {
+      wiki = { ranking: exRanking.ranking, bestRanking: exRanking.bestRanking };
+      if (exCareer) { wiki.wins = exCareer.wins; wiki.losses = exCareer.losses; wiki.surface = exCareer.surface; wiki.titles = exCareer.titles; }
+      if (exPrize && exPrize.amount) wiki.prizeMoney = exPrize.amount;
+      steps.ranking = "#" + exRanking.ranking + " (cached)";
+      log("Ranking fresh (#" + exRanking.ranking + "), skipping Gemini player data");
+    }
+
+    ms = lm ? await fetchMatchStats(lm) : null; steps.stats = ms ? "ok" : "skip";
 
     // ===== MERGE with existing KV (preserve manual overrides) =====
     async function mergeWithKV(key, newData) {
@@ -438,6 +475,12 @@ export default async function handler(req, res) {
         if (!newData.surface && old.surface && old.surface !== "") {
           newData.surface = old.surface;
         }
+        // Preserve enriched tournament name (SofaScore returns "City, Country" but KV has official name)
+        if (old.tournament_name && !old.tournament_name.includes(",") && newData.tournament_name && newData.tournament_name.includes(",")) {
+          newData.tournament_name = old.tournament_name;
+        }
+        // Preserve broadcast from enrichment
+        if (old.broadcast && !newData.broadcast) newData.broadcast = old.broadcast;
       } catch(e) { log("Merge error: " + e.message); }
       return newData;
     }
@@ -528,9 +571,39 @@ export default async function handler(req, res) {
     steps.merge = "done";
 
     // Fetch opponent profile, win probability, and facts AFTER merge (so nm has opponent_id from manual data)
-    var op = nm ? await fetchOppProfile(nm) : null; steps.opp = op ? op.name : "skip";
-    var wp = nm ? await fetchWinProb(nm) : null; steps.odds = wp ? wp.fonseca+"%" : "skip";
-    var tf = nm ? await fetchFacts(nm) : null; steps.facts = tf ? tf.facts.length+"" : "skip";
+    // Smart: opponent profile only if opponent changed or missing
+    var op = null;
+    if (nm && (oppChanged || !exOpp)) {
+      op = await fetchOppProfile(nm);
+      steps.opp = op ? op.name : "skip";
+    } else if (exOpp) {
+      op = exOpp;
+      steps.opp = op.name + " (cached)";
+      log("Opponent unchanged (" + (op.name || "?") + "), skipping profile fetch");
+    } else { steps.opp = "skip"; }
+
+    // Smart: odds only every 6 hours (4x/day = 120/month, within free 500 limit)
+    var wp = null;
+    if (nm && !oddsFresh) {
+      wp = await fetchWinProb(nm);
+      if (wp || !oddsFresh) await kv.set("fn:lastOddsCheck", String(now), { ex: 86400 });
+      steps.odds = wp ? wp.fonseca + "%" : "skip";
+    } else if (nm) {
+      try { var exWp = await kv.get("fn:winProb"); if (exWp) wp = typeof exWp === "string" ? JSON.parse(exWp) : exWp; } catch(e){}
+      steps.odds = wp ? wp.fonseca + "% (cached)" : "skip";
+      log("Odds fresh (" + (wp ? wp.fonseca + "%" : "none") + "), next check in " + Math.round((H6 - (now - lastOddsTs)) / 60000) + "min");
+    } else { steps.odds = "skip"; }
+
+    // Smart: facts only if tournament changed
+    var tf = null;
+    if (nm && (!exFacts || exFacts.tournament !== (nm.tournament_name || ""))) {
+      tf = await fetchFacts(nm);
+      steps.facts = tf ? tf.facts.length + "" : "skip";
+    } else if (exFacts) {
+      tf = exFacts;
+      steps.facts = tf.facts ? tf.facts.length + " (cached)" : "skip";
+      log("Tournament unchanged, skipping facts");
+    } else { steps.facts = "skip"; }
 
     // Gemini enrichment for nextMatch — fill gaps (official name, date, broadcast)
     if (nm && (!nm.date || !nm.tournament_category || (nm.tournament_name && nm.tournament_name.includes(",")))) {
@@ -666,7 +739,7 @@ if (form.length) {
       } catch(e) {}
     }
     if (wiki) {
-      if (wiki.ranking) w.push(kv.set("fn:ranking",JSON.stringify({ranking:wiki.ranking,bestRanking:wiki.bestRanking||null,updatedAt:new Date().toISOString()}),{ex:T2}));
+      if (wiki.ranking) w.push(kv.set("fn:ranking",JSON.stringify({ranking:wiki.ranking,bestRanking:wiki.bestRanking||null,updatedAt:new Date().toISOString()}),{ex:T7}));
       if (wiki.prizeMoney) w.push(kv.set("fn:prizeMoney",JSON.stringify({amount:wiki.prizeMoney}),{ex:T7}));
       if (wiki.wins!==undefined) { var pct=(wiki.wins+wiki.losses)>0?Math.round(wiki.wins/(wiki.wins+wiki.losses)*100):0; w.push(kv.set("fn:season",JSON.stringify({wins:wiki.wins,losses:wiki.losses,winPct:pct}),{ex:T2})); w.push(kv.set("fn:careerStats",JSON.stringify({wins:wiki.wins,losses:wiki.losses,winPct:pct,surface:wiki.surface||null,titles:wiki.titles||null}),{ex:T7})); }
     }
