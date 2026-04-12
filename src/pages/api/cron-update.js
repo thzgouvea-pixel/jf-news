@@ -404,7 +404,8 @@ export default async function handler(req, res) {
   var start = Date.now(); var steps = {};
   try {
     var matches = await scanMatches(req.query && req.query.deep === "1");
-    var fin = matches.filter(function(m){return isFinished(m)&&isSingles(m);}).sort(function(a,b){return (b.startTimestamp||0)-(a.startTimestamp||0);});
+    var NOW_TS = Math.floor(Date.now()/1000);
+    var fin = matches.filter(function(m){return isFinished(m)&&isSingles(m);}).sort(function(a,b){return (b.startTimestamp||NOW_TS)-(a.startTimestamp||NOW_TS);});
     var upc = matches.filter(function(m){if(!isUpcoming(m)||!isSingles(m)) return false; var ex=extractMatch(m); if(ex.score&&ex.score.length>2) return false; return true;}).sort(function(a,b){return (a.startTimestamp||0)-(b.startTimestamp||0);});
     var lm = fin.length > 0 ? extractMatch(fin[0]) : null;
     var nm = upc.length > 0 ? extractMatch(upc[0]) : null;
@@ -706,7 +707,8 @@ if (form.length) {
               var k = m.opponent_name + "|" + m.score;
               if (!keys.has(k)) { form.push(m); keys.add(k); }
             });
-            form.sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
+            var nowISO = new Date().toISOString();
+            form.sort(function(a,b){ return new Date(b.date||nowISO) - new Date(a.date||nowISO); });
             form = form.slice(0,10);
           }
         }
@@ -741,7 +743,18 @@ if (form.length) {
     if (wiki) {
       if (wiki.ranking) w.push(kv.set("fn:ranking",JSON.stringify({ranking:wiki.ranking,bestRanking:wiki.bestRanking||null,updatedAt:new Date().toISOString()}),{ex:T7}));
       if (wiki.prizeMoney) w.push(kv.set("fn:prizeMoney",JSON.stringify({amount:wiki.prizeMoney}),{ex:T7}));
-      if (wiki.wins!==undefined) { var pct=(wiki.wins+wiki.losses)>0?Math.round(wiki.wins/(wiki.wins+wiki.losses)*100):0; w.push(kv.set("fn:season",JSON.stringify({wins:wiki.wins,losses:wiki.losses,winPct:pct}),{ex:T2})); w.push(kv.set("fn:careerStats",JSON.stringify({wins:wiki.wins,losses:wiki.losses,winPct:pct,surface:wiki.surface||null,titles:wiki.titles||null}),{ex:T7})); }
+      if (wiki.wins!==undefined) {
+        var careerW = wiki.wins; var careerL = wiki.losses || 0;
+        if (wiki.surface) {
+          var surfW = (wiki.surface.hard?wiki.surface.hard.w:0) + (wiki.surface.clay?wiki.surface.clay.w:0) + (wiki.surface.grass?wiki.surface.grass.w:0);
+          var surfL = (wiki.surface.hard?wiki.surface.hard.l:0) + (wiki.surface.clay?wiki.surface.clay.l:0) + (wiki.surface.grass?wiki.surface.grass.l:0);
+          if (surfW > careerW) { careerW = surfW; careerL = surfL; }
+        }
+        var careerPct = (careerW+careerL)>0 ? Math.round(careerW/(careerW+careerL)*100) : 0;
+        var seasonPct = (wiki.wins+(wiki.losses||0))>0 ? Math.round(wiki.wins/(wiki.wins+(wiki.losses||0))*100) : 0;
+        w.push(kv.set("fn:season",JSON.stringify({wins:wiki.wins,losses:wiki.losses||0,winPct:seasonPct}),{ex:T2}));
+        w.push(kv.set("fn:careerStats",JSON.stringify({wins:careerW,losses:careerL,winPct:careerPct,surface:wiki.surface||null,titles:wiki.titles||null}),{ex:T7}));
+      }
     }
     if (op) w.push(kv.set("fn:opponentProfile",JSON.stringify(op),{ex:T2}));
     if (wp) w.push(kv.set("fn:winProb",JSON.stringify(wp),{ex:T2}));
