@@ -110,9 +110,12 @@ async function fetchPlayerData() {
   // CAMADA 1: Gemini com google_search (primary)
   var gTxt = await geminiSearch(
     "Busque dados ATUALIZADOS de abril 2026 sobre o tenista brasileiro João Fonseca. " +
-    "Preciso de: ranking ATP atual, career-high ranking, record de carreira em singles (vitórias-derrotas total), " +
-    "record por superfície (hard, clay, grass), prize money total de carreira em USD, número de títulos ATP. " +
+    "Preciso de: ranking ATP atual, career-high ranking, record de CARREIRA completa em singles (vitórias-derrotas TOTAL de toda a carreira), " +
+    "record da TEMPORADA 2026 (vitórias-derrotas apenas em jogos de 2026), " +
+    "record por superfície na carreira (hard, clay, grass), prize money total de carreira em USD, número de títulos ATP. " +
+    "IMPORTANTE: 'wins' e 'losses' devem ser os totais de TODA A CARREIRA, e 'seasonWins' e 'seasonLosses' devem ser APENAS de 2026. " +
     "Responda APENAS JSON: {\"ranking\":NUMBER,\"bestRanking\":NUMBER,\"wins\":NUMBER,\"losses\":NUMBER," +
+    "\"seasonWins\":NUMBER,\"seasonLosses\":NUMBER," +
     "\"surface\":{\"hard\":{\"w\":NUMBER,\"l\":NUMBER},\"clay\":{\"w\":NUMBER,\"l\":NUMBER},\"grass\":{\"w\":NUMBER,\"l\":NUMBER}}," +
     "\"prizeMoney\":NUMBER,\"titles\":NUMBER}"
   );
@@ -124,7 +127,7 @@ async function fetchPlayerData() {
       if (jsonMatch) {
         var result = JSON.parse(jsonMatch[0]);
         if (result && result.ranking) {
-          log("Gemini player data: #" + result.ranking + " | " + (result.wins||0) + "W-" + (result.losses||0) + "L | $" + (result.prizeMoney||0));
+          log("Gemini player data: #" + result.ranking + " | Career:" + (result.wins||0) + "W-" + (result.losses||0) + "L | Season:" + (result.seasonWins||"?") + "W-" + (result.seasonLosses||"?") + "L | $" + (result.prizeMoney||0));
           return result;
         }
       }
@@ -641,6 +644,7 @@ export default async function handler(req, res) {
     var gaps = [];
     if (!wiki || !wiki.ranking) gaps.push("ranking ATP atual do João Fonseca (número)");
     if (!wiki || wiki.wins === undefined) gaps.push("record de carreira singles do João Fonseca (wins-losses total, wins-losses em hard/clay/grass)");
+    if (wiki && wiki.wins !== undefined && wiki.seasonWins === undefined) gaps.push("record da temporada 2026 do João Fonseca em singles (vitórias-derrotas apenas em 2026, campos seasonWins e seasonLosses)");
     if (!wiki || !wiki.prizeMoney) gaps.push("prize money total de carreira do João Fonseca em USD");
     if (!wiki || !wiki.titles) gaps.push("número de títulos ATP do João Fonseca");
     if (nm && !nm.date) gaps.push("data e horário UTC da partida " + (nm.opponent_name||"") + " vs Fonseca no " + (nm.tournament_name||"ATP") + " 2026");
@@ -651,7 +655,7 @@ export default async function handler(req, res) {
       var sweepTxt = await geminiSearch(
         "Busque dados REAIS e ATUALIZADOS sobre o tenista João Fonseca (brasileiro, nascido 2006). Preciso de: " +
         gaps.join("; ") + ". " +
-        "Responda APENAS JSON: {\"ranking\":NUMBER_OR_NULL,\"wins\":NUMBER_OR_NULL,\"losses\":NUMBER_OR_NULL,\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}},\"prizeMoney\":NUMBER_OR_NULL,\"titles\":NUMBER_OR_NULL,\"matchDate\":\"ISO_STRING_OR_NULL\",\"fonseca_odds\":NUMBER_OR_NULL,\"opponent_odds\":NUMBER_OR_NULL}"
+        "Responda APENAS JSON: {\"ranking\":NUMBER_OR_NULL,\"wins\":NUMBER_OR_NULL,\"losses\":NUMBER_OR_NULL,\"seasonWins\":NUMBER_OR_NULL,\"seasonLosses\":NUMBER_OR_NULL,\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}},\"prizeMoney\":NUMBER_OR_NULL,\"titles\":NUMBER_OR_NULL,\"matchDate\":\"ISO_STRING_OR_NULL\",\"fonseca_odds\":NUMBER_OR_NULL,\"opponent_odds\":NUMBER_OR_NULL}"
       );
       if (sweepTxt) {
         try {
@@ -664,6 +668,7 @@ export default async function handler(req, res) {
               if (!wiki) wiki = {};
               if (!wiki.ranking && sweep.ranking) { wiki.ranking = sweep.ranking; log("Sweep: ranking #" + sweep.ranking); }
               if (wiki.wins === undefined && sweep.wins !== null && sweep.wins !== undefined) { wiki.wins = sweep.wins; wiki.losses = sweep.losses || 0; }
+              if (wiki.seasonWins === undefined && sweep.seasonWins !== null && sweep.seasonWins !== undefined) { wiki.seasonWins = sweep.seasonWins; wiki.seasonLosses = sweep.seasonLosses || 0; log("Sweep: season " + sweep.seasonWins + "W-" + (sweep.seasonLosses||0) + "L"); }
               if (!wiki.prizeMoney && sweep.prizeMoney) wiki.prizeMoney = sweep.prizeMoney;
               if (!wiki.titles && sweep.titles) wiki.titles = sweep.titles;
               if (sweep.surface && (!wiki.surface || (!wiki.surface.hard.w && !wiki.surface.clay.w))) wiki.surface = sweep.surface;
@@ -751,9 +756,11 @@ if (form.length) {
           if (surfW > careerW) { careerW = surfW; careerL = surfL; }
         }
         var careerPct = (careerW+careerL)>0 ? Math.round(careerW/(careerW+careerL)*100) : 0;
-        var seasonPct = (wiki.wins+(wiki.losses||0))>0 ? Math.round(wiki.wins/(wiki.wins+(wiki.losses||0))*100) : 0;
-        w.push(kv.set("fn:season",JSON.stringify({wins:wiki.wins,losses:wiki.losses||0,winPct:seasonPct}),{ex:T2}));
         w.push(kv.set("fn:careerStats",JSON.stringify({wins:careerW,losses:careerL,winPct:careerPct,surface:wiki.surface||null,titles:wiki.titles||null}),{ex:T7}));
+        var seW = wiki.seasonWins !== undefined ? wiki.seasonWins : wiki.wins;
+        var seL = wiki.seasonLosses !== undefined ? wiki.seasonLosses : (wiki.losses || 0);
+        var seasonPct = (seW+seL)>0 ? Math.round(seW/(seW+seL)*100) : 0;
+        w.push(kv.set("fn:season",JSON.stringify({wins:seW,losses:seL,winPct:seasonPct}),{ex:T2}));
       }
     }
     if (op) w.push(kv.set("fn:opponentProfile",JSON.stringify(op),{ex:T2}));
