@@ -100,7 +100,9 @@ function extractMatch(match) {
   else if (tLow.includes("1000") || ["monte carlo","madrid","roma","indian wells","miami","canadian","cincinnati","shanghai","paris"].some(function(m){return tLow.includes(m);})) cat = "Masters 1000";
   else if (tLow.includes("500") || ["rio open","barcelona","hamburg","halle","queens","queen's","washington","beijing","basel","vienna","rotterdam","acapulco","dubai","munich","bmw open"].some(function(t){return tLow.includes(t);})) cat = "ATP 500";
   else if (tLow.includes("250") || ["buenos aires","lyon","estoril","geneva","stuttgart","eastbourne","atlanta","winston-salem","chengdu","antwerp","stockholm","metz"].some(function(t){return tLow.includes(t);})) cat = "ATP 250";
-  return { id: match.id, result: fW > oW ? "V" : "D", score: scoreStr, opponent_name: opp.shortName || opp.name || "Oponente", opponent_id: opp.id || null, opponent_country: opp.country ? opp.country.name : "", tournament_name: tName, tournament_category: cat, surface: surface, round: round.name || "", date: match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : null, startTimestamp: match.startTimestamp || null, court: match.courtName || (match.venue && match.venue.name) || "", isFonsecaHome: isFHome, finished: isFinished(match) };
+  var fallbackDate = match._scanDate ? match._scanDate + "T12:00:00Z" : null;
+  var fallbackTs = match._scanDate ? Math.floor(new Date(match._scanDate + "T12:00:00Z").getTime() / 1000) : null;
+  return { id: match.id, result: fW > oW ? "V" : "D", score: scoreStr, opponent_name: opp.shortName || opp.name || "Oponente", opponent_id: opp.id || null, opponent_ranking: opp.ranking || null, opponent_country: opp.country ? opp.country.name : "", tournament_name: tName, tournament_category: cat, surface: surface, round: round.name || "", date: match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : fallbackDate, startTimestamp: match.startTimestamp || fallbackTs, court: match.courtName || (match.venue && match.venue.name) || "", isFonsecaHome: isFHome, finished: isFinished(match) };
 }
 
 // ===== PLAYER DATA: Gemini (primary) → Wikipedia (fallback) =====
@@ -175,14 +177,14 @@ async function fetchPlayerData() {
 async function scanMatches(deep) {
   log("Scanning matches...");
   var all = []; var seen = new Set();
-  function addFiltered(data) { if (!data) return; var ev = data.events || data; if (!Array.isArray(ev)) { for (var k in data) { if (Array.isArray(data[k])) { ev = data[k]; break; } } } if (Array.isArray(ev)) ev.forEach(function(m) { if (isFonseca(m) && m.id && !seen.has(m.id)) { seen.add(m.id); all.push(m); } }); }
+  function addFiltered(data, scanDate) { if (!data) return; var ev = data.events || data; if (!Array.isArray(ev)) { for (var k in data) { if (Array.isArray(data[k])) { ev = data[k]; break; } } } if (Array.isArray(ev)) ev.forEach(function(m) { if (isFonseca(m) && m.id && !seen.has(m.id)) { seen.add(m.id); if (!m.startTimestamp && scanDate) m._scanDate = scanDate; all.push(m); } }); }
 
   // Date scan: 3 days back + 2 forward (normal), 45 days (deep)
   var backDays = deep ? 45 : 3;
   var fwdDays = deep ? 45 : 2;
   for (var d = -backDays; d <= fwdDays; d++) {
     var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
-    addFiltered(await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds));
+    addFiltered(await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds), ds);
   }
 
   log(all.length + " matches"); return all;
