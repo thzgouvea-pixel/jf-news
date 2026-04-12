@@ -9,6 +9,8 @@ function safeCompare(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
+// GET: /api/manual-lastmatch?secret=XXX&opponent=A.+Zverev&score=5-7+7-6+3-6&result=D&tournament=Monte+Carlo+Masters&round=Quartas+de+final&surface=Clay&country=Germany&ranking=3&category=Masters+1000&date=2026-04-10T06:15:00Z
+// POST: body JSON com os mesmos campos
 export default async function handler(req, res) {
   var secret = req.query.secret || req.headers["x-secret"];
   if (!safeCompare(secret, process.env.PUSH_SECRET)) {
@@ -19,18 +21,27 @@ export default async function handler(req, res) {
     if (req.method === "POST" && req.body) {
       match = req.body;
     } else {
-      // GET: set the verified correct last match (Fonseca vs Zverev, Monte Carlo QF)
+      // GET: build match from query params
+      var opponent = req.query.opponent;
+      var score = req.query.score;
+      var result = req.query.result;
+      if (!opponent || !score || !result) {
+        return res.status(400).json({
+          error: "opponent, score, result required",
+          usage: "/api/manual-lastmatch?secret=XXX&opponent=A.+Zverev&score=5-7+7-6+3-6&result=D&tournament=Monte+Carlo+Masters&round=QF&surface=Clay&country=Germany&ranking=3&category=Masters+1000&date=2026-04-10T06:15:00Z"
+        });
+      }
       match = {
-        result: "D",
-        score: "5-7 7-6 3-6",
-        opponent_name: "A. Zverev",
-        opponent_ranking: 3,
-        opponent_country: "Germany",
-        tournament_name: "Monte Carlo, Monaco",
-        tournament_category: "Masters 1000",
-        surface: "Clay",
-        round: "Quartas de final",
-        date: "2026-04-10T06:15:00Z"
+        result: String(result).substring(0, 1).toUpperCase(),
+        score: String(score).substring(0, 50),
+        opponent_name: String(opponent).substring(0, 100).replace(/[<>"'&]/g, ""),
+        opponent_ranking: parseInt(req.query.ranking) || null,
+        opponent_country: req.query.country ? String(req.query.country).substring(0, 60) : "",
+        tournament_name: req.query.tournament ? String(req.query.tournament).substring(0, 100) : "",
+        tournament_category: req.query.category ? String(req.query.category).substring(0, 50) : "",
+        surface: req.query.surface ? String(req.query.surface).substring(0, 20) : "",
+        round: req.query.round ? String(req.query.round).substring(0, 50) : "",
+        date: req.query.date || new Date().toISOString()
       };
     }
     match.finished = true;
