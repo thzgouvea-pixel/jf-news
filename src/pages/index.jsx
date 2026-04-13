@@ -118,6 +118,7 @@ export default function JoaoFonsecaNews() {
   var pushEnabled = _pushEnabled[0]; var setPushEnabled = _pushEnabled[1];
   var _pushLoading = useState(false); var pushLoading = _pushLoading[0]; var setPushLoading = _pushLoading[1];
   var _showAutoInstall = useState(false); var showAutoInstall = _showAutoInstall[0]; var setShowAutoInstall = _showAutoInstall[1];
+  var _showMiniBanner = useState(false); var showMiniBanner = _showMiniBanner[0]; var setShowMiniBanner = _showMiniBanner[1];
   var _autoInstallStep = useState(0); var autoInstallStep = _autoInstallStep[0]; var setAutoInstallStep = _autoInstallStep[1];
   var _fbName = useState(""); var fbName = _fbName[0]; var setFbName = _fbName[1];
   var _fbMsg = useState(""); var fbMsg = _fbMsg[0]; var setFbMsg = _fbMsg[1];
@@ -317,11 +318,28 @@ export default function JoaoFonsecaNews() {
     try {
       var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
       var wasDismissed = localStorage.getItem("fn_autoinstall_dismissed");
+      var dismissExpired = wasDismissed && (Date.now() - parseInt(wasDismissed)) > 7 * 86400000;
+      if (dismissExpired) localStorage.removeItem("fn_autoinstall_dismissed");
       var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      if (isStandalone || wasDismissed || !isMobile) return;
+      if (isStandalone || (wasDismissed && !dismissExpired) || !isMobile) return;
     } catch(e) { return; }
     var timer = setTimeout(function() { setShowAutoInstall(true); }, 15000);
     return function() { clearTimeout(timer); };
+  }, []);
+
+  // Mini PWA banner for returning visitors (shows if auto-install was dismissed)
+  useEffect(function() {
+    try {
+      var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+      var isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isStandalone || !isMobile) return;
+      var autoWasDismissed = localStorage.getItem("fn_autoinstall_dismissed");
+      if (!autoWasDismissed) return; // auto-install not yet shown/dismissed
+      var miniDismissed = localStorage.getItem("fn_minibanner_dismissed");
+      if (miniDismissed && (Date.now() - parseInt(miniDismissed)) < 86400000) return; // 24h cooldown
+      var t2 = setTimeout(function() { setShowMiniBanner(true); }, 5000);
+      return function() { clearTimeout(t2); };
+    } catch(e) {}
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
@@ -385,11 +403,6 @@ export default function JoaoFonsecaNews() {
             <span style={{ fontSize: 14, color: DIM, fontFamily: SANS, fontWeight: 300 }}>›</span>
           </div>
         </div>
-        {recentForm && recentForm.length > 0 && (
-          <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 16px 8px" }}>
-            <Fonsecometro recentForm={recentForm} />
-          </div>
-        )}
       </header>
 
       <main className="mobile-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
@@ -408,7 +421,8 @@ export default function JoaoFonsecaNews() {
           ) : (
             <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
           )}
-          <div style={{ padding: "24px 0 0" }}>
+          {recentForm && recentForm.length > 0 && <Fonsecometro recentForm={recentForm} />}
+          <div style={{ padding: "12px 0 0" }}>
             <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} nextTournament={nextTournament} />
           </div>
         </section>
@@ -417,7 +431,8 @@ export default function JoaoFonsecaNews() {
 {hasNextMatch && (
         <section style={{ padding: "8px 0 0" }}>
           <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} nextTournament={nextTournament} />
-          <div style={{ padding: "24px 0 0" }}>
+          {recentForm && recentForm.length > 0 && <Fonsecometro recentForm={recentForm} />}
+          <div style={{ padding: "12px 0 0" }}>
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
@@ -427,6 +442,16 @@ export default function JoaoFonsecaNews() {
         </section>
 )}
 <section style={{ padding: "28px 0 0" }}>
+          {showMiniBanner && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#f0fdf4", borderRadius: 12, border: "1px solid #bbf7d0", marginBottom: 14 }}>
+              <span style={{ fontSize: 15 }}>📱</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: TEXT, fontFamily: SANS, flex: 1 }}>Adicione o FN à sua tela inicial</span>
+              <button onClick={function(){ handleInstall(); setShowMiniBanner(false); try { localStorage.setItem("fn_minibanner_dismissed", String(Date.now())); } catch(e){} }} style={{ background: GREEN, border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 11, fontWeight: 700, color: "#fff", fontFamily: SANS, cursor: "pointer" }}>Instalar</button>
+              <button onClick={function(){ setShowMiniBanner(false); try { localStorage.setItem("fn_minibanner_dismissed", String(Date.now())); } catch(e){} }} style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          )}
           <p style={{ margin: "0 0 14px", fontSize: 12, fontWeight: 800, color: TEXT, fontFamily: SANS, letterSpacing: "-0.01em", display: "flex", alignItems: "center", gap: 8 }}><span style={{ width: 3, height: 16, borderRadius: 2, background: "#2563EB", display: "inline-block" }} />Notícias</p>
           {loading && news.length === 0 && <Skeleton />}
           {dn.length > 0 && !(loading && news.length === 0) && (
@@ -637,7 +662,7 @@ export default function JoaoFonsecaNews() {
 
       {/* ===== PWA INSTALL BOTTOM SHEET ===== */}
       {showAutoInstall && (
-        <div onClick={function(){ setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed", "1"); } catch(e){} }} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", alignItems: "flex-end", justifyContent: "center", animation: "fadeInO 0.3s ease" }}>
+        <div onClick={function(){ setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed", String(Date.now())); } catch(e){} }} style={{ position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", display: "flex", alignItems: "flex-end", justifyContent: "center", animation: "fadeInO 0.3s ease" }}>
           <div onClick={function(e){ e.stopPropagation(); }} style={{ width: "100%", maxWidth: 420, background: "#111827", borderRadius: "24px 24px 0 0", padding: "0 0 env(safe-area-inset-bottom, 16px) 0", animation: "slideUpSheet 0.4s cubic-bezier(0.16,1,0.3,1)", position: "relative", overflow: "hidden" }}>
             {/* Drag handle */}
             <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 0" }}>
@@ -653,7 +678,7 @@ export default function JoaoFonsecaNews() {
                 <h3 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: SERIF, letterSpacing: "-0.02em" }}>Fonseca News</h3>
                 <p style={{ margin: "3px 0 0", fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: SANS, lineHeight: 1.3 }}>fonsecanews.com.br</p>
               </div>
-              <button onClick={function(){ setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed", "1"); } catch(e){} }} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
+              <button onClick={function(){ setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed", String(Date.now())); } catch(e){} }} style={{ background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
@@ -711,11 +736,11 @@ export default function JoaoFonsecaNews() {
             {/* Action buttons */}
             <div style={{ padding: "0 24px 24px", display: "flex", gap: 10 }}>
               {deferredPrompt && detectDevice() === "android" ? (
-                <button onClick={function(){ handleInstall(); setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed","1"); } catch(e){} }} style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #00A859 0%, #0D7C48 100%)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: SANS, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,168,89,0.3)", letterSpacing: "-0.01em" }}>
+                <button onClick={function(){ handleInstall(); setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed", String(Date.now())); } catch(e){} }} style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #00A859 0%, #0D7C48 100%)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: SANS, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,168,89,0.3)", letterSpacing: "-0.01em" }}>
                   Instalar App
                 </button>
               ) : (
-                <button onClick={function(){ setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed","1"); } catch(e){} }} style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #00A859 0%, #0D7C48 100%)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: SANS, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,168,89,0.3)", letterSpacing: "-0.01em" }}>
+                <button onClick={function(){ setShowAutoInstall(false); try { localStorage.setItem("fn_autoinstall_dismissed", String(Date.now())); } catch(e){} }} style={{ flex: 1, padding: "14px 0", borderRadius: 14, border: "none", background: "linear-gradient(135deg, #00A859 0%, #0D7C48 100%)", color: "#fff", fontSize: 15, fontWeight: 700, fontFamily: SANS, cursor: "pointer", boxShadow: "0 4px 16px rgba(0,168,89,0.3)", letterSpacing: "-0.01em" }}>
                   Entendi!
                 </button>
               )}
