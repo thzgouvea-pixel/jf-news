@@ -203,38 +203,62 @@ async function fetchMatchStats(lm) {
 
 async function fetchMatchDetail(matchId) {
   if (!matchId) return null;
-  var data = await sofaFetch("/v1/event/" + matchId);
-  if (!data) data = await sofaFetch("/v1/match/" + matchId);
-  if (!data) return null;
-  var event = data.event || data;
-  return {
-    court: event.courtName || (event.venue && event.venue.name) || null,
-    startTimestamp: event.startTimestamp || null,
-    date: event.startTimestamp ? new Date(event.startTimestamp * 1000).toISOString() : null,
-  };
+  // Try multiple endpoint variations
+  var endpoints = [
+    "/v1/event/" + matchId,
+    "/v1/match/" + matchId,
+    "/v1/event/details?event_id=" + matchId,
+    "/v1/match/detail?match_id=" + matchId,
+  ];
+  for (var i = 0; i < endpoints.length; i++) {
+    var data = await sofaFetch(endpoints[i]);
+    if (data) {
+      var event = data.event || data;
+      var court = event.courtName || (event.venue && event.venue.name) || (event.venue && event.venue.stadium && event.venue.stadium.name) || null;
+      if (court) {
+        log("Match detail via " + endpoints[i] + ": court=" + court);
+        return {
+          court: court,
+          startTimestamp: event.startTimestamp || null,
+          date: event.startTimestamp ? new Date(event.startTimestamp * 1000).toISOString() : null,
+        };
+      }
+    }
+  }
+  log("Match detail: no court found for id " + matchId);
+  return null;
 }
 
 async function fetchATPRankings() {
   log("Fetching ATP rankings...");
-  var data = await sofaFetch("/v1/rankings/type/6");
-  if (!data) { log("SofaScore rankings returned null, trying Gemini..."); return await fetchATPRankingsGemini(); }
-  var rankings = [];
-  var rows = data.rankings || data.rankingRows || (Array.isArray(data) ? data : null);
-  if (!rows) { for (var k in data) { if (Array.isArray(data[k]) && data[k].length > 10) { rows = data[k]; break; } } }
-  if (rows && Array.isArray(rows)) {
-    rows.slice(0, 100).forEach(function(r) {
-      var team = r.team || r.player || r;
-      var name = team.name || team.shortName || "";
-      var rank = r.ranking || r.rank || r.position || 0;
-      var pts = r.points || r.rowPoints || 0;
-      if (name && rank) rankings.push({ rank: rank, name: name, points: pts, prev: rank });
-    });
+  // Try multiple endpoint variations
+  var endpoints = [
+    "/v1/rankings/type/6",
+    "/v1/sport/rankings?sport_slug=tennis",
+    "/v1/rankings?sport=tennis&type=atp",
+  ];
+  for (var ei = 0; ei < endpoints.length; ei++) {
+    var data = await sofaFetch(endpoints[ei]);
+    if (!data) continue;
+    var rankings = [];
+    var rows = data.rankings || data.rankingRows || data.rows || (Array.isArray(data) ? data : null);
+    if (!rows) { for (var k in data) { if (Array.isArray(data[k]) && data[k].length > 10) { rows = data[k]; break; } } }
+    if (rows && Array.isArray(rows)) {
+      rows.slice(0, 100).forEach(function(r) {
+        var team = r.team || r.player || r;
+        var name = team.name || team.shortName || "";
+        var rank = r.ranking || r.rank || r.position || 0;
+        var pts = r.points || r.rowPoints || 0;
+        if (name && rank) rankings.push({ rank: rank, name: name, points: pts, prev: rank });
+      });
+    }
+    if (rankings.length >= 20) {
+      log("SofaScore rankings via " + endpoints[ei] + ": " + rankings.length + " players, #1=" + rankings[0].name);
+      return { rankings: rankings, updatedAt: new Date().toISOString() };
+    }
+    log("SofaScore rankings " + endpoints[ei] + ": only " + rankings.length + " players, trying next...");
   }
-  if (rankings.length >= 20) {
-    log("SofaScore rankings: " + rankings.length + " players, #1=" + rankings[0].name);
-    return { rankings: rankings, updatedAt: new Date().toISOString() };
-  }
-  log("SofaScore rankings parse failed (" + rankings.length + "), trying Gemini...");
+  log("All SofaScore ranking endpoints failed, trying Gemini...");
   return await fetchATPRankingsGemini();
 }
 
