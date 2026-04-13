@@ -201,6 +201,47 @@ async function fetchMatchStats(lm) {
   return { fonseca: f, opponent: o, opponent_name: lm.opponent_name, opponent_country: lm.opponent_country, tournament: lm.tournament_name, result: lm.result, score: lm.score, date: lm.date };
 }
 
+async function fetchATPRankings() {
+  log("Fetching ATP rankings...");
+  var data = await sofaFetch("/v1/rankings/type/6");
+  if (!data) { log("SofaScore rankings returned null, trying Gemini..."); return await fetchATPRankingsGemini(); }
+  var rankings = [];
+  var rows = data.rankings || data.rankingRows || (Array.isArray(data) ? data : null);
+  if (!rows) { for (var k in data) { if (Array.isArray(data[k]) && data[k].length > 10) { rows = data[k]; break; } } }
+  if (rows && Array.isArray(rows)) {
+    rows.slice(0, 100).forEach(function(r) {
+      var team = r.team || r.player || r;
+      var name = team.name || team.shortName || "";
+      var rank = r.ranking || r.rank || r.position || 0;
+      var pts = r.points || r.rowPoints || 0;
+      if (name && rank) rankings.push({ rank: rank, name: name, points: pts, prev: rank });
+    });
+  }
+  if (rankings.length >= 20) {
+    log("SofaScore rankings: " + rankings.length + " players, #1=" + rankings[0].name);
+    return { rankings: rankings, updatedAt: new Date().toISOString() };
+  }
+  log("SofaScore rankings parse failed (" + rankings.length + "), trying Gemini...");
+  return await fetchATPRankingsGemini();
+}
+
+async function fetchATPRankingsGemini() {
+  var gTxt = await geminiSearch(
+    "Busque o ranking ATP Singles masculino ATUALIZADO de abril 2026. Liste os top 100 jogadores. " +
+    "Responda APENAS JSON: [{\"rank\":1,\"name\":\"Nome Completo\",\"points\":NUMBER},...] Sem texto extra."
+  );
+  if (!gTxt) return null;
+  try {
+    var cleaned = gTxt.replace(/```json|```/g, "").trim();
+    var arr = JSON.parse(cleaned.match(/\[[\s\S]*\]/)[0]);
+    if (arr && arr.length >= 20) {
+      log("Gemini rankings: " + arr.length + " players");
+      return { rankings: arr.map(function(r,i){ return { rank: r.rank||i+1, name: r.name, points: r.points||0, prev: r.rank||i+1 }; }), updatedAt: new Date().toISOString() };
+    }
+  } catch(e) { log("Rankings parse error: " + e.message); }
+  return null;
+}
+
 async function fetchOppProfile(nm) {
   if (!nm || !nm.opponent_name) return null;
   var ck = nm.opponent_id ? "fn:oppCache:" + nm.opponent_id : "fn:oppCache:" + nm.opponent_name.replace(/\s+/g, "_");
@@ -455,12 +496,13 @@ export default async function handler(req, res) {
     var exPrize = smartReads[6] ? (typeof smartReads[6] === "string" ? JSON.parse(smartReads[6]) : smartReads[6]) : null;
     var exRankingsList = smartReads[7] ? (typeof smartReads[7] === "string" ? JSON.parse(smartReads[7]) : smartReads[7]) : null;
     // Build rankings lookup for enriching recentForm
+    function stripAccents(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
     var rankingsLookup = {};
     if (exRankingsList && exRankingsList.rankings) {
       exRankingsList.rankings.forEach(function(r) {
-        var lastName = r.name.split(" ").pop().toLowerCase();
+        var lastName = stripAccents(r.name.split(" ").pop().toLowerCase());
         rankingsLookup[lastName] = r.rank;
-        rankingsLookup[r.name.toLowerCase()] = r.rank;
+        rankingsLookup[stripAccents(r.name.toLowerCase())] = r.rank;
       });
     }
 
@@ -483,6 +525,28 @@ export default async function handler(req, res) {
     }
 
     ms = lm ? await fetchMatchStats(lm) : null; steps.stats = ms ? "ok" : "skip";
+
+    // Smart: refresh ATP rankings daily
+    var rankingsListFresh = exRankingsList && exRankingsList.updatedAt && (now - new Date(exRankingsList.updatedAt).getTime()) < H24;
+    if (!rankingsListFresh) {
+      var newRankings = await fetchATPRankings();
+      if (newRankings && newRankings.rankings && newRankings.rankings.length >= 20) {
+        exRankingsList = newRankings;
+        // Rebuild lookup with fresh data
+        rankingsLookup = {};
+        exRankingsList.rankings.forEach(function(r) {
+          var lastName = stripAccents(r.name.split(" ").pop().toLowerCase());
+          rankingsLookup[lastName] = r.rank;
+          rankingsLookup[stripAccents(r.name.toLowerCase())] = r.rank;
+        });
+        steps.atpRankings = newRankings.rankings.length + " players";
+      } else {
+        steps.atpRankings = "skip";
+      }
+    } else {
+      steps.atpRankings = exRankingsList.rankings.length + " (cached)";
+      log("ATP rankings fresh (" + exRankingsList.rankings.length + " players), skipping refresh");
+    }
 
     // ===== MERGE with existing KV (preserve manual overrides) =====
     async function mergeWithKV(key, newData) {
@@ -717,6 +781,11 @@ export default async function handler(req, res) {
     }
 
     var w = []; var T7=604800; var T2=172800;
+    // Update opponent rankings from fresh ATP list before writing to KV
+    if (rankingsLookup) {
+      if (nm) { var oppLast = stripAccents((nm.opponent_name||"").split(" ").pop().toLowerCase()); if (rankingsLookup[oppLast]) nm.opponent_ranking = rankingsLookup[oppLast]; }
+      if (lm) { var lmLast = stripAccents((lm.opponent_name||"").split(" ").pop().toLowerCase()); if (rankingsLookup[lmLast]) lm.opponent_ranking = rankingsLookup[lmLast]; }
+    }
     if (lm && !skipLastMatchWrite) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
     if (nm) w.push(kv.set("fn:nextMatch",JSON.stringify(nm),{ex:T7}));
 if (form.length) {
@@ -753,7 +822,7 @@ if (form.length) {
       // Enrich ALL entries with rankings from top 100 list
       form.forEach(function(m) {
         if (!m.opponent_ranking && m.opponent_name) {
-          var lastName = m.opponent_name.split(" ").pop().toLowerCase();
+          var lastName = stripAccents(m.opponent_name.split(" ").pop().toLowerCase());
           if (rankingsLookup[lastName]) m.opponent_ranking = rankingsLookup[lastName];
         }
       });
@@ -807,6 +876,7 @@ if (form.length) {
     if (op) w.push(kv.set("fn:opponentProfile",JSON.stringify(op),{ex:T2}));
     if (wp) w.push(kv.set("fn:winProb",JSON.stringify(wp),{ex:T2}));
     if (tf) w.push(kv.set("fn:tournamentFacts",JSON.stringify(tf),{ex:T2}));
+    if (exRankingsList && exRankingsList.updatedAt && !rankingsListFresh) w.push(kv.set("fn:atpRankings",JSON.stringify(exRankingsList),{ex:T7}));
     w.push(kv.set("fn:cronLastRun",new Date().toISOString(),{ex:T7}));
     await Promise.all(w); steps.kv = w.length + " keys";
 
