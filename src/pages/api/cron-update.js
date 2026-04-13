@@ -201,6 +201,19 @@ async function fetchMatchStats(lm) {
   return { fonseca: f, opponent: o, opponent_name: lm.opponent_name, opponent_country: lm.opponent_country, tournament: lm.tournament_name, result: lm.result, score: lm.score, date: lm.date };
 }
 
+async function fetchMatchDetail(matchId) {
+  if (!matchId) return null;
+  var data = await sofaFetch("/v1/event/" + matchId);
+  if (!data) data = await sofaFetch("/v1/match/" + matchId);
+  if (!data) return null;
+  var event = data.event || data;
+  return {
+    court: event.courtName || (event.venue && event.venue.name) || null,
+    startTimestamp: event.startTimestamp || null,
+    date: event.startTimestamp ? new Date(event.startTimestamp * 1000).toISOString() : null,
+  };
+}
+
 async function fetchATPRankings() {
   log("Fetching ATP rankings...");
   var data = await sofaFetch("/v1/rankings/type/6");
@@ -607,6 +620,15 @@ export default async function handler(req, res) {
       }
     }
     if (lm) lm = await mergeWithKV("fn:lastMatch", lm);
+
+    // Enrich nextMatch with court/venue from match detail (1 API call)
+    if (nm && nm.id && !nm.court) {
+      var detail = await fetchMatchDetail(nm.id);
+      if (detail && detail.court) { nm.court = detail.court; log("Court: " + detail.court); }
+      if (detail && detail.startTimestamp && !nm.startTimestamp) nm.startTimestamp = detail.startTimestamp;
+      if (detail && detail.date && !nm.date) nm.date = detail.date;
+    }
+
     if (!nm) {
       // Check manual lock before deleting nextMatch
       var nextMatchLock = null;
