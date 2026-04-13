@@ -101,9 +101,9 @@ var matchDate = (lastMatch && lastMatch.date) ? new Date(lastMatch.date).toLocal
                 <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.45)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Última partida</span>
                 </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {round && <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,0.65)", fontFamily: SANS }}>{round}</span>}
+                {round && <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: SANS }}>{round}</span>}
                 {matchDate && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{matchDate}</span>}
-                {surfaceLabel && <span style={{ fontSize: 9, fontWeight: 800, color: sc, fontFamily: SANS, background: sc + "20", padding: "4px 10px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{surfaceLabel}</span>}
+                {surfaceLabel && <span style={{ fontSize: 10, fontWeight: 800, color: sc, fontFamily: SANS, background: sc + "20", padding: "5px 14px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{surfaceLabel}</span>}
               </div>
             </div>
 
