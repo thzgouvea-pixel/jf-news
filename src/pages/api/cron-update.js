@@ -174,20 +174,20 @@ async function fetchPlayerData() {
   return null;
 }
 
-async function scanMatches(deep) {
+async function scanMatches(backDaysOverride) {
   log("Scanning matches...");
   var all = []; var seen = new Set();
   function addFiltered(data, scanDate) { if (!data) return; var ev = data.events || data; if (!Array.isArray(ev)) { for (var k in data) { if (Array.isArray(data[k])) { ev = data[k]; break; } } } if (Array.isArray(ev)) ev.forEach(function(m) { if (isFonseca(m) && m.id && !seen.has(m.id)) { seen.add(m.id); if (!m.startTimestamp && scanDate) { m._scanDate = scanDate; m.startTimestamp = Math.floor(new Date(scanDate + "T12:00:00Z").getTime() / 1000); } all.push(m); } }); }
 
-  // Date scan: 3 days back + 2 forward (normal), 45 days (deep)
-  var backDays = deep ? 45 : 3;
-  var fwdDays = deep ? 45 : 2;
+  // Date scan: custom backDays + 2 forward
+  var backDays = backDaysOverride || 3;
+  var fwdDays = Math.min(backDays, 7);
   for (var d = -backDays; d <= fwdDays; d++) {
     var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
     addFiltered(await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds), ds);
   }
 
-  log(all.length + " matches"); return all;
+  log(all.length + " matches (" + backDays + "d back)"); return all;
 }
 
 async function fetchMatchStats(lm) {
@@ -408,7 +408,21 @@ async function fetchFacts(nm) {
 export default async function handler(req, res) {
   var start = Date.now(); var steps = {};
   try {
-    var matches = await scanMatches(req.query && req.query.deep === "1");
+    // Auto-detect if recentForm needs recovery
+    var scanDays = 3; // normal
+    if (req.query && req.query.deep === "1") {
+      scanDays = 45; // manual deep
+    } else {
+      try {
+        var existingForm = await kv.get("fn:recentForm");
+        var parsed = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : null;
+        if (!parsed || !Array.isArray(parsed) || parsed.length < 5) {
+          scanDays = 30; // auto-recovery
+          log("recentForm has " + (parsed ? parsed.length : 0) + " entries, auto-expanding scan to " + scanDays + " days");
+        }
+      } catch(e) {}
+    }
+    var matches = await scanMatches(scanDays);
     var NOW_TS = Math.floor(Date.now()/1000);
     function roundWeight(m) { var r = ((m.roundInfo||{}).name||"").toLowerCase(); if (r.includes("final") && !r.includes("quarter") && !r.includes("semi")) return 7; if (r.includes("semi")) return 6; if (r.includes("quarter")) return 5; if (r.includes("r4")||r.includes("round 4")||r.includes("4th")) return 4; if (r.includes("r3")||r.includes("round 3")||r.includes("3rd")) return 3; if (r.includes("r2")||r.includes("round 2")||r.includes("2nd")) return 2; if (r.includes("r1")||r.includes("round 1")||r.includes("1st")) return 1; return 0; }
     var fin = matches.filter(function(m){return isFinished(m)&&isSingles(m);}).sort(function(a,b){ var d = (b.startTimestamp||NOW_TS)-(a.startTimestamp||NOW_TS); return d !== 0 ? d : roundWeight(b)-roundWeight(a); });
