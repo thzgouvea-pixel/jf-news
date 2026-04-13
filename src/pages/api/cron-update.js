@@ -397,7 +397,7 @@ async function fetchFacts(nm) {
   if (!nm||!nm.tournament_name) return null;
   try { var ef = await kv.get("fn:tournamentFacts"); if (ef) { var p = typeof ef==="string"?JSON.parse(ef):ef; if (p&&p.tournament===nm.tournament_name) return p; } } catch(e) {}
   var catInfo = nm.tournament_category ? " (" + nm.tournament_category + ")" : "";
-  var txt = await geminiGenerate("Gere 5 curiosidades curtas (1 frase, máximo 60 caracteres cada) sobre o torneio de tênis " + nm.tournament_name + catInfo + ". Português brasileiro. APENAS JSON: [{\"text\":\"...\"}]");
+  var txt = await geminiGenerate("Gere 5 curiosidades SURPREENDENTES e DIVERTIDAS (1 frase, máximo 60 caracteres cada) sobre o torneio de tênis " + nm.tournament_name + catInfo + ". NÃO quero informações óbvias como localização, superfície ou categoria. Quero fatos curiosos, recordes inusitados, histórias engraçadas, tradições únicas, coincidências, premiações especiais ou momentos memoráveis. Português brasileiro. APENAS JSON: [{\"text\":\"...\"}]");
   if (!txt) return null;
   try {
     var facts = JSON.parse(txt.replace(/```json|```/g,"").trim()); if (!Array.isArray(facts)) return null;
@@ -430,7 +430,7 @@ export default async function handler(req, res) {
     var smartReads = await Promise.all([
       kv.get("fn:ranking"), kv.get("fn:opponentProfile"), kv.get("fn:tournamentFacts"),
       kv.get("fn:nextMatch"), kv.get("fn:lastOddsCheck"), kv.get("fn:careerStats"),
-      kv.get("fn:prizeMoney"),
+      kv.get("fn:prizeMoney"), kv.get("fn:rankings"),
     ]);
     var exRanking = smartReads[0] ? (typeof smartReads[0] === "string" ? JSON.parse(smartReads[0]) : smartReads[0]) : null;
     var exOpp = smartReads[1] ? (typeof smartReads[1] === "string" ? JSON.parse(smartReads[1]) : smartReads[1]) : null;
@@ -439,6 +439,16 @@ export default async function handler(req, res) {
     var lastOddsTs = smartReads[4] ? parseInt(smartReads[4]) : 0;
     var exCareer = smartReads[5] ? (typeof smartReads[5] === "string" ? JSON.parse(smartReads[5]) : smartReads[5]) : null;
     var exPrize = smartReads[6] ? (typeof smartReads[6] === "string" ? JSON.parse(smartReads[6]) : smartReads[6]) : null;
+    var exRankingsList = smartReads[7] ? (typeof smartReads[7] === "string" ? JSON.parse(smartReads[7]) : smartReads[7]) : null;
+    // Build rankings lookup for enriching recentForm
+    var rankingsLookup = {};
+    if (exRankingsList && exRankingsList.rankings) {
+      exRankingsList.rankings.forEach(function(r) {
+        var lastName = r.name.split(" ").pop().toLowerCase();
+        rankingsLookup[lastName] = r.rank;
+        rankingsLookup[r.name.toLowerCase()] = r.rank;
+      });
+    }
 
     // Detect what changed
     var oppChanged = nm && (!exNm || nm.opponent_name !== exNm.opponent_name);
@@ -709,17 +719,32 @@ if (form.length) {
           if (Array.isArray(old)) {
             var oldLookup = {};
             old.forEach(function(m){ var k = m.opponent_name + "|" + m.score; oldLookup[k] = m; });
-            form.forEach(function(m){ var k = m.opponent_name + "|" + m.score; var oldEntry = oldLookup[k]; if (oldEntry && !m.opponent_ranking && oldEntry.opponent_ranking) m.opponent_ranking = oldEntry.opponent_ranking; });
+            // Bidirectional merge: preserve best data from both old and new
+            form.forEach(function(m){
+              var k = m.opponent_name + "|" + m.score;
+              var oldEntry = oldLookup[k];
+              if (oldEntry) {
+                if (!m.opponent_ranking && oldEntry.opponent_ranking) m.opponent_ranking = oldEntry.opponent_ranking;
+                if (!m.date && oldEntry.date) m.date = oldEntry.date;
+              }
+            });
             var keys = new Set(form.map(function(m){ return m.opponent_name + "|" + m.score; }));
             old.forEach(function(m){
               var k = m.opponent_name + "|" + m.score;
               if (!keys.has(k)) { form.push(m); keys.add(k); }
             });
-            form.sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
-            form = form.slice(0,10);
           }
         }
       } catch(e){}
+      // Enrich ALL entries with rankings from top 100 list
+      form.forEach(function(m) {
+        if (!m.opponent_ranking && m.opponent_name) {
+          var lastName = m.opponent_name.split(" ").pop().toLowerCase();
+          if (rankingsLookup[lastName]) m.opponent_ranking = rankingsLookup[lastName];
+        }
+      });
+      form.sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
+      form = form.slice(0,10);
       w.push(kv.set("fn:recentForm",JSON.stringify(form),{ex:T7}));
       }
     }
