@@ -95,7 +95,7 @@ export default function NextDuelCard(props) {
 
         {/* Tournament name */}
         <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
-          <h2 style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>
+          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>
             {nextTournament.tournament_category + " · " + nextTournament.tournament_name}
           </h2>
         </div>
