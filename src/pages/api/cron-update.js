@@ -444,7 +444,7 @@ export default async function handler(req, res) {
     var smartReads = await Promise.all([
       kv.get("fn:ranking"), kv.get("fn:opponentProfile"), kv.get("fn:tournamentFacts"),
       kv.get("fn:nextMatch"), kv.get("fn:lastOddsCheck"), kv.get("fn:careerStats"),
-      kv.get("fn:prizeMoney"), kv.get("fn:rankings"),
+      kv.get("fn:prizeMoney"), kv.get("fn:atpRankings"),
     ]);
     var exRanking = smartReads[0] ? (typeof smartReads[0] === "string" ? JSON.parse(smartReads[0]) : smartReads[0]) : null;
     var exOpp = smartReads[1] ? (typeof smartReads[1] === "string" ? JSON.parse(smartReads[1]) : smartReads[1]) : null;
