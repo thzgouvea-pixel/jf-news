@@ -1,3 +1,9 @@
+// /api/manual-opponent.js
+// Atualiza o nextMatch manualmente quando SofaScore ainda não tem os dados
+// GET: /api/manual-opponent?secret=XXX&name=Gabriel+Diallo&ranking=36&country=Canada&id=280151&broadcast=ESPN+2
+// POST: body JSON { name, ranking, country, sofascore_id }
+// Reutiliza o PUSH_SECRET como autenticação
+
 import { kv } from "@vercel/kv";
 import crypto from "crypto";
 
@@ -9,64 +15,82 @@ function safeCompare(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-// GET: /api/manual-lastmatch?secret=XXX&opponent=A.+Zverev&score=5-7+7-6+3-6&result=D&tournament=Monte+Carlo+Masters&round=Quartas+de+final&surface=Clay&country=Germany&ranking=3&category=Masters+1000&date=2026-04-10T06:15:00Z
-// POST: body JSON com os mesmos campos
 export default async function handler(req, res) {
   var secret = req.query.secret || req.headers["x-secret"];
   if (!safeCompare(secret, process.env.PUSH_SECRET)) {
     return res.status(401).json({ error: "unauthorized" });
   }
+
   try {
-    var match;
-    if (req.method === "POST" && req.body) {
-      match = req.body;
-    } else {
-      // GET: build match from query params
-      var opponent = req.query.opponent;
-      var score = req.query.score;
-      var result = req.query.result;
-      if (!opponent || !score || !result) {
-        return res.status(400).json({
-          error: "opponent, score, result required",
-          usage: "/api/manual-lastmatch?secret=XXX&opponent=A.+Zverev&score=5-7+7-6+3-6&result=D&tournament=Monte+Carlo+Masters&round=QF&surface=Clay&country=Germany&ranking=3&category=Masters+1000&date=2026-04-10T06:15:00Z"
-        });
-      }
-      match = {
-        result: String(result).substring(0, 1).toUpperCase(),
-        score: String(score).substring(0, 50),
-        opponent_name: String(opponent).substring(0, 100).replace(/[<>"'&]/g, ""),
-        opponent_ranking: parseInt(req.query.ranking) || null,
-        opponent_country: req.query.country ? String(req.query.country).substring(0, 60) : "",
-        tournament_name: req.query.tournament ? String(req.query.tournament).substring(0, 100) : "",
-        tournament_category: req.query.category ? String(req.query.category).substring(0, 50) : "",
-        surface: req.query.surface ? String(req.query.surface).substring(0, 20) : "",
-        round: req.query.round ? String(req.query.round).substring(0, 50) : "",
-        date: req.query.date || new Date().toISOString()
-      };
+    // Accept both GET query params and POST body
+    var name = req.query.name || (req.body && req.body.name);
+    var ranking = parseInt(req.query.ranking || (req.body && req.body.ranking)) || null;
+    var country = req.query.country || (req.body && req.body.country) || "";
+    var opponentId = parseInt(req.query.id || (req.body && req.body.sofascore_id)) || null;
+    var atpSlug = req.query.atp || (req.body && req.body.atp_slug) || null;
+
+    if (!name) return res.status(400).json({ error: "name required. Use ?name=Gabriel+Diallo&ranking=36&country=Canada&id=280151" });
+
+    // Sanitize inputs
+    name = String(name).substring(0, 100).replace(/[<>"'&]/g, "");
+    if (!name.trim()) return res.status(400).json({ error: "name required after sanitization" });
+    country = String(country).substring(0, 60).replace(/[<>"'&]/g, "");
+    if (ranking !== null && (ranking < 1 || ranking > 5000)) {
+      return res.status(400).json({ error: "ranking must be between 1 and 5000" });
     }
-    match.finished = true;
-    var T7 = 86400 * 7;
-    var T3 = 86400 * 3;
-    await kv.set("fn:lastMatch", JSON.stringify(match), { ex: T7 });
-    await kv.set("fn:lastMatchManualLock", new Date().toISOString(), { ex: T3 });
-    // Only delete matchStats if opponent changed (stale data from different match)
-    try {
-      var existingStats = await kv.get("fn:matchStats");
-      if (existingStats) {
-        var parsedStats = typeof existingStats === "string" ? JSON.parse(existingStats) : existingStats;
-        if (parsedStats && parsedStats.opponent_name && match.opponent_name) {
-          var statsOpp = parsedStats.opponent_name.split(" ").pop().toLowerCase();
-          var newOpp = match.opponent_name.split(" ").pop().toLowerCase();
-          if (statsOpp !== newOpp) {
-            await kv.del("fn:matchStats");
-          }
-          // else: same opponent, keep existing stats
-        }
+    if (atpSlug) atpSlug = String(atpSlug).substring(0, 20).replace(/[^a-zA-Z0-9]/g, "");
+
+    // Get existing nextMatch from KV or create with tournament defaults
+    var existing = await kv.get("fn:nextMatch");
+    var nextMatch = existing ? (typeof existing === "string" ? JSON.parse(existing) : existing) : {};
+
+    // Update opponent fields
+    nextMatch.opponent_name = name;
+    nextMatch.opponent_ranking = ranking;
+    nextMatch.opponent_country = country;
+    nextMatch.opponent_id = opponentId;
+    if (atpSlug) nextMatch.opponent_atp_slug = atpSlug;
+
+    // Ensure tournament fields exist (use query params or keep existing)
+    var tournament = req.query.tournament || (req.body && req.body.tournament);
+    var date = req.query.date || (req.body && req.body.date);
+    var round = req.query.round || (req.body && req.body.round);
+    var surface = req.query.surface || (req.body && req.body.surface);
+    var court = req.query.court || (req.body && req.body.court);
+    var category = req.query.category || (req.body && req.body.category);
+    var broadcast = req.query.broadcast || (req.body && req.body.broadcast);
+    if (tournament) nextMatch.tournament_name = tournament;
+    if (date) nextMatch.date = date;
+    if (round) nextMatch.round = round;
+    if (surface) nextMatch.surface = surface;
+    if (court) nextMatch.court = court;
+    if (category) nextMatch.tournament_category = category;
+    if (broadcast) nextMatch.broadcast = broadcast;
+
+    // Defaults if no tournament data exists
+    if (!nextMatch.tournament_name) nextMatch.tournament_name = "Monte Carlo Masters";
+    if (!nextMatch.date) nextMatch.date = "2026-04-05T12:00:00Z";
+    if (!nextMatch.tournament_category) nextMatch.tournament_category = "Masters 1000";
+    if (!nextMatch.surface) nextMatch.surface = "Clay";
+
+    await kv.set("fn:nextMatch", JSON.stringify(nextMatch), { ex: 86400 * 7 });
+    await kv.set("fn:nextMatchManualLock", new Date().toISOString(), { ex: 86400 * 3 });
+
+    return res.status(200).json({
+      ok: true,
+      updated: {
+        opponent_name: nextMatch.opponent_name,
+        opponent_ranking: nextMatch.opponent_ranking,
+        opponent_country: nextMatch.opponent_country,
+        opponent_id: nextMatch.opponent_id,
+        tournament: nextMatch.tournament_name || "unknown",
+        round: nextMatch.round || "",
+        surface: nextMatch.surface || "",
+        court: nextMatch.court || "",
+        date: nextMatch.date || "",
+        broadcast: nextMatch.broadcast || null,
       }
-    } catch(e) {
-      // If we can't check, don't delete (safe default)
-    }
-    return res.status(200).json({ ok: true, updated: match });
+    });
   } catch (e) {
     return res.status(500).json({ error: e.message });
   }
