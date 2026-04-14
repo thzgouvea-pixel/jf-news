@@ -83,7 +83,12 @@ export default function PlayerBlock(props) {
         var tournLow = tournament.toLowerCase();
         if (["monte carlo","roland garros","barcelona","madrid","roma","buenos aires","rio open","lyon","hamburg","gstaad","umag","bucharest","estoril"].some(function(t) { return tournLow.includes(t); }) && surface === "Hard") { surfaceLabel = "Saibro"; sc = surfaceColorMap["Clay"]; }
 
-var matchDate = (lastMatch && lastMatch.date) ? new Date(lastMatch.date).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }) : null;
+var matchDate = (lastMatch && lastMatch.date) ? (function() {
+          var d = new Date(lastMatch.date);
+          var dayMonth = d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" });
+          var time = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+          return time !== "00:00" ? dayMonth + " · " + time : dayMonth;
+        })() : null;
         // Duration formatted as Xh Ymin
         var fGames = f.gameswon || 0; var oGames = o.gameswon || 0;
         var totalGames = fGames + oGames;
