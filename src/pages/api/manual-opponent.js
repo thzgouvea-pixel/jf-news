@@ -7,6 +7,40 @@
 import { kv } from "@vercel/kv";
 import crypto from "crypto";
 
+var BROADCAST_MAP = {
+  "BMW Open": "ESPN 4",
+  "Monte Carlo Masters": "ESPN",
+  "Indian Wells Masters": "ESPN",
+  "Miami Open": "ESPN",
+  "Madrid Open": "ESPN",
+  "Italian Open": "ESPN",
+  "Roland Garros": "Globoplay",
+  "Wimbledon": "ESPN",
+  "Australian Open": "ESPN",
+  "US Open": "ESPN",
+  "Barcelona Open": "ESPN 4",
+  "Hamburg Open": "ESPN 4",
+  "Halle Open": "ESPN 4",
+  "Queen's Club": "ESPN 4",
+  "Swiss Indoors Basel": "ESPN 4",
+  "Vienna Open": "ESPN 4",
+  "Rotterdam Open": "ESPN 4",
+  "Rio Open": "ESPN",
+  "Argentina Open": "ESPN 4",
+  "ATP Finals": "ESPN",
+  "Canadian Open": "ESPN",
+  "Cincinnati Masters": "ESPN",
+  "Shanghai Masters": "ESPN",
+  "Paris Masters": "ESPN",
+};
+
+function lookupBroadcast(tournamentName) {
+  if (!tournamentName) return null;
+  if (BROADCAST_MAP[tournamentName]) return BROADCAST_MAP[tournamentName];
+  for (var k in BROADCAST_MAP) { if (tournamentName.toLowerCase().includes(k.toLowerCase())) return BROADCAST_MAP[k]; }
+  return null;
+}
+
 function safeCompare(a, b) {
   if (!a || !b) return false;
   var bufA = Buffer.from(String(a));
@@ -66,6 +100,12 @@ export default async function handler(req, res) {
     if (court) nextMatch.court = court;
     if (category) nextMatch.tournament_category = category;
     if (broadcast) nextMatch.broadcast = broadcast;
+
+    // Auto-lookup broadcast from BROADCAST_MAP when not explicitly provided
+    if (!nextMatch.broadcast && nextMatch.tournament_name) {
+      var autoBC = lookupBroadcast(nextMatch.tournament_name);
+      if (autoBC) nextMatch.broadcast = autoBC;
+    }
 
     // Defaults if no tournament data exists
     if (!nextMatch.tournament_name) nextMatch.tournament_name = "Monte Carlo Masters";
