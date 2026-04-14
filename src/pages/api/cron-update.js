@@ -78,6 +78,60 @@ function isUpcoming(m) { var s = m.status || {}; var t = (s.type || "").toLowerC
 function isSingles(m) { var slug = (m.slug||"").toLowerCase(); var tName = (m.tournament&&m.tournament.name||"").toLowerCase(); if (slug.includes("doubles")||slug.includes("double")||tName.includes("doubles")||tName.includes("double")) return false; var h = (m.homeTeam&&(m.homeTeam.name||"")).toLowerCase(); if (h.includes(" / ")||h.includes(" & ")) return false; return true; }
 function isFonseca(m) { var s = (m.slug || "").toLowerCase(); var h = (m.homeTeam && (m.homeTeam.slug || m.homeTeam.name || "")).toLowerCase(); var a = (m.awayTeam && (m.awayTeam.slug || m.awayTeam.name || "")).toLowerCase(); return s.includes("fonseca") || h.includes("fonseca") || a.includes("fonseca"); }
 
+// Official tournament names and surfaces — instant enrichment, no API cost
+var TOURNAMENT_MAP = {
+  "munich": { name: "BMW Open", cat: "ATP 500", surface: "Clay" },
+  "bmw open": { name: "BMW Open", cat: "ATP 500", surface: "Clay" },
+  "monte carlo": { name: "Monte Carlo Masters", cat: "Masters 1000", surface: "Clay" },
+  "indian wells": { name: "Indian Wells Masters", cat: "Masters 1000", surface: "Hard" },
+  "miami": { name: "Miami Open", cat: "Masters 1000", surface: "Hard" },
+  "madrid": { name: "Madrid Open", cat: "Masters 1000", surface: "Clay" },
+  "roma": { name: "Italian Open", cat: "Masters 1000", surface: "Clay" },
+  "rome": { name: "Italian Open", cat: "Masters 1000", surface: "Clay" },
+  "roland garros": { name: "Roland Garros", cat: "Grand Slam", surface: "Clay" },
+  "french open": { name: "Roland Garros", cat: "Grand Slam", surface: "Clay" },
+  "wimbledon": { name: "Wimbledon", cat: "Grand Slam", surface: "Grass" },
+  "australian open": { name: "Australian Open", cat: "Grand Slam", surface: "Hard" },
+  "us open": { name: "US Open", cat: "Grand Slam", surface: "Hard" },
+  "barcelona": { name: "Barcelona Open", cat: "ATP 500", surface: "Clay" },
+  "hamburg": { name: "Hamburg Open", cat: "ATP 500", surface: "Clay" },
+  "halle": { name: "Halle Open", cat: "ATP 500", surface: "Grass" },
+  "queens": { name: "Queen's Club", cat: "ATP 500", surface: "Grass" },
+  "queen's": { name: "Queen's Club", cat: "ATP 500", surface: "Grass" },
+  "basel": { name: "Swiss Indoors Basel", cat: "ATP 500", surface: "Hard" },
+  "vienna": { name: "Vienna Open", cat: "ATP 500", surface: "Hard" },
+  "rotterdam": { name: "Rotterdam Open", cat: "ATP 500", surface: "Hard" },
+  "acapulco": { name: "Acapulco Open", cat: "ATP 500", surface: "Hard" },
+  "dubai": { name: "Dubai Championships", cat: "ATP 500", surface: "Hard" },
+  "rio open": { name: "Rio Open", cat: "ATP 500", surface: "Clay" },
+  "washington": { name: "Washington Open", cat: "ATP 500", surface: "Hard" },
+  "beijing": { name: "China Open", cat: "ATP 500", surface: "Hard" },
+  "buenos aires": { name: "Argentina Open", cat: "ATP 250", surface: "Clay" },
+  "lyon": { name: "Lyon Open", cat: "ATP 250", surface: "Clay" },
+  "estoril": { name: "Estoril Open", cat: "ATP 250", surface: "Clay" },
+  "geneva": { name: "Geneva Open", cat: "ATP 250", surface: "Clay" },
+  "stuttgart": { name: "Stuttgart Open", cat: "ATP 250", surface: "Grass" },
+  "eastbourne": { name: "Eastbourne International", cat: "ATP 250", surface: "Grass" },
+  "canadian": { name: "Canadian Open", cat: "Masters 1000", surface: "Hard" },
+  "montreal": { name: "Canadian Open", cat: "Masters 1000", surface: "Hard" },
+  "toronto": { name: "Canadian Open", cat: "Masters 1000", surface: "Hard" },
+  "cincinnati": { name: "Cincinnati Masters", cat: "Masters 1000", surface: "Hard" },
+  "shanghai": { name: "Shanghai Masters", cat: "Masters 1000", surface: "Hard" },
+  "paris": { name: "Paris Masters", cat: "Masters 1000", surface: "Hard" },
+  "atp finals": { name: "ATP Finals", cat: "Finals", surface: "Hard" },
+  "nitto": { name: "ATP Finals", cat: "Finals", surface: "Hard" },
+};
+
+function lookupTournament(rawName) {
+  if (!rawName) return null;
+  var low = rawName.toLowerCase();
+  // Direct match
+  if (TOURNAMENT_MAP[low]) return TOURNAMENT_MAP[low];
+  // Partial match
+  for (var key in TOURNAMENT_MAP) { if (low.includes(key)) return TOURNAMENT_MAP[key]; }
+  return null;
+}
+
 function extractMatch(match) {
   var home = match.homeTeam || {}; var away = match.awayTeam || {};
   var isFHome = (home.slug || home.name || "").toLowerCase().includes("fonseca");
@@ -89,17 +143,32 @@ function extractMatch(match) {
   for (var i = 1; i <= 5; i++) { var k = "period" + i; if (fScore[k] !== undefined && oScore[k] !== undefined) { fSets.push(fScore[k]); oSets.push(oScore[k]); } }
   var scoreStr = fSets.map(function(s, idx) { return s + "-" + oSets[idx]; }).join(" ");
   var fW = 0, oW = 0; fSets.forEach(function(s, idx) { if (s > oSets[idx]) fW++; else oW++; });
+
+  // Surface: check groundType first, then tournament map
   var gt = (match.groundType || tournament.groundType || "").toLowerCase();
-  var surface = gt === "clay" ? "Clay" : (gt === "grass" ? "Grass" : "Hard");
-  var tName = tournament.name || (tournament.uniqueTournament && tournament.uniqueTournament.name) || "";
-  var tLowSurf = tName.toLowerCase();
-  if (surface === "Hard" && ["monte carlo","roland garros","barcelona","madrid","roma","buenos aires","rio open","lyon","hamburg","gstaad","umag","bucharest","estoril","munich","bmw open","kitzbühel","bastad","geneva","marrakech"].some(function(c){return tLowSurf.includes(c);})) surface = "Clay";
-  if (surface === "Hard" && ["wimbledon","halle","queens","queen's","eastbourne","mallorca","newport","s-hertogenbosch"].some(function(g){return tLowSurf.includes(g);})) surface = "Grass";
-  var cat = ""; var tLow = tName.toLowerCase();
-  if (["australian open","roland garros","french open","wimbledon","us open"].some(function(g){return tLow.includes(g);})) cat = "Grand Slam";
-  else if (tLow.includes("1000") || ["monte carlo","madrid","roma","indian wells","miami","canadian","cincinnati","shanghai","paris"].some(function(m){return tLow.includes(m);})) cat = "Masters 1000";
-  else if (tLow.includes("500") || ["rio open","barcelona","hamburg","halle","queens","queen's","washington","beijing","basel","vienna","rotterdam","acapulco","dubai","munich","bmw open"].some(function(t){return tLow.includes(t);})) cat = "ATP 500";
-  else if (tLow.includes("250") || ["buenos aires","lyon","estoril","geneva","stuttgart","eastbourne","atlanta","winston-salem","chengdu","antwerp","stockholm","metz"].some(function(t){return tLow.includes(t);})) cat = "ATP 250";
+  var surface = gt.includes("clay") ? "Clay" : (gt.includes("grass") ? "Grass" : "Hard");
+
+  // Tournament name: check raw name AND uniqueTournament name
+  var rawName = tournament.name || "";
+  var utName = (tournament.uniqueTournament && tournament.uniqueTournament.name) || "";
+  var tName = rawName || utName;
+
+  // Lookup in tournament map using both names
+  var mapped = lookupTournament(rawName) || lookupTournament(utName);
+  if (mapped) {
+    tName = mapped.name;
+    surface = mapped.surface;
+    var cat = mapped.cat;
+  } else {
+    // Fallback category detection
+    var tLow = tName.toLowerCase();
+    var cat = "";
+    if (["australian open","roland garros","french open","wimbledon","us open"].some(function(g){return tLow.includes(g);})) cat = "Grand Slam";
+    else if (tLow.includes("1000") || ["monte carlo","madrid","roma","indian wells","miami","canadian","cincinnati","shanghai","paris"].some(function(m){return tLow.includes(m);})) cat = "Masters 1000";
+    else if (tLow.includes("500") || ["rio open","barcelona","hamburg","halle","queens","queen's","washington","beijing","basel","vienna","rotterdam","acapulco","dubai","munich","bmw open"].some(function(t){return tLow.includes(t);})) cat = "ATP 500";
+    else if (tLow.includes("250") || ["buenos aires","lyon","estoril","geneva","stuttgart","eastbourne","atlanta","winston-salem","chengdu","antwerp","stockholm","metz"].some(function(t){return tLow.includes(t);})) cat = "ATP 250";
+  }
+
   var fallbackDate = match._scanDate ? match._scanDate + "T12:00:00Z" : null;
   var fallbackTs = match._scanDate ? Math.floor(new Date(match._scanDate + "T12:00:00Z").getTime() / 1000) : null;
   return { id: match.id, result: fW > oW ? "V" : "D", score: scoreStr, opponent_name: opp.shortName || opp.name || "Oponente", opponent_id: opp.id || null, opponent_ranking: opp.ranking || null, opponent_country: opp.country ? opp.country.name : "", tournament_name: tName, tournament_category: cat, surface: surface, round: round.name || "", date: match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : fallbackDate, startTimestamp: match.startTimestamp || fallbackTs, court: match.courtName || (match.venue && match.venue.name) || "", isFonsecaHome: isFHome, finished: isFinished(match) };
@@ -264,8 +333,8 @@ async function fetchATPRankings() {
 
 async function fetchATPRankingsGemini() {
   var gTxt = await geminiSearch(
-    "Busque o ranking ATP Singles masculino ATUALIZADO de abril 2026. Liste os top 100 jogadores. " +
-    "Responda APENAS JSON: [{\"rank\":1,\"name\":\"Nome Completo\",\"points\":NUMBER},...] Sem texto extra."
+    "Busque o ranking ATP Singles masculino ATUALIZADO. Liste os top 50 jogadores com rank, nome completo e pontos. " +
+    "Responda APENAS um array JSON, sem texto: [{\"rank\":1,\"name\":\"Nome\",\"points\":1234},{\"rank\":2,\"name\":\"Nome\",\"points\":5678},...até rank 50]"
   );
   if (!gTxt) return null;
   try {
@@ -553,7 +622,7 @@ export default async function handler(req, res) {
     ms = lm ? await fetchMatchStats(lm) : null; steps.stats = ms ? "ok" : "skip";
 
     // Smart: refresh ATP rankings daily
-    var rankingsListFresh = exRankingsList && exRankingsList.updatedAt && (now - new Date(exRankingsList.updatedAt).getTime()) < H24;
+    var rankingsListFresh = exRankingsList && exRankingsList.updatedAt && (now - new Date(exRankingsList.updatedAt).getTime()) < H24 && exRankingsList.rankings && exRankingsList.rankings.length >= 40;
     if (!rankingsListFresh) {
       var newRankings = await fetchATPRankings();
       if (newRankings && newRankings.rankings && newRankings.rankings.length >= 20) {
