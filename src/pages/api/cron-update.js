@@ -157,6 +157,43 @@ function lookupBroadcast(tournamentName) {
   return null;
 }
 
+var ROUND_MAP = {
+  "round 1": "1ª rodada",
+  "round of 128": "1ª rodada",
+  "round of 64": "2ª rodada",
+  "round 2": "2ª rodada",
+  "round of 32": "3ª rodada",
+  "round 3": "3ª rodada",
+  "round of 16": "Oitavas de final",
+  "round 4": "Oitavas de final",
+  "quarterfinal": "Quartas de final",
+  "quarterfinals": "Quartas de final",
+  "quarter-final": "Quartas de final",
+  "semifinal": "Semifinal",
+  "semifinals": "Semifinal",
+  "semi-final": "Semifinal",
+  "final": "Final",
+  "qualification": "Qualificatório",
+  "qualifying": "Qualificatório",
+  "q1": "Quali 1ª rodada",
+  "q2": "Quali 2ª rodada",
+  "q3": "Quali 3ª rodada",
+  "1st round": "1ª rodada",
+  "2nd round": "2ª rodada",
+  "3rd round": "3ª rodada",
+  "4th round": "Oitavas de final",
+};
+
+function translateRound(rawRound) {
+  if (!rawRound) return "";
+  var low = rawRound.toLowerCase().trim();
+  if (ROUND_MAP[low]) return ROUND_MAP[low];
+  // Partial match for variations like "Round of 16" with extra spaces
+  for (var k in ROUND_MAP) { if (low.includes(k)) return ROUND_MAP[k]; }
+  // If already in Portuguese (e.g. from manual input), return as-is
+  return rawRound;
+}
+
 function lookupTournament(rawName) {
   if (!rawName) return null;
   var low = rawName.toLowerCase();
@@ -206,7 +243,7 @@ function extractMatch(match) {
 
   var fallbackDate = match._scanDate ? match._scanDate + "T12:00:00Z" : null;
   var fallbackTs = match._scanDate ? Math.floor(new Date(match._scanDate + "T12:00:00Z").getTime() / 1000) : null;
-  return { id: match.id, result: fW > oW ? "V" : "D", score: scoreStr, opponent_name: opp.shortName || opp.name || "Oponente", opponent_id: opp.id || null, opponent_ranking: opp.ranking || null, opponent_country: opp.country ? opp.country.name : "", tournament_name: tName, tournament_category: cat, surface: surface, round: round.name || "", date: match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : fallbackDate, startTimestamp: match.startTimestamp || fallbackTs, court: match.courtName || (match.venue && match.venue.name) || "", isFonsecaHome: isFHome, finished: isFinished(match) };
+  return { id: match.id, result: fW > oW ? "V" : "D", score: scoreStr, opponent_name: opp.shortName || opp.name || "Oponente", opponent_id: opp.id || null, opponent_ranking: opp.ranking || null, opponent_country: opp.country ? opp.country.name : "", tournament_name: tName, tournament_category: cat, surface: surface, round: translateRound(round.name) || "", date: match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : fallbackDate, startTimestamp: match.startTimestamp || fallbackTs, court: match.courtName || (match.venue && match.venue.name) || "", isFonsecaHome: isFHome, finished: isFinished(match) };
 }
 
 // ===== PLAYER DATA: Gemini (primary) → Wikipedia (fallback) =====
@@ -469,16 +506,38 @@ async function fetchWinProb(nm) {
   }
 
   // Source 3: Gemini search for odds
-  var gTxt = await geminiSearch("Quais são as odds de apostas para João Fonseca vs " + (nm.opponent_name || "adversário") + " no " + (nm.tournament_name || "ATP") + " 2026? Responda APENAS JSON: {\"fonseca_odds\":NUMBER,\"opponent_odds\":NUMBER}. Use odds decimais reais de casas de apostas.");
+  var oppName = nm.opponent_name || "adversário";
+  var gTxt = await geminiSearch("Qual a probabilidade de vitória de João Fonseca (#" + (nm.opponent_ranking ? "adversário ranking " + nm.opponent_ranking : "") + ") contra " + oppName + " no " + (nm.tournament_name || "ATP") + " 2026? Considere ranking, forma recente e superfície. Responda APENAS JSON: {\"fonseca_win_pct\":NUMBER,\"opponent_win_pct\":NUMBER}. Os valores devem somar 100. fonseca_win_pct é a probabilidade de FONSECA vencer.");
   if (gTxt) {
     try {
       var cleaned = gTxt.replace(/```json|```/g, "").trim();
       var jsonMatch = cleaned.match(/\{[^}]+\}/);
       if (jsonMatch) {
         var gOdds = JSON.parse(jsonMatch[0]);
+        // New format: direct probabilities
+        if (gOdds && gOdds.fonseca_win_pct && gOdds.opponent_win_pct) {
+          var fPct = Math.round(gOdds.fonseca_win_pct);
+          var oPct = Math.round(gOdds.opponent_win_pct);
+          // Sanity: ensure they sum close to 100
+          if (Math.abs(fPct + oPct - 100) > 5) { var t = fPct + oPct; fPct = Math.round((fPct/t)*100); oPct = 100 - fPct; }
+          log("Gemini win prob: Fonseca " + fPct + "% / " + oppName + " " + oPct + "%");
+          return { fonseca: fPct, opponent: oPct, opponent_name: nm.opponent_name, source: "gemini-odds", updatedAt: new Date().toISOString() };
+        }
+        // Legacy format fallback: odds decimais
         if (gOdds && gOdds.fonseca_odds && gOdds.opponent_odds) {
-          var gfi = 1/gOdds.fonseca_odds, goi = 1/gOdds.opponent_odds, gt = gfi+goi;
-          log("Gemini odds: Fonseca " + gOdds.fonseca_odds + " / " + (nm.opponent_name||"opp") + " " + gOdds.opponent_odds);
+          var fo = gOdds.fonseca_odds, oo = gOdds.opponent_odds;
+          // Validation: lower odds = more likely to win. If Fonseca has better ranking
+          // but higher odds (less likely), the values are probably swapped.
+          if (nm.opponent_ranking && fo > oo) {
+            // Fonseca is #35, if opponent ranking is worse (higher number), Fonseca should be favored (lower odds)
+            var fRank = 35; // approximate — could be improved with actual ranking from KV
+            if (fRank < nm.opponent_ranking) {
+              log("Odds validation: swapping (Fonseca #" + fRank + " should be favored vs #" + nm.opponent_ranking + " but got odds " + fo + " vs " + oo + ")");
+              var tmp = fo; fo = oo; oo = tmp;
+            }
+          }
+          var gfi = 1/fo, goi = 1/oo, gt = gfi+goi;
+          log("Gemini odds: Fonseca " + fo + " / " + oppName + " " + oo);
           return { fonseca: Math.round((gfi/gt)*100), opponent: Math.round((goi/gt)*100), opponent_name: nm.opponent_name, source: "gemini-odds", updatedAt: new Date().toISOString() };
         }
       }
@@ -867,14 +926,14 @@ export default async function handler(req, res) {
     if (!wiki || !wiki.prizeMoney) gaps.push("prize money total de carreira do João Fonseca em USD");
     if (!wiki || !wiki.titles) gaps.push("número de títulos ATP do João Fonseca");
     if (nm && !nm.date) gaps.push("data e horário UTC da partida " + (nm.opponent_name||"") + " vs Fonseca no " + (nm.tournament_name||"ATP") + " 2026");
-    if (nm && !wp) gaps.push("odds de apostas para Fonseca vs " + (nm.opponent_name||"adversário") + " (odds decimais)");
+    if (nm && !wp) gaps.push("probabilidade de vitória de Fonseca vs " + (nm.opponent_name||"adversário") + " (percentual de 0 a 100)");
 
     if (gaps.length > 0) {
       log("Gemini sweep: " + gaps.length + " gaps to fill");
       var sweepTxt = await geminiSearch(
         "Busque dados REAIS e ATUALIZADOS sobre o tenista João Fonseca (brasileiro, nascido 2006). Preciso de: " +
         gaps.join("; ") + ". " +
-        "Responda APENAS JSON: {\"ranking\":NUMBER_OR_NULL,\"wins\":NUMBER_OR_NULL,\"losses\":NUMBER_OR_NULL,\"seasonWins\":NUMBER_OR_NULL,\"seasonLosses\":NUMBER_OR_NULL,\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}},\"prizeMoney\":NUMBER_OR_NULL,\"titles\":NUMBER_OR_NULL,\"matchDate\":\"ISO_STRING_OR_NULL\",\"fonseca_odds\":NUMBER_OR_NULL,\"opponent_odds\":NUMBER_OR_NULL}"
+        "Responda APENAS JSON: {\"ranking\":NUMBER_OR_NULL,\"wins\":NUMBER_OR_NULL,\"losses\":NUMBER_OR_NULL,\"seasonWins\":NUMBER_OR_NULL,\"seasonLosses\":NUMBER_OR_NULL,\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}},\"prizeMoney\":NUMBER_OR_NULL,\"titles\":NUMBER_OR_NULL,\"matchDate\":\"ISO_STRING_OR_NULL\",\"fonseca_win_pct\":NUMBER_OR_NULL,\"opponent_win_pct\":NUMBER_OR_NULL}. fonseca_win_pct é a probabilidade de FONSECA vencer (0-100), devem somar 100."
       );
       if (sweepTxt) {
         try {
@@ -893,11 +952,28 @@ export default async function handler(req, res) {
               if (sweep.surface && (!wiki.surface || (!wiki.surface.hard.w && !wiki.surface.clay.w))) wiki.surface = sweep.surface;
               // Fill nextMatch date
               if (nm && !nm.date && sweep.matchDate) { nm.date = sweep.matchDate; log("Sweep: match date " + sweep.matchDate); }
-              // Fill odds
-              if (!wp && sweep.fonseca_odds && sweep.opponent_odds && nm) {
-                var sfi = 1/sweep.fonseca_odds, soi = 1/sweep.opponent_odds, st = sfi+soi;
-                wp = { fonseca: Math.round((sfi/st)*100), opponent: Math.round((soi/st)*100), opponent_name: nm.opponent_name, source: "gemini-sweep", updatedAt: new Date().toISOString() };
-                log("Sweep: odds " + wp.fonseca + "% / " + wp.opponent + "%");
+              // Fill odds — new format: direct probabilities
+              if (!wp && nm) {
+                if (sweep.fonseca_win_pct && sweep.opponent_win_pct) {
+                  var swFPct = Math.round(sweep.fonseca_win_pct);
+                  var swOPct = Math.round(sweep.opponent_win_pct);
+                  if (Math.abs(swFPct + swOPct - 100) > 5) { var swT = swFPct + swOPct; swFPct = Math.round((swFPct/swT)*100); swOPct = 100 - swFPct; }
+                  wp = { fonseca: swFPct, opponent: swOPct, opponent_name: nm.opponent_name, source: "gemini-sweep", updatedAt: new Date().toISOString() };
+                  log("Sweep: win prob " + wp.fonseca + "% / " + wp.opponent + "%");
+                } else if (sweep.fonseca_odds && sweep.opponent_odds) {
+                  // Legacy fallback with ranking validation
+                  var swFo = sweep.fonseca_odds, swOo = sweep.opponent_odds;
+                  if (nm.opponent_ranking && swFo > swOo) {
+                    var approxRank = (wiki && wiki.ranking) || 35;
+                    if (approxRank < nm.opponent_ranking) {
+                      log("Sweep odds validation: swapping (Fonseca #" + approxRank + " vs #" + nm.opponent_ranking + ")");
+                      var swTmp = swFo; swFo = swOo; swOo = swTmp;
+                    }
+                  }
+                  var sfi = 1/swFo, soi = 1/swOo, st = sfi+soi;
+                  wp = { fonseca: Math.round((sfi/st)*100), opponent: Math.round((soi/st)*100), opponent_name: nm.opponent_name, source: "gemini-sweep", updatedAt: new Date().toISOString() };
+                  log("Sweep: odds " + wp.fonseca + "% / " + wp.opponent + "%");
+                }
               }
               steps.sweep = gaps.length + " gaps filled";
             }
