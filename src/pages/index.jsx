@@ -17,7 +17,6 @@ import ATPRankingList from "../components/ATPRankingList";
 import NextGenComparator from "../components/NextGenComparator";
 import CareerTimeline from "../components/CareerTimeline";
 import ATPCalendar from "../components/ATPCalendar";
-import TournamentFactsCarousel from "../components/TournamentFactsCarousel";
 import WinProbBar from "../components/WinProbBar";
 import InstallBanner from "../components/InstallBanner";
 import Modal from "../components/Modal";
@@ -125,7 +124,6 @@ export default function JoaoFonsecaNews() {
   var _fbRating = useState(null); var fbRating = _fbRating[0]; var setFbRating = _fbRating[1];
   var _fbSent = useState(false); var fbSent = _fbSent[0]; var setFbSent = _fbSent[1];
   var _biography = useState(null); var biography = _biography[0]; var setBiography = _biography[1];
-  var _tournamentFacts = useState(null); var tournamentFacts = _tournamentFacts[0]; var setTournamentFacts = _tournamentFacts[1];
   var _opponentProfile = useState(null); var opponentProfile = _opponentProfile[0]; var setOpponentProfile = _opponentProfile[1];
   var _nextTournament = useState(null); var nextTournament = _nextTournament[0]; var setNextTournament = _nextTournament[1];
   var _showOppPopup = useState(false); var showOppPopup = _showOppPopup[0]; var setShowOppPopup = _showOppPopup[1];
@@ -270,7 +268,6 @@ export default function JoaoFonsecaNews() {
       if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
-      if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
       if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
@@ -297,7 +294,6 @@ export default function JoaoFonsecaNews() {
       if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
-      if (d.tournamentFacts) setTournamentFacts(d.tournamentFacts);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
       if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
@@ -423,14 +419,14 @@ export default function JoaoFonsecaNews() {
           )}
           {recentForm && recentForm.length > 0 && <Fonsecometro recentForm={recentForm} />}
           <div style={{ padding: "12px 0 0" }}>
-            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} nextTournament={nextTournament} />
+            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} />
           </div>
         </section>
 )}
 
 {hasNextMatch && (
         <section style={{ padding: "8px 0 0" }}>
-          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} tournamentFacts={tournamentFacts && tournamentFacts.facts ? tournamentFacts.facts : null} nextTournament={nextTournament} />
+          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} />
           {recentForm && recentForm.length > 0 && <Fonsecometro recentForm={recentForm} />}
           <div style={{ padding: "12px 0 0" }}>
           {highlightVideo && highlightVideo.videoId ? (
