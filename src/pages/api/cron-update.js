@@ -471,17 +471,7 @@ async function fetchNextTournament(upcomingMatches) {
   return result;
 }
 
-async function fetchFacts(nm) {
-  if (!nm||!nm.tournament_name) return null;
-  try { var ef = await kv.get("fn:tournamentFacts"); if (ef) { var p = typeof ef==="string"?JSON.parse(ef):ef; if (p&&p.tournament===nm.tournament_name) return p; } } catch(e) {}
-  var catInfo = nm.tournament_category ? " (" + nm.tournament_category + ")" : "";
-  var txt = await geminiGenerate("Gere 5 curiosidades SURPREENDENTES e DIVERTIDAS (1 frase, máximo 60 caracteres cada) sobre o torneio de tênis " + nm.tournament_name + catInfo + ". NÃO quero informações óbvias como localização, superfície ou categoria. Quero fatos curiosos, recordes inusitados, histórias engraçadas, tradições únicas, coincidências, premiações especiais ou momentos memoráveis. Português brasileiro. APENAS JSON: [{\"text\":\"...\"}]");
-  if (!txt) return null;
-  try {
-    var facts = JSON.parse(txt.replace(/```json|```/g,"").trim()); if (!Array.isArray(facts)) return null;
-    return { tournament: nm.tournament_name, facts: facts.filter(function(f){return f&&f.text;}).slice(0,5), generatedAt: new Date().toISOString() };
-  } catch(e) { log("Facts parse: " + e.message); return null; }
-}
+// Tournament facts removed — feature disabled
 
 export default async function handler(req, res) {
   var start = Date.now(); var steps = {};
@@ -520,18 +510,17 @@ export default async function handler(req, res) {
 
     // Read existing KV timestamps in parallel
     var smartReads = await Promise.all([
-      kv.get("fn:ranking"), kv.get("fn:opponentProfile"), kv.get("fn:tournamentFacts"),
+      kv.get("fn:ranking"), kv.get("fn:opponentProfile"),
       kv.get("fn:nextMatch"), kv.get("fn:lastOddsCheck"), kv.get("fn:careerStats"),
       kv.get("fn:prizeMoney"), kv.get("fn:atpRankings"),
     ]);
     var exRanking = smartReads[0] ? (typeof smartReads[0] === "string" ? JSON.parse(smartReads[0]) : smartReads[0]) : null;
     var exOpp = smartReads[1] ? (typeof smartReads[1] === "string" ? JSON.parse(smartReads[1]) : smartReads[1]) : null;
-    var exFacts = smartReads[2] ? (typeof smartReads[2] === "string" ? JSON.parse(smartReads[2]) : smartReads[2]) : null;
-    var exNm = smartReads[3] ? (typeof smartReads[3] === "string" ? JSON.parse(smartReads[3]) : smartReads[3]) : null;
-    var lastOddsTs = smartReads[4] ? parseInt(smartReads[4]) : 0;
-    var exCareer = smartReads[5] ? (typeof smartReads[5] === "string" ? JSON.parse(smartReads[5]) : smartReads[5]) : null;
-    var exPrize = smartReads[6] ? (typeof smartReads[6] === "string" ? JSON.parse(smartReads[6]) : smartReads[6]) : null;
-    var exRankingsList = smartReads[7] ? (typeof smartReads[7] === "string" ? JSON.parse(smartReads[7]) : smartReads[7]) : null;
+    var exNm = smartReads[2] ? (typeof smartReads[2] === "string" ? JSON.parse(smartReads[2]) : smartReads[2]) : null;
+    var lastOddsTs = smartReads[3] ? parseInt(smartReads[3]) : 0;
+    var exCareer = smartReads[4] ? (typeof smartReads[4] === "string" ? JSON.parse(smartReads[4]) : smartReads[4]) : null;
+    var exPrize = smartReads[5] ? (typeof smartReads[5] === "string" ? JSON.parse(smartReads[5]) : smartReads[5]) : null;
+    var exRankingsList = smartReads[6] ? (typeof smartReads[6] === "string" ? JSON.parse(smartReads[6]) : smartReads[6]) : null;
     // Build rankings lookup for enriching recentForm
     function stripAccents(s) { return s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
     var rankingsLookup = {};
@@ -735,17 +724,6 @@ export default async function handler(req, res) {
       log("Odds fresh (" + (wp ? wp.fonseca + "%" : "none") + "), next check in " + Math.round((H6 - (now - lastOddsTs)) / 60000) + "min");
     } else { steps.odds = "skip"; }
 
-    // Smart: facts only if tournament changed
-    var tf = null;
-    if (nm && (!exFacts || exFacts.tournament !== (nm.tournament_name || ""))) {
-      tf = await fetchFacts(nm);
-      steps.facts = tf ? tf.facts.length + "" : "skip";
-    } else if (exFacts) {
-      tf = exFacts;
-      steps.facts = tf.facts ? tf.facts.length + " (cached)" : "skip";
-      log("Tournament unchanged, skipping facts");
-    } else { steps.facts = "skip"; }
-
     // Gemini enrichment for nextMatch — fill gaps (official name, date, broadcast)
     if (nm && (!nm.date || !nm.tournament_category || (nm.tournament_name && nm.tournament_name.includes(",")))) {
       log("Enriching nextMatch via Gemini...");
@@ -921,7 +899,6 @@ if (form.length) {
     }
     if (op) w.push(kv.set("fn:opponentProfile",JSON.stringify(op),{ex:T2}));
     if (wp) w.push(kv.set("fn:winProb",JSON.stringify(wp),{ex:T2}));
-    if (tf) w.push(kv.set("fn:tournamentFacts",JSON.stringify(tf),{ex:T2}));
     if (exRankingsList && exRankingsList.updatedAt && !rankingsListFresh) w.push(kv.set("fn:atpRankings",JSON.stringify(exRankingsList),{ex:T7}));
     w.push(kv.set("fn:cronLastRun",new Date().toISOString(),{ex:T7}));
     await Promise.all(w); steps.kv = w.length + " keys";
