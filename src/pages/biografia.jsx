@@ -2,7 +2,7 @@
 // Aesthetic biography page for João Fonseca
 // v2: Fixed height (1.88m), coach (Franco Davin + Teixeira), Challengers (3), Nadal photo story
 import Head from "next/head";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 var SERIF = "'Source Serif 4', Georgia, serif";
 var SANS = "'Inter', -apple-system, sans-serif";
@@ -21,7 +21,7 @@ var TIMELINE = [
   { year: "2023", age: "17 anos", title: "Ano revelação", emoji: "🏆", text: "Campeão do US Open Juvenil. Primeiro brasileiro nº1 do ranking juvenil da ITF. Estreia no ATP no Rio Open. Convidado como sparring no Nitto ATP Finals — treina com Alcaraz, Medvedev e Sinner." },
   { year: "2024", age: "18 anos", title: "A explosão", emoji: "🔥", text: "Quartas do Rio Open (ATP 500) com vitória sobre Arthur Fils. Vira profissional. Salta do #727 para #145 no ranking. Campeão do Lexington Challenger. Campeão do NextGen ATP Finals invicto (5-0) — primeiro sul-americano e terceiro mais jovem da história, ao lado de Alcaraz e Sinner." },
   { year: "2025", age: "19 anos", title: "Elite mundial", emoji: "⭐", text: "Derrota Rublev (#9) na estreia do Australian Open. Campeão do ATP 250 de Buenos Aires — mais jovem sul-americano campeão desde Perez-Roldan em 1987. Campeão do Canberra e Phoenix Challengers. Campeão do ATP 500 de Basel — primeiro brasileiro a vencer um ATP 500, feito inédito desde Kuerten. Encerra o ano como #24 do mundo." },
-  { year: "2026", age: "19 anos", title: "Em ascensão", emoji: "🚀", text: "Lesão nas costas atrasa início da temporada. Volta forte: oitavas em Indian Wells com vitórias sobre Collignon, Khachanov e Tommy Paul. Jogo épico contra Sinner nas oitavas (dois tiebreaks). Perde para Alcaraz no Miami Open. Campeão de duplas no Rio Open com Marcelo Melo. Novo técnico: Franco Davin se junta à equipe com Guilherme Teixeira. Se prepara para a gira de saibro: Monte Carlo, Munique, Madri, Roma e Roland Garros." },
+  { year: "2026", age: "19 anos", title: "Em ascensão", emoji: "🚀", text: "Lesão nas costas atrasa início da temporada. Volta forte: R4 em Indian Wells com vitórias sobre Collignon, Khachanov e Tommy Paul. Jogo épico contra Sinner nas oitavas (dois tiebreaks). R3 no Miami Open. Campeão de duplas no Rio Open com Marcelo Melo. QF em Monte Carlo com vitórias sobre Diallo, Rinderknech e Berrettini — derrota honrosa contra o #3 Zverev. Novo técnico: Franco Davin se junta à equipe. Disputa o BMW Open em Munique." },
 ];
 
 var STATS = [
@@ -66,11 +66,41 @@ export default function Biografia() {
   var openSection = _openSection[0];
   var setOpenSection = _openSection[1];
 
+  // Dynamic stats from API
+  var _data = useState(null); var data = _data[0]; var setData = _data[1];
+  useEffect(function() {
+    fetch("/api/all-data").then(function(r) { return r.json(); }).then(function(d) {
+      setData(d);
+    }).catch(function() {});
+  }, []);
+
+  // Dynamic values with fallbacks
+  var ranking = (data && data.ranking && data.ranking.ranking) || 35;
+  var bestRanking = (data && data.ranking && data.ranking.bestRanking) || 24;
+  var career = (data && data.careerStats) || {};
+  var wins = career.wins || 114;
+  var losses = career.losses || 63;
+  var titles = career.titles || 2;
+  var prizeMoney = (data && data.prizeMoney) || 3152530;
+  var prizeStr = prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K";
+  var season = (data && data.season) || {};
+  var seasonW = season.wins || 0;
+  var seasonL = season.losses || 0;
+
+  var STATS_DYNAMIC = [
+    { label: "Ranking ATP", value: "#" + ranking, detail: "Best: #" + bestRanking },
+    { label: "Carreira", value: wins + "V " + losses + "D", detail: Math.round(wins/(wins+losses)*100) + "% aprov." },
+    { label: "Temporada 2026", value: seasonW + "V " + seasonL + "D", detail: (seasonW+seasonL) > 0 ? Math.round(seasonW/(seasonW+seasonL)*100) + "% aprov." : "" },
+    { label: "Títulos ATP", value: "" + titles, detail: "Buenos Aires + Basel" },
+    { label: "Prize Money", value: prizeStr, detail: "Carreira" },
+    { label: "NextGen Finals", value: "🏆", detail: "Campeão 2024" },
+  ];
+
   return (
     <>
       <Head>
         <title>João Fonseca — Biografia | Fonseca News</title>
-        <meta name="description" content="Biografia completa de João Fonseca, tenista brasileiro, #40 ATP. Carreira, títulos, curiosidades e timeline completa do fenômeno do tênis brasileiro." />
+        <meta name="description" content="Biografia completa de João Fonseca, tenista brasileiro. Carreira, títulos, curiosidades e timeline completa do fenômeno do tênis brasileiro." />
         <meta name="keywords" content="João Fonseca, biografia, tênis, ATP, brasileiro, ranking, carreira, títulos, NextGen" />
         <meta property="og:title" content="João Fonseca — Biografia Completa | Fonseca News" />
         <meta property="og:description" content="Tudo sobre a carreira do fenômeno do tênis brasileiro. De Ipanema ao top 40 do mundo." />
@@ -105,7 +135,7 @@ export default function Biografia() {
           <h1 style={{ margin: "0 0 4px", fontSize: 28, fontWeight: 900, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.03em" }}>João Fonseca</h1>
           <p style={{ margin: "0 0 12px", fontSize: 14, color: SUB, fontFamily: SANS }}>Tenista profissional 🇧🇷</p>
           <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
-            {[["🎂", "19 anos"], ["📍", "Rio de Janeiro"], ["📏", "1,88m"], ["🎾", "Destro"], ["🏆", "#24 melhor ranking"]].map(function(p, i) {
+            {[["🎂", "19 anos"], ["📍", "Rio de Janeiro"], ["📏", "1,88m"], ["🎾", "Destro"], ["🏆", "#" + ranking + " ATP"]].map(function(p, i) {
               return <span key={i} style={{ fontSize: 11, color: SUB, fontFamily: SANS, background: "#f5f5f5", padding: "4px 10px", borderRadius: 8 }}>{p[0]} {p[1]}</span>;
             })}
           </div>
@@ -121,7 +151,7 @@ export default function Biografia() {
         {/* STATS GRID */}
         <section style={{ padding: "0 0 28px" }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-            {STATS.map(function(s, i) {
+            {STATS_DYNAMIC.map(function(s, i) {
               return (
                 <div key={i} style={{ background: "#f8f8f8", borderRadius: 12, padding: "14px 10px", textAlign: "center", border: "1px solid " + BORDER }}>
                   <span style={{ fontSize: 22, fontWeight: 800, color: TEXT, fontFamily: SERIF, display: "block" }}>{s.value}</span>
