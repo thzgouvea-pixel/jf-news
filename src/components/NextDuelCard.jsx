@@ -51,14 +51,7 @@ export default function NextDuelCard(props) {
   var pushLoading = props.pushLoading;
   var oppProfile = props.oppProfile;
   var liveData = props.liveData || null;
-  var facts = props.tournamentFacts || null;
   var countdown = useCountdown(match ? match.date : null);
-  var _factIdx = useState(0); var factIdx = _factIdx[0]; var setFactIdx = _factIdx[1];
-  useEffect(function() {
-    if (!facts || !facts.length) return;
-    var iv = setInterval(function() { setFactIdx(function(p) { return (p + 1) % (facts.length + 1); }); }, 5000);
-    return function() { clearInterval(iv); };
-  }, [facts]);
 
   // Timer for "updated ago" (must be before early return to keep hook order)
   var _now = useState(Date.now()); var now = _now[0]; var setNow = _now[1];
@@ -541,16 +534,6 @@ export default function NextDuelCard(props) {
         </>
       )}
 
-      {/* ===== CONTEXT FACTS (both modes) ===== */}
-      {facts && facts.length > 0 && !isLive && (
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.04)", padding: "16px 20px 18px", marginTop: 16, textAlign: "center" }}>
-          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", display: "block", marginBottom: 6 }}>{"Curiosidades de " + (match.tournament_name || "").split(",")[0].trim()}</span>
-          {factIdx % (facts.length + 1) === 0 ? null : (
-            <span style={{ fontSize: 11, color: "rgba(79,195,247,0.65)", fontFamily: SANS, fontWeight: 500, whiteSpace: "nowrap", display: "block" }}>{facts[(factIdx - 1) % facts.length].text}</span>
-          )}
-          <span style={{ fontSize: 9, color: "rgba(255,255,255,0.15)", fontFamily: SANS, display: "block", marginTop: 6 }}>{factIdx % (facts.length + 1) === 0 ? "" : ((factIdx - 1) % facts.length + 1) + "/" + facts.length}</span>
-        </div>
-      )}
     </section>
   );
 }
