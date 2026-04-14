@@ -166,17 +166,7 @@ export default function NextDuelCard(props) {
 
   var fPct = winProb && winProb.fonseca ? Math.round(winProb.fonseca) : null;
   var oPct = winProb && winProb.opponent ? Math.round(winProb.opponent) : null;
-
-  if (fPct === null && player && player.ranking && oppRanking) {
-    var fRank = player.ranking;
-    var oRank = oppRanking;
-    var rankDiff = oRank - fRank;
-    var exponent = -rankDiff / 16;
-    var fProb = 1 / (1 + Math.pow(10, exponent));
-    fProb = Math.min(0.92, Math.max(0.08, fProb + 0.03));
-    fPct = Math.round(fProb * 100);
-    oPct = 100 - fPct;
-  }
+  var probSource = winProb ? (winProb.source || "api") : null;
 
   var dateInfo = match.date ? (function() {
     var d = new Date(match.date);
