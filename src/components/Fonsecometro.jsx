@@ -48,7 +48,7 @@ export default function Fonsecometro({ recentForm }) {
 
   return (
     <>
-      <div style={{ margin: 0, padding: "12px 18px", background: "linear-gradient(135deg, #0d1520 0%, #111d33 100%)", position: "relative", overflow: "hidden" }}>
+      <div style={{ margin: 0, padding: "14px 20px", background: "linear-gradient(135deg, #0d1520 0%, #111d33 100%)", position: "relative", overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <button onClick={function(){ setShowPopup(true); }} onTouchStart={function(){ setShowPopup(true); }} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 13, fontWeight: 800, color: barColor, fontFamily: SERIF, letterSpacing: "-0.01em" }}>Fonsecômetro</span>
