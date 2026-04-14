@@ -122,6 +122,41 @@ var TOURNAMENT_MAP = {
   "nitto": { name: "ATP Finals", cat: "Finals", surface: "Hard" },
 };
 
+// Brazilian broadcast channels by tournament
+var BROADCAST_MAP = {
+  "BMW Open": "ESPN 4",
+  "Monte Carlo Masters": "ESPN",
+  "Indian Wells Masters": "ESPN",
+  "Miami Open": "ESPN",
+  "Madrid Open": "ESPN",
+  "Italian Open": "ESPN",
+  "Roland Garros": "Globoplay",
+  "Wimbledon": "ESPN",
+  "Australian Open": "ESPN",
+  "US Open": "ESPN",
+  "Barcelona Open": "ESPN 4",
+  "Hamburg Open": "ESPN 4",
+  "Halle Open": "ESPN 4",
+  "Queen's Club": "ESPN 4",
+  "Swiss Indoors Basel": "ESPN 4",
+  "Vienna Open": "ESPN 4",
+  "Rotterdam Open": "ESPN 4",
+  "Rio Open": "ESPN",
+  "Argentina Open": "ESPN 4",
+  "ATP Finals": "ESPN",
+  "Canadian Open": "ESPN",
+  "Cincinnati Masters": "ESPN",
+  "Shanghai Masters": "ESPN",
+  "Paris Masters": "ESPN",
+};
+
+function lookupBroadcast(tournamentName) {
+  if (!tournamentName) return null;
+  if (BROADCAST_MAP[tournamentName]) return BROADCAST_MAP[tournamentName];
+  for (var k in BROADCAST_MAP) { if (tournamentName.toLowerCase().includes(k.toLowerCase())) return BROADCAST_MAP[k]; }
+  return null;
+}
+
 function lookupTournament(rawName) {
   if (!rawName) return null;
   var low = rawName.toLowerCase();
@@ -879,6 +914,23 @@ export default async function handler(req, res) {
       if (nm) { var oppLast = stripAccents((nm.opponent_name||"").split(" ").pop().toLowerCase()); if (rankingsLookup[oppLast]) nm.opponent_ranking = rankingsLookup[oppLast]; }
       if (lm) { var lmLast = stripAccents((lm.opponent_name||"").split(" ").pop().toLowerCase()); if (rankingsLookup[lmLast]) lm.opponent_ranking = rankingsLookup[lmLast]; }
     }
+    // ALWAYS apply TOURNAMENT_MAP to ensure clean data regardless of source
+    function applyTournamentMap(match) {
+      if (!match || !match.tournament_name) return;
+      var mapped = lookupTournament(match.tournament_name);
+      if (mapped) {
+        match.tournament_name = mapped.name;
+        match.tournament_category = mapped.cat;
+        match.surface = mapped.surface;
+      }
+      // Auto-detect broadcast if not set
+      if (!match.broadcast) {
+        var bc = lookupBroadcast(match.tournament_name);
+        if (bc) match.broadcast = bc;
+      }
+    }
+    applyTournamentMap(lm);
+    applyTournamentMap(nm);
     if (lm && !skipLastMatchWrite) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
     if (nm) w.push(kv.set("fn:nextMatch",JSON.stringify(nm),{ex:T7}));
 if (form.length) {
@@ -917,6 +969,11 @@ if (form.length) {
         if (!m.opponent_ranking && m.opponent_name) {
           var lastName = stripAccents(m.opponent_name.split(" ").pop().toLowerCase());
           if (rankingsLookup[lastName]) m.opponent_ranking = rankingsLookup[lastName];
+        }
+        // Apply TOURNAMENT_MAP to clean tournament names in recentForm
+        if (m.tournament) {
+          var mapped = lookupTournament(m.tournament);
+          if (mapped) m.tournament = mapped.name;
         }
       });
       form.sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
