@@ -54,7 +54,7 @@ export default async function handler(req, res) {
       getKV("fn:quizCount"),
       getKV("fn:poll:" + dayOfYear),
       getKV("fn:predict:next"),
-      getKV("fn:highlightVideo"),
+      getKV("fn:highlight-video"),
     ]);
 
     var matchStats = results[0];
