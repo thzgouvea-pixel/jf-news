@@ -811,6 +811,14 @@ export default async function handler(req, res) {
       try { nextMatchLock = await kv.get("fn:nextMatchManualLock"); } catch(e) {}
       if (nextMatchLock) {
         log("Manual lock active for nextMatch, skipping deletion");
+        // CRITICAL: restore nm from KV so odds, opponent profile, and enrichment still work
+        try {
+          var kvNm = await kv.get("fn:nextMatch");
+          if (kvNm) {
+            nm = typeof kvNm === "string" ? JSON.parse(kvNm) : kvNm;
+            log("Restored nm from KV: " + (nm.opponent_name || "?") + " @ " + (nm.tournament_name || "?"));
+          }
+        } catch(e) { log("Error restoring nm from KV: " + e.message); }
       } else {
         try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){}
       }
