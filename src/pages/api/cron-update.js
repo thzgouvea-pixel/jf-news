@@ -124,7 +124,7 @@ var TOURNAMENT_MAP = {
 
 // Brazilian broadcast channels by tournament
 var BROADCAST_MAP = {
-  "BMW Open": "ESPN 4",
+  "BMW Open": "ESPN 2 / Disney+",
   "Monte Carlo Masters": "ESPN",
   "Indian Wells Masters": "ESPN",
   "Miami Open": "ESPN",
@@ -332,13 +332,20 @@ async function scanMatches(backDaysOverride) {
 }
 
 async function fetchMatchStats(lm) {
-  if (!lm || !lm.id) return null;
+  if (!lm || !lm.id) { log("matchStats: no match ID"); return null; }
+  log("matchStats: fetching for match " + lm.id + " (" + lm.opponent_name + ")");
   var data = await sofaFetch("/v1/match/statistics?match_id=" + lm.id);
-  if (!data || !Array.isArray(data)) return null;
+  if (!data) { log("matchStats: endpoint returned null/empty for id=" + lm.id); return null; }
+  if (!Array.isArray(data)) {
+    // Try alternate response format — some plans return { statistics: [...] }
+    if (data.statistics && Array.isArray(data.statistics)) { data = data.statistics; }
+    else { log("matchStats: unexpected format: " + JSON.stringify(data).substring(0, 200)); return null; }
+  }
   var ap = data.find(function(p) { return p.period === "ALL"; });
-  if (!ap || !ap.groups) return null;
+  if (!ap || !ap.groups) { log("matchStats: no ALL period in " + data.length + " periods"); return null; }
   var f = {}, o = {};
   ap.groups.forEach(function(g) { (g.statisticsItems || []).forEach(function(it) { var k = (it.key || "").toLowerCase().replace(/\s+/g, ""); var hv = it.homeValue !== undefined ? it.homeValue : (parseInt(it.home) || 0); var av = it.awayValue !== undefined ? it.awayValue : (parseInt(it.away) || 0); f[k] = lm.isFonsecaHome ? hv : av; o[k] = lm.isFonsecaHome ? av : hv; }); });
+  log("matchStats: OK, " + Object.keys(f).length + " stat keys");
   return { fonseca: f, opponent: o, opponent_name: lm.opponent_name, opponent_country: lm.opponent_country, tournament: lm.tournament_name, result: lm.result, score: lm.score, date: lm.date };
 }
 
@@ -462,25 +469,52 @@ async function fetchOppProfile(nm) {
 async function fetchWinProb(nm) {
   if (!nm) return null;
 
-  // Source 1: The Odds API
+  // Source 1: The Odds API — discover active ATP tennis sport keys and try all
   var ok = process.env.ODDS_API_KEY;
   if (ok) {
     try {
-      var r = await fetch("https://api.the-odds-api.com/v4/sports/tennis_atp_singles/odds/?apiKey=" + ok + "&regions=eu&markets=h2h&oddsFormat=decimal");
-      if (r.ok) {
-        var d = await r.json();
-        if (Array.isArray(d)) {
-          var g = d.find(function(x) { return [x.home_team||"",x.away_team||""].some(function(n){return n.toLowerCase().includes("fonseca");}); });
-          if (g && g.bookmakers && g.bookmakers.length) {
-            var mk = g.bookmakers[0].markets && g.bookmakers[0].markets.find(function(m){return m.key==="h2h";});
-            if (mk && mk.outcomes) {
-              var fo=null,oo=null;
-              mk.outcomes.forEach(function(o){if(o.name.toLowerCase().includes("fonseca"))fo=o.price;else oo=o.price;});
-              if(fo&&oo) { var iF=1/fo,iO=1/oo,tot=iF+iO; return { fonseca: Math.round((iF/tot)*100), opponent: Math.round((iO/tot)*100), opponent_name: nm.opponent_name, source: "odds-api", updatedAt: new Date().toISOString() }; }
+      // Step 1: Get all active sports (free, no quota cost)
+      var sportsRes = await fetch("https://api.the-odds-api.com/v4/sports/?apiKey=" + ok);
+      var sportKeys = [];
+      if (sportsRes.ok) {
+        var sports = await sportsRes.json();
+        sportKeys = sports.filter(function(s) { return s.key && s.key.startsWith("tennis_atp") && s.active; }).map(function(s) { return s.key; });
+        log("Odds API active tennis keys: " + sportKeys.join(", "));
+      }
+      // Fallback if sports endpoint fails
+      if (sportKeys.length === 0) sportKeys = ["tennis_atp_singles"];
+
+      // Step 2: Try each sport key until we find Fonseca
+      for (var si = 0; si < sportKeys.length; si++) {
+        var r = await fetch("https://api.the-odds-api.com/v4/sports/" + sportKeys[si] + "/odds/?apiKey=" + ok + "&regions=eu&markets=h2h&oddsFormat=decimal");
+        if (r.ok) {
+          var d = await r.json();
+          if (Array.isArray(d)) {
+            var g = d.find(function(x) { return [x.home_team||"",x.away_team||""].some(function(n){return n.toLowerCase().includes("fonseca");}); });
+            if (g && g.bookmakers && g.bookmakers.length) {
+              // Average odds across multiple bookmakers for accuracy
+              var fOddsArr = [], oOddsArr = [];
+              g.bookmakers.forEach(function(bk) {
+                var mk = bk.markets && bk.markets.find(function(m){return m.key==="h2h";});
+                if (mk && mk.outcomes) {
+                  mk.outcomes.forEach(function(o){
+                    if(o.name.toLowerCase().includes("fonseca")) fOddsArr.push(o.price);
+                    else oOddsArr.push(o.price);
+                  });
+                }
+              });
+              if (fOddsArr.length > 0 && oOddsArr.length > 0) {
+                var avgF = fOddsArr.reduce(function(a,b){return a+b;},0) / fOddsArr.length;
+                var avgO = oOddsArr.reduce(function(a,b){return a+b;},0) / oOddsArr.length;
+                var iF=1/avgF,iO=1/avgO,tot=iF+iO;
+                log("Odds API: Fonseca " + avgF.toFixed(2) + " / " + (nm.opponent_name||"opp") + " " + avgO.toFixed(2) + " (avg of " + fOddsArr.length + " bookmakers via " + sportKeys[si] + ")");
+                return { fonseca: Math.round((iF/tot)*100), opponent: Math.round((iO/tot)*100), opponent_name: nm.opponent_name, source: "odds-api", updatedAt: new Date().toISOString() };
+              }
             }
           }
         }
       }
+      log("Odds API: Fonseca not found in any of " + sportKeys.length + " sport keys");
     } catch(e) { log("Odds API error: " + e.message); }
   }
 
@@ -505,45 +539,7 @@ async function fetchWinProb(nm) {
     } catch(e) { log("SofaScore odds error: " + e.message); }
   }
 
-  // Source 3: Gemini search for odds
-  var oppName = nm.opponent_name || "adversário";
-  var gTxt = await geminiSearch("Qual a probabilidade de vitória de João Fonseca (#" + (nm.opponent_ranking ? "adversário ranking " + nm.opponent_ranking : "") + ") contra " + oppName + " no " + (nm.tournament_name || "ATP") + " 2026? Considere ranking, forma recente e superfície. Responda APENAS JSON: {\"fonseca_win_pct\":NUMBER,\"opponent_win_pct\":NUMBER}. Os valores devem somar 100. fonseca_win_pct é a probabilidade de FONSECA vencer.");
-  if (gTxt) {
-    try {
-      var cleaned = gTxt.replace(/```json|```/g, "").trim();
-      var jsonMatch = cleaned.match(/\{[^}]+\}/);
-      if (jsonMatch) {
-        var gOdds = JSON.parse(jsonMatch[0]);
-        // New format: direct probabilities
-        if (gOdds && gOdds.fonseca_win_pct && gOdds.opponent_win_pct) {
-          var fPct = Math.round(gOdds.fonseca_win_pct);
-          var oPct = Math.round(gOdds.opponent_win_pct);
-          // Sanity: ensure they sum close to 100
-          if (Math.abs(fPct + oPct - 100) > 5) { var t = fPct + oPct; fPct = Math.round((fPct/t)*100); oPct = 100 - fPct; }
-          log("Gemini win prob: Fonseca " + fPct + "% / " + oppName + " " + oPct + "%");
-          return { fonseca: fPct, opponent: oPct, opponent_name: nm.opponent_name, source: "gemini-odds", updatedAt: new Date().toISOString() };
-        }
-        // Legacy format fallback: odds decimais
-        if (gOdds && gOdds.fonseca_odds && gOdds.opponent_odds) {
-          var fo = gOdds.fonseca_odds, oo = gOdds.opponent_odds;
-          // Validation: lower odds = more likely to win. If Fonseca has better ranking
-          // but higher odds (less likely), the values are probably swapped.
-          if (nm.opponent_ranking && fo > oo) {
-            // Fonseca is #35, if opponent ranking is worse (higher number), Fonseca should be favored (lower odds)
-            var fRank = 35; // approximate — could be improved with actual ranking from KV
-            if (fRank < nm.opponent_ranking) {
-              log("Odds validation: swapping (Fonseca #" + fRank + " should be favored vs #" + nm.opponent_ranking + " but got odds " + fo + " vs " + oo + ")");
-              var tmp = fo; fo = oo; oo = tmp;
-            }
-          }
-          var gfi = 1/fo, goi = 1/oo, gt = gfi+goi;
-          log("Gemini odds: Fonseca " + fo + " / " + oppName + " " + oo);
-          return { fonseca: Math.round((gfi/gt)*100), opponent: Math.round((goi/gt)*100), opponent_name: nm.opponent_name, source: "gemini-odds", updatedAt: new Date().toISOString() };
-        }
-      }
-    } catch(e) { log("Gemini odds parse: " + e.message); }
-  }
-
+  log("No reliable odds source for " + (nm.opponent_name || "match"));
   return null;
 }
 
@@ -895,13 +891,13 @@ export default async function handler(req, res) {
       log("Odds fresh (" + (wp ? wp.fonseca + "%" : "none") + "), next check in " + Math.round((H6 - (now - lastOddsTs)) / 60000) + "min");
     } else { steps.odds = "skip"; }
 
-    // Gemini enrichment for nextMatch — fill gaps (official name, date, broadcast)
-    if (nm && (!nm.date || !nm.tournament_category || (nm.tournament_name && nm.tournament_name.includes(",")))) {
+    // Gemini enrichment for nextMatch — fill gaps (official name, date, broadcast, court)
+    if (nm && (!nm.date || !nm.tournament_category || !nm.court || (nm.tournament_name && nm.tournament_name.includes(",")))) {
       log("Enriching nextMatch via Gemini...");
       var enrichTxt = await geminiSearch(
         "Busque informações sobre a partida de tênis João Fonseca vs " + (nm.opponent_name || "adversário") +
         " no torneio " + (nm.tournament_name || "ATP") + " em 2026. " +
-        "Responda APENAS JSON: {\"tournament_official_name\":\"nome oficial do torneio\",\"tournament_category\":\"Grand Slam ou Masters 1000 ou ATP 500 ou ATP 250\",\"surface\":\"Clay ou Hard ou Grass\",\"date\":\"YYYY-MM-DDTHH:MM:SSZ em UTC\",\"round\":\"rodada\",\"broadcast\":\"canal de transmissão no Brasil ou null\",\"city\":\"cidade\"}"
+        "Responda APENAS JSON: {\"tournament_official_name\":\"nome oficial do torneio\",\"tournament_category\":\"Grand Slam ou Masters 1000 ou ATP 500 ou ATP 250\",\"surface\":\"Clay ou Hard ou Grass\",\"date\":\"YYYY-MM-DDTHH:MM:SSZ em UTC\",\"round\":\"rodada\",\"broadcast\":\"canais de transmissão no Brasil ou null\",\"city\":\"cidade\",\"court\":\"nome da quadra onde será jogada a partida\"}"
       );
       if (enrichTxt) {
         try {
@@ -919,6 +915,7 @@ export default async function handler(req, res) {
               if (!nm.surface && enrich.surface) nm.surface = enrich.surface;
               if (!nm.round && enrich.round) nm.round = enrich.round;
               if (enrich.broadcast && enrich.broadcast !== "null") nm.broadcast = enrich.broadcast;
+              if (!nm.court && enrich.court && enrich.court !== "null") { nm.court = enrich.court; log("Gemini court: " + enrich.court); }
               steps.enrich = "ok";
             }
           }
@@ -934,14 +931,14 @@ export default async function handler(req, res) {
     if (!wiki || !wiki.prizeMoney) gaps.push("prize money total de carreira do João Fonseca em USD");
     if (!wiki || !wiki.titles) gaps.push("número de títulos ATP do João Fonseca");
     if (nm && !nm.date) gaps.push("data e horário UTC da partida " + (nm.opponent_name||"") + " vs Fonseca no " + (nm.tournament_name||"ATP") + " 2026");
-    if (nm && !wp) gaps.push("probabilidade de vitória de Fonseca vs " + (nm.opponent_name||"adversário") + " (percentual de 0 a 100)");
+    // Gemini sweep does NOT handle odds — unreliable source removed
 
     if (gaps.length > 0) {
       log("Gemini sweep: " + gaps.length + " gaps to fill");
       var sweepTxt = await geminiSearch(
         "Busque dados REAIS e ATUALIZADOS sobre o tenista João Fonseca (brasileiro, nascido 2006). Preciso de: " +
         gaps.join("; ") + ". " +
-        "Responda APENAS JSON: {\"ranking\":NUMBER_OR_NULL,\"wins\":NUMBER_OR_NULL,\"losses\":NUMBER_OR_NULL,\"seasonWins\":NUMBER_OR_NULL,\"seasonLosses\":NUMBER_OR_NULL,\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}},\"prizeMoney\":NUMBER_OR_NULL,\"titles\":NUMBER_OR_NULL,\"matchDate\":\"ISO_STRING_OR_NULL\",\"fonseca_win_pct\":NUMBER_OR_NULL,\"opponent_win_pct\":NUMBER_OR_NULL}. fonseca_win_pct é a probabilidade de FONSECA vencer (0-100), devem somar 100."
+        "Responda APENAS JSON: {\"ranking\":NUMBER_OR_NULL,\"wins\":NUMBER_OR_NULL,\"losses\":NUMBER_OR_NULL,\"seasonWins\":NUMBER_OR_NULL,\"seasonLosses\":NUMBER_OR_NULL,\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}},\"prizeMoney\":NUMBER_OR_NULL,\"titles\":NUMBER_OR_NULL,\"matchDate\":\"ISO_STRING_OR_NULL\"}"
       );
       if (sweepTxt) {
         try {
@@ -960,29 +957,7 @@ export default async function handler(req, res) {
               if (sweep.surface && (!wiki.surface || (!wiki.surface.hard.w && !wiki.surface.clay.w))) wiki.surface = sweep.surface;
               // Fill nextMatch date
               if (nm && !nm.date && sweep.matchDate) { nm.date = sweep.matchDate; log("Sweep: match date " + sweep.matchDate); }
-              // Fill odds — new format: direct probabilities
-              if (!wp && nm) {
-                if (sweep.fonseca_win_pct && sweep.opponent_win_pct) {
-                  var swFPct = Math.round(sweep.fonseca_win_pct);
-                  var swOPct = Math.round(sweep.opponent_win_pct);
-                  if (Math.abs(swFPct + swOPct - 100) > 5) { var swT = swFPct + swOPct; swFPct = Math.round((swFPct/swT)*100); swOPct = 100 - swFPct; }
-                  wp = { fonseca: swFPct, opponent: swOPct, opponent_name: nm.opponent_name, source: "gemini-sweep", updatedAt: new Date().toISOString() };
-                  log("Sweep: win prob " + wp.fonseca + "% / " + wp.opponent + "%");
-                } else if (sweep.fonseca_odds && sweep.opponent_odds) {
-                  // Legacy fallback with ranking validation
-                  var swFo = sweep.fonseca_odds, swOo = sweep.opponent_odds;
-                  if (nm.opponent_ranking && swFo > swOo) {
-                    var approxRank = (wiki && wiki.ranking) || 35;
-                    if (approxRank < nm.opponent_ranking) {
-                      log("Sweep odds validation: swapping (Fonseca #" + approxRank + " vs #" + nm.opponent_ranking + ")");
-                      var swTmp = swFo; swFo = swOo; swOo = swTmp;
-                    }
-                  }
-                  var sfi = 1/swFo, soi = 1/swOo, st = sfi+soi;
-                  wp = { fonseca: Math.round((sfi/st)*100), opponent: Math.round((soi/st)*100), opponent_name: nm.opponent_name, source: "gemini-sweep", updatedAt: new Date().toISOString() };
-                  log("Sweep: odds " + wp.fonseca + "% / " + wp.opponent + "%");
-                }
-              }
+              // Gemini odds REMOVED — unreliable source
               steps.sweep = gaps.length + " gaps filled";
             }
           }
@@ -1007,11 +982,9 @@ export default async function handler(req, res) {
         match.tournament_category = mapped.cat;
         match.surface = mapped.surface;
       }
-      // Auto-detect broadcast if not set
-      if (!match.broadcast) {
-        var bc = lookupBroadcast(match.tournament_name);
-        if (bc) match.broadcast = bc;
-      }
+      // ALWAYS apply broadcast from BROADCAST_MAP (auto-correct stale data)
+      var bc = lookupBroadcast(match.tournament_name);
+      if (bc) match.broadcast = bc;
     }
     applyTournamentMap(lm);
     applyTournamentMap(nm);
@@ -1109,6 +1082,10 @@ if (form.length) {
     }
     if (op) w.push(kv.set("fn:opponentProfile",JSON.stringify(op),{ex:T2}));
     if (wp) w.push(kv.set("fn:winProb",JSON.stringify(wp),{ex:T2}));
+    else if (nm) {
+      // Clear stale/unreliable odds when no real odds source available
+      try { var exWpCheck = await kv.get("fn:winProb"); if (exWpCheck) { var parsed = typeof exWpCheck === "string" ? JSON.parse(exWpCheck) : exWpCheck; if (parsed && (parsed.source === "gemini-odds" || parsed.source === "gemini-sweep")) { await kv.del("fn:winProb"); log("Cleared stale Gemini odds from KV"); } } } catch(e) {}
+    }
     if (exRankingsList && exRankingsList.updatedAt && !rankingsListFresh) w.push(kv.set("fn:atpRankings",JSON.stringify(exRankingsList),{ex:T7}));
     w.push(kv.set("fn:cronLastRun",new Date().toISOString(),{ex:T7}));
     await Promise.all(w); steps.kv = w.length + " keys";
