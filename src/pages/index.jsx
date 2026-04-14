@@ -412,27 +412,23 @@ export default function JoaoFonsecaNews() {
 
        {!hasNextMatch && (
         <section style={{ padding: "8px 0 0" }}>
-          <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
+          <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
             <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
           )}
           {recentForm && recentForm.length > 0 && <Fonsecometro recentForm={recentForm} />}
-          </div>
-          <div style={{ padding: "12px 0 0" }}>
-            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} />
+          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} />
           </div>
         </section>
 )}
 
 {hasNextMatch && (
         <section style={{ padding: "8px 0 0" }}>
-          <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
+          <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
           <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} />
           {recentForm && recentForm.length > 0 && <Fonsecometro recentForm={recentForm} />}
-          </div>
-          <div style={{ padding: "12px 0 0" }}>
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
