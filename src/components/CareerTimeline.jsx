@@ -12,7 +12,9 @@ export default function CareerTimeline() {
     { date: "Jul 2025", title: "Wimbledon R3", desc: "1º brasileiro desde Bellucci 2010", emoji: "🌿", color: GREEN },
     { date: "Out 2025", title: "Campeão Basel 500", desc: "1º brasileiro a ganhar ATP 500", emoji: "🏆", color: YELLOW },
     { date: "Fev 2026", title: "Duplas no Rio Open", desc: "Título de duplas em casa", emoji: "🤝", color: "#3B82F6" },
-    { date: "Mar 2026", title: "Ranking #40 ATP", desc: "Preparando-se para Monte Carlo", emoji: "📈", color: GREEN },
+    { date: "Mar 2026", title: "R4 em Indian Wells", desc: "Vitórias sobre Paul e Khachanov, épico vs Sinner", emoji: "🎯", color: GREEN },
+    { date: "Abr 2026", title: "QF em Monte Carlo", desc: "3 vitórias incl. Berrettini, derrota honrosa vs #3 Zverev", emoji: "🔥", color: RED },
+    { date: "Abr 2026", title: "BMW Open · Munique", desc: "Em andamento — ATP 500 no saibro alemão", emoji: "🏟️", color: GREEN },
   ];
   return (
     <div style={{ padding: "16px 0", maxHeight: "65vh", overflowY: "auto" }}>
