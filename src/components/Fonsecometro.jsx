@@ -48,17 +48,17 @@ export default function Fonsecometro({ recentForm }) {
 
   return (
     <>
-      <div style={{ margin: 0, padding: "14px 20px", background: "linear-gradient(135deg, #0d1520 0%, #111d33 100%)", position: "relative", overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+      <div style={{ margin: 0, padding: "10px 20px", position: "relative", overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
           <button onClick={function(){ setShowPopup(true); }} onTouchStart={function(){ setShowPopup(true); }} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 800, color: barColor, fontFamily: SERIF, letterSpacing: "-0.01em" }}>Fonsecômetro</span>
-            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.25)", fontFamily: SANS }}>?</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS, letterSpacing: "-0.01em" }}>Moral do João</span>
+            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>?</span>
           </button>
-          <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{h.mood}</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: barColor, fontFamily: SANS }}>{h.mood}</span>
         </div>
 
-        <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ height: 5, borderRadius: 3, width: h.pct + "%", background: "linear-gradient(90deg, " + barColor + "80, " + barColor + ")", boxShadow: "0 0 8px " + barColor + "30", transition: "width 1.2s ease" }} />
+        <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ height: 4, borderRadius: 3, width: h.pct + "%", background: "linear-gradient(90deg, " + barColor + "80, " + barColor + ")", boxShadow: "0 0 8px " + barColor + "30", transition: "width 1.2s ease" }} />
         </div>
       </div>
 
@@ -68,7 +68,7 @@ export default function Fonsecometro({ recentForm }) {
             <button onClick={function(){ setShowPopup(false); }} style={{ position: "absolute", top: 12, right: 12, background: "rgba(255,255,255,0.08)", border: "none", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
-            <h3 style={{ margin: "0 0 16px", fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: SERIF }}>O que é o Fonsecômetro?</h3>
+            <h3 style={{ margin: "0 0 16px", fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: SERIF }}>O que é a Moral do João?</h3>
             <p style={{ margin: "0 0 16px", fontSize: 13, color: "rgba(255,255,255,0.7)", fontFamily: SANS, lineHeight: 1.6 }}>
               Um indicador exclusivo do Fonseca News que mede o momento atual do João baseado nos resultados recentes, qualidade dos adversários e peso de cada partida.
             </p>
