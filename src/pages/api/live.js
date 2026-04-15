@@ -3,6 +3,81 @@ import { kv } from "@vercel/kv";
 
 var RAPIDAPI_HOST = "sofascore6.p.rapidapi.com";
 
+// ===== MAPS (same as cron-update.js) =====
+var TOURNAMENT_MAP = {
+  "munich": { name: "BMW Open", cat: "ATP 500", surface: "Clay" },
+  "bmw open": { name: "BMW Open", cat: "ATP 500", surface: "Clay" },
+  "monte carlo": { name: "Monte Carlo Masters", cat: "Masters 1000", surface: "Clay" },
+  "indian wells": { name: "Indian Wells Masters", cat: "Masters 1000", surface: "Hard" },
+  "miami": { name: "Miami Open", cat: "Masters 1000", surface: "Hard" },
+  "madrid": { name: "Madrid Open", cat: "Masters 1000", surface: "Clay" },
+  "roma": { name: "Italian Open", cat: "Masters 1000", surface: "Clay" },
+  "roland garros": { name: "Roland Garros", cat: "Grand Slam", surface: "Clay" },
+  "french open": { name: "Roland Garros", cat: "Grand Slam", surface: "Clay" },
+  "wimbledon": { name: "Wimbledon", cat: "Grand Slam", surface: "Grass" },
+  "australian open": { name: "Australian Open", cat: "Grand Slam", surface: "Hard" },
+  "us open": { name: "US Open", cat: "Grand Slam", surface: "Hard" },
+  "barcelona": { name: "Barcelona Open", cat: "ATP 500", surface: "Clay" },
+  "rio de janeiro": { name: "Rio Open", cat: "ATP 500", surface: "Clay" },
+  "rio open": { name: "Rio Open", cat: "ATP 500", surface: "Clay" },
+  "buenos aires": { name: "Argentina Open", cat: "ATP 250", surface: "Clay" },
+  "basel": { name: "Swiss Indoors Basel", cat: "ATP 500", surface: "Hard" },
+  "hamburg": { name: "Hamburg Open", cat: "ATP 500", surface: "Clay" },
+  "halle": { name: "Halle Open", cat: "ATP 500", surface: "Grass" },
+  "queen": { name: "Queen's Club", cat: "ATP 500", surface: "Grass" },
+  "vienna": { name: "Vienna Open", cat: "ATP 500", surface: "Hard" },
+  "rotterdam": { name: "Rotterdam Open", cat: "ATP 500", surface: "Hard" },
+  "canadian": { name: "Canadian Open", cat: "Masters 1000", surface: "Hard" },
+  "montreal": { name: "Canadian Open", cat: "Masters 1000", surface: "Hard" },
+  "toronto": { name: "Canadian Open", cat: "Masters 1000", surface: "Hard" },
+  "cincinnati": { name: "Cincinnati Masters", cat: "Masters 1000", surface: "Hard" },
+  "shanghai": { name: "Shanghai Masters", cat: "Masters 1000", surface: "Hard" },
+  "paris": { name: "Paris Masters", cat: "Masters 1000", surface: "Hard" },
+};
+var BROADCAST_MAP = {
+  "BMW Open": "ESPN 2 / Disney+",
+  "Monte Carlo Masters": "ESPN",
+  "Indian Wells Masters": "ESPN",
+  "Miami Open": "ESPN",
+  "Madrid Open": "ESPN",
+  "Italian Open": "ESPN",
+  "Roland Garros": "Globoplay",
+  "Wimbledon": "ESPN",
+  "Australian Open": "ESPN",
+  "US Open": "ESPN",
+  "Barcelona Open": "ESPN 4",
+  "Rio Open": "ESPN",
+  "Argentina Open": "ESPN 4",
+  "ATP Finals": "ESPN",
+  "Canadian Open": "ESPN",
+  "Cincinnati Masters": "ESPN",
+  "Shanghai Masters": "ESPN",
+  "Paris Masters": "ESPN",
+};
+var ROUND_MAP = {
+  "round 1": "1ª rodada", "round of 128": "1ª rodada", "round of 64": "2ª rodada",
+  "round 2": "2ª rodada", "round of 32": "3ª rodada", "round 3": "3ª rodada",
+  "round of 16": "Oitavas de final", "round 4": "Oitavas de final",
+  "quarterfinal": "Quartas de final", "quarterfinals": "Quartas de final",
+  "semifinal": "Semifinal", "semifinals": "Semifinal",
+  "final": "Final", "1st round": "1ª rodada", "2nd round": "2ª rodada",
+  "3rd round": "3ª rodada", "4th round": "Oitavas de final",
+};
+function lookupTournament(rawName) {
+  if (!rawName) return null;
+  var low = rawName.toLowerCase();
+  if (TOURNAMENT_MAP[low]) return TOURNAMENT_MAP[low];
+  for (var key in TOURNAMENT_MAP) { if (low.includes(key)) return TOURNAMENT_MAP[key]; }
+  return null;
+}
+function translateRound(rawRound) {
+  if (!rawRound) return "";
+  var low = rawRound.toLowerCase().trim();
+  if (ROUND_MAP[low]) return ROUND_MAP[low];
+  for (var k in ROUND_MAP) { if (low.includes(k)) return ROUND_MAP[k]; }
+  return rawRound;
+}
+
 async function sofaFetch(path, apiKey) {
   var url = "https://" + RAPIDAPI_HOST + "/api/sofascore" + path;
   var res = await fetch(url, {
@@ -145,22 +220,36 @@ export default async function handler(req, res) {
               score: scoreStr,
               opponent_name: oppF.shortName || oppF.name || "Oponente",
               opponent_id: oppF.id || null,
+              opponent_ranking: oppF.ranking || null,
               opponent_country: oppF.country ? oppF.country.name : "",
               tournament_name: tournF.name || (tournF.uniqueTournament && tournF.uniqueTournament.name) || "",
               tournament_category: "",
               surface: surfF,
-              round: roundF.name || "",
+              round: translateRound(roundF.name) || "",
               date: fonsecaMatch.startTimestamp ? new Date(fonsecaMatch.startTimestamp * 1000).toISOString() : now.toISOString(),
               court: venueF,
               finished: true,
               isFonsecaHome: isFH,
             };
-            // Categorize tournament
-            var tLow = lastMatchData.tournament_name.toLowerCase();
-            if (["australian open","roland garros","french open","wimbledon","us open"].some(function(g){return tLow.includes(g);})) lastMatchData.tournament_category = "Grand Slam";
-            else if (tLow.includes("1000") || ["monte carlo","madrid","roma","indian wells","miami","canadian","cincinnati","shanghai","paris"].some(function(m){return tLow.includes(m);})) lastMatchData.tournament_category = "Masters 1000";
-            else if (tLow.includes("500")) lastMatchData.tournament_category = "ATP 500";
-            else if (tLow.includes("250")) lastMatchData.tournament_category = "ATP 250";
+            // Apply TOURNAMENT_MAP for clean names
+            var rawTName = lastMatchData.tournament_name;
+            var utName = (tournF.uniqueTournament && tournF.uniqueTournament.name) || "";
+            var mapped = lookupTournament(rawTName) || lookupTournament(utName);
+            if (mapped) {
+              lastMatchData.tournament_name = mapped.name;
+              lastMatchData.tournament_category = mapped.cat;
+              lastMatchData.surface = mapped.surface;
+            } else {
+              // Fallback category detection
+              var tLow = lastMatchData.tournament_name.toLowerCase();
+              if (["australian open","roland garros","french open","wimbledon","us open"].some(function(g){return tLow.includes(g);})) lastMatchData.tournament_category = "Grand Slam";
+              else if (tLow.includes("1000") || ["monte carlo","madrid","roma","indian wells","miami","canadian","cincinnati","shanghai","paris"].some(function(m){return tLow.includes(m);})) lastMatchData.tournament_category = "Masters 1000";
+              else if (tLow.includes("500")) lastMatchData.tournament_category = "ATP 500";
+              else if (tLow.includes("250")) lastMatchData.tournament_category = "ATP 250";
+            }
+            // Apply BROADCAST_MAP
+            var bc = BROADCAST_MAP[lastMatchData.tournament_name];
+            if (bc) lastMatchData.broadcast = bc;
 
             await Promise.all([
               kv.set("fn:lastMatch", JSON.stringify(lastMatchData), { ex: 604800 }),
@@ -174,7 +263,7 @@ export default async function handler(req, res) {
               var existingForm = await kv.get("fn:recentForm");
               var formArr = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
               if (!Array.isArray(formArr)) formArr = [];
-              var newEntry = { result: lastMatchData.result, score: lastMatchData.score, opponent_name: lastMatchData.opponent_name, tournament: lastMatchData.tournament_name, date: lastMatchData.date };
+              var newEntry = { result: lastMatchData.result, score: lastMatchData.score, opponent_name: lastMatchData.opponent_name, opponent_ranking: lastMatchData.opponent_ranking || null, tournament: lastMatchData.tournament_name, date: lastMatchData.date };
               // Don't duplicate
               var alreadyExists = formArr.some(function(f) { return f.opponent_name === newEntry.opponent_name && f.score === newEntry.score; });
               if (!alreadyExists) {
@@ -248,6 +337,13 @@ export default async function handler(req, res) {
     if (fonsecaMatch.venue) { venue = typeof fonsecaMatch.venue === "string" ? fonsecaMatch.venue : (fonsecaMatch.venue.name || fonsecaMatch.venue.stadium || null); }
     if (!venue && fonsecaMatch.courtName) venue = fonsecaMatch.courtName;
 
+    // Apply maps for clean data
+    var liveTournName = tournament.name || (tournament.uniqueTournament && tournament.uniqueTournament.name) || "";
+    var liveMapped = lookupTournament(liveTournName);
+    var liveGt = (fonsecaMatch.groundType || tournament.groundType || "").toLowerCase();
+    var liveSurface = liveMapped ? liveMapped.surface : (liveGt === "clay" ? "Clay" : (liveGt === "grass" ? "Grass" : "Hard"));
+    var liveSurfaceLabel = liveSurface === "Clay" ? "Saibro" : (liveSurface === "Grass" ? "Grama" : "Duro");
+
     var result = {
       live: true,
       matchId: fonsecaMatch.id,
@@ -259,9 +355,10 @@ export default async function handler(req, res) {
         current_game: currentGame,
         serving: fonsecaMatch.servingTeam ? ((fonsecaMatch.servingTeam === "homeTeam" && isFonsecaHome) || (fonsecaMatch.servingTeam === "awayTeam" && !isFonsecaHome) ? "fonseca" : "opponent") : "",
       },
-      tournament: tournament.name || "",
-      surface: (function() { var gt = (fonsecaMatch.groundType || tournament.groundType || "").toLowerCase(); if (gt === "clay") return "Saibro"; if (gt === "grass") return "Grama"; return "Duro"; })(),
-      round: roundInfo.name || "",
+      tournament: liveMapped ? liveMapped.name : liveTournName,
+      tournament_category: liveMapped ? liveMapped.cat : "",
+      surface: liveSurfaceLabel,
+      round: translateRound(roundInfo.name) || "",
       court: venue,
       checkedAt: now.toISOString(),
     };
