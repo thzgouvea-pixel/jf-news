@@ -244,7 +244,17 @@ async function handleMatchFinished(match, now) {
 
 // ===== SCAN FOR NEXT MATCH =====
 async function scanNextMatch(lastMatch, now) {
-  try {
+  // Don't overwrite nextMatch if it already exists with better data
+        try {
+          var existingNm = await kv.get("fn:nextMatch");
+          if (existingNm) {
+            var exNm = typeof existingNm === "string" ? JSON.parse(existingNm) : existingNm;
+            if (exNm && exNm.opponent_name && exNm.opponent_ranking) {
+              log("nextMatch already exists with good data, skipping overwrite");
+              return;
+            }
+          }
+        } catch(e) {}
     // Date scan: today + next 3 days (most reliable on RapidAPI)
     for (var d = 0; d <= 3; d++) {
       var ds = new Date(now.getTime() + d * 86400000).toISOString().split("T")[0];
