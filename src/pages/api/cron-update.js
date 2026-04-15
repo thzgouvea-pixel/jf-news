@@ -672,6 +672,29 @@ export default async function handler(req, res) {
       }
       return newData;
     }
+    // === GOLDEN RULE: DATA NEVER REGRESSES ===
+    // Read current KV, keep any field that new data lost
+    async function protect(key, newData) {
+      if (!newData) return newData;
+      try {
+        var raw = await kv.get(key);
+        if (!raw) return newData;
+        var old = typeof raw === "string" ? JSON.parse(raw) : raw;
+        if (!old || typeof old !== "object") return newData;
+        for (var f in old) {
+          if (old[f] !== null && old[f] !== undefined && old[f] !== "" && old[f] !== 0) {
+            if (newData[f] === null || newData[f] === undefined || newData[f] === "" || newData[f] === 0) {
+              newData[f] = old[f];
+            }
+          }
+        }
+      } catch(e) {}
+      return newData;
+    }
+    if (lm) lm = await protect("fn:lastMatch", lm);
+    if (nm) nm = await protect("fn:nextMatch", nm);
+    if (ms) ms = await protect("fn:matchStats", ms);
+    if (!wp) { try { var kWp = await kv.get("fn:winProb"); if (kWp) wp = typeof kWp === "string" ? JSON.parse(kWp) : kWp; } catch(e){} }
     var w = [];
 // Protect against data regression
     if (lm) lm = protectData(lm, await kv.get("fn:lastMatch"));
