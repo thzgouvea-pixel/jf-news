@@ -474,7 +474,7 @@ export default function NextDuelCard(props) {
                 if (countdown.days > 0) p.push(countdown.days + "d");
                 p.push(String(countdown.hours).padStart(2, "0") + "h");
                 p.push(String(countdown.minutes).padStart(2, "0") + "m");
-                p.push(String(countdown.seconds).padStart(2, "0") + "s");
+                if (countdown.days === 0) p.push(String(countdown.seconds).padStart(2, "0") + "s");
                 return p.join(" ");
               })()}</div>
             </div>
