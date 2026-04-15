@@ -42,12 +42,12 @@ export default async function handler(req, res) {
     var now = new Date();
     var fonsecaMatch = null;
 
-    // ── DETECT: Try events/live first, then date scan ──
-    // Note: /v1/sport/tennis/events/live may 404 on RapidAPI wrapper
-    var liveData = await sofaFetch("/v1/sport/tennis/events/live");
+    // ── DETECT: Try live matches endpoint first, then date scan ──
+    // Correct RapidAPI path: /v1/match/live?sport_slug=tennis
+    var liveData = await sofaFetch("/v1/match/live?sport_slug=tennis");
     if (liveData) {
       fonsecaMatch = findFonseca(liveData);
-      if (fonsecaMatch) log("Found via events/live: " + fonsecaMatch.id);
+      if (fonsecaMatch) log("Found via match/live: " + fonsecaMatch.id);
     }
 
     // Date scan fallback (always reliable on RapidAPI)
