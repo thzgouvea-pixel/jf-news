@@ -451,7 +451,7 @@ export default async function handler(req, res) {
       var kvOpp = stripAccents(exLastMatch.opponent_name.split(" ").pop().toLowerCase());
       if (lmOpp === kvOpp) {
         // Same opponent — KV fills gaps in scan data
-        ["date", "startTimestamp", "round", "court", "opponent_ranking", "opponent_country",
+        ["date", "startTimestamp", "court", "opponent_ranking", "opponent_country",
          "opponent_id", "tournament_category", "broadcast", "result", "score"].forEach(function (f) {
           if ((!lm[f] || lm[f] === "") && exLastMatch[f] && exLastMatch[f] !== "") lm[f] = exLastMatch[f];
         });
