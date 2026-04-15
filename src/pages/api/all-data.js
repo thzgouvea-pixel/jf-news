@@ -55,6 +55,8 @@ export default async function handler(req, res) {
       getKV("fn:poll:" + dayOfYear),
       getKV("fn:predict:next"),
       getKV("fn:highlight-video"),
+      getKV("fn:h2h"),
+      getKV("fn:pregameForm"),
     ]);
 
     var matchStats = results[0];
@@ -76,6 +78,8 @@ export default async function handler(req, res) {
     var pollData = results[16];
     var predictData = results[17];
     var highlightVideo = results[18];
+    var h2h = results[19];
+    var pregameForm = results[20];
 
     var parse = function(val) {
       if (!val) return null;
@@ -123,6 +127,8 @@ export default async function handler(req, res) {
       pollResults: { a: pollParsed.a || 0, b: pollParsed.b || 0, total: pollTotal, pctA: pollTotal > 0 ? Math.round(((pollParsed.a||0) / pollTotal) * 100) : 50, pctB: pollTotal > 0 ? Math.round(((pollParsed.b||0) / pollTotal) * 100) : 50 },
       predictResults: { predictions: predictions, total: predTotal },
       highlightVideo: highlightVideo || null,
+      h2h: h2h || null,
+      pregameForm: pregameForm || null,
     });
   } catch (e) {
     return res.status(500).json({ error: e.message });
