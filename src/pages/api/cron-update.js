@@ -530,7 +530,9 @@ export default async function handler(req, res) {
     var oddsFresh = lastOddsTs && (now - lastOddsTs) < H6;
     var oppChanged = nm && nm.opponent_name !== "A definir" && (!exOpp || !exOpp.name ||
       stripAccents(exOpp.name.split(" ").pop().toLowerCase()) !== stripAccents((nm.opponent_name || "").split(" ").pop().toLowerCase()));
-    if (nm && nm.opponent_name !== "A definir" && (!oddsFresh || oppChanged)) {
+    var hasOdds = false;
+    try { var exWp2 = await kv.get("fn:winProb"); if (exWp2) hasOdds = true; } catch(e) {}
+    if (nm && nm.opponent_name !== "A definir" && (!oddsFresh || oppChanged || !hasOdds)) {
       wp = await fetchWinProb(nm);
       await kv.set("fn:lastOddsCheck", String(now), { ex: 86400 });
       steps.odds = wp ? wp.fonseca + "%" : "—";
