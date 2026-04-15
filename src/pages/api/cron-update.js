@@ -434,7 +434,7 @@ export default async function handler(req, res) {
         if (!lm.finished && exLastMatch.finished) lm.finished = true;
         if (exLastMatch.id && !lm.id) lm.id = exLastMatch.id;
         log("merged lm with KV (" + lm.opponent_name + ")");
-      } else if (exLastMatch.date && (!lm.date || new Date(exLastMatch.date) > new Date(lm.date))) {
+      } else if (exLastMatch.date && lm.date && new Date(exLastMatch.date) > new Date(lm.date)) {
         // KV has a DIFFERENT, newer opponent — use KV as lastMatch
         log("KV lastMatch newer: " + exLastMatch.opponent_name + " > " + lm.opponent_name);
         lm = exLastMatch;
