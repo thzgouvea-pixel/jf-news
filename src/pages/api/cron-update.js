@@ -129,54 +129,32 @@ async function enrichNextMatch(nm) {
   if (!nm || !nm.id) return { nm: nm, h2h: null, pregameForm: null };
 
   // a) Event detail — court, confirmed time, round
-  // Try multiple path variations (RapidAPI wrapper may differ from direct SofaScore API)
+  // Correct RapidAPI path: /v1/match/details?match_id=ID
   if (!nm.court || !nm.startTimestamp || !nm.round) {
-    var detailPaths = [
-      "/v1/event/" + nm.id,
-      "/v1/match/" + nm.id,
-      "/v1/event/details?event_id=" + nm.id,
-      "/v1/match/detail?match_id=" + nm.id,
-    ];
-    for (var i = 0; i < detailPaths.length; i++) {
-      var detail = await sofaFetch(detailPaths[i]);
-      if (detail) {
-        var ev = detail.event || detail;
-        if (!nm.court && ev.courtName) nm.court = ev.courtName;
-        if (!nm.court && ev.venue) nm.court = ev.venue.name || "";
-        if (!nm.startTimestamp && ev.startTimestamp) {
-          nm.startTimestamp = ev.startTimestamp;
-          nm.date = new Date(ev.startTimestamp * 1000).toISOString();
-        }
-        if (!nm.round && ev.roundInfo && ev.roundInfo.name) {
-          nm.round = translateRound(ev.roundInfo.name);
-        }
-        log("event detail via " + detailPaths[i] + ": court=" + (nm.court || "—") + " round=" + (nm.round || "—"));
-        break;
+    var detail = await sofaFetch("/v1/match/details?match_id=" + nm.id);
+    if (detail) {
+      var ev = detail.event || detail;
+      if (!nm.court && ev.courtName) nm.court = ev.courtName;
+      if (!nm.court && ev.venue) nm.court = ev.venue.name || "";
+      if (!nm.startTimestamp && ev.startTimestamp) {
+        nm.startTimestamp = ev.startTimestamp;
+        nm.date = new Date(ev.startTimestamp * 1000).toISOString();
       }
+      if (!nm.round && ev.roundInfo && ev.roundInfo.name) {
+        nm.round = translateRound(ev.roundInfo.name);
+      }
+      log("match details: court=" + (nm.court || "—") + " round=" + (nm.round || "—") + " ts=" + (nm.startTimestamp || "—"));
+    } else {
+      log("match details: no data for id=" + nm.id);
     }
   }
 
-  // b) H2H — try multiple paths
+  // b) H2H — NOT available on sofascore6 RapidAPI wrapper
+  // Will be implemented via Gemini or match history in future
   var h2h = null;
-  var h2hPaths = [
-    "/v1/event/" + nm.id + "/h2h",
-    "/v1/match/h2h?match_id=" + nm.id,
-  ];
-  for (var j = 0; j < h2hPaths.length; j++) {
-    h2h = await sofaFetch(h2hPaths[j]);
-    if (h2h) { log("h2h via " + h2hPaths[j]); break; }
-  }
 
-  // c) Pregame form — try multiple paths
+  // c) Pregame form — NOT available on sofascore6 RapidAPI wrapper
   var pregameForm = null;
-  var formPaths = [
-    "/v1/event/" + nm.id + "/pregame-form",
-    "/v1/match/form?match_id=" + nm.id,
-  ];
-  for (var k2 = 0; k2 < formPaths.length; k2++) {
-    pregameForm = await sofaFetch(formPaths[k2]);
-    if (pregameForm) { log("pregame-form via " + formPaths[k2]); break; }
-  }
 
   return { nm: nm, h2h: h2h, pregameForm: pregameForm };
 }
