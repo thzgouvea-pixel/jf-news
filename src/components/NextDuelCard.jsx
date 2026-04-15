@@ -51,7 +51,7 @@ export default function NextDuelCard(props) {
   var pushLoading = props.pushLoading;
   var oppProfile = props.oppProfile;
   var liveData = props.liveData || null;
-  var countdown = useCountdown(match ? match.date : null);
+  var countdown = useCountdown(match ? (match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : match.date) : null);
 
   // Timer for "updated ago" (must be before early return to keep hook order)
   var _now = useState(Date.now()); var now = _now[0]; var setNow = _now[1];
@@ -87,14 +87,14 @@ export default function NextDuelCard(props) {
         </div>
 
         {/* Tournament name */}
-        <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
+        <div style={{ textAlign: "center", padding: "14px 20px 0" }}>
           <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>
             {nextTournament.tournament_category + " · " + nextTournament.tournament_name}
           </h2>
         </div>
 
         {/* Players */}
-        <div style={{ padding: "18px 18px 0" }}>
+        <div style={{ padding: "18px 20px 0" }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, alignItems: "center" }}>
             {/* Fonseca */}
             <div style={{ textAlign: "center" }}>
@@ -157,9 +157,10 @@ export default function NextDuelCard(props) {
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { var fp = findPlayer(oppName); if (fp && fp.data.slug) oppAtpSlug = fp.data.slug; }
 
-  var oppImg = getATPImage(oppName);
-  var oppImgFallback = getESPNImage(oppName);
   var oppImgSofa = getSofaScoreImage(oppName, match.opponent_id);
+  var oppImg = oppImgSofa || getATPImage(oppName);
+  var oppImgFallback = oppImgSofa ? getATPImage(oppName) : getESPNImage(oppName);
+  var oppImgFallback2 = getESPNImage(oppName);
 
   var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
@@ -169,8 +170,9 @@ export default function NextDuelCard(props) {
   var oPct = winProb && winProb.opponent ? Math.round(winProb.opponent) : null;
   var probSource = winProb ? (winProb.source || "api") : null;
 
-  var dateInfo = match.date ? (function() {
-    var d = new Date(match.date);
+  var matchDate = match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : match.date;
+  var dateInfo = matchDate ? (function() {
+    var d = new Date(matchDate);
     var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
     var diaSemana = d.toLocaleDateString("pt-BR", { weekday: "short", timeZone: "America/Sao_Paulo" });
     var diaNum = d.toLocaleDateString("pt-BR", { day: "numeric", month: "short", timeZone: "America/Sao_Paulo" });
@@ -179,8 +181,8 @@ export default function NextDuelCard(props) {
   })() : null;
 
   var downloadICS = function() {
-    if (!match.date) return;
-    var d = new Date(match.date);
+    if (!matchDate) return;
+    var d = new Date(matchDate);
     var pad = function(n) { return String(n).padStart(2, "0"); };
     var formatICS = function(dt) { return dt.getUTCFullYear() + pad(dt.getUTCMonth()+1) + pad(dt.getUTCDate()) + "T" + pad(dt.getUTCHours()) + pad(dt.getUTCMinutes()) + "00Z"; };
     var endDate = new Date(d.getTime() + 3 * 60 * 60 * 1000);
@@ -248,7 +250,7 @@ export default function NextDuelCard(props) {
       </div>
 
       {/* ===== TOURNAMENT TITLE ===== */}
-      <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
+      <div style={{ textAlign: "center", padding: "14px 20px 0" }}>
         {isLive ? (
           <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(liveData.tournament_category || match.tournament_category ? (liveData.tournament_category || match.tournament_category) + " · " : "") + (liveData.tournament || match.tournament_name || "Partida ao vivo")}</h2>
         ) : (
@@ -257,7 +259,7 @@ export default function NextDuelCard(props) {
       </div>
 
       {/* ===== PLAYERS + SCORE ===== */}
-      <div style={{ padding: "18px 18px 0" }}>
+      <div style={{ padding: "18px 20px 0" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", gap: 6, alignItems: "center" }}>
           {/* Fonseca */}
           <div style={{ textAlign: "center" }}>
@@ -292,7 +294,7 @@ export default function NextDuelCard(props) {
           <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
             <div style={{ position: "relative", width: 72, height: 72, margin: "0 auto 8px" }}>
               <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#152035", border: "2.5px solid " + (isLive ? "#ef444450" : "rgba(255,255,255,0.12)"), overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default" }}>
-                {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback || (oppImgSofa || ""); } else if (e.target.dataset.tried === "1" && oppImgSofa) { e.target.dataset.tried = "2"; e.target.src = oppImgSofa; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
+                {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried && oppImgFallback) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else if (e.target.dataset.tried === "1" && oppImgFallback2) { e.target.dataset.tried = "2"; e.target.src = oppImgFallback2; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
               </div>
               {!isLive && onOppClick && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
             </div>
@@ -325,7 +327,7 @@ export default function NextDuelCard(props) {
               <div style={{ display: "grid", gridTemplateColumns: "1fr " + fSets.map(function(){ return "36px"; }).join(" ") + (liveScore.current_game && (liveScore.current_game.fonseca !== undefined) ? " 36px" : ""), gap: 0, alignItems: "center", marginBottom: 4 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS }}>Fonseca</span>
-                  {liveServing === "fonseca" && <span style={{ width: 5, height: 5, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
+                  {liveServing === "fonseca" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
                 </div>
                 {fSets.map(function(fs, si) {
                   var isCur = si === fSets.length - 1;
@@ -338,7 +340,7 @@ export default function NextDuelCard(props) {
               <div style={{ display: "grid", gridTemplateColumns: "1fr " + oSets.map(function(){ return "36px"; }).join(" ") + (liveScore.current_game && (liveScore.current_game.opponent !== undefined) ? " 36px" : ""), gap: 0, alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS }}>{oppName.split(" ").pop()}</span>
-                  {liveServing === "opponent" && <span style={{ width: 5, height: 5, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
+                  {liveServing === "opponent" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
                 </div>
                 {oSets.map(function(os, si) {
                   var isCur = si === oSets.length - 1;
@@ -409,7 +411,7 @@ export default function NextDuelCard(props) {
             </div>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 14px", textAlign: "center" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Transmissão</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.broadcast || "A confirmar"}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{(isLive && liveData.broadcast) ? liveData.broadcast : (match.broadcast || "A confirmar")}</div>
             </div>
           </div>
 
