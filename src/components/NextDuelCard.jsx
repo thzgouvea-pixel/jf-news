@@ -249,7 +249,7 @@ export default function NextDuelCard(props) {
       {/* ===== TOURNAMENT TITLE ===== */}
       <div style={{ textAlign: "center", padding: "14px 18px 0" }}>
         {isLive ? (
-          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(liveData.tournament || match.tournament_name || "Partida ao vivo")}</h2>
+          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(liveData.tournament_category || match.tournament_category ? (liveData.tournament_category || match.tournament_category) + " · " : "") + (liveData.tournament || match.tournament_name || "Partida ao vivo")}</h2>
         ) : (
           <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(match.tournament_category ? match.tournament_category + " · " : "") + (match.tournament_name || "Próxima Partida")}</h2>
         )}
@@ -314,69 +314,85 @@ export default function NextDuelCard(props) {
           {/* Set-by-set scoreboard */}
           {fSets.length > 0 && (
             <div style={{ margin: "18px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0 }}>
-                {/* Labels column */}
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginRight: 12, textAlign: "right" }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, lineHeight: "24px" }}>Fonseca</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS, lineHeight: "24px" }}>{oppName.split(" ").pop()}</span>
+              {/* Header row: labels */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr " + fSets.map(function(){ return "36px"; }).join(" ") + (liveScore.current_game && (liveScore.current_game.fonseca !== undefined) ? " 36px" : ""), gap: 0, marginBottom: 6 }}>
+                <div />
+                {fSets.map(function(_, si) { return <span key={si} style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textAlign: "center" }}>{"S" + (si + 1)}</span>; })}
+                {liveScore.current_game && liveScore.current_game.fonseca !== undefined && <span style={{ fontSize: 9, fontWeight: 700, color: YELLOW, fontFamily: SANS, textAlign: "center" }}>PTS</span>}
+              </div>
+              {/* Fonseca row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr " + fSets.map(function(){ return "36px"; }).join(" ") + (liveScore.current_game && (liveScore.current_game.fonseca !== undefined) ? " 36px" : ""), gap: 0, alignItems: "center", marginBottom: 4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS }}>Fonseca</span>
+                  {liveServing === "fonseca" && <span style={{ width: 5, height: 5, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
                 </div>
-                {/* Set scores */}
-                {fSets.map(function(fs, i) {
-                  var os = oSets[i];
-                  var isCurrentSet = i === fSets.length - 1;
-                  var fWon = !isCurrentSet && fs > os;
-                  var oWon = !isCurrentSet && os > fs;
-                  return (
-                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 32, textAlign: "center" }}>
-                      {i === 0 && <div style={{ display: "flex", justifyContent: "center", gap: 0, marginBottom: 2 }}>{fSets.map(function(_, si) { return <span key={si} style={{ fontSize: 8, fontWeight: 700, color: "rgba(255,255,255,0.2)", fontFamily: SANS, minWidth: 32, textAlign: "center" }}>{"S" + (si + 1)}</span>; })}</div>}
-                      {i === 0 && (
-                        <>
-                          <div style={{ display: "flex", justifyContent: "center", gap: 0 }}>
-                            {fSets.map(function(fss, si) {
-                              var oss = oSets[si];
-                              var isCur = si === fSets.length - 1;
-                              var fw = !isCur && fss > oss;
-                              return <span key={si} style={{ fontSize: 16, fontWeight: 800, color: fw ? GREEN : (isCur ? "#fff" : "rgba(255,255,255,0.4)"), fontFamily: SANS, minWidth: 32, textAlign: "center" }}>{fss}</span>;
-                            })}
-                          </div>
-                          <div style={{ display: "flex", justifyContent: "center", gap: 0 }}>
-                            {oSets.map(function(oss, si) {
-                              var fss = fSets[si];
-                              var isCur = si === fSets.length - 1;
-                              var ow = !isCur && oss > fss;
-                              return <span key={si} style={{ fontSize: 16, fontWeight: 800, color: ow ? "#ef4444" : (isCur ? "#fff" : "rgba(255,255,255,0.4)"), fontFamily: SANS, minWidth: 32, textAlign: "center" }}>{oss}</span>;
-                            })}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                }).slice(0, 1)}
+                {fSets.map(function(fs, si) {
+                  var isCur = si === fSets.length - 1;
+                  var won = !isCur && fs > (oSets[si] || 0);
+                  return <span key={si} style={{ fontSize: 17, fontWeight: 800, color: won ? GREEN : (isCur ? "#fff" : "rgba(255,255,255,0.4)"), fontFamily: SANS, textAlign: "center" }}>{fs}</span>;
+                })}
+                {liveScore.current_game && liveScore.current_game.fonseca !== undefined && <span style={{ fontSize: 15, fontWeight: 700, color: YELLOW, fontFamily: SANS, textAlign: "center" }}>{liveScore.current_game.fonseca}</span>}
+              </div>
+              {/* Opponent row */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr " + oSets.map(function(){ return "36px"; }).join(" ") + (liveScore.current_game && (liveScore.current_game.opponent !== undefined) ? " 36px" : ""), gap: 0, alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS }}>{oppName.split(" ").pop()}</span>
+                  {liveServing === "opponent" && <span style={{ width: 5, height: 5, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
+                </div>
+                {oSets.map(function(os, si) {
+                  var isCur = si === oSets.length - 1;
+                  var won = !isCur && os > (fSets[si] || 0);
+                  return <span key={si} style={{ fontSize: 17, fontWeight: 800, color: won ? "#ef4444" : (isCur ? "#fff" : "rgba(255,255,255,0.4)"), fontFamily: SANS, textAlign: "center" }}>{os}</span>;
+                })}
+                {liveScore.current_game && liveScore.current_game.opponent !== undefined && <span style={{ fontSize: 15, fontWeight: 700, color: YELLOW, fontFamily: SANS, textAlign: "center" }}>{liveScore.current_game.opponent}</span>}
               </div>
             </div>
           )}
 
-          {/* Live stats (if available) */}
+          {/* Live stats */}
           {liveStats && (liveStats.fonseca || liveStats.opponent) && (function() {
             var f = liveStats.fonseca || {};
             var o = liveStats.opponent || {};
+            var fST = (f.firstserveaccuracy||f.first_serve_accuracy||0) + (f.secondserveaccuracy||f.second_serve_accuracy||0) + (f.doublefaults||f.double_faults||0);
+            var oST = (o.firstserveaccuracy||o.first_serve_accuracy||0) + (o.secondserveaccuracy||o.second_serve_accuracy||0) + (o.doublefaults||o.double_faults||0);
+            var f1pct = fST > 0 ? Math.round((f.firstserveaccuracy||f.first_serve_accuracy||0)/fST*100) : 0;
+            var o1pct = oST > 0 ? Math.round((o.firstserveaccuracy||o.first_serve_accuracy||0)/oST*100) : 0;
+            var f2t = (f.secondserveaccuracy||f.second_serve_accuracy||0) + (f.doublefaults||f.double_faults||0);
+            var o2t = (o.secondserveaccuracy||o.second_serve_accuracy||0) + (o.doublefaults||o.double_faults||0);
+            var fP1 = (f.firstserveaccuracy||0) > 0 ? Math.round((f.firstservepointsaccuracy||f.first_serve_points_accuracy||0)/(f.firstserveaccuracy||1)*100) : 0;
+            var oP1 = (o.firstserveaccuracy||0) > 0 ? Math.round((o.firstservepointsaccuracy||o.first_serve_points_accuracy||0)/(o.firstserveaccuracy||1)*100) : 0;
+            var fP2 = f2t > 0 ? Math.round((f.secondservepointsaccuracy||f.second_serve_points_accuracy||0)/f2t*100) : 0;
+            var oP2 = o2t > 0 ? Math.round((o.secondservepointsaccuracy||o.second_serve_points_accuracy||0)/o2t*100) : 0;
+            var fTot = (f.servicepointsscored||f.service_points_scored||0)+(f.receiverpointsscored||f.receiver_points_scored||0)||f.pointstotal||f.points_total||0;
+            var oTot = (o.servicepointsscored||o.service_points_scored||0)+(o.receiverpointsscored||o.receiver_points_scored||0)||o.pointstotal||o.points_total||0;
             var rows = [
-              { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0 },
-              { label: "Duplas faltas", fVal: f.doublefaults || f.double_faults || 0, oVal: o.doublefaults || o.double_faults || 0 },
-              { label: "1º saque", fVal: f["1st_serve_percentage"] || f.firstserveaccuracy || 0, oVal: o["1st_serve_percentage"] || o.firstserveaccuracy || 0, pct: true },
-              { label: "Break points", fVal: f.breakpointssaved || f.break_points_saved || 0, oVal: o.breakpointssaved || o.break_points_saved || 0 },
+              { label: "Aces", fVal: f.aces||0, oVal: o.aces||0 },
+              { label: "Duplas faltas", fVal: f.doublefaults||f.double_faults||0, oVal: o.doublefaults||o.double_faults||0, invert: true },
+              { label: "1º saque", fVal: f1pct, oVal: o1pct, pct: true },
+              { label: "Pts no 1º saque", fVal: fP1, oVal: oP1, pct: true },
+              { label: "Pts no 2º saque", fVal: fP2, oVal: oP2, pct: true },
+              { label: "Breaks salvos", fVal: f.breakpointssaved||f.break_points_saved||0, oVal: o.breakpointssaved||o.break_points_saved||0 },
+              { label: "Breaks feitos", fVal: f.breakpointsscored||f.break_points_scored||0, oVal: o.breakpointsscored||o.break_points_scored||0 },
+              { label: "Total de pontos", fVal: fTot, oVal: oTot },
             ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
             if (rows.length === 0) return null;
             return (
               <div style={{ margin: "10px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10, textAlign: "center" }}>Estatísticas ao vivo</div>
                 {rows.map(function(row, i) {
-                  var fBetter = row.fVal >= row.oVal;
+                  var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
+                  var maxVal = Math.max(row.fVal, row.oVal, 1);
                   return (
-                    <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: i < rows.length - 1 ? 8 : 0 }}>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: fBetter ? GREEN : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 40, textAlign: "left" }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textAlign: "center", flex: 1 }}>{row.label}</span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: !fBetter ? "#ef4444" : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 40, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                    <div key={i} style={{ marginBottom: i < rows.length - 1 ? 10 : 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: fBetter ? GREEN : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 44 }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
+                        <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: "center", flex: 1 }}>{row.label}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: !fBetter ? "#ef4444" : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 44, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                      </div>
+                      <div style={{ display: "flex", height: 3, gap: 3 }}>
+                        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}><div style={{ width: (row.pct ? row.fVal : Math.round(row.fVal/maxVal*100)) + "%", minWidth: 2, height: 3, borderRadius: 2, background: fBetter ? GREEN : "rgba(255,255,255,0.1)" }} /></div>
+                        <div style={{ flex: 1 }}><div style={{ width: (row.pct ? row.oVal : Math.round(row.oVal/maxVal*100)) + "%", minWidth: 2, height: 3, borderRadius: 2, background: !fBetter ? "#ef4444" : "rgba(255,255,255,0.1)" }} /></div>
+                      </div>
                     </div>
                   );
                 })}
@@ -386,17 +402,17 @@ export default function NextDuelCard(props) {
 
           {/* Info grid: Quadra + Transmissão */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "12px 20px 0" }}>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 16px", textAlign: "center" }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 14px", textAlign: "center" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Quadra</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{liveCourt || "A definir"}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{liveCourt || "A definir"}</div>
             </div>
-            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 16px", textAlign: "center" }}>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 14px", textAlign: "center" }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>Transmissão</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.broadcast || "A confirmar"}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.broadcast || "A confirmar"}</div>
             </div>
           </div>
 
-          {/* Assista ao vivo button — only if broadcast is known */}
+          {/* Assista ao vivo button */}
           {match.broadcast && getBroadcastUrl(match.broadcast) && (
           <div style={{ padding: "14px 20px 0" }}>
             <a href={getBroadcastUrl(match.broadcast)} target="_blank" rel="noopener noreferrer" style={{
