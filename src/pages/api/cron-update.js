@@ -658,8 +658,25 @@ export default async function handler(req, res) {
       var nmLn = stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
       if (rankingsLookup2[nmLn]) { nm.opponent_ranking = rankingsLookup2[nmLn]; log("forced nm ranking: #" + nm.opponent_ranking); }
     }
+    // PROTECTIVE WRITE: never overwrite good data with null/empty
+    function protectData(newData, existingData) {
+      if (!newData || !existingData) return newData;
+      var old = typeof existingData === "string" ? JSON.parse(existingData) : existingData;
+      if (!old) return newData;
+      for (var key in old) {
+        if (old[key] !== null && old[key] !== undefined && old[key] !== "" && old[key] !== 0) {
+          if (newData[key] === null || newData[key] === undefined || newData[key] === "" || newData[key] === 0) {
+            newData[key] = old[key];
+          }
+        }
+      }
+      return newData;
+    }
     var w = [];
-
+// Protect against data regression
+    if (lm) lm = protectData(lm, await kv.get("fn:lastMatch"));
+    if (nm) nm = protectData(nm, await kv.get("fn:nextMatch"));
+    if (wp) { /* keep wp */ } else { try { var exWp3 = await kv.get("fn:winProb"); if (exWp3) wp = typeof exWp3 === "string" ? JSON.parse(exWp3) : exWp3; } catch(e){} }
     // lastMatch — merge already happened in classify phase
     if (lm) {
       w.push(kv.set("fn:lastMatch", JSON.stringify(lm), { ex: T7 }));
