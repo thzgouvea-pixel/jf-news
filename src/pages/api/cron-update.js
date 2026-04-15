@@ -684,6 +684,27 @@ export default async function handler(req, res) {
 
     var lm = fin.length > 0 ? extractMatch(fin[0]) : null;
     var nm = upc.length > 0 ? extractMatch(upc[0]) : null;
+
+    // CRITICAL: if nm opponent matches KV lastMatch (already finished), advance to next upc entry
+    if (nm) {
+      try {
+        var kvCheck = await kv.get("fn:lastMatch");
+        if (kvCheck) {
+          var kvParsed = typeof kvCheck === "string" ? JSON.parse(kvCheck) : kvCheck;
+          if (kvParsed && kvParsed.finished && kvParsed.opponent_name) {
+            var kvOpp = kvParsed.opponent_name.split(" ").pop().toLowerCase();
+            var nmOpp = nm.opponent_name.split(" ").pop().toLowerCase();
+            if (kvOpp === nmOpp) {
+              log("nm " + nm.opponent_name + " already finished in KV, advancing to next upc");
+              if (!lm || new Date(kvParsed.date) > new Date(lm.date || 0)) lm = kvParsed;
+              nm = upc.length > 1 ? extractMatch(upc[1]) : null;
+              log("New nm: " + (nm ? nm.opponent_name : "none"));
+            }
+          }
+        }
+      } catch(e) { log("nm check error: " + e.message); }
+    }
+
     var form = fin.slice(0,10).map(function(m){var d=extractMatch(m);return{result:d.result,score:d.score,opponent_name:d.opponent_name,opponent_ranking:d.opponent_ranking||null,tournament:d.tournament_name,round:d.round||"",date:d.date};});
     steps.scan = matches.length + " matches";
     steps.last = lm ? lm.opponent_name : "none";
