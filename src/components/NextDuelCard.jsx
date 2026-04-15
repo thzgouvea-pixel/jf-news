@@ -479,7 +479,25 @@ export default function NextDuelCard(props) {
               })()}</div>
             </div>
           )}
-
+          {/* Action buttons */}
+          <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+            {match.broadcast && getBroadcastUrl(match.broadcast) && (
+            <a href={getBroadcastUrl(match.broadcast)} target="_blank" rel="noopener noreferrer" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: "16px", background: "linear-gradient(135deg, #4FC3F7 0%, #39B0E4 100%)",
+              borderRadius: 14, textDecoration: "none", width: "100%", boxSizing: "border-box",
+            }}>
+              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.01em" }}>► Assistir</span>
+            </a>
+            )}
+            <button onClick={downloadICS} style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+              borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
+            }}>
+              Adicionar ao calendário
+            </button>
+          </div>
           {/* Probability — always visible */}
           <div style={{ margin: "16px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 18px" }}>
             {fPct !== null && oPct !== null ? (
@@ -519,26 +537,6 @@ export default function NextDuelCard(props) {
                 <p style={{ margin: "10px 0 0", fontSize: 10, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textAlign: "center" }}>Probabilidades ainda não disponíveis</p>
               </>
             )}
-          </div>
-
-          {/* Action buttons */}
-          <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
-            {match.broadcast && getBroadcastUrl(match.broadcast) && (
-            <a href={getBroadcastUrl(match.broadcast)} target="_blank" rel="noopener noreferrer" style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              padding: "16px", background: "linear-gradient(135deg, #4FC3F7 0%, #39B0E4 100%)",
-              borderRadius: 14, textDecoration: "none", width: "100%", boxSizing: "border-box",
-            }}>
-              <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.01em" }}>► Assistir</span>
-            </a>
-            )}
-            <button onClick={downloadICS} style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
-            }}>
-              Adicionar ao calendário
-            </button>
           </div>
         </>
       )}
