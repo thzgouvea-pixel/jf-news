@@ -806,15 +806,38 @@ export default async function handler(req, res) {
       var nextMatchLock = null;
       try { nextMatchLock = await kv.get("fn:nextMatchManualLock"); } catch(e) {}
       if (nextMatchLock) {
-        log("Manual lock active for nextMatch, skipping deletion");
-        // CRITICAL: restore nm from KV so odds, opponent profile, and enrichment still work
+        // SMART: check if the locked opponent's match already finished
+        var kvNm = null;
         try {
-          var kvNm = await kv.get("fn:nextMatch");
-          if (kvNm) {
-            nm = typeof kvNm === "string" ? JSON.parse(kvNm) : kvNm;
-            log("Restored nm from KV: " + (nm.opponent_name || "?") + " @ " + (nm.tournament_name || "?"));
-          }
-        } catch(e) { log("Error restoring nm from KV: " + e.message); }
+          var kvNmRaw = await kv.get("fn:nextMatch");
+          if (kvNmRaw) kvNm = typeof kvNmRaw === "string" ? JSON.parse(kvNmRaw) : kvNmRaw;
+        } catch(e) {}
+
+        var lockedOppFinished = false;
+        if (kvNm && kvNm.opponent_name && fin.length > 0) {
+          var lockedLast = kvNm.opponent_name.split(" ").pop().toLowerCase();
+          lockedOppFinished = fin.some(function(m) {
+            var home = (m.homeTeam && (m.homeTeam.shortName || m.homeTeam.name || "")).toLowerCase();
+            var away = (m.awayTeam && (m.awayTeam.shortName || m.awayTeam.name || "")).toLowerCase();
+            return home.includes(lockedLast) || away.includes(lockedLast);
+          });
+        }
+
+        if (lockedOppFinished) {
+          // Match finished! Clear locks and let natural transition happen
+          log("Locked opponent " + (kvNm.opponent_name || "?") + " match FINISHED, clearing locks");
+          try {
+            await kv.del("fn:nextMatchManualLock");
+            await kv.del("fn:lastMatchManualLock");
+            await kv.del("fn:nextMatch");
+            await kv.del("fn:winProb");
+          } catch(e) {}
+          // nm stays null — lm from fin[0] will be the new lastMatch
+        } else {
+          // Match not finished yet — restore nm from KV so odds/enrichment work
+          nm = kvNm;
+          if (nm) log("Restored nm from KV: " + (nm.opponent_name || "?") + " @ " + (nm.tournament_name || "?"));
+        }
       } else {
         try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){}
       }
