@@ -351,8 +351,32 @@ export default async function handler(req, res) {
               if (nextFound) {
                 await kv.set("fn:nextMatch", JSON.stringify(nextFound), { ex: 604800 });
                 console.log("[live] Next match found: " + nextFound.opponent_name + " @ " + nextFound.tournament_name + " " + (nextFound.round || ""));
+              } else if (lastMatchData.result === "V") {
+                // João WON but no next match found yet — create placeholder for next round
+                var NEXT_ROUND = {
+                  "1ª rodada": "Oitavas de final", "2ª rodada": "Oitavas de final", "3ª rodada": "Oitavas de final",
+                  "16avos de final": "Oitavas de final", "Oitavas de final": "Quartas de final",
+                  "Quartas de final": "Semifinal", "Semifinal": "Final",
+                };
+                var placeholderRound = NEXT_ROUND[lastMatchData.round] || "";
+                var placeholder = {
+                  opponent_name: "A definir",
+                  opponent_ranking: null,
+                  opponent_country: "",
+                  tournament_name: lastMatchData.tournament_name,
+                  tournament_category: lastMatchData.tournament_category || "",
+                  surface: lastMatchData.surface || "",
+                  round: placeholderRound,
+                  date: null,
+                  court: "",
+                  finished: false,
+                };
+                var phBC = BROADCAST_MAP[placeholder.tournament_name];
+                if (phBC) placeholder.broadcast = phBC;
+                await kv.set("fn:nextMatch", JSON.stringify(placeholder), { ex: 172800 });
+                console.log("[live] Placeholder nextMatch: " + placeholder.tournament_name + " " + placeholderRound + " (opponent TBD)");
               } else {
-                console.log("[live] No upcoming match found in next 3 days");
+                console.log("[live] No upcoming match found (João lost, no next round)");
               }
             } catch(nextErr) { console.log("[live] Next match scan error: " + nextErr.message); }
             } // end of manual lock else
