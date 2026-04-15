@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { SANS, SERIF, GREEN } from "../lib/constants";
+import { SANS, SERIF, GREEN, TEXT, SUB, DIM } from "../lib/constants";
 
 function calcHype(recentForm) {
-  if (!recentForm || recentForm.length === 0) return { pct: 50, mood: "Sem dados", emoji: "⚖️" };
+  if (!recentForm || recentForm.length === 0) return { pct: 50, mood: "Sem dados" };
   var last10 = recentForm.slice(0, 10);
   var score = 50;
   last10.forEach(function(m, i) {
@@ -22,7 +22,6 @@ function calcHype(recentForm) {
     }
   });
   var pct = Math.max(0, Math.min(100, Math.round(score)));
-
   var mood;
   if (pct >= 90) mood = "Imparável";
   else if (pct >= 80) mood = "Em grande fase";
@@ -32,7 +31,6 @@ function calcHype(recentForm) {
   else if (pct >= 40) mood = "Oscilando";
   else if (pct >= 30) mood = "Buscando ritmo";
   else mood = "Fase de adaptação";
-
   return { pct: pct, mood: mood };
 }
 
@@ -40,25 +38,22 @@ export default function Fonsecometro({ recentForm }) {
   if (!recentForm || recentForm.length === 0) return null;
   var _show = useState(false); var showPopup = _show[0]; var setShowPopup = _show[1];
   var h = calcHype(recentForm);
-
   var barColor = h.pct >= 70 ? "#22C55E" : (h.pct >= 50 ? "#EAB308" : (h.pct >= 30 ? "#F97316" : "#60A5FA"));
-
   var wins = recentForm.slice(0, 10).filter(function(m) { return (m.result || "").toUpperCase() === "V"; }).length;
   var losses = recentForm.slice(0, 10).length - wins;
 
   return (
     <>
-      <div style={{ margin: 0, padding: "10px 20px", position: "relative", overflow: "hidden" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <button onClick={function(){ setShowPopup(true); }} onTouchStart={function(){ setShowPopup(true); }} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.4)", fontFamily: SANS, letterSpacing: "-0.01em" }}>Moral do João</span>
-            <span style={{ fontSize: 9, color: "rgba(255,255,255,0.2)", fontFamily: SANS }}>?</span>
+      <div style={{ margin: "0 0 6px", padding: "10px 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+          <button onClick={function(){ setShowPopup(true); }} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: SUB, fontFamily: SANS }}>Moral do João</span>
+            <span style={{ fontSize: 9, fontWeight: 600, color: DIM, fontFamily: SANS, background: "#f0f0f0", borderRadius: 99, width: 14, height: 14, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>?</span>
           </button>
           <span style={{ fontSize: 12, fontWeight: 700, color: barColor, fontFamily: SANS }}>{h.mood}</span>
         </div>
-
-        <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
-          <div style={{ height: 4, borderRadius: 3, width: h.pct + "%", background: "linear-gradient(90deg, " + barColor + "80, " + barColor + ")", boxShadow: "0 0 8px " + barColor + "30", transition: "width 1.2s ease" }} />
+        <div style={{ height: 5, background: "#f0f0f0", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ height: 5, borderRadius: 3, width: h.pct + "%", background: "linear-gradient(90deg, " + barColor + "90, " + barColor + ")", boxShadow: "0 0 8px " + barColor + "30", transition: "width 1.2s ease" }} />
         </div>
       </div>
 
