@@ -8,7 +8,7 @@ import { kv } from "@vercel/kv";
 import crypto from "crypto";
 
 var BROADCAST_MAP = {
-  "BMW Open": "ESPN 4",
+  "BMW Open": "ESPN 2 / Disney+",
   "Monte Carlo Masters": "ESPN",
   "Indian Wells Masters": "ESPN",
   "Miami Open": "ESPN",
