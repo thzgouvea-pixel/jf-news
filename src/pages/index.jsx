@@ -17,6 +17,7 @@ import ATPRankingList from "../components/ATPRankingList";
 import NextGenComparator from "../components/NextGenComparator";
 import CareerTimeline from "../components/CareerTimeline";
 import ATPCalendar from "../components/ATPCalendar";
+import TournamentBracket from "../components/TournamentBracket";
 import WinProbBar from "../components/WinProbBar";
 import InstallBanner from "../components/InstallBanner";
 import Modal from "../components/Modal";
@@ -78,6 +79,7 @@ export default function JoaoFonsecaNews() {
   var _sng = useState(false); var showNextGen = _sng[0]; var setShowNextGen = _sng[1];
   var _stl = useState(false); var showTimeline = _stl[0]; var setShowTimeline = _stl[1];
   var _scal = useState(false); var showCalendar = _scal[0]; var setShowCalendar = _scal[1];
+  var _sbr = useState(false); var showBracket = _sbr[0]; var setShowBracket = _sbr[1];
   var _svid = useState(false); var showVideos = _svid[0]; var setShowVideos = _svid[1];
   var _allLikes = useState({}); var allLikes = _allLikes[0]; var setAllLikes = _allLikes[1];
   var _matchStats = useState(null); var matchStats = _matchStats[0]; var setMatchStats = _matchStats[1];
@@ -382,6 +384,7 @@ export default function JoaoFonsecaNews() {
               { label: "Biografia", href: "/biografia" },
               { label: "Ranking", action: function(){setShowRanking(true);} },
               { label: "Calendário", action: function(){setShowCalendar(true);} },
+              { label: "Chave", action: function(){setShowBracket(true);} },
               { label: "Conquistas", action: function(){setShowTitles(true);} },
               { label: "Feedback", action: function(){setShowFeedback(true);} },
               { label: "Sobre", href: "/sobre" },
@@ -413,6 +416,7 @@ export default function JoaoFonsecaNews() {
         {recentForm && recentForm.length > 0 && <Fonsecometro recentForm={recentForm} />}
 
        {!hasNextMatch && (
+        <>
         <section style={{ padding: "8px 0 0" }}>
           <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
           {highlightVideo && highlightVideo.videoId ? (
@@ -420,15 +424,25 @@ export default function JoaoFonsecaNews() {
           ) : (
             <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
           )}
+          </div>
+        </section>
+        <section style={{ padding: "12px 0 0" }}>
+          <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
           <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} />
           </div>
         </section>
+        </>
 )}
 
 {hasNextMatch && (
+        <>
         <section style={{ padding: "8px 0 0" }}>
           <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
           <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} />
+          </div>
+        </section>
+        <section style={{ padding: "12px 0 0" }}>
+          <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
@@ -436,6 +450,7 @@ export default function JoaoFonsecaNews() {
           )}
           </div>
         </section>
+        </>
 )}
 <section style={{ padding: "28px 0 0" }}>
           {showMiniBanner && (
@@ -548,7 +563,8 @@ export default function JoaoFonsecaNews() {
 
       {showRanking && (<Modal title="🏆 Ranking ATP Singles" onClose={function(){setShowRanking(false);}} maxWidth={480}><ATPRankingList currentRanking={dp ? dp.ranking : null} /></Modal>)}
       {showRankingChart && (<Modal title="📈 Evolução no Ranking" onClose={function(){setShowRankingChart(false);}} maxWidth={650}><RankingChart currentRanking={dp ? dp.ranking : null} /></Modal>)}
-      {showCalendar && (<Modal title="🗓️ Calendário ATP 2026" onClose={function(){setShowCalendar(false);}} maxWidth={520}><ATPCalendar /></Modal>)}
+      {showCalendar && (<Modal title="🗓️ Calendário ATP 2026" onClose={function(){setShowCalendar(false);}} maxWidth={520}><ATPCalendar recentForm={recentForm} lastMatch={dl} nextMatch={dm} nextTournament={nextTournament} /></Modal>)}
+      {showBracket && (<Modal title={"🏟️ Chave · " + ((dm && dm.tournament_name) || (dl && dl.tournament_name) || "Torneio")} onClose={function(){setShowBracket(false);}} maxWidth={420}><TournamentBracket recentForm={recentForm} lastMatch={dl} nextMatch={dm} /></Modal>)}
       {showTitles && (<Modal title="🏆 Conquistas" onClose={function(){setShowTitles(false);}} maxWidth={460}><div><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour — Singles</p>{[{t:"ATP 500 Basel",d:"Out 2025",det:"vs Davidovich Fokina · 6-3 6-4",note:"1º brasileiro a ganhar ATP 500"},{t:"ATP 250 Buenos Aires",d:"Fev 2025",det:"vs Cerúndolo · 6-4 7-6(1)",note:"Brasileiro mais jovem a ganhar ATP"}].map(function(t,i){return(<div key={i} style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>{t.det}</p>{t.note&&<p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>{t.note}</p>}</div>);})}<div style={{height:1,background:"#e8e8e8",margin:"14px 0"}} /><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour — Duplas</p><div style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>Rio Open 500</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>Fev 2026</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>Duplas · Rio de Janeiro</p></div><div style={{height:1,background:"#e8e8e8",margin:"14px 0"}} /><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:"#b8860b",fontFamily:SANS}}>NextGen ATP Finals</p><div style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>Campeão invicto</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>Dez 2024</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>5 vitórias, 0 derrotas · Jeddah</p><p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>1º sul-americano campeão do NextGen Finals</p></div><div style={{height:1,background:"#e8e8e8",margin:"14px 0"}} /><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:SUB,fontFamily:SANS}}>ATP Challenger</p>{[{t:"Phoenix Challenger",d:"Mar 2025",det:"vs Bublik"},{t:"Canberra International",d:"Jan 2025",det:"vs Quinn · sem perder sets"},{t:"Lexington Challenger",d:"Ago 2024",det:"Mais jovem campeão Challenger de 2024"}].map(function(t,i){return(<div key={i} style={{padding:"8px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:13,fontWeight:600,color:TEXT,fontFamily:SANS}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:11,color:SUB,fontFamily:SANS}}>{t.det}</p></div>);})}</div></Modal>)}
 
       {showOppPopup && opponentProfile && (
