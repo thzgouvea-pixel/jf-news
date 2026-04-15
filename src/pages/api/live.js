@@ -263,7 +263,7 @@ export default async function handler(req, res) {
               var existingForm = await kv.get("fn:recentForm");
               var formArr = existingForm ? (typeof existingForm === "string" ? JSON.parse(existingForm) : existingForm) : [];
               if (!Array.isArray(formArr)) formArr = [];
-              var newEntry = { result: lastMatchData.result, score: lastMatchData.score, opponent_name: lastMatchData.opponent_name, opponent_ranking: lastMatchData.opponent_ranking || null, tournament: lastMatchData.tournament_name, date: lastMatchData.date };
+              var newEntry = { result: lastMatchData.result, score: lastMatchData.score, opponent_name: lastMatchData.opponent_name, opponent_ranking: lastMatchData.opponent_ranking || null, tournament: lastMatchData.tournament_name, round: lastMatchData.round || "", date: lastMatchData.date };
               // Don't duplicate
               var alreadyExists = formArr.some(function(f) { return f.opponent_name === newEntry.opponent_name && f.score === newEntry.score; });
               if (!alreadyExists) {
@@ -288,6 +288,73 @@ export default async function handler(req, res) {
                 }
               }
             } catch(statsErr) { console.log("[live] stats fetch error: " + statsErr.message); }
+
+            // CRITICAL: Immediately scan for NEXT upcoming match
+            try {
+              var scanDates = [today];
+              for (var di = 1; di <= 3; di++) {
+                var futureDate = new Date(now.getTime() + di * 86400000);
+                scanDates.push(futureDate.toISOString().split("T")[0]);
+              }
+              var nextFound = null;
+              for (var sdi = 0; sdi < scanDates.length && !nextFound; sdi++) {
+                var scanData = await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + scanDates[sdi], apiKey);
+                if (scanData) {
+                  var allMatches = [];
+                  if (Array.isArray(scanData)) allMatches = scanData;
+                  else if (scanData.events) allMatches = scanData.events;
+                  else { var sKeys = Object.keys(scanData); for (var ski = 0; ski < sKeys.length; ski++) { if (Array.isArray(scanData[sKeys[ski]])) { allMatches = scanData[sKeys[ski]]; break; } } }
+
+                  for (var mi = 0; mi < allMatches.length; mi++) {
+                    var mm = allMatches[mi];
+                    var hSlug = (mm.homeTeam && (mm.homeTeam.slug || mm.homeTeam.name || "")).toLowerCase();
+                    var aSlug = (mm.awayTeam && (mm.awayTeam.slug || mm.awayTeam.name || "")).toLowerCase();
+                    var mSlug = (mm.slug || "").toLowerCase();
+                    var isFonseca = mSlug.includes("fonseca") || hSlug.includes("fonseca") || aSlug.includes("fonseca");
+                    if (!isFonseca) continue;
+                    var mStatus = mm.status || {};
+                    var mFinished = mStatus.type === "finished" || mStatus.isFinished;
+                    if (mFinished) continue;
+                    // Found upcoming Fonseca match
+                    var nmHome = mm.homeTeam || {};
+                    var nmAway = mm.awayTeam || {};
+                    var nmIsFH = (nmHome.slug || nmHome.name || "").toLowerCase().includes("fonseca");
+                    var nmOpp = nmIsFH ? nmAway : nmHome;
+                    var nmTourn = mm.tournament || {};
+                    var nmRound = mm.roundInfo || {};
+                    var nmGt = (mm.groundType || nmTourn.groundType || "").toLowerCase();
+                    var nmSurf = nmGt === "clay" ? "Clay" : (nmGt === "grass" ? "Grass" : "Hard");
+                    var nmRaw = nmTourn.name || (nmTourn.uniqueTournament && nmTourn.uniqueTournament.name) || "";
+                    var nmMapped = lookupTournament(nmRaw) || lookupTournament((nmTourn.uniqueTournament && nmTourn.uniqueTournament.name) || "");
+                    nextFound = {
+                      id: mm.id,
+                      opponent_name: nmOpp.shortName || nmOpp.name || "A definir",
+                      opponent_id: nmOpp.id || null,
+                      opponent_ranking: nmOpp.ranking || null,
+                      opponent_country: nmOpp.country ? nmOpp.country.name : "",
+                      tournament_name: nmMapped ? nmMapped.name : nmRaw,
+                      tournament_category: nmMapped ? nmMapped.cat : "",
+                      surface: nmMapped ? nmMapped.surface : nmSurf,
+                      round: translateRound(nmRound.name) || "",
+                      date: mm.startTimestamp ? new Date(mm.startTimestamp * 1000).toISOString() : null,
+                      startTimestamp: mm.startTimestamp || null,
+                      court: mm.courtName || "",
+                      isFonsecaHome: nmIsFH,
+                      finished: false,
+                    };
+                    var nmBC = BROADCAST_MAP[nextFound.tournament_name];
+                    if (nmBC) nextFound.broadcast = nmBC;
+                    break;
+                  }
+                }
+              }
+              if (nextFound) {
+                await kv.set("fn:nextMatch", JSON.stringify(nextFound), { ex: 604800 });
+                console.log("[live] Next match found: " + nextFound.opponent_name + " @ " + nextFound.tournament_name + " " + (nextFound.round || ""));
+              } else {
+                console.log("[live] No upcoming match found in next 3 days");
+              }
+            } catch(nextErr) { console.log("[live] Next match scan error: " + nextErr.message); }
             } // end of manual lock else
           }
         } catch(autoErr) { console.log("[live] auto-update error: " + autoErr.message); }
