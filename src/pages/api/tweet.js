@@ -1,19 +1,16 @@
-// ===== FONSECA NEWS - TWITTER BOT v8 =====
-// v8 changes: new evergreen promo tweets, removed repetitive poll/quiz mentions
-// Anti-repetition: KV-based history, similarity check, rate limits
-// Algorithm-optimized: link in reply, max 1-2 hashtags, conversational
-// Schedule: max 4 tweets/day (1 promo + 3 news), min 2h between posts
+// ===== FONSECA NEWS — TWITTER BOT v9 =====
+// Gemini-powered tweet generation, quality source filtering
+// Schedule: max 4 tweets/day, min 2h between posts, 6h-00h BRT
+// Algorithm: link in reply, max 1 hashtag, conversational tone
 
 import crypto from "crypto";
 import { kv } from "@vercel/kv";
 
+// ===== OAUTH 1.0a =====
 function percentEncode(str) {
   return encodeURIComponent(str)
-    .replace(/!/g, '%21')
-    .replace(/\*/g, '%2A')
-    .replace(/'/g, '%27')
-    .replace(/\(/g, '%28')
-    .replace(/\)/g, '%29');
+    .replace(/!/g, "%21").replace(/\*/g, "%2A")
+    .replace(/'/g, "%27").replace(/\(/g, "%28").replace(/\)/g, "%29");
 }
 
 async function postTweet(text, replyTo) {
@@ -28,364 +25,360 @@ async function postTweet(text, replyTo) {
   var nonce = crypto.randomBytes(16).toString("hex");
 
   var oauthData = {
-    oauth_consumer_key: ck,
-    oauth_nonce: nonce,
-    oauth_signature_method: "HMAC-SHA1",
-    oauth_timestamp: ts,
-    oauth_token: at,
-    oauth_version: "1.0"
+    oauth_consumer_key: ck, oauth_nonce: nonce,
+    oauth_signature_method: "HMAC-SHA1", oauth_timestamp: ts,
+    oauth_token: at, oauth_version: "1.0",
   };
 
   var sortedParams = Object.keys(oauthData).sort();
-  var paramPairs = sortedParams.map(function(k) { return percentEncode(k) + "=" + percentEncode(oauthData[k]); });
+  var paramPairs = sortedParams.map(function (k) { return percentEncode(k) + "=" + percentEncode(oauthData[k]); });
   var paramString = paramPairs.join("&");
-  var baseString = "POST" + "&" + percentEncode(url) + "&" + percentEncode(paramString);
+  var baseString = "POST&" + percentEncode(url) + "&" + percentEncode(paramString);
   var signingKey = percentEncode(cs) + "&" + percentEncode(ats);
-
   var sig = crypto.createHmac("sha1", signingKey).update(baseString).digest("base64");
 
   var headerParams = Object.assign({}, oauthData, { oauth_signature: sig });
-  var headerParts = Object.keys(headerParams).sort().map(function(k) {
+  var headerParts = Object.keys(headerParams).sort().map(function (k) {
     return percentEncode(k) + '="' + percentEncode(headerParams[k]) + '"';
   });
-  var authHeader = "OAuth " + headerParts.join(", ");
 
   var body = { text: text };
   if (replyTo) body.reply = { in_reply_to_tweet_id: replyTo };
 
   var res = await fetch(url, {
     method: "POST",
-    headers: {
-      "Authorization": authHeader,
-      "Content-Type": "application/json",
-      "User-Agent": "FonsecaNewsBot/3.0"
-    },
-    body: JSON.stringify(body)
+    headers: { Authorization: "OAuth " + headerParts.join(", "), "Content-Type": "application/json", "User-Agent": "FonsecaNewsBot/3.0" },
+    body: JSON.stringify(body),
   });
 
   var raw = await res.text();
   console.log("[tweet] Status:", res.status, "Body:", raw.substring(0, 300));
-
-  if (!res.ok) {
-    throw new Error("Twitter error: " + res.status + " - " + raw.substring(0, 300));
-  }
-
+  if (!res.ok) throw new Error("Twitter " + res.status + ": " + raw.substring(0, 200));
   return JSON.parse(raw);
 }
 
 async function postWithLinkReply(mainText, linkText) {
   var result = await postTweet(mainText);
   if (result.data && result.data.id && linkText) {
-    try {
-      await postTweet(linkText, result.data.id);
-    } catch (e) {
-      console.log("[tweet] Reply failed:", e.message);
-    }
+    try { await postTweet(linkText, result.data.id); } catch (e) { console.log("[tweet] Reply error:", e.message); }
   }
   return result;
 }
 
-// ===== KV-BASED DEDUPLICATION =====
+// ===== KV DEDUP & RATE LIMITING =====
+async function wasPosted(hash) { try { return !!(await kv.get("tw:" + hash)); } catch (e) { return false; } }
+async function markPosted(hash) { try { await kv.set("tw:" + hash, Date.now(), { ex: 604800 }); } catch (e) { } }
+async function getLastPostTime() { try { var v = await kv.get("tw:last_post"); return v ? parseInt(v, 10) : 0; } catch (e) { return 0; } }
+async function setLastPostTime() { try { await kv.set("tw:last_post", Date.now()); } catch (e) { } }
+async function getTodayCount() { try { var d = new Date().toISOString().split("T")[0]; var v = await kv.get("tw:count:" + d); return v ? parseInt(v, 10) : 0; } catch (e) { return 0; } }
+async function incTodayCount() { try { var d = new Date().toISOString().split("T")[0]; await kv.incr("tw:count:" + d); await kv.expire("tw:count:" + d, 172800); } catch (e) { } }
 
-async function wasRecentlyPosted(titleHash) {
-  try {
-    var val = await kv.get("tw:" + titleHash);
-    return !!val;
-  } catch (e) { return false; }
+// ===== SOURCE QUALITY FILTER =====
+var PREMIUM_SOURCES = [
+  "espn", "ge", "globoesporte", "globo", "uol", "folha", "estadão", "estadao",
+  "terra", "atptour", "atp tour", "tennis.com", "tennisworld", "tennis world",
+  "l'equipe", "lequipe", "eurosport", "sportv", "band", "cnn", "bbc",
+  "reuters", "associated press", "the athletic", "marca", "as.com",
+  "gazzetta", "tuttosport", "record", "lance", "r7", "ig esportes",
+];
+
+var BLOCKED_SOURCES = [
+  "msn.com", "yahoo", "aol", "newsbreak", "smartnews", "flipboard",
+  "ground news", "newsnow", "news aggregator",
+];
+
+function sourceScore(source) {
+  if (!source) return 0;
+  var low = source.toLowerCase();
+  for (var i = 0; i < BLOCKED_SOURCES.length; i++) {
+    if (low.includes(BLOCKED_SOURCES[i])) return -1;
+  }
+  for (var j = 0; j < PREMIUM_SOURCES.length; j++) {
+    if (low.includes(PREMIUM_SOURCES[j])) return 2;
+  }
+  return 1;
 }
 
-async function markAsPosted(titleHash) {
-  try {
-    await kv.set("tw:" + titleHash, Date.now(), { ex: 60 * 60 * 24 * 7 });
-  } catch (e) {}
-}
-
-async function getLastPostTime() {
-  try {
-    var val = await kv.get("tw:last_post");
-    return val ? parseInt(val, 10) : 0;
-  } catch (e) { return 0; }
-}
-
-async function setLastPostTime() {
-  try {
-    await kv.set("tw:last_post", Date.now());
-  } catch (e) {}
-}
-
-async function getTodayPostCount() {
-  try {
-    var today = new Date().toISOString().split("T")[0];
-    var val = await kv.get("tw:count:" + today);
-    return val ? parseInt(val, 10) : 0;
-  } catch (e) { return 0; }
-}
-
-async function incrementTodayPostCount() {
-  try {
-    var today = new Date().toISOString().split("T")[0];
-    await kv.incr("tw:count:" + today);
-    await kv.expire("tw:count:" + today, 60 * 60 * 48);
-  } catch (e) {}
-}
-
-// ===== SIMILARITY CHECK =====
-
+// ===== TITLE HASHING & SIMILARITY =====
 function normalizeTitle(title) {
   return (title || "").toLowerCase()
-    .replace(/[^a-záàãâéêíóôõúüç\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, "").replace(/\s+/g, " ").trim();
 }
 
 function titleHash(title) {
   var norm = normalizeTitle(title);
-  var words = norm.split(" ").filter(function(w) {
-    return w.length > 3 && !["joão", "fonseca", "para", "sobre", "após", "como", "mais", "pela", "pelo", "com", "que", "uma", "dos", "das", "este", "esta", "isso"].includes(w);
-  }).slice(0, 8);
+  var stop = ["joao", "fonseca", "para", "sobre", "apos", "como", "mais", "pela", "pelo", "com", "que", "uma", "dos", "das"];
+  var words = norm.split(" ").filter(function (w) { return w.length > 3 && stop.indexOf(w) === -1; }).slice(0, 8);
   return words.join("_").substring(0, 80);
 }
 
-async function isTooSimilar(title) {
-  var hash = titleHash(title);
-  if (!hash || hash.length < 5) return false;
-  return await wasRecentlyPosted(hash);
+// ===== GEMINI TWEET GENERATION =====
+async function geminiTweet(headline, context) {
+  var gk = process.env.GEMINI_API_KEY;
+  if (!gk) return null;
+
+  var prompt = "Voce e o social media do Fonseca News (@JFonsecaNews), um site de fas do tenista brasileiro Joao Fonseca.\n\n" +
+    "Reescreva esta noticia como um tweet em portugues brasileiro.\n\n" +
+    "REGRAS ABSOLUTAS:\n" +
+    "- Maximo 240 caracteres (NUNCA ultrapasse)\n" +
+    "- Tom de fa apaixonado mas informativo, como um amigo contando a novidade\n" +
+    "- NAO use hashtags\n" +
+    "- Pode usar 1-2 emojis (no meio ou fim, NUNCA no inicio)\n" +
+    "- NAO comece com emoji\n" +
+    "- NAO use aspas ao redor do tweet\n" +
+    "- Varie o estilo: as vezes mais animado, as vezes mais informativo, as vezes opinativo\n" +
+    "- Se for resultado de jogo, destaque o placar e o adversario\n" +
+    "- Se for sobre ranking, destaque a posicao\n" +
+    "- Fale 'Joao' ou 'Fonseca', nunca 'Joao Fonseca' completo (economia de chars)\n" +
+    "- Responda APENAS o texto do tweet, absolutamente nada mais\n\n" +
+    "CONTEXTO ATUAL:\n" +
+    (context.ranking ? "- Ranking ATP: #" + context.ranking + "\n" : "") +
+    (context.lastResult ? "- Ultimo resultado: " + context.lastResult + "\n" : "") +
+    (context.nextOpponent ? "- Proximo adversario: " + context.nextOpponent + "\n" : "") +
+    (context.tournament ? "- Torneio atual: " + context.tournament + "\n" : "") +
+    "\nNOTICIA: \"" + headline + "\"\n\nTWEET:";
+
+  try {
+    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.8, maxOutputTokens: 200 },
+      }),
+    });
+    if (!r.ok) { console.log("[tweet] Gemini " + r.status); return null; }
+    var d = await r.json();
+    var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+    if (!parts) return null;
+    var txt = "";
+    parts.forEach(function (p) { if (p.text && !p.thought) txt += p.text; });
+    txt = txt.trim().replace(/^["']|["']$/g, "").trim();
+    if (txt.length > 0 && txt.length <= 260) return txt;
+    if (txt.length > 260) return txt.substring(0, 257) + "...";
+    return null;
+  } catch (e) { console.log("[tweet] Gemini error:", e.message); return null; }
 }
 
-// ===== TWEET FORMATTING =====
-
-function cleanTitle(title, source) {
-  if (!title) return "";
-  var cleaned = title;
+// ===== FALLBACK: template-based tweet =====
+function templateTweet(title, source) {
+  var clean = title || "";
   if (source) {
-    cleaned = cleaned.replace(" - " + source, "");
-    cleaned = cleaned.replace(" | " + source, "");
-    cleaned = cleaned.replace(" · " + source, "");
+    clean = clean.replace(" - " + source, "").replace(" | " + source, "").replace(" · " + source, "");
   }
-  var dashIdx = cleaned.lastIndexOf(" - ");
-  if (dashIdx > cleaned.length * 0.5) {
-    cleaned = cleaned.substring(0, dashIdx);
-  }
-  return cleaned.trim();
-}
+  var dash = clean.lastIndexOf(" - ");
+  if (dash > clean.length * 0.5) clean = clean.substring(0, dash);
+  clean = clean.trim();
 
-var NEWS_TEMPLATES = {
-  "Resultado": {
-    win: [
-      "{title} 🇧🇷🎾\n\n{score}\n\n#JoãoFonseca",
-      "{title}\n\n{score}\n\n#JoãoFonseca",
-    ],
-    loss: [
-      "{title}\n\n{score}\n\n#JoãoFonseca",
-    ],
-    neutral: [
-      "{title} 🎾\n\n#JoãoFonseca",
-    ]
-  },
-  "Ranking": [
-    "{title} 📈\n\n#JoãoFonseca",
-  ],
-  "Declaração": [
-    "{title}\n\n#JoãoFonseca",
-  ],
-  "Torneio": [
-    "{title} 🎾\n\n#JoãoFonseca",
-  ],
-  "default": [
-    "{title}\n\n#JoãoFonseca",
-    "{title} 🇧🇷\n\n#JoãoFonseca",
-  ]
-};
+  var emojis = ["🎾", "🇧🇷", "🔥", "⚡", "💪"];
+  var emoji = emojis[Math.floor(Math.random() * emojis.length)];
+  var tweet = clean + " " + emoji;
 
-function formatTweet(newsItem, lastMatch, player) {
-  var title = cleanTitle(newsItem.title, newsItem.source);
-  var category = newsItem.category || "default";
-  var templates;
-  var score = "";
-
-  if (lastMatch && lastMatch.score) {
-    score = lastMatch.score;
-    if (lastMatch.tournament) score += " · " + lastMatch.tournament;
-  }
-
-  if (category === "Resultado") {
-    var isWin = /vence|vitória|elimina|avança|classificad/i.test(title);
-    var isLoss = /perde|derrota|eliminad|cai|queda/i.test(title);
-    if (isWin) templates = NEWS_TEMPLATES["Resultado"].win;
-    else if (isLoss) templates = NEWS_TEMPLATES["Resultado"].loss;
-    else templates = NEWS_TEMPLATES["Resultado"].neutral;
-  } else {
-    templates = NEWS_TEMPLATES[category] || NEWS_TEMPLATES["default"];
-  }
-
-  var template = templates[Math.floor(Math.random() * templates.length)];
-  var tweet = template
-    .replace(/\{title\}/g, title)
-    .replace(/\{score\}/g, score)
-    .replace(/\{ranking\}/g, player ? player.ranking : "41");
-
-  tweet = tweet.replace(/\n\n\n/g, "\n\n").replace(/\n\n$/g, "");
-
-  if (tweet.length > 280) {
-    var suffix = "\n\n#JoãoFonseca";
-    var maxTitle = 280 - suffix.length - 5;
-    tweet = title.substring(0, maxTitle) + "..." + suffix;
-  }
-
+  if (tweet.length > 270) tweet = clean.substring(0, 267) + "...";
   return tweet;
 }
 
-function formatLinkReply(newsItem) {
-  var parts = [];
-  if (newsItem.source) parts.push("📰 " + newsItem.source);
-  parts.push("🔗 fonsecanews.com.br");
-  return parts.join("\n");
-}
-
-// ===== PROMOTIONAL TWEETS (evergreen, emojis, no stats/polls) =====
+// ===== PROMO TWEETS =====
 var PROMO_TWEETS = [
-  { main: "🎾 Ranking, calendario, forma recente e noticias filtradas. Tudo do Joao num lugar so.\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "🇧🇷 De Ipanema pro circuito ATP. A historia completa do Joao Fonseca.\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "📊 Timeline, conquistas e comparativo Next Gen. Tudo sobre o Joao em um unico site.\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "🔥 O proximo grande nome do tenis brasileiro tem 19 anos. Acompanhe a jornada.\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "📱 Sem app, sem poluicao. O site de fas do Joao Fonseca direto no navegador.\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "🏆 2 titulos ATP, NextGen campeao, Top 40 mundial. E so o comeco.\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "⭐ O unico site 100% dedicado ao Joao Fonseca. Noticias, stats e mais.\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "🇧🇷🔥 O tenis brasileiro nao via um talento assim desde o Guga.\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "⚡ Fonseca, Tien, Mensik, Fils. Quem chega primeiro no Top 10?\n\n#JoãoFonseca #NextGen" },
-  { main: "🎯 19 anos, Top 40, e subindo. Ate onde o Joao vai?\n\n#JoãoFonseca" },
-  { main: "🤔 Joao Fonseca no Top 10 ate 2027. Voce acredita?\n\n#JoãoFonseca #ATP" },
-  { main: "🎾 O forehand do Joao Fonseca e o mais bonito do circuito atualmente\n\nMuda minha opiniao? Nao 🇧🇷\n\n#JoãoFonseca #ATP" },
-  { main: "🇧🇷 Se o Joao fosse espanhol, ja estaria na capa de todo jornal esportivo do mundo\n\nO Brasil precisa valorizar mais\n\n#JoãoFonseca" },
-  { main: "🔥 Quem assistiu Joao vs Rublev no Australian Open sabe: aquele jogo mudou tudo\n\nO mundo conheceu o Fonseca ali\n\n#JoãoFonseca #AusOpen" },
-  { main: "🤯 O tenis brasileiro nao tinha um fenomeno assim desde o Guga\n\nE o Joao tem so 19 anos. Imagina com 25\n\n#JoãoFonseca" },
-  { main: "📝 Hot take: Joao Fonseca vai ganhar Roland Garros antes dos 22 anos\n\nAnotem\n\n#JoãoFonseca #RolandGarros" },
-  { main: "😂 O Joao tem 19 anos e ja venceu um top 10 em Grand Slam\n\nCom 19 anos eu mal sabia sacar\n\n#JoãoFonseca" },
-  { main: "🏆 Alcaraz, Sinner ou Fonseca — quem vai dominar o tenis em 2030?\n\n#Alcaraz #Sinner #JoãoFonseca" },
-  { main: "🟤 Saibro ou quadra dura? Acho que o Joao vai ser devastador no saibro\n\n#JoãoFonseca" },
-  { main: "🇧🇷🎾 O Brasil tem o melhor sub-20 do mundo e pouca gente sabe\n\nIsso precisa mudar\n\n#JoãoFonseca" },
-  { main: "🤔 Quem vai ser o maior rival do Joao na carreira? Tien? Mensik? Fils?\n\n#JoãoFonseca #NextGen" },
-  { main: "😂🎾 Acordei pensando em tenis. De novo\n\nCulpa do Joao\n\n#JoãoFonseca" },
-  { main: "🇧🇷🏅 Sera que a gente vai ver o Joao nas Olimpiadas de 2028 em LA?\n\nJa estou contando os dias\n\n#JoãoFonseca #LA2028" },
-  { main: "🌱 Grama, saibro ou duro — acompanhe o Joao em qualquer superficie.\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "🎾 A biografia completa do Joao ta no site — de Ipanema ao top 40 do mundo 🇧🇷\n\n#JoãoFonseca", link: "🔗 fonsecanews.com.br" },
-  { main: "🔥 O Joao fez Sinner suar em dois tiebreaks em Indian Wells\n\nA evolucao e real\n\n#JoãoFonseca #ATP" },
-  { main: "🏟️ Voces preferem assistir tenis na TV ou no estadio?\n\nNo estadio a velocidade da bola e surreal\n\n#Tennis #ATP" },
+  "Ranking, calendario, forma recente e noticias filtradas. Tudo do Joao num lugar so 🎾",
+  "O unico site 100% dedicado ao Joao Fonseca. Noticias, stats e muito mais ⚡",
+  "De Ipanema pro circuito ATP. A jornada completa do Joao esta no site 🇧🇷",
+  "Sem app, sem poluicao. Acompanhe o Joao direto no navegador 📱",
+  "O proximo grande nome do tenis brasileiro tem 19 anos. Acompanhe a jornada 🔥",
+  "O tenis brasileiro nao via um talento assim desde o Guga. E so o comeco 🇧🇷",
+  "Quem assistiu Joao vs Rublev no Australian Open sabe — aquele jogo mudou tudo 🔥",
+  "O forehand do Joao e o mais bonito do circuito atualmente. Muda minha opiniao 🎾",
+  "Fonseca, Tien, Mensik, Fils. A proxima geracao ja chegou ⚡",
+  "Se o Joao fosse espanhol, ja estaria na capa de todo jornal esportivo do mundo 🇧🇷",
+  "Alcaraz, Sinner ou Fonseca — quem vai dominar o tenis em 2030? 🏆",
+  "O Brasil tem o melhor sub-20 do mundo e pouca gente sabe. Isso precisa mudar 🇧🇷",
+  "Acordei pensando em tenis. De novo. Culpa do Joao 😂🎾",
+  "Sera que a gente vai ver o Joao nas Olimpiadas de 2028 em LA? Ja to contando os dias 🇧🇷🏅",
+  "Hot take: Joao Fonseca vai ganhar Roland Garros antes dos 22 anos. Anotem 📝",
 ];
 
 // ===== MAIN HANDLER =====
 export default async function handler(req, res) {
-  // Check posting hours (6h-00h Brasilia)
   var nowUTC = new Date().getUTCHours();
   var brasilia = (nowUTC - 3 + 24) % 24;
+
+  // Silent hours: 0h-6h BRT
   if (brasilia < 6) {
-    return res.status(200).json({ message: "Fora do horario (6h-00h BRT). Atual: " + brasilia + "h" });
+    return res.status(200).json({ skip: true, reason: "silent_hours", brt: brasilia });
   }
 
   // Test mode
-  if (req.query.test === "1") {
+  if (req.query && req.query.test === "1") {
     try {
-      var result = await postWithLinkReply("🎾 Teste do bot!\n\n#JoãoFonseca", "🔗 fonsecanews.com.br");
-      return res.status(200).json({ success: true, result: result });
-    } catch (e) {
-      return res.status(200).json({ success: false, error: e.message });
-    }
+      var r = await postWithLinkReply("Teste do bot v9! 🎾", "🔗 fonsecanews.com.br");
+      return res.status(200).json({ ok: true, tweetId: r.data ? r.data.id : null });
+    } catch (e) { return res.status(200).json({ ok: false, error: e.message }); }
   }
 
   try {
-    // ===== RATE LIMITING =====
-    var todayCount = await getTodayPostCount();
+    // ===== RATE LIMITS =====
+    var todayCount = await getTodayCount();
     if (todayCount >= 4) {
-      return res.status(200).json({ message: "Limite diario atingido (4 posts)", count: todayCount });
+      return res.status(200).json({ skip: true, reason: "daily_limit", count: todayCount });
     }
-
     var lastPost = await getLastPostTime();
-    var hoursSinceLast = (Date.now() - lastPost) / (1000 * 60 * 60);
-    if (hoursSinceLast < 2) {
-      return res.status(200).json({ message: "Intervalo minimo de 2h. Ultima: " + Math.round(hoursSinceLast * 60) + "min atras" });
+    var minsSince = (Date.now() - lastPost) / 60000;
+    if (minsSince < 120) {
+      return res.status(200).json({ skip: true, reason: "cooldown", mins: Math.round(minsSince) });
     }
 
-    var posted = [];
+    // ===== GATHER CONTEXT =====
+    var context = {};
+    try {
+      var ranking = await kv.get("fn:ranking");
+      if (ranking) {
+        var rk = typeof ranking === "string" ? JSON.parse(ranking) : ranking;
+        if (rk && rk.ranking) context.ranking = rk.ranking;
+      }
+      var lm = await kv.get("fn:lastMatch");
+      if (lm) {
+        var lastMatch = typeof lm === "string" ? JSON.parse(lm) : lm;
+        if (lastMatch) {
+          context.lastResult = (lastMatch.result === "V" ? "Vitoria" : "Derrota") + " " + (lastMatch.score || "") + " vs " + (lastMatch.opponent_name || "");
+          context.tournament = lastMatch.tournament_name || "";
+        }
+      }
+      var nm = await kv.get("fn:nextMatch");
+      if (nm) {
+        var nextMatch = typeof nm === "string" ? JSON.parse(nm) : nm;
+        if (nextMatch && nextMatch.opponent_name && nextMatch.opponent_name !== "A definir") {
+          context.nextOpponent = nextMatch.opponent_name + (nextMatch.opponent_ranking ? " #" + nextMatch.opponent_ranking : "");
+        }
+      }
+    } catch (e) { console.log("[tweet] Context error:", e.message); }
 
-    // ===== 1. PROMO (once per day, afternoon/evening 14h-20h BRT) =====
+    // ===== 1. PROMO (once per day, 14h-20h BRT) =====
     if (brasilia >= 14 && brasilia <= 20) {
       var today = new Date().toISOString().split("T")[0];
       var promoPosted = await kv.get("tw:promo:" + today);
       if (!promoPosted) {
-        var promoIdx = Math.floor(Math.random() * PROMO_TWEETS.length);
-        var promo = PROMO_TWEETS[promoIdx];
+        // Pick random promo, avoid last 5 used
+        var lastPromos = [];
+        try { var lp = await kv.get("tw:promo_history"); if (lp) lastPromos = typeof lp === "string" ? JSON.parse(lp) : lp; } catch (e) { }
+        if (!Array.isArray(lastPromos)) lastPromos = [];
+
+        var available = PROMO_TWEETS.filter(function (_, idx) { return lastPromos.indexOf(idx) === -1; });
+        if (available.length === 0) { available = PROMO_TWEETS; lastPromos = []; }
+        var promoIdx = PROMO_TWEETS.indexOf(available[Math.floor(Math.random() * available.length)]);
+        var promoText = PROMO_TWEETS[promoIdx];
+
         try {
-          var promoResult = promo.link
-            ? await postWithLinkReply(promo.main, promo.link)
-            : await postTweet(promo.main);
-          await kv.set("tw:promo:" + today, "1", { ex: 60 * 60 * 48 });
+          var promoResult = await postWithLinkReply(promoText, "🔗 fonsecanews.com.br");
+          lastPromos.push(promoIdx);
+          if (lastPromos.length > 5) lastPromos = lastPromos.slice(-5);
+          await kv.set("tw:promo_history", JSON.stringify(lastPromos), { ex: 604800 });
+          await kv.set("tw:promo:" + today, "1", { ex: 172800 });
           await setLastPostTime();
-          await incrementTodayPostCount();
-          posted.push({ type: "promo", tweetId: promoResult.data ? promoResult.data.id : null });
-          return res.status(200).json({ message: "Promo posted", posted: posted });
+          await incTodayCount();
+          return res.status(200).json({ ok: true, type: "promo", tweetId: promoResult.data ? promoResult.data.id : null });
         } catch (e) {
           console.log("[tweet] Promo error:", e.message);
-          await kv.set("tw:promo:" + today, "error", { ex: 60 * 60 * 48 });
+          await kv.set("tw:promo:" + today, "error", { ex: 172800 });
         }
       }
     }
 
     // ===== 2. NEWS =====
-    var allowedHosts = ["fonsecanews.com.br", "www.fonsecanews.com.br", "localhost:3000"];
-    var host = req.headers.host;
-    if (!host || !allowedHosts.some(function(h) { return host === h || host.endsWith(".vercel.app"); })) {
-      host = "fonsecanews.com.br";
-    }
-    var protocol = req.headers["x-forwarded-proto"] === "http" ? "http" : "https";
+    var host = req.headers && req.headers.host || "fonsecanews.com.br";
+    var protocol = (req.headers && req.headers["x-forwarded-proto"] === "http") ? "http" : "https";
+    if (!host.includes("fonsecanews") && !host.includes("vercel.app")) host = "fonsecanews.com.br";
+
     var newsRes = await fetch(protocol + "://" + host + "/api/news");
-    if (!newsRes.ok) throw new Error("Failed to fetch news");
+    if (!newsRes.ok) throw new Error("News API " + newsRes.status);
     var newsData = await newsRes.json();
 
     if (!newsData.news || newsData.news.length === 0) {
-      return res.status(200).json({ message: "Sem noticias" });
+      return res.status(200).json({ skip: true, reason: "no_news" });
     }
 
-    var newsToPost = null;
+    // Filter and score news
+    var candidates = [];
     for (var i = 0; i < newsData.news.length; i++) {
       var item = newsData.news[i];
+
+      // Age filter: max 24h
+      var ageH = (Date.now() - new Date(item.date).getTime()) / 3600000;
+      if (ageH > 24) continue;
+
+      // Source quality
+      var sq = sourceScore(item.source);
+      if (sq < 0) continue; // blocked source
+
+      // Already posted?
       var hash = titleHash(item.title);
-      if (await wasRecentlyPosted(hash)) continue;
-      if (await isTooSimilar(item.title)) continue;
-      newsToPost = item;
-      break;
+      if (!hash || hash.length < 5) continue;
+      if (await wasPosted(hash)) continue;
+
+      // Title must mention Fonseca
+      var tLow = (item.title || "").toLowerCase();
+      if (!tLow.includes("fonseca")) continue;
+
+      // Score: freshness + source quality
+      var freshness = Math.max(0, 1 - (ageH / 24));
+      var score = freshness * 10 + sq * 5;
+
+      candidates.push({ item: item, hash: hash, score: score });
     }
 
-    if (!newsToPost) {
-      return res.status(200).json({ message: "Todas as noticias ja postadas ou similares" });
+    // Sort by score (best first)
+    candidates.sort(function (a, b) { return b.score - a.score; });
+
+    if (candidates.length === 0) {
+      return res.status(200).json({ skip: true, reason: "no_new_news", checked: newsData.news.length });
     }
 
-    try {
-      var tweetText = formatTweet(newsToPost, newsData.lastMatch, newsData.player);
-      var linkReply = formatLinkReply(newsToPost);
-      var tweetResult = await postWithLinkReply(tweetText, linkReply);
+    var best = candidates[0];
 
-      await markAsPosted(titleHash(newsToPost.title));
-      await setLastPostTime();
-      await incrementTodayPostCount();
+    // ===== GENERATE TWEET TEXT =====
+    var tweetText = await geminiTweet(best.item.title, context);
 
-      posted.push({
-        type: "news",
-        title: newsToPost.title,
-        tweetId: tweetResult.data ? tweetResult.data.id : null,
-        chars: tweetText.length
-      });
-    } catch (e) {
-      posted.push({ title: newsToPost.title, error: e.message });
+    // Fallback if Gemini fails
+    if (!tweetText) {
+      tweetText = templateTweet(best.item.title, best.item.source);
     }
 
-    res.status(200).json({
-      message: "Posted " + posted.filter(function(p) { return !p.error; }).length,
+    // Add hashtag at end (only #JoãoFonseca)
+    if (!tweetText.includes("#")) {
+      if (tweetText.length + 16 <= 280) {
+        tweetText = tweetText + "\n\n#JoãoFonseca";
+      }
+    }
+
+    // Safety: enforce 280 char limit
+    if (tweetText.length > 280) {
+      tweetText = tweetText.substring(0, 277) + "...";
+    }
+
+    // Link in reply (better for algorithm)
+    var linkReply = "📰 " + (best.item.source || "Fonte") + "\n🔗 fonsecanews.com.br";
+
+    console.log("[tweet] Posting: " + tweetText.substring(0, 100) + "...");
+
+    var tweetResult = await postWithLinkReply(tweetText, linkReply);
+
+    await markPosted(best.hash);
+    await setLastPostTime();
+    await incTodayCount();
+
+    return res.status(200).json({
+      ok: true,
+      type: "news",
+      title: best.item.title,
+      source: best.item.source,
+      tweet: tweetText,
+      chars: tweetText.length,
+      tweetId: tweetResult.data ? tweetResult.data.id : null,
       todayTotal: todayCount + 1,
-      posted: posted
     });
 
-  } catch (error) {
-    console.error("[tweet] Error:", error);
-    res.status(500).json({ error: error.message });
+  } catch (e) {
+    console.error("[tweet] Error:", e);
+    return res.status(200).json({ ok: false, error: e.message });
   }
 }
