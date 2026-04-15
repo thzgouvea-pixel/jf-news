@@ -16,10 +16,13 @@ export var getESPNImage = function(name) {
   return (p && p.data.espn) ? "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/" + p.data.espn + ".png&w=200&h=145" : null;
 };
 
-export var getSofaScoreImage = function(name, sofascoreId) {
+export var getSofaScoreImage = function(name, teamId) {
+  // Try team image from img.sofascore.com (most reliable)
+  if (teamId) return "https://img.sofascore.com/api/v1/team/" + teamId + "/image";
+  // Fallback: PLAYER_DB sofa ID
   var p = findPlayer(name);
-  var id = (p && p.data.sofa) ? p.data.sofa : sofascoreId;
-  return id ? "https://api.sofascore.app/api/v1/player/" + id + "/image" : null;
+  if (p && p.data.sofa) return "https://img.sofascore.com/api/v1/team/" + p.data.sofa + "/image";
+  return null;
 };
 
 export var formatTimeAgo = function(d) { if (!d) return ""; try { var m = Math.floor((new Date() - new Date(d)) / 60000); if (m < 1) return "agora"; if (m < 60) return "há " + m + " min"; var h = Math.floor(m / 60); if (h < 24) return "há " + h + "h"; var dd = Math.floor(h / 24); if (dd === 1) return "ontem"; if (dd < 7) return "há " + dd + " dias"; return new Date(d).toLocaleDateString("pt-BR", { day: "numeric", month: "short" }); } catch(e) { return ""; } };
