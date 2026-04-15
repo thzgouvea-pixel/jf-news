@@ -136,12 +136,21 @@ async function enrichNextMatch(nm) {
       var ev = detail.event || detail;
       if (!nm.court && ev.courtName) nm.court = ev.courtName;
       if (!nm.court && ev.venue) nm.court = ev.venue.name || "";
-      if (!nm.startTimestamp && ev.startTimestamp) {
-        nm.startTimestamp = ev.startTimestamp;
-        nm.date = new Date(ev.startTimestamp * 1000).toISOString();
+      // SofaScore RapidAPI uses "timestamp" not "startTimestamp"
+      var ts = ev.startTimestamp || ev.timestamp || null;
+      if (!nm.startTimestamp && ts) {
+        nm.startTimestamp = ts;
+        nm.date = new Date(ts * 1000).toISOString();
       }
-      if (!nm.round && ev.roundInfo && ev.roundInfo.name) {
-        nm.round = translateRound(ev.roundInfo.name);
+      // SofaScore RapidAPI uses "round" not "roundInfo"
+      var roundObj = ev.roundInfo || ev.round || null;
+      if (!nm.round && roundObj && roundObj.name) {
+        nm.round = translateRound(roundObj.name);
+      }
+      // Rankings come from team objects
+      if (!nm.opponent_ranking) {
+        var oppTeam = nm.isFonsecaHome ? ev.awayTeam : ev.homeTeam;
+        if (oppTeam && oppTeam.ranking) nm.opponent_ranking = oppTeam.ranking;
       }
       log("match details: court=" + (nm.court || "—") + " round=" + (nm.round || "—") + " ts=" + (nm.startTimestamp || "—"));
     } else {
