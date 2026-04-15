@@ -199,6 +199,19 @@ async function handleMatchFinished(match, now) {
     enrichMatch(lm);
 
     // Save lastMatch
+    // Don't overwrite lastMatch if KV has better data
+            try {
+              var existingLm = await kv.get("fn:lastMatch");
+              if (existingLm) {
+                var exLm2 = typeof existingLm === "string" ? JSON.parse(existingLm) : existingLm;
+                if (exLm2 && exLm2.opponent_ranking && exLm2.opponent_name === lastMatchData.opponent_name) {
+                  // Merge: keep existing good fields
+                  for (var f in exLm2) {
+                    if (exLm2[f] && !lastMatchData[f]) lastMatchData[f] = exLm2[f];
+                  }
+                }
+              }
+            } catch(e) {}
     await Promise.all([
       kv.set("fn:lastMatch", JSON.stringify(lm), { ex: 604800 }),
       kv.set("fn:lastStatsEventId", String(match.id), { ex: 604800 }),
