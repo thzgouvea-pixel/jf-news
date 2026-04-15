@@ -646,6 +646,16 @@ export default async function handler(req, res) {
     }
 
     // ── KV WRITE ──
+    // FORCE apply rankings right before KV write (ensure no merge overwrote them)
+    var rankingsLookup2 = buildRankingsLookup(exRankingsList);
+    if (lm && !lm.opponent_ranking && lm.opponent_name) {
+      var lmLn = stripAccents(lm.opponent_name.split(" ").pop().toLowerCase());
+      if (rankingsLookup2[lmLn]) { lm.opponent_ranking = rankingsLookup2[lmLn]; log("forced lm ranking: #" + lm.opponent_ranking); }
+    }
+    if (nm && !nm.opponent_ranking && nm.opponent_name && nm.opponent_name !== "A definir") {
+      var nmLn = stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
+      if (rankingsLookup2[nmLn]) { nm.opponent_ranking = rankingsLookup2[nmLn]; log("forced nm ranking: #" + nm.opponent_ranking); }
+    }
     var w = [];
 
     // lastMatch — merge already happened in classify phase
