@@ -112,8 +112,9 @@ async function discoverMatches() {
 
   // Sort: finished by most recent, upcoming by soonest
   var NOW_TS = Math.floor(Date.now() / 1000);
-  results.finished.sort(function (a, b) { return (b.startTimestamp || NOW_TS) - (a.startTimestamp || NOW_TS); });
-  results.upcoming.sort(function (a, b) { return (a.startTimestamp || 0) - (b.startTimestamp || 0); });
+  function getTs(m) { return m.startTimestamp || m.timestamp || 0; }
+  results.finished.sort(function (a, b) { return (getTs(b) || NOW_TS) - (getTs(a) || NOW_TS); });
+  results.upcoming.sort(function (a, b) { return (getTs(a) || 0) - (getTs(b) || 0); });
 
   // Filter out "upcoming" that already have scores (SofaScore status lag)
   results.upcoming = results.upcoming.filter(function (m) {
