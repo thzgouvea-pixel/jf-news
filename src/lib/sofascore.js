@@ -293,7 +293,7 @@ export function extractMatch(match) {
   var roundStr = translateRound(round.name) || "";
 
   // Timestamps
-  var date = match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : null;
+  var date = (match.startTimestamp || match.timestamp) ? new Date((match.startTimestamp || match.timestamp) * 1000).toISOString() : null;
 
   return {
     id: match.id,
@@ -308,7 +308,7 @@ export function extractMatch(match) {
     surface: surface,
     round: roundStr,
     date: date,
-    startTimestamp: match.startTimestamp || null,
+    startTimestamp: match.startTimestamp || match.timestamp || null,
     court: match.courtName || (match.venue && match.venue.name) || "",
     isFonsecaHome: isFHome,
     finished: isFinished(match),
