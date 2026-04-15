@@ -1033,8 +1033,8 @@ export default async function handler(req, res) {
     } else { steps.odds = "skip"; }
 
     // Gemini enrichment for nextMatch — fill gaps (official name, date, broadcast, court)
-    if (nm && (!nm.date || !nm.tournament_category || !nm.court || (nm.tournament_name && nm.tournament_name.includes(",")))) {
-      log("Enriching nextMatch via Gemini...");
+    if (nm && (!nm.date || !nm.round || !nm.tournament_category || !nm.court || (nm.tournament_name && nm.tournament_name.includes(",")))) {
+      log("Enriching nextMatch via Gemini... (date=" + !!nm.date + " round=" + (nm.round||"EMPTY") + " court=" + (nm.court||"EMPTY") + ")");
       var enrichTxt = await geminiSearch(
         "Busque informações sobre a partida de tênis João Fonseca vs " + (nm.opponent_name || "adversário") +
         " no torneio " + (nm.tournament_name || "ATP") + " em 2026. " +
@@ -1054,7 +1054,7 @@ export default async function handler(req, res) {
               if (!nm.date && enrich.date) nm.date = enrich.date;
               if (!nm.tournament_category && enrich.tournament_category) nm.tournament_category = enrich.tournament_category;
               if (!nm.surface && enrich.surface) nm.surface = enrich.surface;
-              if (!nm.round && enrich.round) nm.round = translateRound(enrich.round) || enrich.round;
+              if (!nm.round && enrich.round) { nm.round = translateRound(enrich.round) || enrich.round; log("Gemini round: " + enrich.round + " → " + nm.round); }
               if (enrich.broadcast && enrich.broadcast !== "null") nm.broadcast = enrich.broadcast;
               if (!nm.court && enrich.court && enrich.court !== "null") { nm.court = enrich.court; log("Gemini court: " + enrich.court); }
               steps.enrich = "ok";
@@ -1128,9 +1128,17 @@ export default async function handler(req, res) {
       if (bc) match.broadcast = bc;
       // ALWAYS translate round to Portuguese
       if (match.round) match.round = translateRound(match.round);
+      // ALWAYS ensure date matches startTimestamp (fix inconsistencies)
+      if (match.startTimestamp && match.startTimestamp > 1000000000) {
+        var correctDate = new Date(match.startTimestamp * 1000).toISOString();
+        if (match.date !== correctDate) {
+          match.date = correctDate;
+        }
+      }
     }
     applyTournamentMap(lm);
     applyTournamentMap(nm);
+    if (nm) log("nm final: " + nm.opponent_name + " | round=" + (nm.round||"EMPTY") + " | court=" + (nm.court||"EMPTY") + " | rank=" + nm.opponent_ranking);
     if (lm && !skipLastMatchWrite) w.push(kv.set("fn:lastMatch",JSON.stringify(lm),{ex:T7}));
     if (nm) w.push(kv.set("fn:nextMatch",JSON.stringify(nm),{ex:T7}));
 if (form.length) {
