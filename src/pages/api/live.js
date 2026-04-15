@@ -88,11 +88,41 @@ export default async function handler(req, res) {
         try {
           var prevId = await kv.get("fn:lastStatsEventId");
           if (prevId !== String(fonsecaMatch.id)) {
-            // Check manual lock before overwriting lastMatch
+            // Smart manual lock: only block if the finished match is the SAME opponent as the locked match
             var manualLock = await kv.get("fn:lastMatchManualLock");
+            var blockUpdate = false;
             if (manualLock) {
-              console.log("[live] Manual lock active for lastMatch, skipping auto-update");
-            } else {
+              try {
+                var lockedLM = await kv.get("fn:lastMatch");
+                var lockedData = lockedLM ? (typeof lockedLM === "string" ? JSON.parse(lockedLM) : lockedLM) : null;
+                var lockedOpp = lockedData ? (lockedData.opponent_name || "").split(" ").pop().toLowerCase() : "";
+                var finishedOpp = (oppF.shortName || oppF.name || "").split(" ").pop().toLowerCase();
+                if (lockedOpp && finishedOpp && lockedOpp === finishedOpp) {
+                  blockUpdate = true;
+                  console.log("[live] Manual lock active and same opponent (" + lockedOpp + "), skipping auto-update");
+                } else {
+                  console.log("[live] Manual lock active but DIFFERENT opponent (locked=" + lockedOpp + " finished=" + finishedOpp + "), clearing lock and updating");
+                  await kv.del("fn:lastMatchManualLock");
+                }
+              } catch(lockErr) {
+                console.log("[live] Lock check error: " + lockErr.message);
+              }
+            }
+            // Also check nextMatch manual lock — clear it if the finished match matches the locked nextMatch opponent
+            try {
+              var nmLock = await kv.get("fn:nextMatchManualLock");
+              if (nmLock) {
+                var lockedNM = await kv.get("fn:nextMatch");
+                var lockedNMData = lockedNM ? (typeof lockedNM === "string" ? JSON.parse(lockedNM) : lockedNM) : null;
+                var lockedNMOpp = lockedNMData ? (lockedNMData.opponent_name || "").split(" ").pop().toLowerCase() : "";
+                var finOpp = (oppF.shortName || oppF.name || "").split(" ").pop().toLowerCase();
+                if (lockedNMOpp && finOpp && lockedNMOpp === finOpp) {
+                  console.log("[live] Clearing nextMatch manual lock (match vs " + finOpp + " finished)");
+                  await kv.del("fn:nextMatchManualLock");
+                }
+              }
+            } catch(nmLockErr) {}
+            if (!blockUpdate) {
             console.log("[live] Match finished! Auto-updating lastMatch + clearing nextMatch");
             var homeTeamF = fonsecaMatch.homeTeam || {};
             var awayTeamF = fonsecaMatch.awayTeam || {};
