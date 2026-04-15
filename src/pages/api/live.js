@@ -6,7 +6,7 @@ import { kv } from "@vercel/kv";
 import {
   FONSECA_TEAM_ID, sofaFetch, isFonseca, isSingles, isFinished, isLive as isMatchLive,
   extractMatch, parseMatchStats, enrichMatch, lookupTournament, lookupBroadcast,
-  translateRound, NEXT_ROUND, BROADCAST_MAP, log as _log,
+  translateRound, stripAccents, NEXT_ROUND, BROADCAST_MAP, log as _log,
 } from "../../lib/sofascore.js";
 
 function log(msg) { _log("live", msg); }
@@ -42,14 +42,15 @@ export default async function handler(req, res) {
     var now = new Date();
     var fonsecaMatch = null;
 
-    // ── DETECT: Try events/live first (1 API call) ──
+    // ── DETECT: Try events/live first, then date scan ──
+    // Note: /v1/sport/tennis/events/live may 404 on RapidAPI wrapper
     var liveData = await sofaFetch("/v1/sport/tennis/events/live");
     if (liveData) {
       fonsecaMatch = findFonseca(liveData);
       if (fonsecaMatch) log("Found via events/live: " + fonsecaMatch.id);
     }
 
-    // ── FALLBACK: date scan (today + yesterday) ──
+    // Date scan fallback (always reliable on RapidAPI)
     if (!fonsecaMatch) {
       var today = now.toISOString().split("T")[0];
       var todayData = await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + today);
@@ -244,36 +245,29 @@ async function handleMatchFinished(match, now) {
 // ===== SCAN FOR NEXT MATCH =====
 async function scanNextMatch(lastMatch, now) {
   try {
-    // Try near-events first
-    var nearData = await sofaFetch("/v1/team/" + FONSECA_TEAM_ID + "/near-events");
-    if (nearData) {
-      var nextEvent = nearData.nextEvent || null;
-      if (!nextEvent && Array.isArray(nearData.nextEvents) && nearData.nextEvents.length > 0) {
-        nextEvent = nearData.nextEvents[0];
-      }
-      if (nextEvent && isFonseca(nextEvent) && isSingles(nextEvent) && !isFinished(nextEvent)) {
-        var nm = extractMatch(nextEvent);
-        enrichMatch(nm);
-        await kv.set("fn:nextMatch", JSON.stringify(nm), { ex: 604800 });
-        log("Next match: " + nm.opponent_name + " @ " + nm.tournament_name + " " + (nm.round || ""));
-        return;
-      }
-    }
-
-    // Fallback: date scan +1 to +3 days
-    var today = now.toISOString().split("T")[0];
+    // Date scan: today + next 3 days (most reliable on RapidAPI)
     for (var d = 0; d <= 3; d++) {
       var ds = new Date(now.getTime() + d * 86400000).toISOString().split("T")[0];
       var dayData = await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds);
       if (!dayData) continue;
       var ev = dayData.events || (Array.isArray(dayData) ? dayData : []);
+      if (!Array.isArray(ev)) { for (var k in dayData) { if (Array.isArray(dayData[k])) { ev = dayData[k]; break; } } }
       for (var i = 0; i < ev.length; i++) {
         var m = ev[i];
         if (!isFonseca(m) || !isSingles(m) || isFinished(m)) continue;
+        // Skip if same opponent as just-finished match
+        var mOpp = (m.awayTeam && (m.awayTeam.slug || m.awayTeam.name || "")).toLowerCase().includes("fonseca")
+          ? (m.homeTeam && (m.homeTeam.shortName || m.homeTeam.name || ""))
+          : (m.awayTeam && (m.awayTeam.shortName || m.awayTeam.name || ""));
+        if (lastMatch && lastMatch.opponent_name) {
+          var finLast = stripAccents(lastMatch.opponent_name.split(" ").pop().toLowerCase());
+          var mLast = stripAccents((mOpp || "").split(" ").pop().toLowerCase());
+          if (mLast === finLast) continue; // stale
+        }
         var nm2 = extractMatch(m);
         enrichMatch(nm2);
         await kv.set("fn:nextMatch", JSON.stringify(nm2), { ex: 604800 });
-        log("Next match (scan): " + nm2.opponent_name + " @ " + nm2.tournament_name);
+        log("Next match: " + nm2.opponent_name + " @ " + nm2.tournament_name);
         return;
       }
     }
