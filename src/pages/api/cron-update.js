@@ -50,85 +50,72 @@ function parseGeminiJSON(txt) {
 }
 
 // ===== PHASE 1: DISCOVER =====
+// PRIMARY: date scan (always works on RapidAPI)
+// The team/near-events and team/events endpoints return 404 on sofascore6.p.rapidapi.com
 async function discoverMatches() {
-  log("DISCOVER: fetching near-events + events/last...");
+  log("DISCOVER: date scan -3 to +7 days...");
   var results = { upcoming: [], finished: [] };
   var seen = new Set();
 
-  // a) near-events — best way to find next/prev match (1 API call)
-  var nearData = await sofaFetch("/v1/team/" + FONSECA_TEAM_ID + "/near-events");
-  if (nearData) {
-    // Handle various response shapes
-    var nearEvents = [];
-    if (nearData.nextEvent) nearEvents.push(nearData.nextEvent);
-    if (Array.isArray(nearData.nextEvents)) nearEvents = nearEvents.concat(nearData.nextEvents);
-    if (Array.isArray(nearData.events)) nearEvents = nearEvents.concat(nearData.events);
-    if (nearData.previousEvent) nearEvents.push(nearData.previousEvent);
-
-    nearEvents.forEach(function (m) {
+  // Date scan: -3 days back, +7 days forward
+  for (var d = -3; d <= 7; d++) {
+    var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
+    var dayData = await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds);
+    if (!dayData) continue;
+    var ev = dayData.events || (Array.isArray(dayData) ? dayData : []);
+    if (!Array.isArray(ev)) { for (var k in dayData) { if (Array.isArray(dayData[k])) { ev = dayData[k]; break; } } }
+    ev.forEach(function (m) {
       if (!m || !m.id || seen.has(m.id)) return;
       if (!isFonseca(m) || !isSingles(m)) return;
       seen.add(m.id);
       if (isFinished(m)) results.finished.push(m);
-      else results.upcoming.push(m);
+      else if (isUpcoming(m)) results.upcoming.push(m);
     });
-    log("near-events: " + results.upcoming.length + " upc, " + results.finished.length + " fin");
-  } else {
-    log("near-events: FAILED");
   }
+  log("scan: " + results.finished.length + " fin, " + results.upcoming.length + " upc (" + seen.size + " total)");
 
-  // b) events/last — recent finished matches (1 API call)
-  var lastData = await sofaFetch("/v1/team/" + FONSECA_TEAM_ID + "/events/last/0");
-  if (lastData) {
-    var lastEvents = lastData.events || (Array.isArray(lastData) ? lastData : []);
-    lastEvents.forEach(function (m) {
-      if (!m || !m.id || seen.has(m.id)) return;
-      if (!isSingles(m) || !isFonseca(m) || !isFinished(m)) return;
-      seen.add(m.id);
-      results.finished.push(m);
-    });
-    log("events/last: " + lastEvents.length + " total events");
-  }
-
-  // c) events/next — upcoming matches (1 API call, only if near-events missed them)
-  if (results.upcoming.length === 0) {
-    var nextData = await sofaFetch("/v1/team/" + FONSECA_TEAM_ID + "/events/next/0");
-    if (nextData) {
-      var nextEvents = nextData.events || (Array.isArray(nextData) ? nextData : []);
-      nextEvents.forEach(function (m) {
-        if (!m || !m.id || seen.has(m.id)) return;
-        if (!isSingles(m) || !isFonseca(m)) return;
-        seen.add(m.id);
-        if (!isFinished(m)) results.upcoming.push(m);
-      });
-      log("events/next: " + nextEvents.length + " total events");
+  // KV CROSS-REFERENCE: detect stale "upcoming" matches that already finished
+  // SofaScore RapidAPI can be slow to update status — a match might show as "upcoming"
+  // even after it finished. Check against KV lastMatch to catch this.
+  try {
+    var kvLM = await kv.get("fn:lastMatch");
+    if (kvLM) {
+      var parsedLM = typeof kvLM === "string" ? JSON.parse(kvLM) : kvLM;
+      if (parsedLM && parsedLM.finished && parsedLM.opponent_name) {
+        var kvOppLast = stripAccents(parsedLM.opponent_name.split(" ").pop().toLowerCase());
+        var kvTournament = (parsedLM.tournament_name || "").toLowerCase();
+        results.upcoming = results.upcoming.filter(function (m) {
+          var ex = extractMatch(m);
+          var mOppLast = stripAccents(ex.opponent_name.split(" ").pop().toLowerCase());
+          var mTourn = (ex.tournament_name || "").toLowerCase();
+          if (mOppLast === kvOppLast && mTourn.includes(kvTournament.split(" ")[0])) {
+            log("stale upcoming: " + ex.opponent_name + " (already finished in KV)");
+            // Move to finished if not already there
+            if (!results.finished.some(function(f) { return f.id === m.id; })) {
+              results.finished.push(m);
+            }
+            return false;
+          }
+          return true;
+        });
+        // Also: if KV lastMatch is newer than any scanned finished match, inject it
+        if (parsedLM.id && !seen.has(parsedLM.id)) {
+          var kvDate = parsedLM.date ? new Date(parsedLM.date).getTime() : 0;
+          var scanLatest = results.finished.length > 0 ? (results.finished[0].startTimestamp || 0) * 1000 : 0;
+          if (kvDate > scanLatest) {
+            log("KV lastMatch is newer than scan (" + parsedLM.opponent_name + ")");
+          }
+        }
+      }
     }
-  }
+  } catch (e) { log("KV cross-ref error: " + e.message); }
 
-  // d) Fallback: date scan only if discover found nothing at all
-  if (results.finished.length === 0 && results.upcoming.length === 0) {
-    log("DISCOVER fallback: date scan -3 to +3 days");
-    for (var d = -3; d <= 3; d++) {
-      var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
-      var dayData = await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds);
-      if (!dayData) continue;
-      var ev = dayData.events || (Array.isArray(dayData) ? dayData : []);
-      ev.forEach(function (m) {
-        if (!m || !m.id || seen.has(m.id)) return;
-        if (!isFonseca(m) || !isSingles(m)) return;
-        seen.add(m.id);
-        if (isFinished(m)) results.finished.push(m);
-        else if (isUpcoming(m)) results.upcoming.push(m);
-      });
-    }
-  }
-
-  // Sort
+  // Sort: finished by most recent, upcoming by soonest
   var NOW_TS = Math.floor(Date.now() / 1000);
   results.finished.sort(function (a, b) { return (b.startTimestamp || NOW_TS) - (a.startTimestamp || NOW_TS); });
   results.upcoming.sort(function (a, b) { return (a.startTimestamp || 0) - (b.startTimestamp || 0); });
 
-  // Filter out upcoming with existing scores (SofaScore lag)
+  // Filter out "upcoming" that already have scores (SofaScore status lag)
   results.upcoming = results.upcoming.filter(function (m) {
     var ex = extractMatch(m);
     return !(ex.score && ex.score.length > 2);
@@ -141,31 +128,55 @@ async function discoverMatches() {
 async function enrichNextMatch(nm) {
   if (!nm || !nm.id) return { nm: nm, h2h: null, pregameForm: null };
 
-  // a) Event detail — court, confirmed time, round (1 API call)
+  // a) Event detail — court, confirmed time, round
+  // Try multiple path variations (RapidAPI wrapper may differ from direct SofaScore API)
   if (!nm.court || !nm.startTimestamp || !nm.round) {
-    var detail = await sofaFetch("/v1/event/" + nm.id);
-    if (detail) {
-      var ev = detail.event || detail;
-      if (!nm.court && ev.courtName) nm.court = ev.courtName;
-      if (!nm.court && ev.venue) nm.court = ev.venue.name || "";
-      if (!nm.startTimestamp && ev.startTimestamp) {
-        nm.startTimestamp = ev.startTimestamp;
-        nm.date = new Date(ev.startTimestamp * 1000).toISOString();
+    var detailPaths = [
+      "/v1/event/" + nm.id,
+      "/v1/match/" + nm.id,
+      "/v1/event/details?event_id=" + nm.id,
+      "/v1/match/detail?match_id=" + nm.id,
+    ];
+    for (var i = 0; i < detailPaths.length; i++) {
+      var detail = await sofaFetch(detailPaths[i]);
+      if (detail) {
+        var ev = detail.event || detail;
+        if (!nm.court && ev.courtName) nm.court = ev.courtName;
+        if (!nm.court && ev.venue) nm.court = ev.venue.name || "";
+        if (!nm.startTimestamp && ev.startTimestamp) {
+          nm.startTimestamp = ev.startTimestamp;
+          nm.date = new Date(ev.startTimestamp * 1000).toISOString();
+        }
+        if (!nm.round && ev.roundInfo && ev.roundInfo.name) {
+          nm.round = translateRound(ev.roundInfo.name);
+        }
+        log("event detail via " + detailPaths[i] + ": court=" + (nm.court || "—") + " round=" + (nm.round || "—"));
+        break;
       }
-      if (!nm.round && ev.roundInfo && ev.roundInfo.name) {
-        nm.round = translateRound(ev.roundInfo.name);
-      }
-      log("event detail: court=" + (nm.court || "—") + " ts=" + (nm.startTimestamp || "—") + " round=" + (nm.round || "—"));
     }
   }
 
-  // b) H2H (1 API call)
-  var h2h = await sofaFetch("/v1/event/" + nm.id + "/h2h");
-  if (h2h) log("h2h: loaded");
+  // b) H2H — try multiple paths
+  var h2h = null;
+  var h2hPaths = [
+    "/v1/event/" + nm.id + "/h2h",
+    "/v1/match/h2h?match_id=" + nm.id,
+  ];
+  for (var j = 0; j < h2hPaths.length; j++) {
+    h2h = await sofaFetch(h2hPaths[j]);
+    if (h2h) { log("h2h via " + h2hPaths[j]); break; }
+  }
 
-  // c) Pregame form (1 API call)
-  var pregameForm = await sofaFetch("/v1/event/" + nm.id + "/pregame-form");
-  if (pregameForm) log("pregame-form: loaded");
+  // c) Pregame form — try multiple paths
+  var pregameForm = null;
+  var formPaths = [
+    "/v1/event/" + nm.id + "/pregame-form",
+    "/v1/match/form?match_id=" + nm.id,
+  ];
+  for (var k2 = 0; k2 < formPaths.length; k2++) {
+    pregameForm = await sofaFetch(formPaths[k2]);
+    if (pregameForm) { log("pregame-form via " + formPaths[k2]); break; }
+  }
 
   return { nm: nm, h2h: h2h, pregameForm: pregameForm };
 }
@@ -407,8 +418,6 @@ export default async function handler(req, res) {
     // Enrich with TOURNAMENT_MAP
     if (lm) enrichMatch(lm);
     if (nm) enrichMatch(nm);
-    steps.last = lm ? lm.opponent_name + " " + lm.result + " " + lm.score : "none";
-    steps.next = nm ? nm.opponent_name : "none";
 
     // ── READ KV (parallel) ──
     var kvReads = await Promise.all([
@@ -424,6 +433,35 @@ export default async function handler(req, res) {
     var exCareer = pk(kvReads[4]);
     var exForm = pk(kvReads[5]);
     var exLastMatch = pk(kvReads[6]);
+
+    // SMART MERGE: if KV lastMatch has better data than scan for same opponent, merge
+    if (lm && exLastMatch && exLastMatch.opponent_name) {
+      var lmOpp = stripAccents(lm.opponent_name.split(" ").pop().toLowerCase());
+      var kvOpp = stripAccents(exLastMatch.opponent_name.split(" ").pop().toLowerCase());
+      if (lmOpp === kvOpp) {
+        // Same opponent — merge: KV wins for fields where scan has null/empty
+        ["date", "startTimestamp", "round", "court", "opponent_ranking", "opponent_country",
+         "opponent_id", "tournament_category", "broadcast", "result", "score"].forEach(function (f) {
+          if ((!lm[f] || lm[f] === "") && exLastMatch[f] && exLastMatch[f] !== "") lm[f] = exLastMatch[f];
+        });
+        if (!lm.finished && exLastMatch.finished) lm.finished = true;
+        if (exLastMatch.id && !lm.id) lm.id = exLastMatch.id;
+        log("merged lm with KV (" + lm.opponent_name + ")");
+      } else if (exLastMatch.date && (!lm.date || new Date(exLastMatch.date) > new Date(lm.date))) {
+        // KV has a DIFFERENT, newer opponent — use KV as lastMatch
+        log("KV lastMatch newer: " + exLastMatch.opponent_name + " > " + lm.opponent_name);
+        lm = exLastMatch;
+        enrichMatch(lm);
+      }
+    } else if (!lm && exLastMatch && exLastMatch.opponent_name) {
+      // Scan found nothing finished, but KV has one
+      lm = exLastMatch;
+      enrichMatch(lm);
+      log("using KV lastMatch: " + lm.opponent_name);
+    }
+
+    steps.last = lm ? lm.opponent_name + " " + lm.result + " " + lm.score : "none";
+    steps.next = nm ? nm.opponent_name : "none";
 
     var now = Date.now();
     var H6 = 6 * 3600000, H24 = 24 * 3600000, D7 = 7 * H24;
@@ -594,17 +632,8 @@ export default async function handler(req, res) {
     // ── KV WRITE ──
     var w = [];
 
-    // lastMatch
+    // lastMatch — merge already happened in classify phase
     if (lm) {
-      if (exLastMatch && exLastMatch.date && lm.date && new Date(exLastMatch.date) > new Date(lm.date)) {
-        // KV has newer — enrich it
-        ["round", "tournament_category", "surface", "opponent_ranking", "opponent_country", "court"].forEach(function (f) {
-          if ((!exLastMatch[f] || exLastMatch[f] === "") && lm[f]) exLastMatch[f] = lm[f];
-        });
-        applyRanking(exLastMatch, rankingsLookup);
-        enrichMatch(exLastMatch);
-        lm = exLastMatch;
-      }
       w.push(kv.set("fn:lastMatch", JSON.stringify(lm), { ex: T7 }));
     }
 
