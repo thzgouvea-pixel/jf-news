@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { GREEN, YELLOW, TEXT, DIM, SANS, SERIF, BORDER, CARD_SHADOW, surfaceColorMap, countryFlags, FONSECA_IMG, FONSECA_IMG_FALLBACK } from '../lib/constants';
-import { findPlayer, getATPImage, getESPNImage } from '../lib/utils';
+import { findPlayer, getATPImage, getESPNImage, getSofaScoreImage } from '../lib/utils';
 
 var BROADCAST_URLS = {
   "disney+": "https://www.disneyplus.com",
@@ -159,6 +159,7 @@ export default function NextDuelCard(props) {
 
   var oppImg = getATPImage(oppName);
   var oppImgFallback = getESPNImage(oppName);
+  var oppImgSofa = getSofaScoreImage(oppName, match.opponent_id);
 
   var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
@@ -291,7 +292,7 @@ export default function NextDuelCard(props) {
           <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
             <div style={{ position: "relative", width: 72, height: 72, margin: "0 auto 8px" }}>
               <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#152035", border: "2.5px solid " + (isLive ? "#ef444450" : "rgba(255,255,255,0.12)"), overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default" }}>
-                {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (oppImgFallback && !e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
+                {oppImg ? <img src={oppImg} alt={oppName} style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback || (oppImgSofa || ""); } else if (e.target.dataset.tried === "1" && oppImgSofa) { e.target.dataset.tried = "2"; e.target.src = oppImgSofa; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
               </div>
               {!isLive && onOppClick && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
             </div>
