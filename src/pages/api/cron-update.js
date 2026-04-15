@@ -551,6 +551,7 @@ var ATP_CALENDAR_2026 = [
   { name: "Miami Open", cat: "Masters 1000", surface: "Hard", city: "Miami", country: "EUA", start: "2026-03-18", end: "2026-03-29" },
   { name: "Monte Carlo", cat: "Masters 1000", surface: "Clay", city: "Monte Carlo", country: "Mônaco", start: "2026-04-05", end: "2026-04-12" },
   { name: "Barcelona Open", cat: "ATP 500", surface: "Clay", city: "Barcelona", country: "Espanha", start: "2026-04-13", end: "2026-04-19" },
+  { name: "BMW Open", cat: "ATP 500", surface: "Clay", city: "Munique", country: "Alemanha", start: "2026-04-13", end: "2026-04-19" },
   { name: "Madrid Open", cat: "Masters 1000", surface: "Clay", city: "Madri", country: "Espanha", start: "2026-04-22", end: "2026-05-03" },
   { name: "Roma Masters", cat: "Masters 1000", surface: "Clay", city: "Roma", country: "Itália", start: "2026-05-06", end: "2026-05-17" },
   { name: "Roland Garros", cat: "Grand Slam", surface: "Clay", city: "Paris", country: "França", start: "2026-05-24", end: "2026-06-07" },
@@ -654,9 +655,36 @@ export default async function handler(req, res) {
     function roundWeight(m) { var r = ((m.roundInfo||{}).name||"").toLowerCase(); if (r.includes("final") && !r.includes("quarter") && !r.includes("semi")) return 7; if (r.includes("semi")) return 6; if (r.includes("quarter")) return 5; if (r.includes("r4")||r.includes("round 4")||r.includes("4th")) return 4; if (r.includes("r3")||r.includes("round 3")||r.includes("3rd")) return 3; if (r.includes("r2")||r.includes("round 2")||r.includes("2nd")) return 2; if (r.includes("r1")||r.includes("round 1")||r.includes("1st")) return 1; return 0; }
     var fin = matches.filter(function(m){return isFinished(m)&&isSingles(m);}).sort(function(a,b){ var d = (b.startTimestamp||NOW_TS)-(a.startTimestamp||NOW_TS); return d !== 0 ? d : roundWeight(b)-roundWeight(a); });
     var upc = matches.filter(function(m){if(!isUpcoming(m)||!isSingles(m)) return false; var ex=extractMatch(m); if(ex.score&&ex.score.length>2) return false; return true;}).sort(function(a,b){return (a.startTimestamp||0)-(b.startTimestamp||0);});
+
+    // SMART: cross-reference upc with KV lastMatch — skip "upcoming" matches that already finished
+    // (SofaScore RapidAPI can be slow to update match status)
+    try {
+      var kvLastMatch = await kv.get("fn:lastMatch");
+      if (kvLastMatch) {
+        var kvLM = typeof kvLastMatch === "string" ? JSON.parse(kvLastMatch) : kvLastMatch;
+        if (kvLM && kvLM.finished && kvLM.opponent_name) {
+          var kvOppLast = kvLM.opponent_name.split(" ").pop().toLowerCase();
+          upc = upc.filter(function(m) {
+            var ex = extractMatch(m);
+            var mOppLast = ex.opponent_name.split(" ").pop().toLowerCase();
+            if (mOppLast === kvOppLast) {
+              log("Skipping stale upcoming match vs " + ex.opponent_name + " (already finished in KV)");
+              // Move to fin if not already there
+              if (!fin.some(function(f) { return f.id === m.id; })) fin.unshift(m);
+              return false;
+            }
+            return true;
+          });
+        }
+      }
+    } catch(e) {}
+
+    // Re-sort fin in case we added stale matches from upc
+    fin.sort(function(a,b){ var d = (b.startTimestamp||NOW_TS)-(a.startTimestamp||NOW_TS); return d !== 0 ? d : roundWeight(b)-roundWeight(a); });
+
     var lm = fin.length > 0 ? extractMatch(fin[0]) : null;
     var nm = upc.length > 0 ? extractMatch(upc[0]) : null;
-    var form = fin.slice(0,10).map(function(m){var d=extractMatch(m);return{result:d.result,score:d.score,opponent_name:d.opponent_name,opponent_ranking:d.opponent_ranking||null,tournament:d.tournament_name,date:d.date};});
+    var form = fin.slice(0,10).map(function(m){var d=extractMatch(m);return{result:d.result,score:d.score,opponent_name:d.opponent_name,opponent_ranking:d.opponent_ranking||null,tournament:d.tournament_name,round:d.round||"",date:d.date};});
     steps.scan = matches.length + " matches";
     steps.last = lm ? lm.opponent_name : "none";
     steps.next = nm ? nm.opponent_name : "none";
@@ -841,6 +869,49 @@ export default async function handler(req, res) {
       } else {
         try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch(e){}
       }
+
+      // SMART: If nm is still null, check if João WON his last match in an ongoing tournament
+      // If so, create a placeholder nextMatch for the next round (adversário a definir)
+      if (!nm) {
+        try {
+          var kvLM = await kv.get("fn:lastMatch");
+          var parsedLM = kvLM ? (typeof kvLM === "string" ? JSON.parse(kvLM) : kvLM) : lm;
+          if (parsedLM && parsedLM.result === "V" && parsedLM.tournament_name) {
+            var todayStr = new Date().toISOString().split("T")[0];
+            var tournOngoing = ATP_CALENDAR_2026.some(function(t) {
+              var nameMatch = parsedLM.tournament_name.toLowerCase().includes(t.name.toLowerCase()) || t.name.toLowerCase().includes(parsedLM.tournament_name.toLowerCase().split(",")[0].trim());
+              return nameMatch && t.end && t.end >= todayStr;
+            });
+            if (tournOngoing) {
+              var NEXT_ROUND = {
+                "1ª rodada": "Oitavas de final", "2ª rodada": "Oitavas de final", "3ª rodada": "Oitavas de final",
+                "16avos de final": "Oitavas de final", "Oitavas de final": "Quartas de final",
+                "Quartas de final": "Semifinal", "Semifinal": "Final",
+              };
+              var currentRound = parsedLM.round || "";
+              var nextRound = NEXT_ROUND[currentRound] || "";
+              var mappedTourn = lookupTournament(parsedLM.tournament_name);
+              nm = {
+                opponent_name: "A definir",
+                opponent_ranking: null,
+                opponent_country: "",
+                tournament_name: mappedTourn ? mappedTourn.name : parsedLM.tournament_name,
+                tournament_category: mappedTourn ? mappedTourn.cat : (parsedLM.tournament_category || ""),
+                surface: mappedTourn ? mappedTourn.surface : (parsedLM.surface || ""),
+                round: nextRound,
+                date: null,
+                court: "",
+                finished: false,
+              };
+              var bc = lookupBroadcast(nm.tournament_name);
+              if (bc) nm.broadcast = bc;
+              log("Placeholder nextMatch: " + nm.tournament_name + " " + nm.round + " (opponent TBD)");
+              await kv.set("fn:nextMatch", JSON.stringify(nm), { ex: 172800 });
+            }
+          }
+        } catch(placeholderErr) { log("Placeholder nextMatch error: " + placeholderErr.message); }
+      }
+
       var nt = await fetchNextTournament(upc);
       if (nt) { try { await kv.set("fn:nextTournament", JSON.stringify(nt), { ex: 172800 }); } catch(e){ log("KV nextTournament error: " + e.message); } }
     } else {
