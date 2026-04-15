@@ -669,8 +669,6 @@ export default async function handler(req, res) {
             var mOppLast = ex.opponent_name.split(" ").pop().toLowerCase();
             if (mOppLast === kvOppLast) {
               log("Skipping stale upcoming match vs " + ex.opponent_name + " (already finished in KV)");
-              // Move to fin if not already there
-              if (!fin.some(function(f) { return f.id === m.id; })) fin.unshift(m);
               return false;
             }
             return true;
@@ -705,7 +703,7 @@ export default async function handler(req, res) {
       } catch(e) { log("nm check error: " + e.message); }
     }
 
-    var form = fin.slice(0,10).map(function(m){var d=extractMatch(m);return{result:d.result,score:d.score,opponent_name:d.opponent_name,opponent_ranking:d.opponent_ranking||null,tournament:d.tournament_name,round:d.round||"",date:d.date};});
+    var form = fin.slice(0,10).map(function(m){var d=extractMatch(m);return{result:d.result,score:d.score,opponent_name:d.opponent_name,opponent_ranking:d.opponent_ranking||null,tournament:d.tournament_name,round:d.round||"",date:d.date};}).filter(function(f){ return f.score && f.score.length > 1; });
     steps.scan = matches.length + " matches";
     steps.last = lm ? lm.opponent_name : "none";
     steps.next = nm ? nm.opponent_name : "none";
@@ -742,6 +740,23 @@ export default async function handler(req, res) {
 
     // Detect what changed
     var oppChanged = nm && (!exNm || nm.opponent_name !== exNm.opponent_name);
+    // ALSO check if opponent profile is stale (different opponent name)
+    if (!oppChanged && nm && exOpp && exOpp.name) {
+      var profLast = stripAccents(exOpp.name.split(" ").pop().toLowerCase());
+      var nmLast = stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
+      if (profLast !== nmLast) {
+        oppChanged = true;
+        log("opponentProfile stale (" + exOpp.name + " vs " + nm.opponent_name + "), forcing refresh");
+      }
+    }
+    // Clear odds timer when opponent changes so new odds are fetched immediately
+    if (oppChanged) { lastOddsTs = 0; }
+    // Also force refresh if profile doesn't match current opponent
+    if (!oppChanged && nm && exOpp && exOpp.name) {
+      var profLast = exOpp.name.split(" ").pop().toLowerCase();
+      var nmLast = nm.opponent_name.split(" ").pop().toLowerCase();
+      if (profLast !== nmLast) { oppChanged = true; log("Profile mismatch: " + exOpp.name + " vs nm " + nm.opponent_name + ", forcing refresh"); }
+    }
     var rankingFresh = exRanking && exRanking.updatedAt && (now - new Date(exRanking.updatedAt).getTime()) < D7;
     var careerFresh = exCareer && exCareer.wins !== undefined;
     var oddsFresh = lastOddsTs && (now - lastOddsTs) < H6;
@@ -968,7 +983,18 @@ export default async function handler(req, res) {
             var pLM = typeof eLM === "string" ? JSON.parse(eLM) : eLM;
             if (pLM.date && lm.date && new Date(pLM.date) > new Date(lm.date)) {
               log("Existing lastMatch is newer, keeping it");
+              // Enrich KV version with cron data for any empty fields
+              var enrichFields = ["round", "tournament_category", "surface", "opponent_ranking", "opponent_country", "court"];
+              enrichFields.forEach(function(f) {
+                if ((!pLM[f] || pLM[f] === "") && lm[f] && lm[f] !== "") pLM[f] = lm[f];
+              });
+              // Apply TOURNAMENT_MAP if tournament name is raw
+              if (pLM.tournament_name && pLM.tournament_name.includes(",")) {
+                var mapped = lookupTournament(pLM.tournament_name);
+                if (mapped) { pLM.tournament_name = mapped.name; pLM.tournament_category = mapped.cat; pLM.surface = mapped.surface; }
+              }
               lm = pLM;
+              skipLastMatchWrite = false; // Allow write to save enriched data
             } else if (pLM.round && !lm.round && pLM.opponent_name && lm.opponent_name && pLM.opponent_name.split(" ").pop() === lm.opponent_name.split(" ").pop()) {
               log("Existing lastMatch has round info, merging");
               lm.round = pLM.round;
@@ -994,9 +1020,9 @@ export default async function handler(req, res) {
       log("Opponent unchanged (" + (op.name || "?") + "), skipping profile fetch");
     } else { steps.opp = "skip"; }
 
-    // Smart: odds only every 6 hours (4x/day = 120/month, within free 500 limit)
+    // Smart: odds only every 6 hours, BUT always refresh when opponent changes
     var wp = null;
-    if (nm && !oddsFresh) {
+    if (nm && (!oddsFresh || oppChanged)) {
       wp = await fetchWinProb(nm);
       if (wp || !oddsFresh) await kv.set("fn:lastOddsCheck", String(now), { ex: 86400 });
       steps.odds = wp ? wp.fonseca + "%" : "skip";
@@ -1028,7 +1054,7 @@ export default async function handler(req, res) {
               if (!nm.date && enrich.date) nm.date = enrich.date;
               if (!nm.tournament_category && enrich.tournament_category) nm.tournament_category = enrich.tournament_category;
               if (!nm.surface && enrich.surface) nm.surface = enrich.surface;
-              if (!nm.round && enrich.round) nm.round = enrich.round;
+              if (!nm.round && enrich.round) nm.round = translateRound(enrich.round) || enrich.round;
               if (enrich.broadcast && enrich.broadcast !== "null") nm.broadcast = enrich.broadcast;
               if (!nm.court && enrich.court && enrich.court !== "null") { nm.court = enrich.court; log("Gemini court: " + enrich.court); }
               steps.enrich = "ok";
@@ -1100,6 +1126,8 @@ export default async function handler(req, res) {
       // ALWAYS apply broadcast from BROADCAST_MAP (auto-correct stale data)
       var bc = lookupBroadcast(match.tournament_name);
       if (bc) match.broadcast = bc;
+      // ALWAYS translate round to Portuguese
+      if (match.round) match.round = translateRound(match.round);
     }
     applyTournamentMap(lm);
     applyTournamentMap(nm);
@@ -1149,6 +1177,8 @@ if (form.length) {
         }
       });
       form.sort(function(a,b){ return new Date(b.date||0) - new Date(a.date||0); });
+      // Remove ghost entries (empty score = stale SofaScore data)
+      form = form.filter(function(f) { return f.score && f.score.length > 1; });
       form = form.slice(0,10);
       w.push(kv.set("fn:recentForm",JSON.stringify(form),{ex:T7}));
       }
