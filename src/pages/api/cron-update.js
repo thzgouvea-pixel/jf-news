@@ -392,13 +392,36 @@ export default async function handler(req, res) {
     var lm = discovered.finished.length > 0 ? extractMatch(discovered.finished[0]) : null;
     var nm = discovered.upcoming.length > 0 ? extractMatch(discovered.upcoming[0]) : null;
 
-    // Cross-check: skip nm if it's the same match as lm (SofaScore lag)
+    // Cross-check: skip nm if same opponent as lm (SofaScore lag)
     if (nm && lm && nm.opponent_name && lm.opponent_name) {
       var nmL = stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
       var lmL = stripAccents(lm.opponent_name.split(" ").pop().toLowerCase());
       if (nmL === lmL && nm.tournament_name === lm.tournament_name) {
         log("nm stale (" + nm.opponent_name + " = lm), advancing");
         nm = discovered.upcoming.length > 1 ? extractMatch(discovered.upcoming[1]) : null;
+      }
+    }
+
+    // CRITICAL: if lm has no score (SofaScore returned it as "notstarted"),
+    // fetch match/details to get real data
+    if (lm && (!lm.result || lm.result === "") && lm.id) {
+      log("lm has no score, fetching match/details for id=" + lm.id);
+      var lmDetail = await sofaFetch("/v1/match/details?match_id=" + lm.id);
+      if (lmDetail) {
+        var lmEv = lmDetail.event || lmDetail;
+        if (lmEv.homeTeam && lmEv.awayTeam) {
+          var lmFromDetail = extractMatch(lmEv);
+          // Use detail data, but preserve id
+          if (lmFromDetail.result || lmFromDetail.score) {
+            lm = lmFromDetail;
+            log("lm updated from details: " + lm.opponent_name + " " + lm.result + " " + lm.score);
+          }
+        }
+        // Also check for timestamp/round even if no score yet
+        var ts = lmEv.startTimestamp || lmEv.timestamp || null;
+        if (!lm.startTimestamp && ts) { lm.startTimestamp = ts; lm.date = new Date(ts * 1000).toISOString(); }
+        var rObj = lmEv.roundInfo || lmEv.round || null;
+        if (!lm.round && rObj && rObj.name) lm.round = translateRound(rObj.name);
       }
     }
 
@@ -421,12 +444,12 @@ export default async function handler(req, res) {
     var exForm = pk(kvReads[5]);
     var exLastMatch = pk(kvReads[6]);
 
-    // SMART MERGE: if KV lastMatch has better data than scan for same opponent, merge
+    // SMART MERGE lastMatch with KV
     if (lm && exLastMatch && exLastMatch.opponent_name) {
       var lmOpp = stripAccents(lm.opponent_name.split(" ").pop().toLowerCase());
       var kvOpp = stripAccents(exLastMatch.opponent_name.split(" ").pop().toLowerCase());
       if (lmOpp === kvOpp) {
-        // Same opponent — merge: KV wins for fields where scan has null/empty
+        // Same opponent — KV fills gaps in scan data
         ["date", "startTimestamp", "round", "court", "opponent_ranking", "opponent_country",
          "opponent_id", "tournament_category", "broadcast", "result", "score"].forEach(function (f) {
           if ((!lm[f] || lm[f] === "") && exLastMatch[f] && exLastMatch[f] !== "") lm[f] = exLastMatch[f];
@@ -434,17 +457,22 @@ export default async function handler(req, res) {
         if (!lm.finished && exLastMatch.finished) lm.finished = true;
         if (exLastMatch.id && !lm.id) lm.id = exLastMatch.id;
         log("merged lm with KV (" + lm.opponent_name + ")");
-      } else if (exLastMatch.date && lm.date && new Date(exLastMatch.date) > new Date(lm.date)) {
-        // KV has a DIFFERENT, newer opponent — use KV as lastMatch
-        log("KV lastMatch newer: " + exLastMatch.opponent_name + " > " + lm.opponent_name);
-        lm = exLastMatch;
-        enrichMatch(lm);
+      } else {
+        // Different opponents — only use KV if scan's lm has NO result at all
+        if (lm.result && lm.result !== "") {
+          // Scan has a real result — it's the latest match, keep it
+          log("scan lm has result (" + lm.opponent_name + " " + lm.result + "), keeping over KV (" + exLastMatch.opponent_name + ")");
+        } else if (exLastMatch.result && exLastMatch.result !== "") {
+          // Scan has no result, KV does — KV is authoritative
+          log("scan lm has no result, using KV: " + exLastMatch.opponent_name + " " + exLastMatch.result);
+          lm = exLastMatch;
+          enrichMatch(lm);
+        }
       }
     } else if (!lm && exLastMatch && exLastMatch.opponent_name) {
-      // Scan found nothing finished, but KV has one
       lm = exLastMatch;
       enrichMatch(lm);
-      log("using KV lastMatch: " + lm.opponent_name);
+      log("no scan lm, using KV: " + lm.opponent_name);
     }
 
     steps.last = lm ? lm.opponent_name + " " + lm.result + " " + lm.score : "none";
