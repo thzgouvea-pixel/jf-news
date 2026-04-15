@@ -480,7 +480,7 @@ export default function NextDuelCard(props) {
             </div>
           )}
           {/* Action buttons */}
-          <div style={{ padding: "16px 20px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ padding: "16px 20px 6px", display: "flex", flexDirection: "column", gap: 10 }}>
             {match.broadcast && getBroadcastUrl(match.broadcast) && (
             <a href={getBroadcastUrl(match.broadcast)} target="_blank" rel="noopener noreferrer" style={{
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -499,7 +499,7 @@ export default function NextDuelCard(props) {
             </button>
           </div>
           {/* Probability — always visible */}
-          <div style={{ margin: "16px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 18px" }}>
+          <div style={{ margin: "10px 20px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 18px" }}>
             {fPct !== null && oPct !== null ? (
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
