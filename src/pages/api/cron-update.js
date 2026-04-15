@@ -681,6 +681,15 @@ export default async function handler(req, res) {
         if (!raw) return newData;
         var old = typeof raw === "string" ? JSON.parse(raw) : raw;
         if (!old || typeof old !== "object") return newData;
+        // If different match, keep the NEWER one entirely
+        if (old.opponent_name && newData.opponent_name && old.opponent_name !== newData.opponent_name) {
+          if (old.date && newData.date && new Date(old.date) > new Date(newData.date)) {
+            log("protect: keeping newer " + old.opponent_name + " over older " + newData.opponent_name);
+            return old;
+          }
+          return newData; // new match is newer, use it without merging fields
+        }
+        // Same match: preserve good fields
         for (var f in old) {
           if (old[f] !== null && old[f] !== undefined && old[f] !== "" && old[f] !== 0) {
             if (newData[f] === null || newData[f] === undefined || newData[f] === "" || newData[f] === 0) {
