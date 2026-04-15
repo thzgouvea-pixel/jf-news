@@ -1,5 +1,5 @@
-// ===== FONSECA NEWS — LIVE v2 =====
-// GOLDEN RULE: never overwrite good KV data with empty data
+// ===== FONSECA NEWS — LIVE v3 (DEFINITIVE) =====
+// GOLDEN RULE: data can change, data cannot vanish
 
 import { kv } from "@vercel/kv";
 import {
@@ -21,7 +21,7 @@ function findFonseca(data) {
   return null;
 }
 
-// GOLDEN RULE: merge new data with existing KV, never lose fields
+// Never overwrite good data with empty data
 async function protectKV(key, newData) {
   if (!newData) return newData;
   try {
@@ -174,6 +174,7 @@ export default async function handler(req, res) {
 // ===== HANDLE MATCH FINISHED =====
 async function handleMatchFinished(match, now) {
   try {
+    // Already processed this match? Skip entirely.
     var prevId = await kv.get("fn:lastStatsEventId");
     if (prevId === String(match.id)) return;
 
@@ -182,17 +183,39 @@ async function handleMatchFinished(match, now) {
     var lm = extractMatch(match);
     lm.finished = true;
     enrichMatch(lm);
-
-    // PROTECT: merge with existing KV data before saving
     lm = await protectKV("fn:lastMatch", lm);
 
-    await Promise.all([
+    // Check if nextMatch already has a DIFFERENT opponent (= next round already set)
+    // If so, DON'T delete nextMatch or winProb — they belong to the NEXT game
+    var shouldClearNext = true;
+    try {
+      var existingNm = await kv.get("fn:nextMatch");
+      if (existingNm) {
+        var parsedNm = typeof existingNm === "string" ? JSON.parse(existingNm) : existingNm;
+        if (parsedNm && parsedNm.opponent_name) {
+          var finishedOpp = stripAccents((lm.opponent_name || "").split(" ").pop().toLowerCase());
+          var nextOpp = stripAccents((parsedNm.opponent_name || "").split(" ").pop().toLowerCase());
+          if (nextOpp !== finishedOpp && parsedNm.opponent_name !== "A definir") {
+            shouldClearNext = false;
+            log("nextMatch has different opponent (" + parsedNm.opponent_name + "), preserving nextMatch + winProb");
+          }
+        }
+      }
+    } catch (e) { }
+
+    // Save lastMatch + mark as processed
+    var writes = [
       kv.set("fn:lastMatch", JSON.stringify(lm), { ex: 604800 }),
       kv.set("fn:lastStatsEventId", String(match.id), { ex: 604800 }),
-      kv.del("fn:nextMatch"),
-      kv.del("fn:winProb"),
-    ]);
+    ];
+    // ONLY clear nextMatch/winProb if the next opponent is the SAME as just-finished (stale)
+    if (shouldClearNext) {
+      writes.push(kv.del("fn:nextMatch"));
+      writes.push(kv.del("fn:winProb"));
+    }
+    await Promise.all(writes);
 
+    // Save matchStats
     try {
       var statsData = await sofaFetch("/v1/match/statistics?match_id=" + match.id);
       var ms = parseMatchStats(statsData, lm.isFonsecaHome, {
@@ -202,6 +225,7 @@ async function handleMatchFinished(match, now) {
       if (ms) await kv.set("fn:matchStats", JSON.stringify(ms), { ex: 604800 });
     } catch (e) { log("stats error: " + e.message); }
 
+    // Update recentForm
     try {
       var exForm = await kv.get("fn:recentForm");
       var formArr = exForm ? (typeof exForm === "string" ? JSON.parse(exForm) : exForm) : [];
@@ -220,7 +244,11 @@ async function handleMatchFinished(match, now) {
     } catch (e) { log("recentForm error: " + e.message); }
 
     log("lastMatch saved: " + lm.result + " " + lm.score + " vs " + lm.opponent_name);
-    await scanNextMatch(lm, now);
+
+    // Only scan for next match if we actually cleared it
+    if (shouldClearNext) {
+      await scanNextMatch(lm, now);
+    }
 
   } catch (e) { log("handleMatchFinished error: " + e.message); }
 }
@@ -228,13 +256,13 @@ async function handleMatchFinished(match, now) {
 // ===== SCAN FOR NEXT MATCH =====
 async function scanNextMatch(lastMatch, now) {
   try {
-    // PROTECT: don't overwrite if KV already has good data
+    // Don't overwrite if KV already has good data
     try {
       var existingNm = await kv.get("fn:nextMatch");
       if (existingNm) {
         var exNm = typeof existingNm === "string" ? JSON.parse(existingNm) : existingNm;
-        if (exNm && exNm.opponent_name && exNm.opponent_ranking) {
-          log("nextMatch already exists with good data, skipping overwrite");
+        if (exNm && exNm.opponent_name && exNm.opponent_name !== "A definir" && exNm.opponent_ranking) {
+          log("nextMatch already exists with good data (" + exNm.opponent_name + " #" + exNm.opponent_ranking + "), skipping");
           return;
         }
       }
@@ -279,7 +307,7 @@ async function scanNextMatch(lastMatch, now) {
       await kv.set("fn:nextMatch", JSON.stringify(placeholder), { ex: 172800 });
       log("Placeholder: " + placeholder.tournament_name + " " + nextRound);
     } else {
-      log("No next match (João lost or no upcoming found)");
+      log("No next match");
     }
 
   } catch (e) { log("scanNextMatch error: " + e.message); }
