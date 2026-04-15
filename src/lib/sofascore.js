@@ -253,7 +253,7 @@ export function extractMatch(match) {
   var fScore = isFHome ? (match.homeScore || {}) : (match.awayScore || {});
   var oScore = isFHome ? (match.awayScore || {}) : (match.homeScore || {});
   var tournament = match.tournament || {};
-  var round = match.roundInfo || {};
+  var round = match.roundInfo || match.round || {};
 
   // Build set scores
   var fSets = [], oSets = [];
