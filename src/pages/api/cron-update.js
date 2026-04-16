@@ -174,23 +174,6 @@ async function enrichNextMatch(nm) {
           "Responda APENAS com o nome da quadra em uma \u00fanica linha, sem explica\u00e7\u00f5es. " +
           "Exemplos v\u00e1lidos: Center Court, Court 1, Centre Court, Pista Central, Court Philippe-Chatrier. " +
           "Se n\u00e3o souber com certeza, responda apenas: DESCONHECIDO";
-  async function fetchCalendarFromGemini() {
-  var gk = process.env.GEMINI_API_KEY;
-  if (!gk) return null;
-  try {
-    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text:
-          "Liste os torneios ATP de tenis que Joao Fonseca jogou ou provavelmente jogara em 2026. " +
-          "Inclua Grand Slams, Masters 1000, ATP 500, ATP 250. " +
-          "Superficie em portugues: Duro, Saibro ou Grama. " +
-          "Responda SOMENTE com JSON array, sem texto antes ou depois. " +
-          "Formato exato: [{\"name\":\"Australian Open\",\"cat\":\"Grand Slam\",\"surface\":\"Duro\",\"city\":\"Melbourne\",\"country\":\"Australia\",\"start\":\"2026-01-18\",\"end\":\"2026-02-01\"}]"
-        }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 4096 }
-      })
-    });
     if (!r.ok) { log("calendar Gemini HTTP " + r.status); return null; }
     var d = await r.json();
     var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
@@ -959,24 +942,6 @@ export default async function handler(req, res) {
         }
         }
     }
-// ── CALENDAR (weekly) ──
-    try {
-      var exCalendar = await kv.get("fn:atpCalendar");
-      var calParsed = exCalendar ? (typeof exCalendar === "string" ? JSON.parse(exCalendar) : exCalendar) : null;
-      var calFresh = calParsed && calParsed.updatedAt && (now - new Date(calParsed.updatedAt).getTime()) < D7;
-      if (!calFresh) {
-        var newCal = await fetchCalendarFromGemini();
-        if (newCal && newCal.length >= 5) {
-          var calPayload = { tournaments: newCal, updatedAt: new Date().toISOString() };
-          w.push(kv.set("fn:atpCalendar", JSON.stringify(calPayload), { ex: T7 }));
-          log("calendar: updated " + newCal.length + " tournaments");
-        } else {
-          log("calendar: Gemini failed, keeping existing");
-        }
-      } else {
-        log("calendar: cached (" + (calParsed.tournaments ? calParsed.tournaments.length : 0) + " tournaments)");
-      }
-    } catch(e) { log("calendar error: " + e.message); }
     // ── SEASON (never-overwrite, Gemini weekly + recentForm daily) ──
     try {
       var exSeason = await kv.get("fn:season");
