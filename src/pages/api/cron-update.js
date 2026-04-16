@@ -362,13 +362,16 @@ function calculateSeason(recentForm, storedSeason) {
 // Fetch full 2026 record via Gemini (runs weekly max)
 async function fetchSeasonFromGemini() {
   var gTxt = await geminiSearch(
-    "Record ATUAL e ATUALIZADO da temporada 2026 do tenista João Fonseca em singles ATP até hoje. " +
+    "Record ATUAL e ATUALIZADO da temporada 2026 do tenista João Fonseca em SINGLES (simples) ATP até hoje. " +
+    "REGRA CRÍTICA: Conte APENAS jogos de SIMPLES (singles). " +
+    "NUNCA conte jogos de DUPLAS (doubles). " +
     "Conte APENAS jogos de 2026 (desde 1 de janeiro). " +
+    "Considere apenas jogos do circuito ATP principal, Challenger, Grand Slams e Masters 1000 em singles. " +
     "APENAS JSON: {\"wins\":NUMBER,\"losses\":NUMBER}"
   );
   var parsed = parseGeminiJSON(gTxt);
   if (parsed && typeof parsed.wins === "number" && typeof parsed.losses === "number") {
-    log("season Gemini: " + parsed.wins + "W-" + parsed.losses + "L");
+    log("season Gemini (singles only): " + parsed.wins + "W-" + parsed.losses + "L");
     return parsed;
   }
   return null;
