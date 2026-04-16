@@ -497,7 +497,7 @@ export default function NextDuelCard(props) {
                 padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
               }}>
-                📅 Calendário
+                Adicionar ao Calendário
               </button>
               {bracketUrl && bracketUrl.url && (
                 <a href={bracketUrl.url} target="_blank" rel="noopener noreferrer" style={{
@@ -505,7 +505,7 @@ export default function NextDuelCard(props) {
                   padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
                   borderRadius: 14, textDecoration: "none", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
                 }}>
-                  🏆 Chaveamento
+                  Chaveamento
                 </a>
               )}
             </div>
