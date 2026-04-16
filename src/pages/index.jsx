@@ -421,15 +421,17 @@ export default function JoaoFonsecaNews() {
 
         {recentForm && recentForm.length > 0 && <Fonsecometro recentForm={recentForm} />}
 
-       {!hasNextMatch && (
+       {hasNextMatch && (
         <>
         <section style={{ padding: "8px 0 0" }}>
-          <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
-          {highlightVideo && highlightVideo.videoId ? (
-            <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
-          ) : (
-            <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
-          )}
+          ...NextDuelCard...
+        </section>
+        <section style={{ padding: "12px 0 0" }}>
+          ...LastMatch/PlayerBlock...
+        </section>
+        <NextStopCard nextMatch={dm} lastMatch={dl} atpCalendar={atpCalendar} />
+        </>
+)}
           </div>
         </section>
         <section style={{ padding: "12px 0 0" }}>
