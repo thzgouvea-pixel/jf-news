@@ -44,6 +44,7 @@ function useCountdown(targetDate) {
 
 export default function NextDuelCard(props) {
   var match = props.match; var player = props.player;
+  var bracketUrl = props.bracketUrl || null;
   var onOppClick = props.onOppClick;
   var winProb = props.winProb;
   var onPushClick = props.onPushClick;
@@ -490,13 +491,24 @@ export default function NextDuelCard(props) {
               <span style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: SANS, letterSpacing: "0.01em" }}>► Assistir</span>
             </a>
             )}
-            <button onClick={downloadICS} style={{
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 14, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
-            }}>
-              Adicionar ao calendário
-            </button>
+            <div style={{ display: "grid", gridTemplateColumns: bracketUrl && bracketUrl.url ? "1fr 1fr" : "1fr", gap: 10 }}>
+              <button onClick={downloadICS} style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
+              }}>
+                📅 Calendário
+              </button>
+              {bracketUrl && bracketUrl.url && (
+                <a href={bracketUrl.url} target="_blank" rel="noopener noreferrer" style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 14, textDecoration: "none", color: "rgba(255,255,255,0.6)", fontSize: 13, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
+                }}>
+                  🏆 Chaveamento
+                </a>
+              )}
+            </div>
           </div>
           {/* Probability — always visible */}
           <div style={{ margin: "10px 20px 20px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "16px 18px" }}>
