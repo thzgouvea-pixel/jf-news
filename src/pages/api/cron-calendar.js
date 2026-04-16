@@ -84,7 +84,7 @@ export default async function handler(req, res) {
     }
 
     var txt = "";
-    parts.forEach(function(p) { if (p.text) txt += p.text; });
+    parts.forEach(function(p) { if (p.text && !p.thought) txt += p.text; });
 
     if (!txt) {
       return res.status(500).json({ error: "Gemini: empty text" });
