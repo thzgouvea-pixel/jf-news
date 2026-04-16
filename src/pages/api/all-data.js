@@ -111,6 +111,7 @@ export default async function handler(req, res) {
       nextMatch: nextMatch || null,
       winProb: winProb || null,
       biography: biography || null,
+      bracketUrl: bracketUrl || null,
       tournamentFacts: tournamentFacts || null,
       opponentProfile: opponentProfile || null,
       prizeMoney: (prizeMoney && prizeMoney.amount != null) ? prizeMoney.amount : null,
