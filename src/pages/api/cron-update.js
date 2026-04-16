@@ -58,10 +58,16 @@ async function discoverMatches() {
   var seen = new Set();
 
   // Date scan: -3 days back, +7 days forward
+  // Parallel date scan
+  var dayPromises = [];
   for (var d = -3; d <= 7; d++) {
     var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
-    var dayData = await sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds);
-    if (!dayData) continue;
+    dayPromises.push(sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds));
+  }
+  var dayResults = await Promise.all(dayPromises);
+
+  dayResults.forEach(function(dayData) {
+    if (!dayData) return;
     var ev = dayData.events || (Array.isArray(dayData) ? dayData : []);
     if (!Array.isArray(ev)) { for (var k in dayData) { if (Array.isArray(dayData[k])) { ev = dayData[k]; break; } } }
     ev.forEach(function (m) {
@@ -71,7 +77,7 @@ async function discoverMatches() {
       if (isFinished(m)) results.finished.push(m);
       else if (isUpcoming(m)) results.upcoming.push(m);
     });
-  }
+  });
   log("scan: " + results.finished.length + " fin, " + results.upcoming.length + " upc (" + seen.size + " total)");
 
   // KV CROSS-REFERENCE: detect stale "upcoming" matches that already finished
