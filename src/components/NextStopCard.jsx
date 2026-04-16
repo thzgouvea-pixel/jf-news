@@ -79,14 +79,7 @@ export default function NextStopCard(props) {
   else if (lastMatch && lastMatch.tournament_name) currentTourn = lastMatch.tournament_name;
   if (!currentTourn) return null;
 
-  var dynamic = (atpCalendar && atpCalendar.tournaments && atpCalendar.tournaments.length >= 3) ? atpCalendar.tournaments : [];
-  var combined = dynamic.slice();
-  FALLBACK.forEach(function(fb) {
-    var exists = combined.some(function(d) { return matchesName(d.name, fb.name); });
-    if (!exists) combined.push(fb);
-  });
-
-  var sorted = combined.sort(function(a, b) { return (a.start || "").localeCompare(b.start || ""); });
+  var sorted = FALLBACK.slice().sort(function(a, b) { return (a.start || "").localeCompare(b.start || ""); });
 
   var currentIdx = -1;
   for (var i = 0; i < sorted.length; i++) {
