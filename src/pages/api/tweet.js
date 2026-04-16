@@ -118,21 +118,28 @@ async function geminiTweet(headline, context) {
   var gk = process.env.GEMINI_API_KEY;
   if (!gk) return null;
 
-  var prompt = "Voce e o social media do Fonseca News (@JFonsecaNews), um site de fas do tenista brasileiro Joao Fonseca.\n\n" +
+  var prompt = "Voce e o social media do Fonseca News (@JFonsecaNews), site de fas do tenista brasileiro Joao Fonseca.\n\n" +
     "Reescreva esta noticia como um tweet em portugues brasileiro.\n\n" +
     "REGRAS ABSOLUTAS:\n" +
-    "- Entre 120 e 240 caracteres (NUNCA ultrapasse 240, NUNCA menos que 120)\n" +
-    "- Aproveite o espaco para dar contexto: placar, ranking, torneio, rodada\n" +
+    "- MINIMO 120 caracteres, MAXIMO 240 caracteres\n" +
+    "- O tweet precisa ser uma FRASE COMPLETA, nunca corte no meio de uma palavra\n" +
     "- Tom de fa apaixonado mas informativo, como um amigo contando a novidade\n" +
-    "- NAO use hashtags\n" +
-    "- Pode usar 1-2 emojis (no meio ou fim, NUNCA no inicio)\n" +
+    "- Aproveite o espaco: inclua contexto como placar, ranking, torneio, rodada, adversario\n" +
+    "- NAO use hashtags (serao adicionadas automaticamente)\n" +
+    "- Pode usar 1-2 emojis no meio ou fim, NUNCA no inicio\n" +
     "- NAO comece com emoji\n" +
     "- NAO use aspas ao redor do tweet\n" +
-    "- Varie o estilo: as vezes mais animado, as vezes mais informativo, as vezes opinativo\n" +
-    "- Se for resultado de jogo, destaque o placar e o adversario\n" +
-    "- Se for sobre ranking, destaque a posicao\n" +
-    "- Fale 'Joao' ou 'Fonseca', nunca 'Joao Fonseca' completo (economia de chars)\n" +
-    "- Responda APENAS o texto do tweet, absolutamente nada mais\n\n" +
+    "- Fale 'Joao' ou 'Fonseca', nunca 'Joao Fonseca' completo\n" +
+    "- Responda APENAS o texto do tweet, nada mais\n\n" +
+    "EXEMPLOS DE TWEETS BONS:\n" +
+    "- \"Fonseca atropela Rinderknech no BMW Open com duplo 6-3 6-2 e avanca pras quartas! Proximo desafio: Shelton, #6 do mundo 🔥\"\n" +
+    "- \"Com a vitoria de hoje, Joao chega a 10 vitorias em 2026 e segue firme no top 35 da ATP. A evolucao nao para 🇧🇷\"\n" +
+    "- \"Quartas de final no BMW Open confirmadas! Joao encara Shelton na sexta as 08:20 BRT. Vai ser um jogaco 🎾\"\n" +
+    "- \"Analistas apontam Fonseca como favorito contra Shelton nas quartas do BMW Open. O moleque ta pronto pro desafio 💪\"\n\n" +
+    "EXEMPLOS DE TWEETS RUINS (NUNCA faca assim):\n" +
+    "- \"O Fonseca ta voando em M\" (cortado no meio, sem sentido)\n" +
+    "- \"Nosso Joao ta voando no BMW\" (muito curto, sem informacao)\n" +
+    "- \"Grande jogo\" (vazio, sem contexto)\n\n" +
     "CONTEXTO ATUAL:\n" +
     (context.ranking ? "- Ranking ATP: #" + context.ranking + "\n" : "") +
     (context.lastResult ? "- Ultimo resultado: " + context.lastResult + "\n" : "") +
@@ -146,7 +153,7 @@ async function geminiTweet(headline, context) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.8, maxOutputTokens: 200 },
+        generationConfig: { temperature: 0.5, maxOutputTokens: 500 },
       }),
     });
     if (!r.ok) { console.log("[tweet] Gemini " + r.status); return null; }
@@ -156,9 +163,32 @@ async function geminiTweet(headline, context) {
     var txt = "";
     parts.forEach(function (p) { if (p.text && !p.thought) txt += p.text; });
     txt = txt.trim().replace(/^["']|["']$/g, "").trim();
-    if (txt.length > 0 && txt.length <= 260) return txt;
-    if (txt.length > 260) return txt.substring(0, 257) + "...";
-    return null;
+
+    // QUALITY VALIDATION — reject garbage
+    if (!txt || txt.length < 80) {
+      console.log("[tweet] Gemini too short (" + (txt ? txt.length : 0) + " chars)");
+      return null;
+    }
+
+    // Reject if truncated — last word is suspiciously short (cut mid-sentence)
+    var words = txt.replace(/[🔥🎾🇧🇷⚡💪🏆😂📝🏅✨🏟️👏🫡📱📲🔔]+$/g, "").trim().split(/\s+/);
+    var lastWord = words[words.length - 1] || "";
+    var shortWordsOk = ["e", "o", "a", "no", "na", "um", "ja", "so", "la", "ai", "ao", "em", "de", "do", "da", "os", "as", "se", "ou"];
+    var lastClean = lastWord.toLowerCase().replace(/[.!?…,;:)]/g, "");
+    if (lastClean.length > 0 && lastClean.length <= 2 && shortWordsOk.indexOf(lastClean) === -1) {
+      console.log("[tweet] Gemini truncated, ends with: '" + lastWord + "'");
+      return null;
+    }
+
+    // Reject if doesn't look like a complete sentence
+    if (!/[.!?…🔥🎾🇧🇷⚡💪🏆😂📝🏅✨a-záàâãéêíóôõúç0-9)"]$/i.test(txt.charAt(txt.length - 1))) {
+      console.log("[tweet] Gemini bad ending: '" + txt.substring(txt.length - 10) + "'");
+      return null;
+    }
+
+    if (txt.length > 260) txt = txt.substring(0, 257) + "...";
+
+    return txt;
   } catch (e) { console.log("[tweet] Gemini error:", e.message); return null; }
 }
 
