@@ -55,6 +55,7 @@ export default async function handler(req, res) {
       getKV("fn:poll:" + dayOfYear),
       getKV("fn:predict:next"),
       getKV("fn:highlight-video"),
+      getKV("fn:bracketUrl"),
       getKV("fn:h2h"),
       getKV("fn:pregameForm"),
     ]);
@@ -78,8 +79,9 @@ export default async function handler(req, res) {
     var pollData = results[16];
     var predictData = results[17];
     var highlightVideo = results[18];
-    var h2h = results[19];
-    var pregameForm = results[20];
+    var bracketUrl = results[19];
+    var h2h = results[20];
+    var pregameForm = results[21];
 
     var parse = function(val) {
       if (!val) return null;
