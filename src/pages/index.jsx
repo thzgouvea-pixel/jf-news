@@ -301,6 +301,7 @@ export default function JoaoFonsecaNews() {
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
       if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
+      if (d.bracketUrl && d.bracketUrl.url) setBracketUrl(d.bracketUrl); else setBracketUrl(null);
     }).catch(function() {});
     var isNew = !localStorage.getItem("fn_visited");
     if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
