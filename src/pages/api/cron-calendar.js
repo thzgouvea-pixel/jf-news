@@ -71,7 +71,7 @@ export default async function handler(req, res) {
         tools: [{ google_search: {} }],
         generationConfig: { temperature: 0.1, maxOutputTokens: 16384 }
       })
-
+    });
     if (!r.ok) {
       var errText = await r.text();
       return res.status(500).json({ error: "Gemini HTTP " + r.status, detail: errText.substring(0, 300) });
