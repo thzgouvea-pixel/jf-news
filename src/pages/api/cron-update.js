@@ -355,6 +355,43 @@ async function fetchATPRankings() {
   }
   return null;
 }
+// ===== CALENDAR (Gemini weekly) =====
+async function fetchCalendarFromGemini() {
+  var gTxt = await geminiSearch(
+    "Calendario COMPLETO de torneios ATP que o tenista brasileiro Joao Fonseca participou ou vai participar em 2026. " +
+    "Inclua TODOS: Grand Slams, Masters 1000, ATP 500, ATP 250 que ele jogou ou provavelmente jogara. " +
+    "Para cada torneio: nome, categoria (Grand Slam/Masters 1000/ATP 500/ATP 250/Finals), " +
+    "superficie em portugues (Duro/Saibro/Grama), cidade, pais, data inicio (YYYY-MM-DD), data fim (YYYY-MM-DD). " +
+    "APENAS JSON array, nada mais: [{\"name\":\"...\",\"cat\":\"...\",\"surface\":\"...\",\"city\":\"...\",\"country\":\"...\",\"start\":\"YYYY-MM-DD\",\"end\":\"YYYY-MM-DD\"}]"
+  );
+  if (!gTxt) return null;
+  try {
+    var cleaned = gTxt.replace(/```json|```/g, "").trim();
+    var arrMatch = cleaned.match(/\[[\s\S]*\]/);
+    if (!arrMatch) return null;
+    var arr = JSON.parse(arrMatch[0]);
+    if (!Array.isArray(arr) || arr.length < 5) return null;
+    var valid = arr.filter(function(t) { return t.name && t.cat && t.start && t.end; });
+    if (valid.length < 5) return null;
+    var monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
+    var mShort = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+    valid.forEach(function(t) {
+      var sd = new Date(t.start);
+      var ed = new Date(t.end);
+      t.month = monthNames[sd.getUTCMonth()] || "";
+      t.date = sd.getUTCDate() + " " + mShort[sd.getUTCMonth()] + " - " + ed.getUTCDate() + " " + mShort[ed.getUTCMonth()];
+      if (!t.surface) t.surface = "";
+      if (!t.city) t.city = "";
+      if (!t.country) t.country = "";
+    });
+    valid.sort(function(a,b) { return a.start.localeCompare(b.start); });
+    log("calendar Gemini: " + valid.length + " tournaments");
+    return valid;
+  } catch(e) {
+    log("calendar parse error: " + e.message);
+    return null;
+  }
+}
 // ===== SEASON CALCULATION =====
 // Count 2026 matches from recentForm, merge with stored baseline
 function calculateSeason(recentForm, storedSeason) {
@@ -872,7 +909,24 @@ export default async function handler(req, res) {
         }
         }
     }
-
+// ── CALENDAR (weekly) ──
+    try {
+      var exCalendar = await kv.get("fn:atpCalendar");
+      var calParsed = exCalendar ? (typeof exCalendar === "string" ? JSON.parse(exCalendar) : exCalendar) : null;
+      var calFresh = calParsed && calParsed.updatedAt && (now - new Date(calParsed.updatedAt).getTime()) < D7;
+      if (!calFresh) {
+        var newCal = await fetchCalendarFromGemini();
+        if (newCal && newCal.length >= 5) {
+          var calPayload = { tournaments: newCal, updatedAt: new Date().toISOString() };
+          w.push(kv.set("fn:atpCalendar", JSON.stringify(calPayload), { ex: T7 }));
+          log("calendar: updated " + newCal.length + " tournaments");
+        } else {
+          log("calendar: Gemini failed, keeping existing");
+        }
+      } else {
+        log("calendar: cached (" + (calParsed.tournaments ? calParsed.tournaments.length : 0) + " tournaments)");
+      }
+    } catch(e) { log("calendar error: " + e.message); }
     // ── SEASON (never-overwrite, Gemini weekly + recentForm daily) ──
     try {
       var exSeason = await kv.get("fn:season");
