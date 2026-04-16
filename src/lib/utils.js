@@ -17,11 +17,9 @@ export var getESPNImage = function(name) {
 };
 
 export var getSofaScoreImage = function(name, teamId) {
-  // Try team image from img.sofascore.com (most reliable)
-  if (teamId) return "https://img.sofascore.com/api/v1/team/" + teamId + "/image";
-  // Fallback: PLAYER_DB sofa ID
+  if (teamId) return "/api/player-image?id=" + teamId;
   var p = findPlayer(name);
-  if (p && p.data.sofa) return "https://img.sofascore.com/api/v1/team/" + p.data.sofa + "/image";
+  if (p && p.data.sofa) return "/api/player-image?id=" + p.data.sofa;
   return null;
 };
 
