@@ -126,35 +126,43 @@ export default function NextStopCard(props) {
   var dateRange = formatDateRange(next.start, next.end);
 
   return (
-    <section style={{ padding: "8px 0 0" }}>
+    <section style={{ padding: "12px 0 0" }}>
       <div style={{
         borderRadius: 16,
         background: "transparent",
         border: "1px solid #e0e0e0",
-        padding: "14px 18px",
+        padding: "18px 20px",
         display: "flex",
         alignItems: "center",
-        gap: 14,
+        gap: 16,
       }}>
         <div style={{
-          width: 40, height: 40, borderRadius: 10,
+          width: 44, height: 44, borderRadius: 12,
           background: "#f5f5f5",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 20, flexShrink: 0,
+          fontSize: 22, flexShrink: 0,
         }}>
           {flag || "✈️"}
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <span style={{
-            fontSize: 9, fontWeight: 700, color: "#999",
-            fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em",
-            display: "block", marginBottom: 2,
-          }}>
-            Próxima parada
-          </span>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#1a1a1a", fontFamily: SERIF, lineHeight: 1.2 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5 }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: "50%",
+              background: "#FFCB05",
+              display: "inline-block",
+              animation: "pulse 2s ease-in-out infinite",
+              boxShadow: "0 0 6px #FFCB0580",
+            }} />
+            <span style={{
+              fontSize: 9, fontWeight: 700, color: "#999",
+              fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em",
+            }}>
+              Próxima parada
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#1a1a1a", fontFamily: SERIF, lineHeight: 1.2 }}>
               {next.name}
             </span>
             <span style={{
@@ -165,7 +173,7 @@ export default function NextStopCard(props) {
               {next.cat}
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 3 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: "#444", fontFamily: SANS }}>
               {dateRange}
             </span>
