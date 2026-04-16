@@ -815,7 +815,7 @@ export default async function handler(req, res) {
       w.push(kv.set("fn:nextMatch", JSON.stringify(nm), { ex: T7 }));
       try { await kv.del("fn:nextTournament"); } catch (e) { }
     } else {
-      try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); } catch (e) { }
+      try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); await kv.del("fn:bracketUrl"); } catch (e) { }
       var nextT = ATP_CALENDAR_2026.find(function (t) { return new Date(t.end + "T23:59:59Z") >= new Date(); });
       if (nextT) w.push(kv.set("fn:nextTournament", JSON.stringify({
         tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface,
