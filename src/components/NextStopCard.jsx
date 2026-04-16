@@ -106,8 +106,17 @@ export default function NextStopCard(props) {
     }
   }
 
-  if (currentIdx === -1 || currentIdx >= sorted.length - 1) return null;
-  var next = sorted[currentIdx + 1];
+  if (currentIdx === -1) return null;
+
+  // Only show tournaments João is CONFIRMED to play (Grand Slams + Masters 1000)
+  var CONFIRMED_CATS = ["Grand Slam", "Masters 1000", "Finals"];
+  var next = null;
+  for (var k = currentIdx + 1; k < sorted.length; k++) {
+    if (CONFIRMED_CATS.indexOf(sorted[k].cat) !== -1) {
+      next = sorted[k];
+      break;
+    }
+  }
   if (!next || !next.name) return null;
 
   var flag = FLAGS[next.country] || FLAGS[next.city] || "";
