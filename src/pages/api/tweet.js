@@ -121,7 +121,8 @@ async function geminiTweet(headline, context) {
   var prompt = "Voce e o social media do Fonseca News (@JFonsecaNews), um site de fas do tenista brasileiro Joao Fonseca.\n\n" +
     "Reescreva esta noticia como um tweet em portugues brasileiro.\n\n" +
     "REGRAS ABSOLUTAS:\n" +
-    "- Maximo 240 caracteres (NUNCA ultrapasse)\n" +
+    "- Entre 120 e 240 caracteres (NUNCA ultrapasse 240, NUNCA menos que 120)\n" +
+    "- Aproveite o espaco para dar contexto: placar, ranking, torneio, rodada\n" +
     "- Tom de fa apaixonado mas informativo, como um amigo contando a novidade\n" +
     "- NAO use hashtags\n" +
     "- Pode usar 1-2 emojis (no meio ou fim, NUNCA no inicio)\n" +
@@ -196,6 +197,12 @@ var PROMO_TWEETS = [
   "Acordei pensando em tenis. De novo. Culpa do Joao 😂🎾",
   "Sera que a gente vai ver o Joao nas Olimpiadas de 2028 em LA? Ja to contando os dias 🇧🇷🏅",
   "Hot take: Joao Fonseca vai ganhar Roland Garros antes dos 22 anos. Anotem 📝",
+  // NEW: home screen shortcut tips
+  "Dica: adiciona o Fonseca News na tela inicial do seu celular. Funciona como app, mas ocupa ZERO espaco 📱✨",
+  "Tem iPhone? Abre o site no Safari, toca em compartilhar e escolhe 'Adicionar a Tela de Inicio'. Fica igual app 📲",
+  "Tem Android? Abre no Chrome, menu (3 pontinhos) e clica em 'Adicionar a tela inicial'. Notificacoes em breve 🔔",
+  "Fonseca News como app, sem baixar nada. Adiciona o site na tela inicial e acompanha o Joao num toque 🎾📱",
+  "Quer acompanhar cada passo do Joao? Adiciona o site na tela inicial do seu celular. Rapido e pratico 🇧🇷⚡",
 ];
 
 // ===== MAIN HANDLER =====
@@ -342,9 +349,38 @@ export default async function handler(req, res) {
       tweetText = templateTweet(best.item.title, best.item.source);
     }
 
-    // Add hashtag at end (only #JoãoFonseca)
+    // Smart hashtags — pick 2-3 based on news content
     if (!tweetText.includes("#")) {
-      if (tweetText.length + 16 <= 280) {
+      var hashtags = ["#JoãoFonseca"];
+      var titleLow = (best.item.title || "").toLowerCase();
+      var tweetLow = tweetText.toLowerCase();
+      var combined = titleLow + " " + tweetLow;
+
+      // Tournament-specific
+      if (combined.includes("roland garros") || combined.includes("french open")) hashtags.push("#RolandGarros");
+      else if (combined.includes("wimbledon")) hashtags.push("#Wimbledon");
+      else if (combined.includes("us open")) hashtags.push("#USOpen");
+      else if (combined.includes("australian open") || combined.includes("aus open")) hashtags.push("#AusOpen");
+      else if (combined.includes("monte carlo")) hashtags.push("#MonteCarlo");
+      else if (combined.includes("madrid")) hashtags.push("#MadridOpen");
+      else if (combined.includes("roma") || combined.includes("italian open")) hashtags.push("#IBI");
+      else if (combined.includes("miami")) hashtags.push("#MiamiOpen");
+      else if (combined.includes("indian wells")) hashtags.push("#IndianWells");
+      else if (combined.includes("bmw open") || combined.includes("munich")) hashtags.push("#BMWOpen");
+      else if (combined.includes("rio open")) hashtags.push("#RioOpen");
+
+      // Context-based
+      if (combined.includes("atp") || combined.includes("ranking")) hashtags.push("#ATP");
+      if (combined.includes("brasil") || combined.includes("brasileiro")) hashtags.push("#TenisBrasil");
+
+      // Dedup and limit to 3
+      var uniqueTags = [];
+      hashtags.forEach(function(t) { if (uniqueTags.indexOf(t) === -1 && uniqueTags.length < 3) uniqueTags.push(t); });
+
+      var tagsText = "\n\n" + uniqueTags.join(" ");
+      if (tweetText.length + tagsText.length <= 280) {
+        tweetText = tweetText + tagsText;
+      } else if (tweetText.length + 16 <= 280) {
         tweetText = tweetText + "\n\n#JoãoFonseca";
       }
     }
@@ -355,7 +391,7 @@ export default async function handler(req, res) {
     }
 
     // Link in reply (better for algorithm)
-    var linkReply = "📰 " + (best.item.source || "Fonte") + "\n🔗 fonsecanews.com.br";
+    var linkReply = "📰 " + (best.item.source || "Fonte") + "\n\n🔗 www.fonsecanews.com.br";
 
     console.log("[tweet] Posting: " + tweetText.substring(0, 100) + "...");
 
