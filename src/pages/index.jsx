@@ -89,6 +89,7 @@ export default function JoaoFonsecaNews() {
   var _liveMatch = useState(null); var liveMatch = _liveMatch[0]; var setLiveMatch = _liveMatch[1];
   var _highlightVideo = useState(null); var highlightVideo = _highlightVideo[0]; var setHighlightVideo = _highlightVideo[1];
   var _bracketUrl = useState(null); var bracketUrl = _bracketUrl[0]; var setBracketUrl = _bracketUrl[1];
+  var _atpCalendar = useState(null); var atpCalendar = _atpCalendar[0]; var setAtpCalendar = _atpCalendar[1];
   var _winProb = useState(null); var winProb = _winProb[0]; var setWinProb = _winProb[1];
   var _visibleCount = useState(12); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
@@ -275,6 +276,7 @@ export default function JoaoFonsecaNews() {
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
       if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
       if (d.bracketUrl && d.bracketUrl.url) setBracketUrl(d.bracketUrl); else setBracketUrl(null);
+      if (d.atpCalendar) setAtpCalendar(d.atpCalendar); else setAtpCalendar(null);
     }).catch(function() {});
   };
 
@@ -302,6 +304,7 @@ export default function JoaoFonsecaNews() {
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
       if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
       if (d.bracketUrl && d.bracketUrl.url) setBracketUrl(d.bracketUrl); else setBracketUrl(null);
+      if (d.atpCalendar) setAtpCalendar(d.atpCalendar); else setAtpCalendar(null);
     }).catch(function() {});
     var isNew = !localStorage.getItem("fn_visited");
     if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
@@ -566,7 +569,7 @@ export default function JoaoFonsecaNews() {
 
       {showRanking && (<Modal title="🏆 Ranking ATP Singles" onClose={function(){setShowRanking(false);}} maxWidth={480}><ATPRankingList currentRanking={dp ? dp.ranking : null} /></Modal>)}
       {showRankingChart && (<Modal title="📈 Evolução no Ranking" onClose={function(){setShowRankingChart(false);}} maxWidth={650}><RankingChart currentRanking={dp ? dp.ranking : null} /></Modal>)}
-      {showCalendar && (<Modal title="🗓️ Calendário ATP 2026" onClose={function(){setShowCalendar(false);}} maxWidth={520}><ATPCalendar recentForm={recentForm} lastMatch={dl} nextMatch={dm} nextTournament={nextTournament} /></Modal>)}
+      {showCalendar && (<Modal title="🗓️ Calendário ATP 2026" onClose={function(){setShowCalendar(false);}} maxWidth={520}><ATPCalendar recentForm={recentForm} lastMatch={dl} nextMatch={dm} nextTournament={nextTournament} atpCalendar={atpCalendar} />
       {showBracket && (<Modal title={"🏟️ Chave · " + ((dm && dm.tournament_name) || (dl && dl.tournament_name) || "Torneio")} onClose={function(){setShowBracket(false);}} maxWidth={420}><TournamentBracket recentForm={recentForm} lastMatch={dl} nextMatch={dm} /></Modal>)}
       {showTitles && (<Modal title="🏆 Conquistas" onClose={function(){setShowTitles(false);}} maxWidth={460}><div><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour — Singles</p>{[{t:"ATP 500 Basel",d:"Out 2025",det:"vs Davidovich Fokina · 6-3 6-4",note:"1º brasileiro a ganhar ATP 500"},{t:"ATP 250 Buenos Aires",d:"Fev 2025",det:"vs Cerúndolo · 6-4 7-6(1)",note:"Brasileiro mais jovem a ganhar ATP"}].map(function(t,i){return(<div key={i} style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>{t.det}</p>{t.note&&<p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>{t.note}</p>}</div>);})}<div style={{height:1,background:"#e8e8e8",margin:"14px 0"}} /><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour — Duplas</p><div style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>Rio Open 500</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>Fev 2026</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>Duplas · Rio de Janeiro</p></div><div style={{height:1,background:"#e8e8e8",margin:"14px 0"}} /><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:"#b8860b",fontFamily:SANS}}>NextGen ATP Finals</p><div style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>Campeão invicto</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>Dez 2024</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>5 vitórias, 0 derrotas · Jeddah</p><p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>1º sul-americano campeão do NextGen Finals</p></div><div style={{height:1,background:"#e8e8e8",margin:"14px 0"}} /><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:SUB,fontFamily:SANS}}>ATP Challenger</p>{[{t:"Phoenix Challenger",d:"Mar 2025",det:"vs Bublik"},{t:"Canberra International",d:"Jan 2025",det:"vs Quinn · sem perder sets"},{t:"Lexington Challenger",d:"Ago 2024",det:"Mais jovem campeão Challenger de 2024"}].map(function(t,i){return(<div key={i} style={{padding:"8px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:13,fontWeight:600,color:TEXT,fontFamily:SANS}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:11,color:SUB,fontFamily:SANS}}>{t.det}</p></div>);})}</div></Modal>)}
 
