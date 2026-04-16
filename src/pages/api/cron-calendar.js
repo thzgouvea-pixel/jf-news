@@ -64,10 +64,10 @@ export default async function handler(req, res) {
           "Liste TODOS os torneios ATP de tenis que Joao Fonseca jogou ou provavelmente jogara em 2026. " +
           "Inclua Grand Slams, Masters 1000, ATP 500, ATP 250 que ele participou ou tem chance de participar. " +
           "Superficie em portugues: Duro, Saibro ou Grama. " +
-          "Responda SOMENTE com JSON array. Nenhum texto antes ou depois, nenhum markdown. " +
-          "Formato exato: [{\"name\":\"Australian Open\",\"cat\":\"Grand Slam\",\"surface\":\"Duro\",\"city\":\"Melbourne\",\"country\":\"Australia\",\"start\":\"2026-01-18\",\"end\":\"2026-02-01\"}]"
+          "Responda SOMENTE com JSON array COMPACTO em uma unica linha, sem quebras de linha, sem espacos extras, sem markdown. " +
+          "Formato: [{\"name\":\"Australian Open\",\"cat\":\"Grand Slam\",\"surface\":\"Duro\",\"city\":\"Melbourne\",\"country\":\"Australia\",\"start\":\"2026-01-18\",\"end\":\"2026-02-01\"}]"
         }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 4096 }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 16384 }
       })
     });
 
@@ -91,6 +91,15 @@ export default async function handler(req, res) {
 
     var cleaned = txt.replace(/```json|```/g, "").trim();
     var arrMatch = cleaned.match(/\[[\s\S]*\]/);
+    if (!arrMatch && cleaned.indexOf("[") !== -1) {
+      var lastBrace = cleaned.lastIndexOf("}");
+      if (lastBrace > 0) {
+        try {
+          var salvaged = cleaned.substring(cleaned.indexOf("["), lastBrace + 1) + "]";
+          arrMatch = [salvaged];
+        } catch(e) {}
+      }
+    }
     if (!arrMatch) {
       return res.status(500).json({ error: "No JSON array found", raw: txt.substring(0, 500) });
     }
