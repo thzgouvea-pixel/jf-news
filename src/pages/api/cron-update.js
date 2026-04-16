@@ -322,7 +322,57 @@ async function fetchATPRankings() {
   }
   return null;
 }
+// ===== SEASON CALCULATION =====
+// Count 2026 matches from recentForm, merge with stored baseline
+function calculateSeason(recentForm, storedSeason) {
+  if (!recentForm || !Array.isArray(recentForm)) return storedSeason || null;
 
+  var yearStart = new Date("2026-01-01T00:00:00Z").getTime();
+  var wins2026 = 0, losses2026 = 0;
+  var seen = {};
+
+  recentForm.forEach(function(m) {
+    if (!m.date || !m.opponent_name || !m.score) return;
+    var ts = new Date(m.date).getTime();
+    if (ts < yearStart) return;
+    var key = m.opponent_name + "|" + m.score + "|" + m.date.substring(0, 10);
+    if (seen[key]) return;
+    seen[key] = true;
+    if (m.result === "V") wins2026++;
+    else if (m.result === "D") losses2026++;
+  });
+
+  // Merge with baseline (matches older than what's in recentForm)
+  var baseW = (storedSeason && storedSeason.baseline) ? (storedSeason.baseline.wins || 0) : 0;
+  var baseL = (storedSeason && storedSeason.baseline) ? (storedSeason.baseline.losses || 0) : 0;
+
+  var totalW = wins2026 + baseW;
+  var totalL = losses2026 + baseL;
+  var total = totalW + totalL;
+
+  return {
+    wins: totalW,
+    losses: totalL,
+    winPct: total > 0 ? Math.round(totalW / total * 100) : 0,
+    recentFormCount: wins2026 + losses2026,
+    baseline: { wins: baseW, losses: baseL },
+    updatedAt: new Date().toISOString(),
+  };
+}
+// Fetch full 2026 record via Gemini (runs weekly max)
+async function fetchSeasonFromGemini() {
+  var gTxt = await geminiSearch(
+    "Record ATUAL e ATUALIZADO da temporada 2026 do tenista João Fonseca em singles ATP até hoje. " +
+    "Conte APENAS jogos de 2026 (desde 1 de janeiro). " +
+    "APENAS JSON: {\"wins\":NUMBER,\"losses\":NUMBER}"
+  );
+  var parsed = parseGeminiJSON(gTxt);
+  if (parsed && typeof parsed.wins === "number" && typeof parsed.losses === "number") {
+    log("season Gemini: " + parsed.wins + "W-" + parsed.losses + "L");
+    return parsed;
+  }
+  return null;
+}
 // ===== PHASE 6: PLAYER DATA (career stats via Gemini) =====
 async function fetchPlayerData() {
   var gTxt = await geminiSearch(
@@ -747,12 +797,57 @@ export default async function handler(req, res) {
           var sW = (wiki.surface.hard ? wiki.surface.hard.w : 0) + (wiki.surface.clay ? wiki.surface.clay.w : 0) + (wiki.surface.grass ? wiki.surface.grass.w : 0);
           if (sW > cW) { cW = sW; cL = (wiki.surface.hard ? wiki.surface.hard.l : 0) + (wiki.surface.clay ? wiki.surface.clay.l : 0) + (wiki.surface.grass ? wiki.surface.grass.l : 0); }
         }
-        w.push(kv.set("fn:careerStats", JSON.stringify({ wins: cW, losses: cL, winPct: (cW + cL) > 0 ? Math.round(cW / (cW + cL) * 100) : 0, surface: wiki.surface || null, titles: wiki.titles || null }), { ex: T7 }));
-        var seW = wiki.seasonWins !== undefined ? wiki.seasonWins : wiki.wins;
-        var seL = wiki.seasonLosses !== undefined ? wiki.seasonLosses : (wiki.losses || 0);
-        w.push(kv.set("fn:season", JSON.stringify({ wins: seW, losses: seL, winPct: (seW + seL) > 0 ? Math.round(seW / (seW + seL) * 100) : 0 }), { ex: T2 }));
-      }
+        }
     }
+
+    // ── SEASON (never-overwrite, Gemini weekly + recentForm daily) ──
+    try {
+      var exSeason = await kv.get("fn:season");
+      var parsedSeason = exSeason ? (typeof exSeason === "string" ? JSON.parse(exSeason) : exSeason) : null;
+
+      // Need Gemini baseline? Only if we have no baseline or baseline is >7d old
+      var needsBaseline = !parsedSeason || !parsedSeason.baseline ||
+        !parsedSeason.baselineUpdatedAt ||
+        (now - new Date(parsedSeason.baselineUpdatedAt).getTime()) > (7 * H24);
+
+      var baseline = parsedSeason && parsedSeason.baseline ? parsedSeason.baseline : null;
+      var baselineUpdatedAt = parsedSeason ? parsedSeason.baselineUpdatedAt : null;
+
+      if (needsBaseline) {
+        var geminiTotal = await fetchSeasonFromGemini();
+        if (geminiTotal) {
+          // Compute what's NOT in recentForm = baseline
+          var recentWins = 0, recentLosses = 0;
+          var yearStart = new Date("2026-01-01T00:00:00Z").getTime();
+          form.forEach(function(m) {
+            if (!m.date) return;
+            if (new Date(m.date).getTime() < yearStart) return;
+            if (m.result === "V") recentWins++;
+            else if (m.result === "D") recentLosses++;
+          });
+          var newBaseW = Math.max(0, geminiTotal.wins - recentWins);
+          var newBaseL = Math.max(0, geminiTotal.losses - recentLosses);
+          baseline = { wins: newBaseW, losses: newBaseL };
+          baselineUpdatedAt = new Date().toISOString();
+          log("season baseline updated: " + newBaseW + "W-" + newBaseL + "L (Gemini total: " + geminiTotal.wins + "-" + geminiTotal.losses + ", recentForm: " + recentWins + "-" + recentLosses + ")");
+        }
+      }
+      // Calculate final season from baseline + recentForm
+      var seasonToWrite = calculateSeason(form, { baseline: baseline });
+      if (seasonToWrite) {
+        seasonToWrite.baselineUpdatedAt = baselineUpdatedAt || new Date().toISOString();
+
+        // GOLDEN RULE: never let season go DOWN
+        if (parsedSeason && parsedSeason.wins !== undefined) {
+          if ((seasonToWrite.wins + seasonToWrite.losses) < (parsedSeason.wins + parsedSeason.losses)) {
+            log("season would regress (" + seasonToWrite.wins + "-" + seasonToWrite.losses + " < " + parsedSeason.wins + "-" + parsedSeason.losses + "), keeping existing");
+            seasonToWrite = parsedSeason;
+          }
+        }
+        w.push(kv.set("fn:season", JSON.stringify(seasonToWrite), { ex: T7 }));
+        log("season: " + seasonToWrite.wins + "W-" + seasonToWrite.losses + "L");
+      }
+    } catch (e) { log("season error: " + e.message); }
 
     if (op) w.push(kv.set("fn:opponentProfile", JSON.stringify(op), { ex: T2 }));
     if (wp) w.push(kv.set("fn:winProb", JSON.stringify(wp), { ex: T2 }));
