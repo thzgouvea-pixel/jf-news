@@ -1,4 +1,4 @@
-// ===== FONSECA NEWS — CRON UPDATE v17 (REWRITE) =====
+// ===== FONSECA NEWS — CRON UPDATE v18 (CLEAN) =====
 // Architecture: SofaScore (primary) → Gemini (backup only) → Placeholder (visible error)
 // Flow: DISCOVER → CLASSIFY → ENRICH → VALIDATE → WRITE
 // Target: < 50s execution, ~8 API calls per run
@@ -50,14 +50,11 @@ function parseGeminiJSON(txt) {
 }
 
 // ===== PHASE 1: DISCOVER =====
-// PRIMARY: date scan (always works on RapidAPI)
-// The team/near-events and team/events endpoints return 404 on sofascore6.p.rapidapi.com
 async function discoverMatches() {
   log("DISCOVER: date scan -3 to +7 days...");
   var results = { upcoming: [], finished: [] };
   var seen = new Set();
 
-  // Date scan: -3 days back, +7 days forward
   // Parallel date scan
   var dayPromises = [];
   for (var d = -3; d <= 7; d++) {
@@ -80,9 +77,7 @@ async function discoverMatches() {
   });
   log("scan: " + results.finished.length + " fin, " + results.upcoming.length + " upc (" + seen.size + " total)");
 
-  // KV CROSS-REFERENCE: detect stale "upcoming" matches that already finished
-  // SofaScore RapidAPI can be slow to update status — a match might show as "upcoming"
-  // even after it finished. Check against KV lastMatch to catch this.
+  // KV CROSS-REFERENCE
   try {
     var kvLM = await kv.get("fn:lastMatch");
     if (kvLM) {
@@ -96,7 +91,6 @@ async function discoverMatches() {
           var mTourn = (ex.tournament_name || "").toLowerCase();
           if (mOppLast === kvOppLast && mTourn.includes(kvTournament.split(" ")[0])) {
             log("stale upcoming: " + ex.opponent_name + " (already finished in KV)");
-            // Move to finished if not already there
             if (!results.finished.some(function(f) { return f.id === m.id; })) {
               results.finished.push(m);
             }
@@ -104,7 +98,6 @@ async function discoverMatches() {
           }
           return true;
         });
-        // Also: if KV lastMatch is newer than any scanned finished match, inject it
         if (parsedLM.id && !seen.has(parsedLM.id)) {
           var kvDate = parsedLM.date ? new Date(parsedLM.date).getTime() : 0;
           var scanLatest = results.finished.length > 0 ? (results.finished[0].startTimestamp || 0) * 1000 : 0;
@@ -116,13 +109,10 @@ async function discoverMatches() {
     }
   } catch (e) { log("KV cross-ref error: " + e.message); }
 
-  // Sort: finished by most recent, upcoming by soonest
   var NOW_TS = Math.floor(Date.now() / 1000);
   function getTs(m) { return m.startTimestamp || m.timestamp || 0; }
   results.finished.sort(function (a, b) { return (getTs(b) || NOW_TS) - (getTs(a) || NOW_TS); });
   results.upcoming.sort(function (a, b) { return (getTs(a) || 0) - (getTs(b) || 0); });
-
-  // Filter out "upcoming" that already have scores (SofaScore status lag)
   results.upcoming = results.upcoming.filter(function (m) {
     var ex = extractMatch(m);
     return !(ex.score && ex.score.length > 2);
@@ -149,7 +139,7 @@ async function enrichNextMatch(nm) {
       if (!nm.round && ev.roundInfo && ev.roundInfo.name) {
         nm.round = translateRound(ev.roundInfo.name);
       }
-      log("match details: court=" + (nm.court || "—") + " round=" + (nm.round || "—") + " ts=" + (nm.startTimestamp || "—"));
+      log("match details: court=" + (nm.court || "\u2014") + " round=" + (nm.round || "\u2014") + " ts=" + (nm.startTimestamp || "\u2014"));
     } else {
       log("match details: no data for id=" + nm.id);
     }
@@ -159,7 +149,6 @@ async function enrichNextMatch(nm) {
   if (!nm.court && nm.startTimestamp && nm.opponent_name && nm.opponent_name !== "A definir") {
     var hoursUntil = (nm.startTimestamp * 1000 - Date.now()) / 3600000;
     if (hoursUntil > 0 && hoursUntil < 48) {
-      // Check cache first
       var courtCacheKey = "fn:gemini:court:" + nm.id;
       var cached = null;
       try { cached = await kv.get(courtCacheKey); } catch (e) {}
@@ -168,49 +157,15 @@ async function enrichNextMatch(nm) {
         log("court Gemini (cached): " + cached);
       } else {
         var matchDate = new Date(nm.startTimestamp * 1000).toISOString().split("T")[0];
-        var prompt = "Tenista J\u00e3o Fonseca joga contra " + nm.opponent_name + " no torneio " +
+        var courtPrompt = "Tenista Jo\u00e3o Fonseca joga contra " + nm.opponent_name + " no torneio " +
           (nm.tournament_name || "ATP") + " no dia " + matchDate + ". " +
           "Qual o nome da QUADRA (court) onde esse jogo espec\u00edfico ser\u00e1 disputado? " +
           "Responda APENAS com o nome da quadra em uma \u00fanica linha, sem explica\u00e7\u00f5es. " +
           "Exemplos v\u00e1lidos: Center Court, Court 1, Centre Court, Pista Central, Court Philippe-Chatrier. " +
           "Se n\u00e3o souber com certeza, responda apenas: DESCONHECIDO";
-    if (!r.ok) { log("calendar Gemini HTTP " + r.status); return null; }
-    var d = await r.json();
-    var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
-    if (!parts) { log("calendar Gemini: no parts"); return null; }
-    var txt = "";
-    parts.forEach(function(p) { if (p.text) txt += p.text; });
-    log("calendar raw: " + txt.substring(0, 200));
-    if (!txt) return null;
-    var cleaned = txt.replace(/```json|```/g, "").trim();
-    var arrMatch = cleaned.match(/\[[\s\S]*\]/);
-    if (!arrMatch) { log("calendar: no array found"); return null; }
-    var arr = JSON.parse(arrMatch[0]);
-    if (!Array.isArray(arr) || arr.length < 3) { log("calendar: too few items (" + (arr ? arr.length : 0) + ")"); return null; }
-    var valid = arr.filter(function(t) { return t.name && t.start; });
-    var monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
-    var mShort = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-    valid.forEach(function(t) {
-      var sd = new Date(t.start);
-      var ed = t.end ? new Date(t.end) : sd;
-      t.month = monthNames[sd.getUTCMonth()] || "";
-      t.date = sd.getUTCDate() + " " + mShort[sd.getUTCMonth()] + " - " + ed.getUTCDate() + " " + mShort[ed.getUTCMonth()];
-      if (!t.cat) t.cat = "";
-      if (!t.surface) t.surface = "";
-      if (!t.city) t.city = "";
-      if (!t.country) t.country = "";
-    });
-    valid.sort(function(a,b) { return a.start.localeCompare(b.start); });
-    log("calendar Gemini: " + valid.length + " tournaments");
-    return valid;
-  } catch(e) {
-    log("calendar error: " + e.message);
-    return null;
-  }
-}
+        var gTxt = await geminiSearch(courtPrompt);
         if (gTxt) {
           var clean = gTxt.trim().replace(/["'`]/g, "").split("\n")[0].trim();
-          // Validate: not empty, not too long, not a "don't know" response
           var invalidResponses = ["desconhecido", "n\u00e3o sei", "a definir", "n/a", "nao sei", "unknown", "tbd"];
           var isInvalid = !clean || clean.length < 3 || clean.length > 50 ||
             invalidResponses.some(function(r) { return clean.toLowerCase().includes(r); });
@@ -226,12 +181,8 @@ async function enrichNextMatch(nm) {
     }
   }
 
-  // b) H2H — NOT available on sofascore6 RapidAPI wrapper
   var h2h = null;
-
-  // c) Pregame form — NOT available on sofascore6 RapidAPI wrapper
   var pregameForm = null;
-
   return { nm: nm, h2h: h2h, pregameForm: pregameForm };
 }
 
@@ -239,7 +190,6 @@ async function enrichNextMatch(nm) {
 async function fetchOpponentProfile(nm, existingProfile) {
   if (!nm || !nm.opponent_name || nm.opponent_name === "A definir") return existingProfile || null;
 
-  // Check if cached profile matches current opponent
   if (existingProfile && existingProfile.name) {
     var exLast = stripAccents(existingProfile.name.split(" ").pop().toLowerCase());
     var nmLast = stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
@@ -249,7 +199,6 @@ async function fetchOpponentProfile(nm, existingProfile) {
     }
   }
 
-  // SofaScore team API (1 API call)
   if (nm.opponent_id) {
     var data = await sofaFetch("/v1/team/" + nm.opponent_id);
     if (data && data.team) {
@@ -266,10 +215,9 @@ async function fetchOpponentProfile(nm, existingProfile) {
         if (t.playerTeamInfo.plays) pr.hand = t.playerTeamInfo.plays === "right-handed" ? "Destro" : "Canhoto";
       }
 
-      // Gemini enrichment for style (only if SofaScore worked)
       var gTxt = await geminiSearch(
-        "Tenista " + (pr.name || nm.opponent_name) + ": estilo de jogo breve em português, títulos ATP, career-high ranking. " +
-        "APENAS JSON: {\"style\":\"descrição breve\",\"titles\":NUMBER_OR_NULL,\"careerHigh\":NUMBER_OR_NULL}"
+        "Tenista " + (pr.name || nm.opponent_name) + ": estilo de jogo breve em portugu\u00eas, t\u00edtulos ATP, career-high ranking. " +
+        "APENAS JSON: {\"style\":\"descri\u00e7\u00e3o breve\",\"titles\":NUMBER_OR_NULL,\"careerHigh\":NUMBER_OR_NULL}"
       );
       var gData = parseGeminiJSON(gTxt);
       if (gData) {
@@ -284,11 +232,10 @@ async function fetchOpponentProfile(nm, existingProfile) {
     }
   }
 
-  // Gemini full fallback
   log("opponent: Gemini fallback for " + nm.opponent_name);
   var gTxt2 = await geminiSearch(
-    "Tenista " + nm.opponent_name + ". APENAS JSON: {\"name\":\"nome curto\",\"country\":\"país\",\"ranking\":N," +
-    "\"age\":N,\"height\":\"X.XXm\",\"hand\":\"Destro ou Canhoto\",\"titles\":N,\"style\":\"breve em português\",\"careerHigh\":N}"
+    "Tenista " + nm.opponent_name + ". APENAS JSON: {\"name\":\"nome curto\",\"country\":\"pa\u00eds\",\"ranking\":N," +
+    "\"age\":N,\"height\":\"X.XXm\",\"hand\":\"Destro ou Canhoto\",\"titles\":N,\"style\":\"breve em portugu\u00eas\",\"careerHigh\":N}"
   );
   var gProfile = parseGeminiJSON(gTxt2);
   if (gProfile && gProfile.name) {
@@ -303,7 +250,6 @@ async function fetchOpponentProfile(nm, existingProfile) {
 async function fetchWinProb(nm) {
   if (!nm || !nm.opponent_name || nm.opponent_name === "A definir") return null;
 
-  // Source 1: The Odds API
   var ok = process.env.ODDS_API_KEY;
   if (ok) {
     try {
@@ -342,7 +288,6 @@ async function fetchWinProb(nm) {
     } catch (e) { log("odds: Odds API error: " + e.message); }
   }
 
-  // Source 2: SofaScore match odds
   if (nm.id) {
     var sd = await sofaFetch("/v1/match/odds?match_id=" + nm.id);
     if (sd && sd.markets) {
@@ -388,52 +333,13 @@ async function fetchATPRankings() {
   }
   return null;
 }
-// ===== CALENDAR (Gemini weekly) =====
-async function fetchCalendarFromGemini() {
-  var gTxt = await geminiSearch(
-    "Calendario COMPLETO de torneios ATP que o tenista brasileiro Joao Fonseca participou ou vai participar em 2026. " +
-    "Inclua TODOS: Grand Slams, Masters 1000, ATP 500, ATP 250 que ele jogou ou provavelmente jogara. " +
-    "Para cada torneio: nome, categoria (Grand Slam/Masters 1000/ATP 500/ATP 250/Finals), " +
-    "superficie em portugues (Duro/Saibro/Grama), cidade, pais, data inicio (YYYY-MM-DD), data fim (YYYY-MM-DD). " +
-    "APENAS JSON array, nada mais: [{\"name\":\"...\",\"cat\":\"...\",\"surface\":\"...\",\"city\":\"...\",\"country\":\"...\",\"start\":\"YYYY-MM-DD\",\"end\":\"YYYY-MM-DD\"}]"
-  );
-  if (!gTxt) return null;
-  try {
-    var cleaned = gTxt.replace(/```json|```/g, "").trim();
-    var arrMatch = cleaned.match(/\[[\s\S]*\]/);
-    if (!arrMatch) return null;
-    var arr = JSON.parse(arrMatch[0]);
-    if (!Array.isArray(arr) || arr.length < 5) return null;
-    var valid = arr.filter(function(t) { return t.name && t.cat && t.start && t.end; });
-    if (valid.length < 5) return null;
-    var monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
-    var mShort = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-    valid.forEach(function(t) {
-      var sd = new Date(t.start);
-      var ed = new Date(t.end);
-      t.month = monthNames[sd.getUTCMonth()] || "";
-      t.date = sd.getUTCDate() + " " + mShort[sd.getUTCMonth()] + " - " + ed.getUTCDate() + " " + mShort[ed.getUTCMonth()];
-      if (!t.surface) t.surface = "";
-      if (!t.city) t.city = "";
-      if (!t.country) t.country = "";
-    });
-    valid.sort(function(a,b) { return a.start.localeCompare(b.start); });
-    log("calendar Gemini: " + valid.length + " tournaments");
-    return valid;
-  } catch(e) {
-    log("calendar parse error: " + e.message);
-    return null;
-  }
-}
+
 // ===== SEASON CALCULATION =====
-// Count 2026 matches from recentForm, merge with stored baseline
 function calculateSeason(recentForm, storedSeason) {
   if (!recentForm || !Array.isArray(recentForm)) return storedSeason || null;
-
   var yearStart = new Date("2026-01-01T00:00:00Z").getTime();
   var wins2026 = 0, losses2026 = 0;
   var seen = {};
-
   recentForm.forEach(function(m) {
     if (!m.date || !m.opponent_name || !m.score) return;
     var ts = new Date(m.date).getTime();
@@ -444,29 +350,24 @@ function calculateSeason(recentForm, storedSeason) {
     if (m.result === "V") wins2026++;
     else if (m.result === "D") losses2026++;
   });
-
-  // Merge with baseline (matches older than what's in recentForm)
   var baseW = (storedSeason && storedSeason.baseline) ? (storedSeason.baseline.wins || 0) : 0;
   var baseL = (storedSeason && storedSeason.baseline) ? (storedSeason.baseline.losses || 0) : 0;
-
   var totalW = wins2026 + baseW;
   var totalL = losses2026 + baseL;
   var total = totalW + totalL;
-
   return {
-    wins: totalW,
-    losses: totalL,
+    wins: totalW, losses: totalL,
     winPct: total > 0 ? Math.round(totalW / total * 100) : 0,
     recentFormCount: wins2026 + losses2026,
     baseline: { wins: baseW, losses: baseL },
     updatedAt: new Date().toISOString(),
   };
 }
-// Fetch full 2026 record via Gemini (runs weekly max)
+
 async function fetchSeasonFromGemini() {
   var gTxt = await geminiSearch(
-    "Record ATUAL e ATUALIZADO da temporada 2026 do tenista João Fonseca em SINGLES (simples) ATP até hoje. " +
-    "REGRA CRÍTICA: Conte APENAS jogos de SIMPLES (singles). " +
+    "Record ATUAL e ATUALIZADO da temporada 2026 do tenista Jo\u00e3o Fonseca em SINGLES (simples) ATP at\u00e9 hoje. " +
+    "REGRA CR\u00cdTICA: Conte APENAS jogos de SIMPLES (singles). " +
     "NUNCA conte jogos de DUPLAS (doubles). " +
     "Conte APENAS jogos de 2026 (desde 1 de janeiro). " +
     "Considere apenas jogos do circuito ATP principal, Challenger, Grand Slams e Masters 1000 em singles. " +
@@ -479,12 +380,13 @@ async function fetchSeasonFromGemini() {
   }
   return null;
 }
+
 // ===== PHASE 6: PLAYER DATA (career stats via Gemini) =====
 async function fetchPlayerData() {
   var gTxt = await geminiSearch(
-    "Dados ATUALIZADOS de abril 2026 sobre o tenista brasileiro João Fonseca. " +
+    "Dados ATUALIZADOS de abril 2026 sobre o tenista brasileiro Jo\u00e3o Fonseca. " +
     "Preciso: ranking ATP atual, career-high, record carreira singles (W-L total), " +
-    "record temporada 2026 (W-L), record por superfície (hard/clay/grass), prize money USD, títulos ATP. " +
+    "record temporada 2026 (W-L), record por superf\u00edcie (hard/clay/grass), prize money USD, t\u00edtulos ATP. " +
     "APENAS JSON: {\"ranking\":N,\"bestRanking\":N,\"wins\":N,\"losses\":N,\"seasonWins\":N,\"seasonLosses\":N," +
     "\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}},\"prizeMoney\":N,\"titles\":N}"
   );
@@ -494,7 +396,6 @@ async function fetchPlayerData() {
     return result;
   }
 
-  // Wikipedia fallback
   try {
     var res = await fetch("https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json&section=0", { headers: { "User-Agent": "FonsecaNews/1.0" } });
     if (!res.ok) return null;
@@ -504,7 +405,7 @@ async function fetchPlayerData() {
     var wp = {};
     function extractWL(field) {
       var p1 = new RegExp("\\|\\s*" + field + "\\s*=\\s*\\{\\{[^}]*wins\\s*=\\s*(\\d+)\\s*\\|\\s*losses\\s*=\\s*(\\d+)", "i");
-      var p2 = new RegExp("\\|\\s*" + field + "\\s*=\\s*(\\d+)\\s*[–\\-]\\s*(\\d+)", "i");
+      var p2 = new RegExp("\\|\\s*" + field + "\\s*=\\s*(\\d+)\\s*[\u2013\\-]\\s*(\\d+)", "i");
       var m = text.match(p1) || text.match(p2);
       return m ? { w: parseInt(m[1]), l: parseInt(m[2]) } : null;
     }
@@ -549,7 +450,6 @@ export default async function handler(req, res) {
     var lm = discovered.finished.length > 0 ? extractMatch(discovered.finished[0]) : null;
     var nm = discovered.upcoming.length > 0 ? extractMatch(discovered.upcoming[0]) : null;
 
-    // Cross-check: skip nm if same opponent as lm (SofaScore lag)
     if (nm && lm && nm.opponent_name && lm.opponent_name) {
       var nmL = stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
       var lmL = stripAccents(lm.opponent_name.split(" ").pop().toLowerCase());
@@ -559,8 +459,6 @@ export default async function handler(req, res) {
       }
     }
 
-    // CRITICAL: if lm has no score (SofaScore returned it as "notstarted"),
-    // fetch match/details to get real data
     if (lm && (!lm.result || lm.result === "") && lm.id) {
       log("lm has no score, fetching match/details for id=" + lm.id);
       var lmDetail = await sofaFetch("/v1/match/details?match_id=" + lm.id);
@@ -568,13 +466,11 @@ export default async function handler(req, res) {
         var lmEv = lmDetail.event || lmDetail;
         if (lmEv.homeTeam && lmEv.awayTeam) {
           var lmFromDetail = extractMatch(lmEv);
-          // Use detail data, but preserve id
           if (lmFromDetail.result || lmFromDetail.score) {
             lm = lmFromDetail;
             log("lm updated from details: " + lm.opponent_name + " " + lm.result + " " + lm.score);
           }
         }
-        // Also check for timestamp/round even if no score yet
         var ts = lmEv.startTimestamp || lmEv.timestamp || null;
         if (!lm.startTimestamp && ts) { lm.startTimestamp = ts; lm.date = new Date(ts * 1000).toISOString(); }
         var rObj = lmEv.roundInfo || lmEv.round || null;
@@ -582,25 +478,22 @@ export default async function handler(req, res) {
       }
     }
 
-    // Enrich with TOURNAMENT_MAP
     if (lm) enrichMatch(lm);
     if (nm) enrichMatch(nm);
-    // FORCE REFRESH: round/court/ts come directly from SofaScore every run
-    // This overrides stale KV values (like "Final" when it was actually "Oitavas")
+
+    // FORCE REFRESH round/court from SofaScore
     if (lm && lm.id) {
       var lmDetailForce = await sofaFetch("/v1/match/details?match_id=" + lm.id);
       if (lmDetailForce) {
         var lmEvForce = lmDetailForce.event || lmDetailForce;
-        // Round: use SofaScore's value if present (even if different from KV)
-        var rObj = lmEvForce.roundInfo || lmEvForce.round || null;
-        if (rObj && rObj.name) {
-          var translated = translateRound(rObj.name);
+        var rObjF = lmEvForce.roundInfo || lmEvForce.round || null;
+        if (rObjF && rObjF.name) {
+          var translated = translateRound(rObjF.name);
           if (translated && translated !== lm.round) {
-            log("round refresh: '" + lm.round + "' → '" + translated + "' (from SofaScore)");
+            log("round refresh: '" + lm.round + "' \u2192 '" + translated + "' (from SofaScore)");
             lm.round = translated;
           }
         }
-        // Same for court
         if (lmEvForce.courtName && lmEvForce.courtName !== lm.court) {
           lm.court = lmEvForce.courtName;
         }
@@ -627,7 +520,6 @@ export default async function handler(req, res) {
       var lmOpp = stripAccents(lm.opponent_name.split(" ").pop().toLowerCase());
       var kvOpp = stripAccents(exLastMatch.opponent_name.split(" ").pop().toLowerCase());
       if (lmOpp === kvOpp) {
-        // Same opponent — KV fills gaps in scan data
         ["date", "startTimestamp", "court", "opponent_ranking", "opponent_country",
          "opponent_id", "tournament_category", "broadcast", "result", "score"].forEach(function (f) {
           if ((!lm[f] || lm[f] === "") && exLastMatch[f] && exLastMatch[f] !== "") lm[f] = exLastMatch[f];
@@ -636,12 +528,9 @@ export default async function handler(req, res) {
         if (exLastMatch.id && !lm.id) lm.id = exLastMatch.id;
         log("merged lm with KV (" + lm.opponent_name + ")");
       } else {
-        // Different opponents — only use KV if scan's lm has NO result at all
         if (lm.result && lm.result !== "") {
-          // Scan has a real result — it's the latest match, keep it
           log("scan lm has result (" + lm.opponent_name + " " + lm.result + "), keeping over KV (" + exLastMatch.opponent_name + ")");
         } else if (exLastMatch.result && exLastMatch.result !== "") {
-          // Scan has no result, KV does — KV is authoritative
           log("scan lm has no result, using KV: " + exLastMatch.opponent_name + " " + exLastMatch.result);
           lm = exLastMatch;
           enrichMatch(lm);
@@ -672,7 +561,6 @@ export default async function handler(req, res) {
       steps.rankings = "cached";
     }
 
-    // Apply rankings to matches
     var rankingsLookup = buildRankingsLookup(exRankingsList);
     if (lm) applyRanking(lm, rankingsLookup);
     if (nm) applyRanking(nm, rankingsLookup);
@@ -685,7 +573,7 @@ export default async function handler(req, res) {
         opponent_name: lm.opponent_name, opponent_country: lm.opponent_country,
         tournament: lm.tournament_name, result: lm.result, score: lm.score, date: lm.date,
       });
-      steps.stats = ms ? Object.keys(ms.fonseca).length + "k" : "—";
+      steps.stats = ms ? Object.keys(ms.fonseca).length + "k" : "\u2014";
     }
 
     // ── ENRICH NEXT MATCH ──
@@ -695,12 +583,12 @@ export default async function handler(req, res) {
       nm = enriched.nm;
       h2hData = enriched.h2h;
       pregameFormData = enriched.pregameForm;
-      steps.enrich = "h2h=" + (h2hData ? "✓" : "—") + " form=" + (pregameFormData ? "✓" : "—");
+      steps.enrich = "h2h=" + (h2hData ? "\u2713" : "\u2014") + " form=" + (pregameFormData ? "\u2713" : "\u2014");
     }
 
     // ── OPPONENT PROFILE ──
     var op = await fetchOpponentProfile(nm, exOpp);
-    steps.opp = op ? (op.name || "ok") : "—";
+    steps.opp = op ? (op.name || "ok") : "\u2014";
 
     // ── WIN PROBABILITY ──
     var wp = null;
@@ -712,7 +600,7 @@ export default async function handler(req, res) {
     if (nm && nm.opponent_name !== "A definir" && (!oddsFresh || oppChanged || !hasOdds)) {
       wp = await fetchWinProb(nm);
       await kv.set("fn:lastOddsCheck", String(now), { ex: 86400 });
-      steps.odds = wp ? wp.fonseca + "%" : "—";
+      steps.odds = wp ? wp.fonseca + "%" : "\u2014";
     } else {
       try { var exWp = await kv.get("fn:winProb"); if (exWp) wp = pk(exWp); } catch (e) { }
       steps.odds = wp ? wp.fonseca + "%(c)" : "skip";
@@ -737,7 +625,6 @@ export default async function handler(req, res) {
       return { result: d.result, score: d.score, opponent_name: d.opponent_name, opponent_ranking: d.opponent_ranking || null, tournament: d.tournament_name, round: d.round || "", date: d.date };
     }).filter(function (f) { return f.score && f.score.length > 1; });
 
-    // Merge with existing form
     if (exForm && Array.isArray(exForm)) {
       var keys = new Set(form.map(function (m) { return m.opponent_name + "|" + m.score; }));
       exForm.forEach(function (m) {
@@ -787,7 +674,7 @@ export default async function handler(req, res) {
     if (gaps.length > 0) {
       log("sweep: " + gaps.join(", "));
       var sweepTxt = await geminiSearch(
-        "Dados de abril 2026 sobre João Fonseca. Preciso: " + gaps.join("; ") + ". " +
+        "Dados de abril 2026 sobre Jo\u00e3o Fonseca. Preciso: " + gaps.join("; ") + ". " +
         "JSON: {\"ranking\":N,\"wins\":N,\"losses\":N,\"seasonWins\":N,\"seasonLosses\":N," +
         "\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}}," +
         "\"prizeMoney\":N,\"titles\":N,\"matchDate\":\"ISO_OR_NULL\"}"
@@ -805,7 +692,7 @@ export default async function handler(req, res) {
         steps.sweep = gaps.length + " filled";
       }
     } else {
-      steps.sweep = "—";
+      steps.sweep = "\u2014";
     }
 
     // ── VALIDATE ──
@@ -825,7 +712,6 @@ export default async function handler(req, res) {
     }
 
     // ── KV WRITE ──
-    // FORCE apply rankings right before KV write (ensure no merge overwrote them)
     var rankingsLookup2 = buildRankingsLookup(exRankingsList);
     if (lm && !lm.opponent_ranking && lm.opponent_name) {
       var lmLn = stripAccents(lm.opponent_name.split(" ").pop().toLowerCase());
@@ -835,7 +721,7 @@ export default async function handler(req, res) {
       var nmLn = stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
       if (rankingsLookup2[nmLn]) { nm.opponent_ranking = rankingsLookup2[nmLn]; log("forced nm ranking: #" + nm.opponent_ranking); }
     }
-    // PROTECTIVE WRITE: never overwrite good data with null/empty
+
     function protectData(newData, existingData) {
       if (!newData || !existingData) return newData;
       var old = typeof existingData === "string" ? JSON.parse(existingData) : existingData;
@@ -849,8 +735,7 @@ export default async function handler(req, res) {
       }
       return newData;
     }
-    // === GOLDEN RULE: DATA NEVER REGRESSES ===
-    // Read current KV, keep any field that new data lost
+
     async function protect(key, newData) {
       if (!newData) return newData;
       try {
@@ -858,8 +743,6 @@ export default async function handler(req, res) {
         if (!raw) return newData;
         var old = typeof raw === "string" ? JSON.parse(raw) : raw;
         if (!old || typeof old !== "object") return newData;
-
-        // Different match (different opponent) → keep newer one entirely
         if (old.opponent_name && newData.opponent_name && old.opponent_name !== newData.opponent_name) {
           if (old.date && newData.date && new Date(old.date) > new Date(newData.date)) {
             log("protect: keeping newer " + old.opponent_name + " over older " + newData.opponent_name);
@@ -867,22 +750,14 @@ export default async function handler(req, res) {
           }
           return newData;
         }
-
-        // Same match: two categories of fields
-        // STICKY: once set, never lose (score, result, opponent_id, etc)
-        // REFRESHABLE: always accept new non-empty value from SofaScore (round, court)
         var REFRESHABLE = ["round", "court", "tournament_name", "tournament_category", "surface", "broadcast", "date", "startTimestamp"];
-
         for (var f in old) {
           var isRefreshable = REFRESHABLE.indexOf(f) !== -1;
           if (isRefreshable) {
-            // If new has a non-empty value, use it. If new is empty, keep old.
             if (newData[f] === null || newData[f] === undefined || newData[f] === "" || newData[f] === 0) {
               newData[f] = old[f];
             }
-            // else: new value wins (fresh from SofaScore)
           } else {
-            // Sticky: preserve old if new is empty
             if (old[f] !== null && old[f] !== undefined && old[f] !== "" && old[f] !== 0) {
               if (newData[f] === null || newData[f] === undefined || newData[f] === "" || newData[f] === 0) {
                 newData[f] = old[f];
@@ -893,21 +768,22 @@ export default async function handler(req, res) {
       } catch(e) {}
       return newData;
     }
+
     if (lm) lm = await protect("fn:lastMatch", lm);
     if (nm) nm = await protect("fn:nextMatch", nm);
     if (ms) ms = await protect("fn:matchStats", ms);
     if (!wp) { try { var kWp = await kv.get("fn:winProb"); if (kWp) wp = typeof kWp === "string" ? JSON.parse(kWp) : kWp; } catch(e){} }
+
     var w = [];
-// Protect against data regression
+
     if (lm) lm = protectData(lm, await kv.get("fn:lastMatch"));
     if (nm) nm = protectData(nm, await kv.get("fn:nextMatch"));
-    if (wp) { /* keep wp */ } else { try { var exWp3 = await kv.get("fn:winProb"); if (exWp3) wp = typeof exWp3 === "string" ? JSON.parse(exWp3) : exWp3; } catch(e){} }
-    // lastMatch — merge already happened in classify phase
+    if (!wp) { try { var exWp3 = await kv.get("fn:winProb"); if (exWp3) wp = typeof exWp3 === "string" ? JSON.parse(exWp3) : exWp3; } catch(e){} }
+
     if (lm) {
       w.push(kv.set("fn:lastMatch", JSON.stringify(lm), { ex: T7 }));
     }
 
-    // nextMatch
     if (nm) {
       w.push(kv.set("fn:nextMatch", JSON.stringify(nm), { ex: T7 }));
       try { await kv.del("fn:nextTournament"); } catch (e) { }
@@ -921,16 +797,13 @@ export default async function handler(req, res) {
       }), { ex: T2 }));
     }
 
-    // matchStats
     if (ms && lm) {
       var statsOppMatch = ms.opponent_name && lm.opponent_name && ms.opponent_name.split(" ").pop() === lm.opponent_name.split(" ").pop();
       if (statsOppMatch || !ms.opponent_name) w.push(kv.set("fn:matchStats", JSON.stringify(ms), { ex: T7 }));
     }
 
-    // recentForm
     if (form.length > 0) w.push(kv.set("fn:recentForm", JSON.stringify(form), { ex: T7 }));
 
-    // Player data
     if (wiki) {
       if (wiki.ranking) w.push(kv.set("fn:ranking", JSON.stringify({ ranking: wiki.ranking, bestRanking: wiki.bestRanking || null, updatedAt: new Date().toISOString() }), { ex: T7 }));
       if (wiki.prizeMoney) w.push(kv.set("fn:prizeMoney", JSON.stringify({ amount: wiki.prizeMoney }), { ex: T7 }));
@@ -940,25 +813,22 @@ export default async function handler(req, res) {
           var sW = (wiki.surface.hard ? wiki.surface.hard.w : 0) + (wiki.surface.clay ? wiki.surface.clay.w : 0) + (wiki.surface.grass ? wiki.surface.grass.w : 0);
           if (sW > cW) { cW = sW; cL = (wiki.surface.hard ? wiki.surface.hard.l : 0) + (wiki.surface.clay ? wiki.surface.clay.l : 0) + (wiki.surface.grass ? wiki.surface.grass.l : 0); }
         }
-        }
+        w.push(kv.set("fn:careerStats", JSON.stringify({ wins: cW, losses: cL, winPct: (cW + cL) > 0 ? Math.round(cW / (cW + cL) * 100) : 0, surface: wiki.surface || null, titles: wiki.titles || null }), { ex: T7 }));
+      }
     }
-    // ── SEASON (never-overwrite, Gemini weekly + recentForm daily) ──
+
+    // ── SEASON ──
     try {
       var exSeason = await kv.get("fn:season");
       var parsedSeason = exSeason ? (typeof exSeason === "string" ? JSON.parse(exSeason) : exSeason) : null;
-
-      // Need Gemini baseline? Only if we have no baseline or baseline is >7d old
       var needsBaseline = !parsedSeason || !parsedSeason.baseline ||
         !parsedSeason.baselineUpdatedAt ||
         (now - new Date(parsedSeason.baselineUpdatedAt).getTime()) > (7 * H24);
-
       var baseline = parsedSeason && parsedSeason.baseline ? parsedSeason.baseline : null;
       var baselineUpdatedAt = parsedSeason ? parsedSeason.baselineUpdatedAt : null;
-
       if (needsBaseline) {
         var geminiTotal = await fetchSeasonFromGemini();
         if (geminiTotal) {
-          // Compute what's NOT in recentForm = baseline
           var recentWins = 0, recentLosses = 0;
           var yearStart = new Date("2026-01-01T00:00:00Z").getTime();
           form.forEach(function(m) {
@@ -974,15 +844,12 @@ export default async function handler(req, res) {
           log("season baseline updated: " + newBaseW + "W-" + newBaseL + "L (Gemini total: " + geminiTotal.wins + "-" + geminiTotal.losses + ", recentForm: " + recentWins + "-" + recentLosses + ")");
         }
       }
-      // Calculate final season from baseline + recentForm
       var seasonToWrite = calculateSeason(form, { baseline: baseline });
       if (seasonToWrite) {
         seasonToWrite.baselineUpdatedAt = baselineUpdatedAt || new Date().toISOString();
-
-        // GOLDEN RULE: never let season go DOWN
         if (parsedSeason && parsedSeason.wins !== undefined) {
           if ((seasonToWrite.wins + seasonToWrite.losses) < (parsedSeason.wins + parsedSeason.losses)) {
-            log("season would regress (" + seasonToWrite.wins + "-" + seasonToWrite.losses + " < " + parsedSeason.wins + "-" + parsedSeason.losses + "), keeping existing");
+            log("season would regress, keeping existing");
             seasonToWrite = parsedSeason;
           }
         }
@@ -1003,7 +870,7 @@ export default async function handler(req, res) {
 
     var elapsed = Date.now() - start;
     log("Done " + elapsed + "ms | " + JSON.stringify(steps));
-    if (elapsed > 50000) log("⚠ WARNING: " + elapsed + "ms > 50s");
+    if (elapsed > 50000) log("\u26a0 WARNING: " + elapsed + "ms > 50s");
     res.status(200).json({ ok: true, elapsed: elapsed + "ms", steps: steps });
 
   } catch (e) {
