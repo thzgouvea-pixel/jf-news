@@ -420,18 +420,6 @@ export default function JoaoFonsecaNews() {
 )}
 
         {recentForm && recentForm.length > 0 && <Fonsecometro recentForm={recentForm} />}
-
-       {hasNextMatch && (
-        <>
-        <section style={{ padding: "8px 0 0" }}>
-          ...NextDuelCard...
-        </section>
-        <section style={{ padding: "12px 0 0" }}>
-          ...LastMatch/PlayerBlock...
-        </section>
-        <NextStopCard nextMatch={dm} lastMatch={dl} atpCalendar={atpCalendar} />
-        </>
-)}
           </div>
         </section>
         <section style={{ padding: "12px 0 0" }}>
@@ -450,7 +438,6 @@ export default function JoaoFonsecaNews() {
           <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} bracketUrl={bracketUrl} />
           </div>
         </section>
-        <NextStopCard nextMatch={dm} lastMatch={dl} atpCalendar={atpCalendar} />
         <section style={{ padding: "12px 0 0" }}>
           <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
           {highlightVideo && highlightVideo.videoId ? (
@@ -460,6 +447,7 @@ export default function JoaoFonsecaNews() {
           )}
           </div>
         </section>
+        <NextStopCard nextMatch={dm} lastMatch={dl} atpCalendar={atpCalendar} />
         </>
 )}
 <section style={{ padding: "28px 0 0" }}>
