@@ -56,6 +56,7 @@ export default async function handler(req, res) {
       getKV("fn:predict:next"),
       getKV("fn:highlight-video"),
       getKV("fn:bracketUrl"),
+      getKV("fn:atpCalendar"),
       getKV("fn:h2h"),
       getKV("fn:pregameForm"),
     ]);
@@ -80,6 +81,7 @@ export default async function handler(req, res) {
     var predictData = results[17];
     var highlightVideo = results[18];
     var bracketUrl = results[19];
+    var atpCalendar = results[XX];
     var h2h = results[20];
     var pregameForm = results[21];
 
@@ -112,6 +114,7 @@ export default async function handler(req, res) {
       winProb: winProb || null,
       biography: biography || null,
       bracketUrl: bracketUrl || null,
+      atpCalendar: atpCalendar || null,
       tournamentFacts: tournamentFacts || null,
       opponentProfile: opponentProfile || null,
       prizeMoney: (prizeMoney && prizeMoney.amount != null) ? prizeMoney.amount : null,
