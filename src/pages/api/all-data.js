@@ -81,9 +81,9 @@ export default async function handler(req, res) {
     var predictData = results[17];
     var highlightVideo = results[18];
     var bracketUrl = results[19];
-    var atpCalendar = results[XX];
-    var h2h = results[20];
-    var pregameForm = results[21];
+    var atpCalendar = results[20];
+    var h2h = results[21];
+    var pregameForm = results[22];
 
     var parse = function(val) {
       if (!val) return null;
