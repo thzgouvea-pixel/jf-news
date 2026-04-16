@@ -276,7 +276,12 @@ export default async function handler(req, res) {
         var promoText = PROMO_TWEETS[promoIdx];
 
         try {
-          var promoResult = await postWithLinkReply(promoText, "🔗 fonsecanews.com.br");
+          var promoMain = promoText;
+          if (!promoMain.includes("#") && promoMain.length + 30 <= 280) {
+            promoMain = promoMain + "\n\n#JoãoFonseca #TenisBrasil";
+          }
+          var promoReply = "🔗 www.fonsecanews.com.br";
+          var promoResult = await postWithLinkReply(promoMain, promoReply);
           lastPromos.push(promoIdx);
           if (lastPromos.length > 5) lastPromos = lastPromos.slice(-5);
           await kv.set("tw:promo_history", JSON.stringify(lastPromos), { ex: 604800 });
