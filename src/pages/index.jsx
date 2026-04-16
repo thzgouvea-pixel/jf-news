@@ -133,7 +133,7 @@ export default function JoaoFonsecaNews() {
   var _nextTournament = useState(null); var nextTournament = _nextTournament[0]; var setNextTournament = _nextTournament[1];
   var _showOppPopup = useState(false); var showOppPopup = _showOppPopup[0]; var setShowOppPopup = _showOppPopup[1];
 
-  var initDone = useRef(false);
+  var initDone = useRef(false); var nextMatchRef = useRef(null);
 
   var handlePushSubscribe = function() {
     if (pushLoading || pushEnabled) return;
@@ -212,9 +212,14 @@ export default function JoaoFonsecaNews() {
           }
         } else {
           setLiveMatch(null);
-          // Switch to slow polling when not live
-          if (liveInterval !== 300000) {
-            liveInterval = 300000;
+          var desiredInterval = 300000;
+          var nmRef = nextMatchRef.current;
+          if (nmRef && nmRef.startTimestamp) {
+            var msToMatch = nmRef.startTimestamp * 1000 - Date.now();
+            if (msToMatch > 0 && msToMatch < 3600000) desiredInterval = 120000;
+          }
+          if (liveInterval !== desiredInterval) {
+            liveInterval = desiredInterval;
             clearInterval(iv);
             iv = setInterval(function() { if (!document.hidden) pollLive(); }, liveInterval);
           }
@@ -228,7 +233,7 @@ export default function JoaoFonsecaNews() {
     return function() { clearInterval(iv); };
   }, []);
 
-  useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 60000); return function() { clearTimeout(t); }; }, [popupDismissed]);
+  useEffect(function() { if (popupDismissed) return; var t = setTimeout(function() { setShowInstallPopup(true); }, 60000); return function() { clearTimeout(t); }; }, [popupDismissed]); useEffect(function() { nextMatchRef.current = nextMatch; }, [nextMatch]);
 
   useEffect(function() {
     var handler = function(e) { e.preventDefault(); setDeferredPrompt(e); setShowInstallBanner(true); };
