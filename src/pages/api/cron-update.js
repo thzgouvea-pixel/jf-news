@@ -174,25 +174,37 @@ async function enrichNextMatch(nm) {
           "Responda APENAS com o nome da quadra em uma \u00fanica linha, sem explica\u00e7\u00f5es. " +
           "Exemplos v\u00e1lidos: Center Court, Court 1, Centre Court, Pista Central, Court Philippe-Chatrier. " +
           "Se n\u00e3o souber com certeza, responda apenas: DESCONHECIDO";
-        async function fetchCalendarFromGemini() {
-  var gTxt = await geminiSearch(
-    "Liste os torneios ATP de tenis que Joao Fonseca jogou ou vai jogar em 2026. " +
-    "Responda SOMENTE com um JSON array. Nenhum texto antes ou depois. " +
-    "Formato: [{\"name\":\"Australian Open\",\"cat\":\"Grand Slam\",\"surface\":\"Duro\",\"city\":\"Melbourne\",\"country\":\"Australia\",\"start\":\"2026-01-18\",\"end\":\"2026-02-01\"}] " +
-    "Inclua Grand Slams, Masters 1000, ATP 500 e ATP 250. Superficie em portugues: Duro, Saibro ou Grama."
-  );
-  log("calendar raw: " + (gTxt ? gTxt.substring(0, 200) : "null"));
-  if (!gTxt) return null;
+  async function fetchCalendarFromGemini() {
+  var gk = process.env.GEMINI_API_KEY;
+  if (!gk) return null;
   try {
-    var cleaned = gTxt.replace(/```json|```/g, "").replace(/^\s*\n/gm, "").trim();
+    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text:
+          "Liste os torneios ATP de tenis que Joao Fonseca jogou ou provavelmente jogara em 2026. " +
+          "Inclua Grand Slams, Masters 1000, ATP 500, ATP 250. " +
+          "Superficie em portugues: Duro, Saibro ou Grama. " +
+          "Responda SOMENTE com JSON array, sem texto antes ou depois. " +
+          "Formato exato: [{\"name\":\"Australian Open\",\"cat\":\"Grand Slam\",\"surface\":\"Duro\",\"city\":\"Melbourne\",\"country\":\"Australia\",\"start\":\"2026-01-18\",\"end\":\"2026-02-01\"}]"
+        }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 4096 }
+      })
+    });
+    if (!r.ok) { log("calendar Gemini HTTP " + r.status); return null; }
+    var d = await r.json();
+    var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+    if (!parts) { log("calendar Gemini: no parts"); return null; }
+    var txt = "";
+    parts.forEach(function(p) { if (p.text) txt += p.text; });
+    log("calendar raw: " + txt.substring(0, 200));
+    if (!txt) return null;
+    var cleaned = txt.replace(/```json|```/g, "").trim();
     var arrMatch = cleaned.match(/\[[\s\S]*\]/);
-    if (!arrMatch) { log("calendar: no array found in response"); return null; }
+    if (!arrMatch) { log("calendar: no array found"); return null; }
     var arr = JSON.parse(arrMatch[0]);
-    if (!Array.isArray(arr)) { log("calendar: parsed but not array"); return null; }
-    log("calendar: parsed " + arr.length + " items");
-    if (arr.length < 3) return null;
+    if (!Array.isArray(arr) || arr.length < 3) { log("calendar: too few items (" + (arr ? arr.length : 0) + ")"); return null; }
     var valid = arr.filter(function(t) { return t.name && t.start; });
-    if (valid.length < 3) return null;
     var monthNames = ["JAN","FEV","MAR","ABR","MAI","JUN","JUL","AGO","SET","OUT","NOV","DEZ"];
     var mShort = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
     valid.forEach(function(t) {
@@ -209,7 +221,7 @@ async function enrichNextMatch(nm) {
     log("calendar Gemini: " + valid.length + " tournaments");
     return valid;
   } catch(e) {
-    log("calendar parse error: " + e.message);
+    log("calendar error: " + e.message);
     return null;
   }
 }
