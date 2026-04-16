@@ -89,7 +89,7 @@ var getESPNImage = function(name) {
 var getSofaScoreImage = function(name, sofascoreId) {
   var p = findPlayer(name);
   var id = (p && p.data.sofa) ? p.data.sofa : sofascoreId;
-  return id ? "https://api.sofascore.app/api/v1/player/" + id + "/image" : null;
+  return id ? "/api/player-image?id=" + id : null;
 };
 
 const FONSECA_IMG = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
