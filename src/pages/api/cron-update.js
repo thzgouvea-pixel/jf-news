@@ -135,29 +135,19 @@ async function discoverMatches() {
 async function enrichNextMatch(nm) {
   if (!nm || !nm.id) return { nm: nm, h2h: null, pregameForm: null };
 
-  // a) Event detail — court, confirmed time, round
-  // Correct RapidAPI path: /v1/match/details?match_id=ID
+  // a) Event detail — court, confirmed time, round (SofaScore primary)
   if (!nm.court || !nm.startTimestamp || !nm.round) {
     var detail = await sofaFetch("/v1/match/details?match_id=" + nm.id);
     if (detail) {
       var ev = detail.event || detail;
       if (!nm.court && ev.courtName) nm.court = ev.courtName;
       if (!nm.court && ev.venue) nm.court = ev.venue.name || "";
-      // SofaScore RapidAPI uses "timestamp" not "startTimestamp"
-      var ts = ev.startTimestamp || ev.timestamp || null;
-      if (!nm.startTimestamp && ts) {
-        nm.startTimestamp = ts;
-        nm.date = new Date(ts * 1000).toISOString();
+      if (!nm.startTimestamp && ev.startTimestamp) {
+        nm.startTimestamp = ev.startTimestamp;
+        nm.date = new Date(ev.startTimestamp * 1000).toISOString();
       }
-      // SofaScore RapidAPI uses "round" not "roundInfo"
-      var roundObj = ev.roundInfo || ev.round || null;
-      if (!nm.round && roundObj && roundObj.name) {
-        nm.round = translateRound(roundObj.name);
-      }
-      // Rankings come from team objects
-      if (!nm.opponent_ranking) {
-        var oppTeam = nm.isFonsecaHome ? ev.awayTeam : ev.homeTeam;
-        if (oppTeam && oppTeam.ranking) nm.opponent_ranking = oppTeam.ranking;
+      if (!nm.round && ev.roundInfo && ev.roundInfo.name) {
+        nm.round = translateRound(ev.roundInfo.name);
       }
       log("match details: court=" + (nm.court || "—") + " round=" + (nm.round || "—") + " ts=" + (nm.startTimestamp || "—"));
     } else {
@@ -165,8 +155,45 @@ async function enrichNextMatch(nm) {
     }
   }
 
+  // a2) GEMINI BACKUP for court (only when SofaScore returned empty + match imminent)
+  if (!nm.court && nm.startTimestamp && nm.opponent_name && nm.opponent_name !== "A definir") {
+    var hoursUntil = (nm.startTimestamp * 1000 - Date.now()) / 3600000;
+    if (hoursUntil > 0 && hoursUntil < 48) {
+      // Check cache first
+      var courtCacheKey = "fn:gemini:court:" + nm.id;
+      var cached = null;
+      try { cached = await kv.get(courtCacheKey); } catch (e) {}
+      if (cached && typeof cached === "string" && cached.length > 0 && cached.length < 50) {
+        nm.court = cached;
+        log("court Gemini (cached): " + cached);
+      } else {
+        var matchDate = new Date(nm.startTimestamp * 1000).toISOString().split("T")[0];
+        var prompt = "Tenista J\u00e3o Fonseca joga contra " + nm.opponent_name + " no torneio " +
+          (nm.tournament_name || "ATP") + " no dia " + matchDate + ". " +
+          "Qual o nome da QUADRA (court) onde esse jogo espec\u00edfico ser\u00e1 disputado? " +
+          "Responda APENAS com o nome da quadra em uma \u00fanica linha, sem explica\u00e7\u00f5es. " +
+          "Exemplos v\u00e1lidos: Center Court, Court 1, Centre Court, Pista Central, Court Philippe-Chatrier. " +
+          "Se n\u00e3o souber com certeza, responda apenas: DESCONHECIDO";
+        var gTxt = await geminiSearch(prompt);
+        if (gTxt) {
+          var clean = gTxt.trim().replace(/["'`]/g, "").split("\n")[0].trim();
+          // Validate: not empty, not too long, not a "don't know" response
+          var invalidResponses = ["desconhecido", "n\u00e3o sei", "a definir", "n/a", "nao sei", "unknown", "tbd"];
+          var isInvalid = !clean || clean.length < 3 || clean.length > 50 ||
+            invalidResponses.some(function(r) { return clean.toLowerCase().includes(r); });
+          if (!isInvalid) {
+            nm.court = clean;
+            try { await kv.set(courtCacheKey, clean, { ex: 43200 }); } catch (e) {}
+            log("court Gemini: " + clean);
+          } else {
+            log("court Gemini: invalid response ('" + clean.substring(0, 30) + "')");
+          }
+        }
+      }
+    }
+  }
+
   // b) H2H — NOT available on sofascore6 RapidAPI wrapper
-  // Will be implemented via Gemini or match history in future
   var h2h = null;
 
   // c) Pregame form — NOT available on sofascore6 RapidAPI wrapper
