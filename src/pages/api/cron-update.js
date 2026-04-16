@@ -482,6 +482,27 @@ export default async function handler(req, res) {
     // Enrich with TOURNAMENT_MAP
     if (lm) enrichMatch(lm);
     if (nm) enrichMatch(nm);
+    // FORCE REFRESH: round/court/ts come directly from SofaScore every run
+    // This overrides stale KV values (like "Final" when it was actually "Oitavas")
+    if (lm && lm.id) {
+      var lmDetailForce = await sofaFetch("/v1/match/details?match_id=" + lm.id);
+      if (lmDetailForce) {
+        var lmEvForce = lmDetailForce.event || lmDetailForce;
+        // Round: use SofaScore's value if present (even if different from KV)
+        var rObj = lmEvForce.roundInfo || lmEvForce.round || null;
+        if (rObj && rObj.name) {
+          var translated = translateRound(rObj.name);
+          if (translated && translated !== lm.round) {
+            log("round refresh: '" + lm.round + "' → '" + translated + "' (from SofaScore)");
+            lm.round = translated;
+          }
+        }
+        // Same for court
+        if (lmEvForce.courtName && lmEvForce.courtName !== lm.court) {
+          lm.court = lmEvForce.courtName;
+        }
+      }
+    }
 
     // ── READ KV (parallel) ──
     var kvReads = await Promise.all([
@@ -734,19 +755,35 @@ export default async function handler(req, res) {
         if (!raw) return newData;
         var old = typeof raw === "string" ? JSON.parse(raw) : raw;
         if (!old || typeof old !== "object") return newData;
-        // If different match, keep the NEWER one entirely
+
+        // Different match (different opponent) → keep newer one entirely
         if (old.opponent_name && newData.opponent_name && old.opponent_name !== newData.opponent_name) {
           if (old.date && newData.date && new Date(old.date) > new Date(newData.date)) {
             log("protect: keeping newer " + old.opponent_name + " over older " + newData.opponent_name);
             return old;
           }
-          return newData; // new match is newer, use it without merging fields
+          return newData;
         }
-        // Same match: preserve good fields
+
+        // Same match: two categories of fields
+        // STICKY: once set, never lose (score, result, opponent_id, etc)
+        // REFRESHABLE: always accept new non-empty value from SofaScore (round, court)
+        var REFRESHABLE = ["round", "court", "tournament_name", "tournament_category", "surface", "broadcast", "date", "startTimestamp"];
+
         for (var f in old) {
-          if (old[f] !== null && old[f] !== undefined && old[f] !== "" && old[f] !== 0) {
+          var isRefreshable = REFRESHABLE.indexOf(f) !== -1;
+          if (isRefreshable) {
+            // If new has a non-empty value, use it. If new is empty, keep old.
             if (newData[f] === null || newData[f] === undefined || newData[f] === "" || newData[f] === 0) {
               newData[f] = old[f];
+            }
+            // else: new value wins (fresh from SofaScore)
+          } else {
+            // Sticky: preserve old if new is empty
+            if (old[f] !== null && old[f] !== undefined && old[f] !== "" && old[f] !== 0) {
+              if (newData[f] === null || newData[f] === undefined || newData[f] === "" || newData[f] === 0) {
+                newData[f] = old[f];
+              }
             }
           }
         }
