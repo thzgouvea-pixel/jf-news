@@ -285,9 +285,8 @@ export default async function handler(req, res) {
     }
 
     // ===== 2. NEWS =====
-    var host = req.headers && req.headers.host || "fonsecanews.com.br";
-    var protocol = (req.headers && req.headers["x-forwarded-proto"] === "http") ? "http" : "https";
-    if (!host.includes("fonsecanews") && !host.includes("vercel.app")) host = "fonsecanews.com.br";
+    var host = "fonsecanews.com.br";
+    var protocol = "https";
 
     var newsRes = await fetch(protocol + "://" + host + "/api/news");
     if (!newsRes.ok) throw new Error("News API " + newsRes.status);
