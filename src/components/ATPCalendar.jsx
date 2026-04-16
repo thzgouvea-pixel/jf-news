@@ -38,11 +38,13 @@ export default function ATPCalendar(props) {
   var lastMatch = props.lastMatch;
   var nextMatch = props.nextMatch;
   var nextTournament = props.nextTournament;
+  var dynamicCalendar = props.atpCalendar && props.atpCalendar.tournaments && props.atpCalendar.tournaments.length >= 5 ? props.atpCalendar.tournaments : null;
   var now = new Date();
 
   var catColors2 = { "Grand Slam": "#6D35D0", "Masters 1000": "#c0392b", "ATP 500": "#2563EB", "Finals": "#b8860b" };
 
-  var events = CALENDAR.map(function(ev) {
+  var calSource = dynamicCalendar || CALENDAR;
+  var events = calSource.map(function(ev) {
     var tournStart = new Date(ev.start);
     var isPast = now > new Date(tournStart.getTime() + 14 * 86400000);
 
