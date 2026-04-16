@@ -57,7 +57,7 @@ async function discoverMatches() {
 
   // Parallel date scan
   var dayPromises = [];
-  for (var d = -3; d <= 7; d++) {
+  for (var d = -2; d <= 5; d++) {
     var ds = new Date(Date.now() + d * 86400000).toISOString().split("T")[0];
     dayPromises.push(sofaFetch("/v1/match/list?sport_slug=tennis&date=" + ds));
   }
