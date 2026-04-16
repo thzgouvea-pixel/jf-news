@@ -23,7 +23,7 @@ async function geminiSearch(prompt) {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         tools: [{ google_search: {} }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+        generationConfig: { temperature: 0.1, maxOutputTokens: 4096 }
       })
     });
     if (r.ok) {
@@ -43,20 +43,11 @@ function parseGeminiJSON(txt) {
   if (!txt) return null;
   try {
     var cleaned = txt.replace(/```json|```/g, "").trim();
-    var arrMatch = cleaned.match(/\[[\s\S]*\]/);
-    if (!arrMatch) {
-      // Try to salvage truncated array — close it manually
-      if (cleaned.indexOf("[") !== -1) {
-        var lastBrace = cleaned.lastIndexOf("}");
-        if (lastBrace > 0) {
-          var salvaged = cleaned.substring(cleaned.indexOf("["), lastBrace + 1) + "]";
-          try { arrMatch = [salvaged]; } catch(e) {}
-        }
-      }
-      if (!arrMatch) {
-        return res.status(500).json({ error: "No JSON array found", raw: txt.substring(0, 500) });
-      }
-    }
+    var match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) return JSON.parse(match[0]);
+  } catch (e) { log("Gemini parse error: " + e.message); }
+  return null;
+}
 
 // ===== PHASE 1: DISCOVER =====
 async function discoverMatches() {
