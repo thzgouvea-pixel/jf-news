@@ -61,15 +61,16 @@ export default async function handler(req, res) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text:
-          "Liste TODOS os torneios ATP de tenis que Joao Fonseca jogou ou provavelmente jogara em 2026. " +
+          "Pesquise no Google e me diga: quais torneios ATP de tenis Joao Fonseca jogou ou provavelmente jogara em 2026? " +
+          "PESQUISE AS DATAS REAIS de cada torneio no site oficial da ATP (atptour.com). NAO invente datas de memoria. " +
           "Inclua Grand Slams, Masters 1000, ATP 500, ATP 250 que ele participou ou tem chance de participar. " +
           "Superficie em portugues: Duro, Saibro ou Grama. " +
           "Responda SOMENTE com JSON array COMPACTO em uma unica linha, sem quebras de linha, sem espacos extras, sem markdown. " +
           "Formato: [{\"name\":\"Australian Open\",\"cat\":\"Grand Slam\",\"surface\":\"Duro\",\"city\":\"Melbourne\",\"country\":\"Australia\",\"start\":\"2026-01-18\",\"end\":\"2026-02-01\"}]"
         }] }],
+        tools: [{ google_search: {} }],
         generationConfig: { temperature: 0.1, maxOutputTokens: 16384 }
       })
-    });
 
     if (!r.ok) {
       var errText = await r.text();
