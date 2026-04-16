@@ -89,7 +89,6 @@ export default function JoaoFonsecaNews() {
   var _liveMatch = useState(null); var liveMatch = _liveMatch[0]; var setLiveMatch = _liveMatch[1];
   var _highlightVideo = useState(null); var highlightVideo = _highlightVideo[0]; var setHighlightVideo = _highlightVideo[1];
   var _bracketUrl = useState(null); var bracketUrl = _bracketUrl[0]; var setBracketUrl = _bracketUrl[1];
-  var _bracketUrl = useState(null); var bracketUrl = _bracketUrl[0]; var setBracketUrl = _bracketUrl[1];
   var _winProb = useState(null); var winProb = _winProb[0]; var setWinProb = _winProb[1];
   var _visibleCount = useState(12); var visibleCount = _visibleCount[0]; var setVisibleCount = _visibleCount[1];
   var _fb = useState(function() { try { return localStorage.getItem("fn_site_fb"); } catch(e) { return null; } });
@@ -441,7 +440,7 @@ export default function JoaoFonsecaNews() {
         <>
         <section style={{ padding: "8px 0 0" }}>
           <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
-          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} />
+          <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} bracketUrl={bracketUrl} />
           </div>
         </section>
         <section style={{ padding: "12px 0 0" }}>
