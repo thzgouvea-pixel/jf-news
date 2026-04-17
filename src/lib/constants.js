@@ -58,7 +58,7 @@ export const PLAYER_DB = {
   "Khachanov": { slug: "ke29", espn: "3112", sofa: null },
   "Berrettini": { slug: "bk40", espn: "3316", sofa: 205641 },
   "Diallo": { slug: "d0f6", espn: "3885", sofa: 280151 },
-  "Shelton": { slug: "s0jy", espn: "11712", sofa: 963814 },
+  "Shelton": { slug: "s0s1", espn: "11712", sofa: 963814 },
   "Draper": { slug: "d0bi", espn: "4580", sofa: 366258 },
   "Tiafoe": { slug: "td51", espn: "3263", sofa: 235141 },
   "Musetti": { slug: "m0ej", espn: "4228", sofa: 367702 },
