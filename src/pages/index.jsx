@@ -691,7 +691,6 @@ export default function JoaoFonsecaNews() {
 
       {/* ===== PWA INSTALL BOTTOM SHEET ===== */}
       {showAutoInstall && <PWAInstallSheet onClose={function(){ setShowAutoInstall(false); }} onInstall={handleInstall} deferredPrompt={deferredPrompt} />}
-      )}
 
     </div>
   );
