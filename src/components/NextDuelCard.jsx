@@ -216,11 +216,24 @@ export default function NextDuelCard(props) {
   var setsWon = liveScore.sets_won || {};
   var liveServing = liveScore.serving || "";
 
-  // Live stats extraction
+  // Live stats extraction (internal use only, not displayed)
   var liveStats = isLive && liveData.stats ? liveData.stats : null;
 
   // Time since last update (hooks already declared above)
   var checkedSecsAgo = isLive && liveData.checkedAt ? Math.floor((now - new Date(liveData.checkedAt).getTime()) / 1000) : null;
+
+  // Match elapsed time
+  var matchStartTs = isLive && liveData.startTimestamp ? liveData.startTimestamp : null;
+  var elapsedText = "";
+  if (matchStartTs) {
+    var elapsedMs = now - (matchStartTs * 1000);
+    if (elapsedMs > 0) {
+      var totalMin = Math.floor(elapsedMs / 60000);
+      var h = Math.floor(totalMin / 60);
+      var m = totalMin % 60;
+      elapsedText = h > 0 ? h + "h " + (m < 10 ? "0" : "") + m + "m" : m + "m";
+    }
+  }
 
   // Live court from liveData or match
   var liveCourt = (isLive && liveData.court) ? liveData.court : (match.court || null);
@@ -254,6 +267,7 @@ export default function NextDuelCard(props) {
             <>
               <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 8px #ef444480", animation: "pulse 1.5s ease-in-out infinite", display: "inline-block" }} />
               <span style={{ fontSize: 11, fontWeight: 800, color: "#ef4444", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Ao vivo</span>
+              {elapsedText && <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, marginLeft: 2 }}>· {elapsedText}</span>}
             </>
           ) : (
             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(79,195,247,0.7)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próximo jogo</span>
@@ -362,57 +376,6 @@ export default function NextDuelCard(props) {
               </div>
             </div>
           )}
-
-          {/* Live stats */}
-          {liveStats && (liveStats.fonseca || liveStats.opponent) && (function() {
-            var f = liveStats.fonseca || {};
-            var o = liveStats.opponent || {};
-            var fST = (f.firstserveaccuracy||f.first_serve_accuracy||0) + (f.secondserveaccuracy||f.second_serve_accuracy||0) + (f.doublefaults||f.double_faults||0);
-            var oST = (o.firstserveaccuracy||o.first_serve_accuracy||0) + (o.secondserveaccuracy||o.second_serve_accuracy||0) + (o.doublefaults||o.double_faults||0);
-            var f1pct = fST > 0 ? Math.round((f.firstserveaccuracy||f.first_serve_accuracy||0)/fST*100) : 0;
-            var o1pct = oST > 0 ? Math.round((o.firstserveaccuracy||o.first_serve_accuracy||0)/oST*100) : 0;
-            var f2t = (f.secondserveaccuracy||f.second_serve_accuracy||0) + (f.doublefaults||f.double_faults||0);
-            var o2t = (o.secondserveaccuracy||o.second_serve_accuracy||0) + (o.doublefaults||o.double_faults||0);
-            var fP1 = (f.firstserveaccuracy||0) > 0 ? Math.round((f.firstservepointsaccuracy||f.first_serve_points_accuracy||0)/(f.firstserveaccuracy||1)*100) : 0;
-            var oP1 = (o.firstserveaccuracy||0) > 0 ? Math.round((o.firstservepointsaccuracy||o.first_serve_points_accuracy||0)/(o.firstserveaccuracy||1)*100) : 0;
-            var fP2 = f2t > 0 ? Math.round((f.secondservepointsaccuracy||f.second_serve_points_accuracy||0)/f2t*100) : 0;
-            var oP2 = o2t > 0 ? Math.round((o.secondservepointsaccuracy||o.second_serve_points_accuracy||0)/o2t*100) : 0;
-            var fTot = (f.servicepointsscored||f.service_points_scored||0)+(f.receiverpointsscored||f.receiver_points_scored||0)||f.pointstotal||f.points_total||0;
-            var oTot = (o.servicepointsscored||o.service_points_scored||0)+(o.receiverpointsscored||o.receiver_points_scored||0)||o.pointstotal||o.points_total||0;
-            var rows = [
-              { label: "Aces", fVal: f.aces||0, oVal: o.aces||0 },
-              { label: "Duplas faltas", fVal: f.doublefaults||f.double_faults||0, oVal: o.doublefaults||o.double_faults||0, invert: true },
-              { label: "1º saque", fVal: f1pct, oVal: o1pct, pct: true },
-              { label: "Pts no 1º saque", fVal: fP1, oVal: oP1, pct: true },
-              { label: "Pts no 2º saque", fVal: fP2, oVal: oP2, pct: true },
-              { label: "Breaks salvos", fVal: f.breakpointssaved||f.break_points_saved||0, oVal: o.breakpointssaved||o.break_points_saved||0 },
-              { label: "Breaks feitos", fVal: f.breakpointsscored||f.break_points_scored||0, oVal: o.breakpointsscored||o.break_points_scored||0 },
-              { label: "Total de pontos", fVal: fTot, oVal: oTot },
-            ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
-            if (rows.length === 0) return null;
-            return (
-              <div style={{ margin: "10px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10, textAlign: "center" }}>Estatísticas ao vivo</div>
-                {rows.map(function(row, i) {
-                  var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
-                  var maxVal = Math.max(row.fVal, row.oVal, 1);
-                  return (
-                    <div key={i} style={{ marginBottom: i < rows.length - 1 ? 10 : 0 }}>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 3 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: fBetter ? GREEN : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 44 }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
-                        <span style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: "center", flex: 1 }}>{row.label}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: !fBetter ? "#ef4444" : "rgba(255,255,255,0.4)", fontFamily: SANS, width: 44, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
-                      </div>
-                      <div style={{ display: "flex", height: 3, gap: 3 }}>
-                        <div style={{ flex: 1, display: "flex", justifyContent: "flex-end" }}><div style={{ width: (row.pct ? row.fVal : Math.round(row.fVal/maxVal*100)) + "%", minWidth: 2, height: 3, borderRadius: 2, background: fBetter ? GREEN : "rgba(255,255,255,0.1)" }} /></div>
-                        <div style={{ flex: 1 }}><div style={{ width: (row.pct ? row.oVal : Math.round(row.oVal/maxVal*100)) + "%", minWidth: 2, height: 3, borderRadius: 2, background: !fBetter ? "#ef4444" : "rgba(255,255,255,0.1)" }} /></div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
 
           {/* Info grid: Quadra + Transmissão */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "12px 20px 0" }}>
