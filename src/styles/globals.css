@@ -72,3 +72,6 @@ nav::-webkit-scrollbar {
     display: none !important;
   }
 }
+@media all and (display-mode: standalone) {
+  .pwa-install-btn { display: none !important; }
+}
