@@ -125,24 +125,23 @@ async function discoverMatches() {
 async function enrichNextMatch(nm) {
   if (!nm || !nm.id) return { nm: nm, h2h: null, pregameForm: null };
 
-  // a) Event detail — court, confirmed time, round (SofaScore primary)
-  if (!nm.court || !nm.startTimestamp || !nm.round) {
-    var detail = await sofaFetch("/v1/match/details?match_id=" + nm.id);
-    if (detail) {
-      var ev = detail.event || detail;
-      if (!nm.court && ev.courtName) nm.court = ev.courtName;
-      if (!nm.court && ev.venue) nm.court = ev.venue.name || "";
-      if (!nm.startTimestamp && ev.startTimestamp) {
-        nm.startTimestamp = ev.startTimestamp;
-        nm.date = new Date(ev.startTimestamp * 1000).toISOString();
-      }
-      if (!nm.round && ev.roundInfo && ev.roundInfo.name) {
-        nm.round = translateRound(ev.roundInfo.name);
-      }
-      log("match details: court=" + (nm.court || "\u2014") + " round=" + (nm.round || "\u2014") + " ts=" + (nm.startTimestamp || "\u2014"));
-    } else {
-      log("match details: no data for id=" + nm.id);
+  // a) Event detail — ALWAYS refresh time/court/round from SofaScore
+  var detail = await sofaFetch("/v1/match/details?match_id=" + nm.id);
+  if (detail) {
+    var ev = detail.event || detail;
+    if (ev.courtName) nm.court = ev.courtName;
+    else if (!nm.court && ev.venue) nm.court = ev.venue.name || "";
+    if (ev.startTimestamp && ev.startTimestamp !== nm.startTimestamp) {
+      log("time refresh: " + (nm.startTimestamp || "?") + " -> " + ev.startTimestamp);
+      nm.startTimestamp = ev.startTimestamp;
+      nm.date = new Date(ev.startTimestamp * 1000).toISOString();
     }
+    if (ev.roundInfo && ev.roundInfo.name) {
+      nm.round = translateRound(ev.roundInfo.name);
+    }
+    log("match details: court=" + (nm.court || "\u2014") + " round=" + (nm.round || "\u2014") + " ts=" + (nm.startTimestamp || "\u2014"));
+  } else {
+    log("match details: no data for id=" + nm.id);
   }
 
   // a2) GEMINI BACKUP for court (only when SofaScore returned empty + match imminent)
