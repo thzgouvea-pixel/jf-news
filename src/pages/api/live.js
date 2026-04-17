@@ -145,6 +145,7 @@ export default async function handler(req, res) {
     var liveResult = {
       live: true, matchId: fonsecaMatch.id,
       status: status.description || "Em andamento",
+      startTimestamp: fonsecaMatch.startTimestamp || null,
       opponent: { name: opponent.shortName || opponent.name || "Oponente", country: opponent.country ? opponent.country.name : "" },
       score: { fonseca_sets: fSets, opponent_sets: oSets, sets_won: { fonseca: fSetsWon, opponent: oSetsWon }, current_game: currentGame, serving: serving },
       tournament: liveMapped ? liveMapped.name : liveTournName,
