@@ -315,7 +315,6 @@ export default function JoaoFonsecaNews() {
     if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
     try {
       var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
-      var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
       var alreadyTracked = localStorage.getItem("fn_standalone_tracked");
       if (isStandalone && !alreadyTracked) {
         fetch("/api/visitors?action=standalone", { method: "POST" }).catch(function() {});
@@ -389,7 +388,7 @@ export default function JoaoFonsecaNews() {
           <button className="pwa-install-btn" onClick={function(){ setShowAutoInstall(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "#FFCB05", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0, animation: "pulse 2s ease-in-out infinite", boxShadow: "0 0 8px #FFCB0540" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             </button>
-          <button onClick={handleRefresh}
+                    <button onClick={handleRefresh} disabled={loading} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, padding: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
           </button>
           </div>
