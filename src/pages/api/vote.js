@@ -3,10 +3,12 @@ import { kv } from "@vercel/kv";
 
 export default async function handler(req, res) {
   try {
-    // Calculate day of year for poll rotation
+    // Calculate ISO week for poll rotation (resets every Monday)
     var now = new Date();
-    var start = new Date(now.getFullYear(), 0, 0);
-    var dayOfYear = Math.floor((now - start) / 86400000);
+    var weekStart = new Date(now.getTime());
+    var dayOfWeek = weekStart.getDay() === 0 ? 7 : weekStart.getDay();
+    weekStart.setDate(weekStart.getDate() - dayOfWeek + 1);
+    var weekOfYear = Math.floor((weekStart - new Date(weekStart.getFullYear(), 0, 0)) / (7 * 86400000));
 
     if (req.method === "POST") {
       var body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
@@ -14,11 +16,11 @@ export default async function handler(req, res) {
       if (option !== "a" && option !== "b") {
         return res.status(400).json({ error: "option must be 'a' or 'b'" });
       }
-      var key = "fn:poll:" + dayOfYear;
+      var key = "fn:poll:week:" + weekStart.getFullYear() + "-" + weekOfYear;
       var current = await kv.get(key);
       var data = current ? (typeof current === "string" ? JSON.parse(current) : current) : { a: 0, b: 0 };
       data[option] = (data[option] || 0) + 1;
-      await kv.set(key, JSON.stringify(data), { ex: 86400 * 30 }); // 30 days expiry
+      await kv.set(key, JSON.stringify(data), { ex: 86400 * 14 }); // 14 days expiry (2 weeks)
       var total = data.a + data.b;
       return res.status(200).json({
         a: data.a,
@@ -32,7 +34,7 @@ export default async function handler(req, res) {
     // GET — return current results without voting
     if (req.method === "GET") {
       res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");
-      var key = "fn:poll:" + dayOfYear;
+      var key = "fn:poll:week:" + weekStart.getFullYear() + "-" + weekOfYear;
       var current = await kv.get(key);
       var data = current ? (typeof current === "string" ? JSON.parse(current) : current) : { a: 0, b: 0 };
       var total = data.a + data.b;
