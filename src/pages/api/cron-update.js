@@ -137,8 +137,19 @@ async function enrichNextMatch(nm) {
       nm.startTimestamp = newTs;
       nm.date = new Date(newTs * 1000).toISOString();
     }
-    if (ev.roundInfo && ev.roundInfo.name) {
-      nm.round = translateRound(ev.roundInfo.name);
+    var newRoundName = (ev.roundInfo && ev.roundInfo.name) || (ev.round && ev.round.name);
+    if (newRoundName) {
+      var translatedRound = translateRound(newRoundName);
+      if (translatedRound && translatedRound !== nm.round) {
+        log("round refresh: " + (nm.round || "?") + " -> " + translatedRound);
+        nm.round = translatedRound;
+      }
+    }
+    if (ev.status) {
+      if (ev.status.isPostponed) { nm.postponed = true; log("status: POSTPONED"); }
+      else nm.postponed = false;
+      if (ev.status.isCancelled) { nm.cancelled = true; log("status: CANCELLED"); }
+      else nm.cancelled = false;
     }
     log("match details: court=" + (nm.court || "\u2014") + " round=" + (nm.round || "\u2014") + " ts=" + (nm.startTimestamp || "\u2014"));
   } else {
