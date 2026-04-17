@@ -436,7 +436,6 @@ export default function JoaoFonsecaNews() {
             {[
               { label: "Biografia", href: "/biografia" },
               { label: "Ranking", action: function(){setShowRanking(true);} },
-              { label: "Chave", action: function(){setShowBracket(true);} },
               { label: "Conquistas", action: function(){setShowTitles(true);} },
               { label: "Feedback", action: function(){setShowFeedback(true);} },
               { label: "Sobre", href: "/sobre" },
