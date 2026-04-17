@@ -23,13 +23,13 @@ function calcHype(recentForm) {
   });
   var pct = Math.max(0, Math.min(100, Math.round(score)));
   var mood;
-  if (pct >= 90) mood = "Imparável";
-  else if (pct >= 80) mood = "Em grande fase";
-  else if (pct >= 70) mood = "Moral em alta";
-  else if (pct >= 60) mood = "Confiante";
-  else if (pct >= 50) mood = "Estável";
-  else if (pct >= 40) mood = "Oscilando";
-  else if (pct >= 30) mood = "Buscando ritmo";
+  if (pct >= 80) mood = "Imparável";
+  else if (pct >= 70) mood = "Em grande fase";
+  else if (pct >= 60) mood = "Moral em alta";
+  else if (pct >= 50) mood = "Confiante";
+  else if (pct >= 40) mood = "Estável";
+  else if (pct >= 30) mood = "Oscilando";
+  else if (pct >= 20) mood = "Buscando ritmo";
   else mood = "Fase de adaptação";
   return { pct: pct, mood: mood };
 }
@@ -38,7 +38,7 @@ export default function Fonsecometro({ recentForm }) {
   if (!recentForm || recentForm.length === 0) return null;
   var _show = useState(false); var showPopup = _show[0]; var setShowPopup = _show[1];
   var h = calcHype(recentForm);
-  var barColor = h.pct >= 70 ? "#22C55E" : (h.pct >= 50 ? "#EAB308" : (h.pct >= 30 ? "#F97316" : "#60A5FA"));
+  var barColor = h.pct >= 60 ? "#22C55E" : (h.pct >= 40 ? "#EAB308" : (h.pct >= 20 ? "#F97316" : "#60A5FA"));
   var wins = recentForm.slice(0, 10).filter(function(m) { return (m.result || "").toUpperCase() === "V"; }).length;
   var losses = recentForm.slice(0, 10).length - wins;
 
@@ -69,10 +69,10 @@ export default function Fonsecometro({ recentForm }) {
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
               {[
-                { color: "#22C55E", label: "70%+", desc: "Em alta — vitórias consistentes" },
-                { color: "#EAB308", label: "50-69%", desc: "Estável — resultados mistos" },
-                { color: "#F97316", label: "30-49%", desc: "Oscilando — buscando ritmo" },
-                { color: "#60A5FA", label: "0-29%", desc: "Fase de adaptação" },
+                { color: "#22C55E", label: "60%+", desc: "Em alta — vitórias consistentes" },
+                { color: "#EAB308", label: "40-59%", desc: "Estável — resultados mistos" },
+                { color: "#F97316", label: "20-39%", desc: "Oscilando — buscando ritmo" },
+                { color: "#60A5FA", label: "0-19%", desc: "Fase de adaptação" },
               ].map(function(s, i) {
                 return (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
