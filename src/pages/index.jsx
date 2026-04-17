@@ -99,7 +99,7 @@ export default function JoaoFonsecaNews() {
   var _showMaisMenu = useState(false); var showMaisMenu = _showMaisMenu[0]; var setShowMaisMenu = _showMaisMenu[1];
   var _tabBarHidden = useState(false); var tabBarHidden = _tabBarHidden[0]; var setTabBarHidden = _tabBarHidden[1];
   var _headerCompact = useState(false); var headerCompact = _headerCompact[0]; var setHeaderCompact = _headerCompact[1];
-
+  var _isStandalone = useState(false); var isStandalone = _isStandalone[0]; var setIsStandalone = _isStandalone[1];
   useEffect(function() {
     var lastScrollY = window.scrollY;
     var scrollDelta = 0;
@@ -114,6 +114,12 @@ export default function JoaoFonsecaNews() {
       setHeaderCompact(currentY > 60);
       lastScrollY = currentY;
     };
+    useEffect(function() {
+    try {
+      var standalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
+      setIsStandalone(!!standalone);
+    } catch(e) {}
+  }, []);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return function() { window.removeEventListener("scroll", handleScroll); };
   }, []);
@@ -385,6 +391,11 @@ export default function JoaoFonsecaNews() {
               </span>
             </div>
           </div>
+          {!isStandalone && (
+            <button onClick={function(){ setShowAutoInstall(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "#FFCB05", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0, animation: "pulse 2s ease-in-out infinite", boxShadow: "0 0 8px #FFCB0540" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            </button>
+          )}
           <button onClick={handleRefresh} disabled={loading} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, padding: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
           </button>
