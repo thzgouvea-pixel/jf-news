@@ -483,7 +483,7 @@ export default function JoaoFonsecaNews() {
             <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} bracketUrl={bracketUrl} />
           </div>
         </section>
-        <NextStopCard nextMatch={dm} lastMatch={dl} atpCalendar={atpCalendar} />
+        <NextStopCard nextMatch={dm} lastMatch={dl} atpCalendar={atpCalendar} nextTournament={nextTournament} />
         </>
 )}  
 
@@ -503,7 +503,7 @@ export default function JoaoFonsecaNews() {
           )}
           </div>
         </section>
-        <NextStopCard nextMatch={dm} lastMatch={dl} atpCalendar={atpCalendar} />
+        <NextStopCard nextMatch={dm} lastMatch={dl} atpCalendar={atpCalendar} nextTournament={nextTournament} />
         </>
 )}
 <section style={{ padding: "28px 0 0" }}>
