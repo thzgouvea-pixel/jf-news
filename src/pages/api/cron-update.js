@@ -131,10 +131,11 @@ async function enrichNextMatch(nm) {
     var ev = detail.event || detail;
     if (ev.courtName) nm.court = ev.courtName;
     else if (!nm.court && ev.venue) nm.court = ev.venue.name || "";
-    if (ev.startTimestamp && ev.startTimestamp !== nm.startTimestamp) {
-      log("time refresh: " + (nm.startTimestamp || "?") + " -> " + ev.startTimestamp);
-      nm.startTimestamp = ev.startTimestamp;
-      nm.date = new Date(ev.startTimestamp * 1000).toISOString();
+    var newTs = ev.startTimestamp || ev.timestamp;
+    if (newTs && newTs !== nm.startTimestamp) {
+      log("time refresh: " + (nm.startTimestamp || "?") + " -> " + newTs);
+      nm.startTimestamp = newTs;
+      nm.date = new Date(newTs * 1000).toISOString();
     }
     if (ev.roundInfo && ev.roundInfo.name) {
       nm.round = translateRound(ev.roundInfo.name);
