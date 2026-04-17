@@ -235,6 +235,79 @@ export default function NextDuelCard(props) {
     }
   }
 
+  // Performance analysis — who is playing better
+  var performanceVerdict = null;
+  if (isLive && liveStats && (liveStats.fonseca || liveStats.opponent)) {
+    var pf = liveStats.fonseca || {};
+    var po = liveStats.opponent || {};
+    var fScore = 0, oScore = 0;
+    var samples = 0;
+
+    // Sets won (highest weight)
+    var fSetsW = (liveScore.sets_won && liveScore.sets_won.fonseca) || 0;
+    var oSetsW = (liveScore.sets_won && liveScore.sets_won.opponent) || 0;
+    if (fSetsW > 0 || oSetsW > 0) {
+      fScore += fSetsW * 3;
+      oScore += oSetsW * 3;
+      samples++;
+    }
+
+    // Aces
+    var fAces = pf.aces || 0, oAces = po.aces || 0;
+    if (fAces + oAces > 0) {
+      if (fAces > oAces) fScore += 1;
+      else if (oAces > fAces) oScore += 1;
+      samples++;
+    }
+
+    // Double faults (inverted — lower is better)
+    var fDF = pf.doublefaults || pf.double_faults || 0;
+    var oDF = po.doublefaults || po.double_faults || 0;
+    if (fDF + oDF > 0) {
+      if (fDF < oDF) fScore += 1;
+      else if (oDF < fDF) oScore += 1;
+      samples++;
+    }
+
+    // First serve points won %
+    var fST = (pf.firstserveaccuracy || pf.first_serve_accuracy || 0);
+    var oST = (po.firstserveaccuracy || po.first_serve_accuracy || 0);
+    if (fST > 0 && oST > 0) {
+      var fP1 = Math.round((pf.firstservepointsaccuracy || pf.first_serve_points_accuracy || 0) / fST * 100);
+      var oP1 = Math.round((po.firstservepointsaccuracy || po.first_serve_points_accuracy || 0) / oST * 100);
+      if (fP1 > oP1 + 3) fScore += 2;
+      else if (oP1 > fP1 + 3) oScore += 2;
+      samples++;
+    }
+
+    // Break points converted
+    var fBP = pf.breakpointsscored || pf.break_points_scored || 0;
+    var oBP = po.breakpointsscored || po.break_points_scored || 0;
+    if (fBP + oBP > 0) {
+      if (fBP > oBP) fScore += 2;
+      else if (oBP > fBP) oScore += 2;
+      samples++;
+    }
+
+    // Total points
+    var fTot = (pf.servicepointsscored || pf.service_points_scored || 0) + (pf.receiverpointsscored || pf.receiver_points_scored || 0) || pf.pointstotal || 0;
+    var oTot = (po.servicepointsscored || po.service_points_scored || 0) + (po.receiverpointsscored || po.receiver_points_scored || 0) || po.pointstotal || 0;
+    if (fTot + oTot > 10) {
+      var fPct = fTot / (fTot + oTot);
+      if (fPct > 0.55) fScore += 1;
+      else if (fPct < 0.45) oScore += 1;
+      samples++;
+    }
+
+    // Verdict (need at least 3 metrics + enough data)
+    if (samples >= 3 && (fScore + oScore) >= 3) {
+      var diff = fScore - oScore;
+      if (diff >= 3) performanceVerdict = { text: "João está melhor na partida", color: GREEN, icon: "🟢" };
+      else if (diff <= -3) performanceVerdict = { text: oppName.split(" ").pop() + " está melhor na partida", color: "#ef4444", icon: "🔴" };
+      else performanceVerdict = { text: "Partida equilibrada", color: YELLOW, icon: "⚖️" };
+    }
+  }
+
   // Live court from liveData or match
   var liveCourt = (isLive && liveData.court) ? liveData.court : (match.court || null);
   var liveRound = (isLive && liveData.round) ? liveData.round : (match.round || "");
@@ -374,6 +447,14 @@ export default function NextDuelCard(props) {
                   return <span key={si} style={{ fontSize: 17, fontWeight: 800, color: won ? "#ef4444" : (isCur ? "#fff" : "rgba(255,255,255,0.4)"), fontFamily: SANS, textAlign: "center" }}>{os}</span>;
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Performance verdict */}
+          {performanceVerdict && (
+            <div style={{ margin: "14px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid " + performanceVerdict.color + "30", borderRadius: 14, padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              <span style={{ fontSize: 16 }}>{performanceVerdict.icon}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: performanceVerdict.color, fontFamily: SANS, letterSpacing: "-0.01em" }}>{performanceVerdict.text}</span>
             </div>
           )}
 
