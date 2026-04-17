@@ -332,36 +332,33 @@ export default function NextDuelCard(props) {
           {fSets.length > 0 && (
             <div style={{ margin: "18px 20px 0", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 16px" }}>
               {/* Header row: labels */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr " + fSets.map(function(){ return "36px"; }).join(" ") + (liveScore.current_game && (liveScore.current_game.fonseca !== undefined) ? " 36px" : ""), gap: 0, marginBottom: 6 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr " + fSets.map(function(){ return "36px"; }).join(" "), gap: 0, marginBottom: 6 }}>
                 <div />
                 {fSets.map(function(_, si) { return <span key={si} style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.2)", fontFamily: SANS, textAlign: "center" }}>{"S" + (si + 1)}</span>; })}
-                {liveScore.current_game && liveScore.current_game.fonseca !== undefined && <span style={{ fontSize: 9, fontWeight: 700, color: YELLOW, fontFamily: SANS, textAlign: "center" }}>PTS</span>}
               </div>
               {/* Fonseca row */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr " + fSets.map(function(){ return "36px"; }).join(" ") + (liveScore.current_game && (liveScore.current_game.fonseca !== undefined) ? " 36px" : ""), gap: 0, alignItems: "center", marginBottom: 4 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr " + fSets.map(function(){ return "36px"; }).join(" "), gap: 0, alignItems: "center", marginBottom: 4 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS }}>Fonseca</span>
-                  {liveServing === "fonseca" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
+                  {liveServing === "fonseca" && <span style={{ width: 8, height: 8, borderRadius: "50%", background: YELLOW, display: "inline-block", boxShadow: "0 0 6px " + YELLOW + "80", animation: "pulse 1.5s ease-in-out infinite" }} />}
                 </div>
                 {fSets.map(function(fs, si) {
                   var isCur = si === fSets.length - 1;
                   var won = !isCur && fs > (oSets[si] || 0);
                   return <span key={si} style={{ fontSize: 17, fontWeight: 800, color: won ? GREEN : (isCur ? "#fff" : "rgba(255,255,255,0.4)"), fontFamily: SANS, textAlign: "center" }}>{fs}</span>;
                 })}
-                {liveScore.current_game && liveScore.current_game.fonseca !== undefined && <span style={{ fontSize: 15, fontWeight: 700, color: YELLOW, fontFamily: SANS, textAlign: "center" }}>{liveScore.current_game.fonseca}</span>}
               </div>
               {/* Opponent row */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr " + oSets.map(function(){ return "36px"; }).join(" ") + (liveScore.current_game && (liveScore.current_game.opponent !== undefined) ? " 36px" : ""), gap: 0, alignItems: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr " + oSets.map(function(){ return "36px"; }).join(" "), gap: 0, alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", fontFamily: SANS }}>{oppName.split(" ").pop()}</span>
-                  {liveServing === "opponent" && <span style={{ width: 6, height: 6, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />}
+                  {liveServing === "opponent" && <span style={{ width: 8, height: 8, borderRadius: "50%", background: YELLOW, display: "inline-block", boxShadow: "0 0 6px " + YELLOW + "80", animation: "pulse 1.5s ease-in-out infinite" }} />}
                 </div>
                 {oSets.map(function(os, si) {
                   var isCur = si === oSets.length - 1;
                   var won = !isCur && os > (fSets[si] || 0);
                   return <span key={si} style={{ fontSize: 17, fontWeight: 800, color: won ? "#ef4444" : (isCur ? "#fff" : "rgba(255,255,255,0.4)"), fontFamily: SANS, textAlign: "center" }}>{os}</span>;
                 })}
-                {liveScore.current_game && liveScore.current_game.opponent !== undefined && <span style={{ fontSize: 15, fontWeight: 700, color: YELLOW, fontFamily: SANS, textAlign: "center" }}>{liveScore.current_game.opponent}</span>}
               </div>
             </div>
           )}
