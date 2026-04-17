@@ -360,7 +360,6 @@ export default function JoaoFonsecaNews() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
-      <Head>
         <Head>
         <title>Fonseca News — Guia de bolso sobre João Fonseca</title>
         <meta name="description" content="Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas, próximos jogos e mais." />
