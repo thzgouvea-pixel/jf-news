@@ -108,6 +108,7 @@ export default function Biografia() {
         <meta property="og:url" content="https://fonsecanews.com.br/biografia" />
         <meta property="og:image" content="https://fonsecanews.com.br/og-image.PNG" />
         <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href="https://fonsecanews.com.br/biografia" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
