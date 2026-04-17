@@ -361,8 +361,45 @@ export default function JoaoFonsecaNews() {
   return (
     <div style={{ minHeight: "100vh", background: "#fff" }}>
       <Head>
+        <Head>
         <title>Fonseca News — Guia de bolso sobre João Fonseca</title>
         <meta name="description" content="Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas, próximos jogos e mais." />
+        <meta name="robots" content="index, follow, max-image-preview:large" />
+        <meta name="author" content="Fonseca News" />
+        <meta name="keywords" content="João Fonseca, tenista brasileiro, tênis, ATP, ranking ATP, Fonseca, tênis Brasil" />
+
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Fonseca News" />
+        <meta property="og:title" content="Fonseca News — Guia de bolso sobre João Fonseca" />
+        <meta property="og:description" content="Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas, próximos jogos e mais." />
+        <meta property="og:image" content="https://fonsecanews.com.br/og-image.PNG" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:url" content="https://fonsecanews.com.br" />
+        <meta property="og:locale" content="pt_BR" />
+
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@JFonsecaNews" />
+        <meta name="twitter:title" content="Fonseca News — Guia de bolso sobre João Fonseca" />
+        <meta name="twitter:description" content="Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas, próximos jogos e mais." />
+        <meta name="twitter:image" content="https://fonsecanews.com.br/og-image.PNG" />
+
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          "name": "Fonseca News",
+          "url": "https://fonsecanews.com.br",
+          "inLanguage": "pt-BR",
+          "description": "Guia de bolso sobre o tenista brasileiro João Fonseca",
+          "about": {
+            "@type": "Person",
+            "name": "João Fonseca",
+            "alternateName": "Joao Fonseca",
+            "jobTitle": "Tenista profissional",
+            "nationality": "BR",
+            "sport": "Tennis"
+          }
+        })}} />
       </Head>
 
       <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(248,250,251,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER, boxShadow: headerCompact ? "0 1px 8px rgba(0,0,0,0.04)" : "none", transition: "all 0.3s ease" }}>
