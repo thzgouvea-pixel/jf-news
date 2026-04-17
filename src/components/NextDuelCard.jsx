@@ -234,6 +234,19 @@ export default function NextDuelCard(props) {
       <div style={{ position: "absolute", top: -50, right: -50, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, " + (isLive ? "#ef4444" : sc) + (isLive ? "18" : "10") + " 0%, transparent 65%)", pointerEvents: "none" }} />
       {isLive && <div style={{ position: "absolute", top: -30, left: -30, width: 160, height: 160, borderRadius: "50%", background: "radial-gradient(circle, #ef444410 0%, transparent 65%)", pointerEvents: "none" }} />}
 
+      {/* ===== POSTPONED / CANCELLED BANNER ===== */}
+      {(match.postponed || match.cancelled) && (
+        <div style={{ padding: "14px 20px", background: match.cancelled ? "linear-gradient(90deg, rgba(239,68,68,0.18), rgba(239,68,68,0.08))" : "linear-gradient(90deg, rgba(251,191,36,0.18), rgba(251,191,36,0.08))", borderBottom: "1px solid " + (match.cancelled ? "rgba(239,68,68,0.3)" : "rgba(251,191,36,0.3)"), display: "flex", alignItems: "center", justifyContent: "center", gap: 10, position: "relative", zIndex: 1 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={match.cancelled ? "#ef4444" : "#fbbf24"} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            {match.cancelled ? <><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></> : <><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}
+          </svg>
+          <span style={{ fontSize: 13, fontWeight: 800, color: match.cancelled ? "#ef4444" : "#fbbf24", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            {match.cancelled ? "Jogo cancelado" : "Jogo adiado"}
+          </span>
+        </div>
+      )}
+
+      {/* ===== TOP BAR ===== */}
       {/* ===== TOP BAR ===== */}
       <div style={{ padding: "18px 20px 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
