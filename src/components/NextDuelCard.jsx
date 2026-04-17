@@ -76,6 +76,7 @@ export default function NextDuelCard(props) {
     var todayPrev = new Date();
     var endDMidnight = endD ? new Date(endD.getUTCFullYear(), endD.getUTCMonth(), endD.getUTCDate(), 23, 59, 59, 999) : null;
     var isOngoingPrev = todayPrev >= startD && (!endDMidnight || todayPrev <= endDMidnight);
+    var fonsecaConfirmed = nextTournament.fonsecaConfirmed;
 
     return (
       <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)" }}>
@@ -137,10 +138,13 @@ export default function NextDuelCard(props) {
 
         {/* Message + link */}
         <div style={{ padding: "20px 24px 22px", textAlign: "center" }}>
-          {isOngoingPrev
-            ? <p style={{ fontSize: 13, color: GREEN, fontFamily: SANS, margin: "0 0 14px", lineHeight: 1.5, fontWeight: 700 }}>🟢 Fonseca está neste torneio</p>
-            : <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontFamily: SANS, margin: "0 0 14px", lineHeight: 1.5 }}>Aguardando confirmação do adversário</p>
-          }
+          {fonsecaConfirmed === true ? (
+            <p style={{ fontSize: 13, color: GREEN, fontFamily: SANS, margin: "0 0 14px", lineHeight: 1.5, fontWeight: 700 }}>🟢 Fonseca confirmado neste torneio</p>
+          ) : fonsecaConfirmed === false ? (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontFamily: SANS, margin: "0 0 14px", lineHeight: 1.5 }}>Fonseca não inscrito neste torneio</p>
+          ) : (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", fontFamily: SANS, margin: "0 0 14px", lineHeight: 1.5 }}>Aguardando confirmação da participação</p>
+          )}
           <a href="https://www.atptour.com/en/players/joao-fonseca/f0fv/player-activity" target="_blank" rel="noopener noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "10px 20px", background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.2)", borderRadius: 12, color: "#4FC3F7", fontSize: 12, fontWeight: 700, fontFamily: SANS, textDecoration: "none" }}>
             Ver calendário ATP
           </a>
