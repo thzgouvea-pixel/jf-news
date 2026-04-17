@@ -113,8 +113,6 @@ export default function JoaoFonsecaNews() {
       setHeaderCompact(currentY > 60);
       lastScrollY = currentY;
     };
-    useEffect(function() {
-    try {
     window.addEventListener("scroll", handleScroll, { passive: true });
     return function() { window.removeEventListener("scroll", handleScroll); };
   }, []);
@@ -316,6 +314,7 @@ export default function JoaoFonsecaNews() {
     var isNew = !localStorage.getItem("fn_visited");
     if (isNew) { fetch("/api/visitors", { method: "POST" }).catch(function() {}); try { localStorage.setItem("fn_visited", "1"); } catch(e) {} }
     try {
+      var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
       var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone;
       var alreadyTracked = localStorage.getItem("fn_standalone_tracked");
       if (isStandalone && !alreadyTracked) {
