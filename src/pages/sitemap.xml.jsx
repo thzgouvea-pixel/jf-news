@@ -3,7 +3,6 @@
 var SITE = "https://fonsecanews.com.br";
 function generateSitemap() {
   var pages = [
-    var pages = [
     { url: SITE, changefreq: "hourly", priority: "1.0" },
     { url: SITE + "/biografia", changefreq: "monthly", priority: "0.9" },
     { url: SITE + "/regras", changefreq: "monthly", priority: "0.8" },
