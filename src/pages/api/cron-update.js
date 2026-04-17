@@ -806,12 +806,57 @@ export default async function handler(req, res) {
       try { await kv.del("fn:nextTournament"); } catch (e) { }
     } else {
       try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); await kv.del("fn:bracketUrl"); } catch (e) { }
-      var nextT = ATP_CALENDAR_2026.find(function (t) { return new Date(t.end + "T23:59:59Z") >= new Date(); });
-      if (nextT) w.push(kv.set("fn:nextTournament", JSON.stringify({
-        tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface,
-        city: nextT.city, country: nextT.country, start_date: nextT.start, end_date: nextT.end,
-        source: "calendar", updatedAt: new Date().toISOString(),
-      }), { ex: T2 }));
+
+      // Select only FUTURE tournaments (start date > today), never ongoing ones
+      var todayForTourn = new Date();
+      todayForTourn.setUTCHours(0, 0, 0, 0);
+      var nextT = ATP_CALENDAR_2026.find(function (t) {
+        if (!t.start) return false;
+        return new Date(t.start + "T00:00:00Z") > todayForTourn;
+      });
+
+      if (nextT) {
+        // Check if Fonseca is confirmed to play — cache 3 days per tournament
+        var confirmedCacheKey = "fn:gemini:tournConfirmed:" + nextT.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+        var fonsecaConfirmed = null;
+        try {
+          var cachedConf = await kv.get(confirmedCacheKey);
+          if (cachedConf !== null && cachedConf !== undefined) {
+            fonsecaConfirmed = cachedConf === "yes" || cachedConf === true;
+            log("tournament confirmed (cached): " + nextT.name + " = " + fonsecaConfirmed);
+          }
+        } catch (e) { }
+
+        if (fonsecaConfirmed === null) {
+          var confPrompt = "O tenista Jo\u00e3o Fonseca est\u00e1 inscrito/confirmado para jogar o torneio " +
+            nextT.name + " em " + nextT.city + " (" + nextT.start + " a " + nextT.end + ")? " +
+            "Responda APENAS: YES ou NO ou UNKNOWN. Sem explica\u00e7\u00f5es.";
+          var confTxt = await geminiSearch(confPrompt);
+          if (confTxt) {
+            var confClean = confTxt.trim().toUpperCase().split(/\s+/)[0].replace(/[^A-Z]/g, "");
+            if (confClean === "YES") {
+              fonsecaConfirmed = true;
+              try { await kv.set(confirmedCacheKey, "yes", { ex: 259200 }); } catch (e) { }
+              log("tournament confirmed (Gemini): " + nextT.name + " = YES");
+            } else if (confClean === "NO") {
+              fonsecaConfirmed = false;
+              try { await kv.set(confirmedCacheKey, "no", { ex: 259200 }); } catch (e) { }
+              log("tournament confirmed (Gemini): " + nextT.name + " = NO");
+            } else {
+              fonsecaConfirmed = null;
+              log("tournament confirmed (Gemini): " + nextT.name + " = UNKNOWN");
+            }
+          }
+        }
+
+        w.push(kv.set("fn:nextTournament", JSON.stringify({
+          tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface,
+          city: nextT.city, country: nextT.country, start_date: nextT.start, end_date: nextT.end,
+          fonsecaConfirmed: fonsecaConfirmed,
+          source: "calendar", updatedAt: new Date().toISOString(),
+        }), { ex: T2 }));
+        log("nextTournament: " + nextT.name + " (confirmed=" + fonsecaConfirmed + ")");
+      }
     }
 
     if (ms && lm) {
