@@ -3,8 +3,15 @@ import { GREEN, BG_ALT, TEXT, SUB, DIM, BORDER, SANS, SERIF } from '../lib/const
 
 export default function DailyPoll() {
   var now = new Date();
-  var today = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
-  var pollKey = "fn_poll_" + today;
+  // Calculate week ID (Monday-to-Monday). Uses ISO week: Monday is day 1.
+  var getWeekId = function(date) {
+    var d = new Date(date.getTime());
+    var day = d.getDay() === 0 ? 7 : d.getDay(); // Sunday=7, Mon=1
+    d.setDate(d.getDate() - day + 1); // go back to Monday
+    return d.getFullYear() + "-W" + String(Math.ceil((((d - new Date(d.getFullYear(), 0, 1)) / 86400000) + 1) / 7)).padStart(2, "0");
+  };
+  var thisWeek = getWeekId(now);
+  var pollKey = "fn_poll_" + thisWeek;
   var _v = useState(function() { try { return localStorage.getItem(pollKey); } catch(e) { return null; } });
   var vote = _v[0]; var setVote = _v[1];
   var _r = useState(function() { try { var d = JSON.parse(localStorage.getItem(pollKey + "_r") || "null"); return d; } catch(e) { return null; } });
@@ -39,8 +46,12 @@ export default function DailyPoll() {
     { q: "Quem é a maior promessa do tênis mundial?", a: "João 🇧🇷", b: "Draper 🇬🇧" },
     { q: "O João deve jogar o Rio Open todo ano?", a: "Sempre!", b: "Só quando fizer sentido" },
   ];
-  var dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
-  var poll = polls[dayOfYear % polls.length];
+  // Week of year for poll rotation (changes every Monday)
+  var weekStart = new Date(now.getTime());
+  var dayOfWeek = weekStart.getDay() === 0 ? 7 : weekStart.getDay();
+  weekStart.setDate(weekStart.getDate() - dayOfWeek + 1);
+  var weekOfYear = Math.floor((weekStart - new Date(weekStart.getFullYear(), 0, 0)) / (7 * 86400000));
+  var poll = polls[weekOfYear % polls.length];
   useEffect(function() {
     fetch("/api/vote").then(function(r) { return r.json(); }).then(function(d) { if (d && d.total > 0) { setResults({ a: d.pctA, b: d.pctB, total: d.total }); } }).catch(function() {});
   }, []);
@@ -75,7 +86,7 @@ export default function DailyPoll() {
               </div>
             );
           })}
-          <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>{results && results.total ? results.total + (results.total === 1 ? " voto" : " votos") : "Seja o primeiro a votar"} · Nova enquete amanhã</p>
+          <p style={{ margin: "8px 0 0", fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center" }}>{results && results.total ? results.total + (results.total === 1 ? " voto" : " votos") : "Seja o primeiro a votar"} · Nova enquete na segunda-feira</p>
         </div>
       )}
     </div>
