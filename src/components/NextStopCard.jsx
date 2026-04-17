@@ -73,6 +73,12 @@ export default function NextStopCard(props) {
   var nextMatch = props.nextMatch;
   var lastMatch = props.lastMatch;
   var atpCalendar = props.atpCalendar;
+  var nextTournament = props.nextTournament;
+
+  // If "Próximo Torneio" card is being shown (no active nextMatch + has nextTournament),
+  // hide "Próxima Parada" to avoid redundancy
+  var hasActiveNextMatch = !!(nextMatch && nextMatch.opponent_name && nextMatch.opponent_name !== "A definir");
+  if (!hasActiveNextMatch && nextTournament) return null;
 
   var currentTourn = null;
   if (nextMatch && nextMatch.tournament_name) currentTourn = nextMatch.tournament_name;
