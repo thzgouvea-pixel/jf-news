@@ -106,7 +106,7 @@ var matchDate = (lastMatch && lastMatch.date) ? (function() {
                 <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.45)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Última partida</span>
                 </div>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {round && <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: SANS }}>{round}</span>}
+                {round && <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.8)", fontFamily: SANS }}>{round}</span>}
                 {matchDate && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS }}>{matchDate}</span>}
                 {surfaceLabel && <span style={{ fontSize: 10, fontWeight: 800, color: sc, fontFamily: SANS, background: sc + "20", padding: "5px 14px", borderRadius: 999, textTransform: "uppercase", letterSpacing: "0.06em" }}>{surfaceLabel}</span>}
               </div>
@@ -132,13 +132,13 @@ var matchDate = (lastMatch && lastMatch.date) ? (function() {
                 {/* Score center */}
                 <div style={{ textAlign: "center", minWidth: 100 }}>
                   {/* Sets won */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 4 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 10 }}>
                     <span style={{ fontSize: 32, fontWeight: 900, color: isWin ? GREEN : "rgba(255,255,255,0.5)", fontFamily: SANS, lineHeight: 1 }}>{fSetsWon}</span>
                     <span style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.15)", fontFamily: SANS }}>x</span>
                     <span style={{ fontSize: 32, fontWeight: 900, color: !isWin ? "#ef4444" : "rgba(255,255,255,0.5)", fontFamily: SANS, lineHeight: 1 }}>{oSetsWon}</span>
                   </div>
                   {/* Individual set scores */}
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, marginBottom: 14 }}>
                     {sets.map(function(s, i) {
                       var parts = s.split("-");
                       var fWon = (parseInt(parts[0]) || 0) > (parseInt(parts[1]) || 0);
@@ -147,9 +147,8 @@ var matchDate = (lastMatch && lastMatch.date) ? (function() {
                       );
                     })}
                   </div>
-                  {/* Result badge */}
                   {/* Duration */}
-                  {durationStr && <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, display: "block", marginTop: 8 }}>{durationStr}</span>}
+                  {durationStr && <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, display: "block" }}>{durationStr}</span>}
                 </div>
 
                 {/* Opponent */}
