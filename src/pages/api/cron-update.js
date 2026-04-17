@@ -261,6 +261,31 @@ async function fetchOpponentProfile(nm, existingProfile) {
 async function fetchWinProb(nm) {
   if (!nm || !nm.opponent_name || nm.opponent_name === "A definir") return null;
 
+  // SofaScore first (free, updates live during match)
+  if (nm.id) {
+    var sdEarly = await sofaFetch("/v1/match/odds?match_id=" + nm.id);
+    var marketsEarly = Array.isArray(sdEarly) ? sdEarly : (sdEarly && sdEarly.markets);
+    if (marketsEarly && Array.isArray(marketsEarly)) {
+      var h2hEarly = marketsEarly.find(function (m) { return m.name === "Full time" || m.name === "1x2"; });
+      if (h2hEarly && h2hEarly.choices && h2hEarly.choices.length >= 2) {
+        var isFHE = nm.isFonsecaHome !== false;
+        var homeE = h2hEarly.choices.find(function(c) { return c.name === "1"; });
+        var awayE = h2hEarly.choices.find(function(c) { return c.name === "2"; });
+        var fE = isFHE ? homeE : awayE;
+        var oE = isFHE ? awayE : homeE;
+        var fOddE = fE && fE.value && fE.value.decimal;
+        var oOddE = oE && oE.value && oE.value.decimal;
+        if (fOddE && oOddE) {
+          var fiE = 1 / fOddE, oiE = 1 / oOddE, tE = fiE + oiE;
+          var isLiveE = h2hEarly.isLive === true;
+          log("odds: " + Math.round((fiE / tE) * 100) + "% Fonseca (SofaScore" + (isLiveE ? " LIVE" : "") + ")");
+          return { fonseca: Math.round((fiE / tE) * 100), opponent: Math.round((oiE / tE) * 100), opponent_name: nm.opponent_name, source: "sofascore-odds", isLive: isLiveE, updatedAt: new Date().toISOString() };
+        }
+      }
+    }
+  }
+
+  // Fallback: Odds API (costs requests)
   var ok = process.env.ODDS_API_KEY;
   if (ok) {
     try {
@@ -301,22 +326,30 @@ async function fetchWinProb(nm) {
 
   if (nm.id) {
     var sd = await sofaFetch("/v1/match/odds?match_id=" + nm.id);
-    if (sd && sd.markets) {
-      var h2h = sd.markets.find(function (m) { return m.marketName === "Full time" || m.marketName === "1x2" || m.key === "1x2"; });
-      if (h2h && h2h.choices) {
-        var fOdd = null, oOdd = null;
-        h2h.choices.forEach(function (c) {
-          if ((c.name || "").toLowerCase().includes("fonseca") || c.name === "1") fOdd = c.odds || c.fractionalValue;
-          else if (c.name === "2" || c.name !== "X") oOdd = c.odds || c.fractionalValue;
-        });
+    var markets = Array.isArray(sd) ? sd : (sd && sd.markets);
+    if (markets && Array.isArray(markets)) {
+      var h2h = markets.find(function (m) { return m.name === "Full time" || m.name === "1x2"; });
+      if (h2h && h2h.choices && h2h.choices.length >= 2) {
+        var isFonsecaHome = nm.isFonsecaHome !== false;
+        var homeChoice = h2h.choices.find(function(c) { return c.name === "1"; });
+        var awayChoice = h2h.choices.find(function(c) { return c.name === "2"; });
+        var fChoice = isFonsecaHome ? homeChoice : awayChoice;
+        var oChoice = isFonsecaHome ? awayChoice : homeChoice;
+        var fOdd = fChoice && fChoice.value && fChoice.value.decimal;
+        var oOdd = oChoice && oChoice.value && oChoice.value.decimal;
         if (fOdd && oOdd) {
           var fi = 1 / fOdd, oi = 1 / oOdd, t2 = fi + oi;
-          log("odds: " + Math.round((fi / t2) * 100) + "% Fonseca (SofaScore)");
-          return { fonseca: Math.round((fi / t2) * 100), opponent: Math.round((oi / t2) * 100), opponent_name: nm.opponent_name, source: "sofascore-odds", updatedAt: new Date().toISOString() };
+          var isLiveOdds = h2h.isLive === true;
+          log("odds: " + Math.round((fi / t2) * 100) + "% Fonseca (SofaScore" + (isLiveOdds ? " LIVE" : "") + ")");
+          return { fonseca: Math.round((fi / t2) * 100), opponent: Math.round((oi / t2) * 100), opponent_name: nm.opponent_name, source: "sofascore-odds", isLive: isLiveOdds, updatedAt: new Date().toISOString() };
         }
       }
     }
   }
+
+  log("odds: no source available");
+  return null;
+}
 
   log("odds: no source available");
   return null;
