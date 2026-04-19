@@ -1,15 +1,6 @@
 import { useState } from "react";
 import Head from "next/head";
-
-var GREEN = "#00A859";
-var YELLOW = "#FFCB05";
-var TEXT = "#1a1a1a";
-var SUB = "#6b6b6b";
-var DIM = "#a0a0a0";
-var BORDER = "#e8e8e8";
-var BG_ALT = "#f8f8f8";
-var SERIF = "'Source Serif 4', Georgia, serif";
-var SANS = "'Inter', -apple-system, sans-serif";
+import { GREEN, YELLOW, TEXT, SUB, DIM, BORDER, BG_ALT, SERIF, SANS } from "../lib/constants";
 
 var MARCAS = ["Wilson", "Babolat", "Head", "Yonex", "Prince", "Tecnifibre", "Dunlop", "Prokennex", "Outra"];
 var ESTADOS = ["Novo (sem uso)", "Seminovo (poucos jogos)", "Usado — Bom estado", "Usado — Marcas de uso", "Precisa de encordoamento"];
