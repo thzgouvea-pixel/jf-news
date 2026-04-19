@@ -1,252 +1,256 @@
-import { useState } from "react";
+// src/pages/biografia.jsx
+// Aesthetic biography page for João Fonseca
+// v2: Fixed height (1.88m), coach (Franco Davin + Teixeira), Challengers (3), Nadal photo story
 import Head from "next/head";
-import { GREEN, YELLOW, TEXT, SUB, DIM, BORDER, BG_ALT, SERIF, SANS } from "../lib/constants";
+import { useState, useEffect } from "react";
+import { GREEN, YELLOW, TEXT, SUB, DIM, BORDER, SERIF, SANS } from "../lib/constants";
 
-var MARCAS = ["Wilson", "Babolat", "Head", "Yonex", "Prince", "Tecnifibre", "Dunlop", "Prokennex", "Outra"];
-var ESTADOS = ["Novo (sem uso)", "Seminovo (poucos jogos)", "Usado — Bom estado", "Usado — Marcas de uso", "Precisa de encordoamento"];
-var GRIPS = ["L0", "L1", "L2", "L3", "L4", "L5"];
+var TIMELINE = [
+  { year: "2006", age: "", title: "O começo", text: "Nasce em 21 de agosto no Rio de Janeiro, em Ipanema. Filho de Roberta, ex-jogadora de vôlei, e Christiano, CEO da IP Capital Partners." },
+  { year: "2010", age: "4 anos", title: "Primeiro contato", text: "Começa a jogar tênis no Country Club do Rio de Janeiro, ao lado de casa. Pai monta uma mini-rede no quarto pra jogar com ele." },
+  { year: "2014", age: "8 anos", title: "O sonho nasce", text: "Assiste Rafael Nadal vencer o Rio Open da primeira fileira. Tira foto com Thomaz Bellucci. O tênis deixa de ser brincadeira." },
+  { year: "2022", age: "16 anos", title: "Primeiros passos", text: "Atinge quartas de final em dois Challengers. Começa a aparecer no radar do circuito profissional." },
+  { year: "2023", age: "17 anos", title: "Ano revelação", emoji: "🏆", text: "Campeão do US Open Juvenil. Primeiro brasileiro nº1 do ranking juvenil da ITF. Estreia no ATP no Rio Open. Convidado como sparring no Nitto ATP Finals — treina com Alcaraz, Medvedev e Sinner." },
+  { year: "2024", age: "18 anos", title: "A explosão", emoji: "🔥", text: "Quartas do Rio Open (ATP 500) com vitória sobre Arthur Fils. Vira profissional. Salta do #727 para #145 no ranking. Campeão do Lexington Challenger. Campeão do NextGen ATP Finals invicto (5-0) — primeiro sul-americano e terceiro mais jovem da história, ao lado de Alcaraz e Sinner." },
+  { year: "2025", age: "19 anos", title: "Elite mundial", emoji: "⭐", text: "Derrota Rublev (#9) na estreia do Australian Open. Campeão do ATP 250 de Buenos Aires — mais jovem sul-americano campeão desde Perez-Roldan em 1987. Campeão do Canberra e Phoenix Challengers. Campeão do ATP 500 de Basel — primeiro brasileiro a vencer um ATP 500, feito inédito desde Kuerten. Encerra o ano como #24 do mundo." },
+  { year: "2026", age: "19 anos", title: "Em ascensão", emoji: "🚀", text: "Lesão nas costas atrasa início da temporada. Volta forte: R4 em Indian Wells com vitórias sobre Collignon, Khachanov e Tommy Paul. Jogo épico contra Sinner nas oitavas (dois tiebreaks). R3 no Miami Open. Campeão de duplas no Rio Open com Marcelo Melo. QF em Monte Carlo com vitórias sobre Diallo, Rinderknech e Berrettini — derrota honrosa contra o #3 Zverev. Novo técnico: Franco Davin se junta à equipe. Disputa o BMW Open em Munique." },
+];
 
-function InputField(props) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-        {props.label} {props.required && <span style={{ color: "#E63946" }}>*</span>}
-      </label>
-      <input
-        type={props.type || "text"}
-        value={props.value}
-        onChange={function(e) { props.onChange(e.target.value); }}
-        placeholder={props.placeholder || ""}
-        style={{ width: "100%", padding: "12px 14px", border: "1.5px solid " + BORDER, borderRadius: 10, fontSize: 14, fontFamily: SANS, color: TEXT, background: "#fff", outline: "none", boxSizing: "border-box", transition: "border-color 0.2s" }}
-        onFocus={function(e) { e.target.style.borderColor = GREEN; }}
-        onBlur={function(e) { e.target.style.borderColor = BORDER; }}
-      />
-    </div>
-  );
-}
+var STATS = [
+  { label: "Títulos ATP", value: "2", detail: "Buenos Aires + Basel" },
+  { label: "Títulos Challenger", value: "3", detail: "Lexington, Canberra, Phoenix" },
+  { label: "NextGen Finals", value: "🏆", detail: "Campeão 2024" },
+  { label: "US Open Jr", value: "🏆", detail: "Campeão 2023" },
+  { label: "Melhor ranking", value: "#24", detail: "Nov 2025" },
+  { label: "Nº1 Brasil", value: "✓", detail: "Atual" },
+];
 
-function ChipSelect(props) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>
-        {props.label} {props.required && <span style={{ color: "#E63946" }}>*</span>}
-      </label>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {props.options.map(function(opt) {
-          var active = props.value === opt;
-          return (
-            <button key={opt} onClick={function() { props.onChange(opt); }} type="button"
-              style={{ padding: props.compact ? "8px 12px" : "10px 16px", borderRadius: 10, border: "1.5px solid " + (active ? GREEN : BORDER), background: active ? GREEN + "10" : "#fff", color: active ? GREEN : TEXT, fontSize: 13, fontWeight: active ? 700 : 500, fontFamily: SANS, cursor: "pointer", transition: "all 0.15s" }}>
-              {opt}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+var FICHA = [
+  ["Nome completo", "João Franca Guimarães Fonseca"],
+  ["Nascimento", "21 de agosto de 2006 (19 anos)"],
+  ["Naturalidade", "Ipanema, Rio de Janeiro 🇧🇷"],
+  ["Altura", "1,88m"],
+  ["Mão", "Destro, backhand com duas mãos"],
+  ["Técnico", "Franco Davin / Guilherme Teixeira"],
+  ["Profissional desde", "2024"],
+  ["Patrocinadores", "Nike, Rolex"],
+  ["Ídolos", "Roger Federer, Gustavo Kuerten"],
+];
 
-export default function Raquetes() {
-  var _marca = useState(""); var marca = _marca[0]; var setMarca = _marca[1];
-  var _modelo = useState(""); var modelo = _modelo[0]; var setModelo = _modelo[1];
-  var _grip = useState(""); var grip = _grip[0]; var setGrip = _grip[1];
-  var _peso = useState(""); var peso = _peso[0]; var setPeso = _peso[1];
-  var _estado = useState(""); var estado = _estado[0]; var setEstado = _estado[1];
-  var _preco = useState(""); var preco = _preco[0]; var setPreco = _preco[1];
-  var _cidade = useState(""); var cidade = _cidade[0]; var setCidade = _cidade[1];
-  var _obs = useState(""); var obs = _obs[0]; var setObs = _obs[1];
-  var _sent = useState(false); var sent = _sent[0]; var setSent = _sent[1];
-  var _copied = useState(false); var copied = _copied[0]; var setCopied = _copied[1];
+var CURIOSIDADES = [
+  "Aos 2 anos, o professor de yoga do pai já notava coordenação fora do normal",
+  "Cresceu a 10 minutos do Rio Open — assistia o torneio todo ano desde criança",
+  "Em 2014, aos 8 anos, assistiu Nadal da primeira fileira no Rio Open e tirou foto com Bellucci — ali nasceu o sonho",
+  "Aos 19, já tem mais títulos ATP que Federer e Djokovic tinham na mesma idade",
+  "O New York Times o chamou de 'futura estrela' e comparou seu forehand a uma 'bola de demolição'",
+  "Foi o primeiro sul-americano campeão do NextGen ATP Finals",
+  "Torneios viram 'carnaval brasileiro' quando ele joga, segundo a imprensa internacional",
+  "Testimonee da Rolex desde 2024 — a mesma marca que patrocina Federer",
+];
 
-  var isValid = marca && modelo && estado && preco && cidade;
+var CITACOES = [
+  { text: "Estou muito feliz com o momento em que estou agora, mas claro que quero mais.", author: "João Fonseca", context: "ao New York Times" },
+  { text: "Sou confiante e acho que posso fazer grandes coisas, mas também preciso manter os pés no chão.", author: "João Fonseca", context: "ao New York Times" },
+];
 
-  var buildMessage = function() {
-    var msg = "🎾 Raquete à venda — Fonseca News\n\n";
-    msg += "📌 Marca: " + marca + "\n";
-    msg += "📌 Modelo: " + modelo + "\n";
-    if (grip) msg += "📌 Grip: " + grip + "\n";
-    if (peso) msg += "📌 Peso: " + peso + "g\n";
-    msg += "📌 Estado: " + estado + "\n";
-    msg += "📌 Preço: R$ " + preco + "\n";
-    msg += "📌 Cidade: " + cidade + "\n";
-    if (obs) msg += "\n💬 " + obs + "\n";
-    msg += "\nInteressados, me chamem! 🏷️";
-    return msg;
-  };
+export default function Biografia() {
+  var _openSection = useState(null);
+  var openSection = _openSection[0];
+  var setOpenSection = _openSection[1];
 
-  var handleSubmit = function() {
-    if (!isValid) return;
-    var msg = buildMessage();
-    // Copy to clipboard then open Telegram
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(msg).then(function() {
-        setCopied(true);
-        setTimeout(function() {
-          window.open("https://t.me/raquetesfn", "_blank");
-          setSent(true);
-        }, 800);
-      });
-    } else {
-      var ta = document.createElement("textarea");
-      ta.value = msg; document.body.appendChild(ta); ta.select();
-      document.execCommand("copy"); document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(function() {
-        window.open("https://t.me/raquetesfn", "_blank");
-        setSent(true);
-      }, 800);
-    }
-  };
+  // Dynamic stats from API
+  var _data = useState(null); var data = _data[0]; var setData = _data[1];
+  useEffect(function() {
+    fetch("/api/all-data").then(function(r) { return r.json(); }).then(function(d) {
+      setData(d);
+    }).catch(function() {});
+  }, []);
 
-  var handleReset = function() {
-    setMarca(""); setModelo(""); setGrip(""); setPeso("");
-    setEstado(""); setPreco(""); setCidade(""); setObs("");
-    setSent(false); setCopied(false);
-  };
+  // Dynamic values with fallbacks
+  var ranking = (data && data.ranking && data.ranking.ranking) || 35;
+  var bestRanking = (data && data.ranking && data.ranking.bestRanking) || 24;
+  var career = (data && data.careerStats) || {};
+  var wins = career.wins || 114;
+  var losses = career.losses || 63;
+  var titles = career.titles || 2;
+  var prizeMoney = (data && data.prizeMoney) || 3152530;
+  var prizeStr = prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K";
+  var season = (data && data.season) || {};
+  var seasonW = season.wins || 0;
+  var seasonL = season.losses || 0;
+
+  var STATS_DYNAMIC = [
+    { label: "Ranking ATP", value: "#" + ranking, detail: "Best: #" + bestRanking },
+    { label: "Carreira", value: wins + "V " + losses + "D", detail: Math.round(wins/(wins+losses)*100) + "% aprov." },
+    { label: "Temporada 2026", value: seasonW + "V " + seasonL + "D", detail: (seasonW+seasonL) > 0 ? Math.round(seasonW/(seasonW+seasonL)*100) + "% aprov." : "" },
+    { label: "Títulos ATP", value: "" + titles, detail: "Buenos Aires + Basel" },
+    { label: "Prize Money", value: prizeStr, detail: "Carreira" },
+    { label: "NextGen Finals", value: "🏆", detail: "Campeão 2024" },
+  ];
 
   return (
     <>
       <Head>
-        <title>Venda sua Raquete | Fonseca News</title>
-        <meta name="description" content="Anuncie sua raquete de tênis usada gratuitamente na comunidade Fonseca News. Compra e venda entre fãs de tênis." />
-        <meta property="og:title" content="Venda sua Raquete | Fonseca News" />
-        <meta property="og:description" content="Anuncie grátis na comunidade de tênis do Fonseca News." />
+        <title>João Fonseca — Biografia | Fonseca News</title>
+        <meta name="description" content="Biografia completa de João Fonseca, tenista brasileiro. Carreira, títulos, curiosidades e timeline completa do fenômeno do tênis brasileiro." />
+        <meta name="keywords" content="João Fonseca, biografia, tênis, ATP, brasileiro, ranking, carreira, títulos, NextGen" />
+        <meta property="og:title" content="João Fonseca — Biografia Completa | Fonseca News" />
+        <meta property="og:description" content="Tudo sobre a carreira do fenômeno do tênis brasileiro. De Ipanema ao top 40 do mundo." />
+        <meta property="og:type" content="profile" />
+        <meta property="og:url" content="https://fonsecanews.com.br/biografia" />
+        <meta property="og:image" content="https://fonsecanews.com.br/og-image.PNG" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <link rel="canonical" href="https://fonsecanews.com.br/biografia" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
-      <div style={{ minHeight: "100vh", background: "#fff", fontFamily: SANS }}>
-        {/* Header */}
-        <header style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderBottom: "1px solid " + BORDER }}>
-          <div style={{ maxWidth: 640, margin: "0 auto", padding: "14px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontFamily: SERIF, fontSize: 14, fontWeight: 800 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
-              </div>
-              <span style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: TEXT }}>Fonseca News</span>
-            </a>
-            <a href="/" style={{ fontSize: 12, fontWeight: 600, color: GREEN, fontFamily: SANS, textDecoration: "none" }}>← Voltar</a>
-          </div>
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: "0 20px", background: "#fff", minHeight: "100vh" }}>
+
+        {/* HEADER */}
+        <header style={{ padding: "16px 0", borderBottom: "1px solid " + BORDER, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #0D1726, #132440)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <span style={{ fontFamily: SERIF, fontSize: 13, fontWeight: 800 }}><span style={{ color: GREEN }}>F</span><span style={{ color: YELLOW }}>N</span></span>
+            </div>
+            <span style={{ fontFamily: SERIF, fontSize: 16, fontWeight: 700, color: TEXT }}>Fonseca News</span>
+          </a>
+          <a href="/" style={{ fontSize: 13, color: GREEN, fontFamily: SANS, fontWeight: 600, textDecoration: "none" }}>← Voltar</a>
         </header>
 
-        <main style={{ maxWidth: 640, margin: "0 auto", padding: "0 20px 60px" }}>
-          {/* Hero */}
-          <section style={{ padding: "28px 0 24px", textAlign: "center" }}>
-            <div style={{ width: 64, height: 64, borderRadius: 18, background: "linear-gradient(135deg, #1a1a0a 0%, #2d2811 100%)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px", boxShadow: "0 4px 16px rgba(0,0,0,0.1)" }}>
-              <span style={{ fontSize: 28 }}>🎾</span>
-            </div>
-            <h1 style={{ margin: "0 0 8px", fontSize: 26, fontWeight: 800, fontFamily: SERIF, color: TEXT, letterSpacing: "-0.03em" }}>Venda sua raquete</h1>
-            <p style={{ margin: "0 0 4px", fontSize: 14, color: SUB, fontFamily: SANS }}>Anuncie grátis na comunidade do Fonseca News</p>
-            <p style={{ margin: 0, fontSize: 12, color: DIM, fontFamily: SANS }}>Seu anúncio vai direto pro grupo no Telegram</p>
-          </section>
+        {/* HERO */}
+        <section style={{ textAlign: "center", padding: "32px 0 24px" }}>
+          <img
+            src="https://www.atptour.com/-/media/alias/player-headshot/f0fv"
+            alt="João Fonseca"
+            style={{ width: 120, height: 120, borderRadius: "50%", objectFit: "cover", border: "3px solid " + GREEN, marginBottom: 16 }}
+          />
+          <h1 style={{ margin: "0 0 4px", fontSize: 28, fontWeight: 900, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.03em" }}>João Fonseca</h1>
+          <p style={{ margin: "0 0 12px", fontSize: 14, color: SUB, fontFamily: SANS }}>Tenista profissional 🇧🇷</p>
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+            {[["🎂", "19 anos"], ["📍", "Rio de Janeiro"], ["📏", "1,88m"], ["🎾", "Destro"], ["🏆", "#" + ranking + " ATP"]].map(function(p, i) {
+              return <span key={i} style={{ fontSize: 11, color: SUB, fontFamily: SANS, background: "#f5f5f5", padding: "4px 10px", borderRadius: 8 }}>{p[0]} {p[1]}</span>;
+            })}
+          </div>
+        </section>
 
-          {/* How it works */}
-          <section style={{ display: "flex", gap: 8, marginBottom: 28, justifyContent: "center" }}>
-            {[["1", "Preencha", "os dados da raquete"], ["2", "Copie", "o anúncio formatado"], ["3", "Cole", "no grupo do Telegram"]].map(function(step) {
+        {/* INTRO */}
+        <section style={{ padding: "0 0 24px" }}>
+          <p style={{ margin: 0, fontSize: 15, color: TEXT, fontFamily: SERIF, lineHeight: 1.8 }}>
+            De um menino que jogava mini-tênis no quarto com o pai em Ipanema ao jogador que fez Sinner suar em dois tiebreaks diante de milhares de pessoas em Indian Wells. João Fonseca não é uma promessa — é uma realidade do tênis mundial aos 19 anos.
+          </p>
+        </section>
+
+        {/* STATS GRID */}
+        <section style={{ padding: "0 0 28px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+            {STATS_DYNAMIC.map(function(s, i) {
               return (
-                <div key={step[0]} style={{ flex: 1, textAlign: "center", padding: "12px 8px", background: BG_ALT, borderRadius: 12 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: GREEN, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, margin: "0 auto 6px", fontFamily: SANS }}>{step[0]}</div>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: TEXT, fontFamily: SANS, display: "block" }}>{step[1]}</span>
-                  <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{step[2]}</span>
+                <div key={i} style={{ background: "#f8f8f8", borderRadius: 12, padding: "14px 10px", textAlign: "center", border: "1px solid " + BORDER }}>
+                  <span style={{ fontSize: 22, fontWeight: 800, color: TEXT, fontFamily: SERIF, display: "block" }}>{s.value}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: SUB, fontFamily: SANS, display: "block", marginTop: 2 }}>{s.label}</span>
+                  <span style={{ fontSize: 9, color: DIM, fontFamily: SANS }}>{s.detail}</span>
                 </div>
               );
             })}
-          </section>
+          </div>
+        </section>
 
-          {!sent ? (
-            <>
-              {/* Form */}
-              <section style={{ marginBottom: 24 }}>
-                <ChipSelect label="Marca" options={MARCAS} value={marca} onChange={setMarca} required />
-                <InputField label="Modelo" value={modelo} onChange={setModelo} placeholder="Ex: Pro Staff 97, Pure Aero..." required />
-                <ChipSelect label="Grip" options={GRIPS} value={grip} onChange={setGrip} compact />
-                <InputField label="Peso" value={peso} onChange={setPeso} placeholder="Ex: 305" type="number" />
-                <ChipSelect label="Estado" options={ESTADOS} value={estado} onChange={setEstado} required />
-                <InputField label="Preço (R$)" value={preco} onChange={setPreco} placeholder="Ex: 450" type="number" required />
-                <InputField label="Cidade/Estado" value={cidade} onChange={setCidade} placeholder="Ex: São Paulo/SP" required />
+        {/* CITAÇÃO */}
+        <section style={{ padding: "0 0 28px" }}>
+          <div style={{ background: "#f8f8f8", borderRadius: 14, padding: "20px", borderLeft: "3px solid " + GREEN }}>
+            <p style={{ margin: "0 0 8px", fontSize: 15, fontStyle: "italic", color: TEXT, fontFamily: SERIF, lineHeight: 1.6 }}>"{CITACOES[0].text}"</p>
+            <p style={{ margin: 0, fontSize: 11, color: SUB, fontFamily: SANS }}><strong>{CITACOES[0].author}</strong> · {CITACOES[0].context}</p>
+          </div>
+        </section>
 
-                <div style={{ marginBottom: 20 }}>
-                  <label style={{ display: "block", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>Observações</label>
-                  <textarea
-                    value={obs} onChange={function(e) { setObs(e.target.value); }}
-                    placeholder="Ex: Com capa e overgrip novo, cordas recém trocadas..."
-                    rows="3"
-                    style={{ width: "100%", padding: "12px 14px", border: "1.5px solid " + BORDER, borderRadius: 10, fontSize: 14, fontFamily: SANS, color: TEXT, background: "#fff", outline: "none", resize: "vertical", boxSizing: "border-box" }}
-                    onFocus={function(e) { e.target.style.borderColor = GREEN; }}
-                    onBlur={function(e) { e.target.style.borderColor = BORDER; }}
-                  />
-                </div>
-              </section>
-
-              {/* Preview */}
-              {isValid && (
-                <section style={{ marginBottom: 24 }}>
-                  <p style={{ fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 8 }}>Prévia do anúncio</p>
-                  <div style={{ background: "linear-gradient(135deg, #0D1726, #132440)", borderRadius: 14, padding: "16px 18px" }}>
-                    <pre style={{ margin: 0, fontSize: 12, color: "rgba(255,255,255,0.8)", fontFamily: SANS, lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{buildMessage()}</pre>
+        {/* TIMELINE */}
+        <section style={{ padding: "0 0 28px" }}>
+          <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>Trajetória</h2>
+          <div style={{ position: "relative", paddingLeft: 28 }}>
+            <div style={{ position: "absolute", left: 8, top: 6, bottom: 6, width: 2, background: "linear-gradient(" + GREEN + ", " + YELLOW + ")", borderRadius: 2 }} />
+            {TIMELINE.map(function(t, i) {
+              var isLast = i === TIMELINE.length - 1;
+              return (
+                <div key={i} style={{ position: "relative", marginBottom: isLast ? 0 : 20 }}>
+                  <div style={{ position: "absolute", left: -23, top: 5, width: 12, height: 12, borderRadius: "50%", background: isLast ? GREEN : "#fff", border: "2px solid " + GREEN, zIndex: 1 }} />
+                  <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <span style={{ fontSize: 14, fontWeight: 800, color: GREEN, fontFamily: SANS }}>{t.year}</span>
+                      {t.age && <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{t.age}</span>}
+                      {t.emoji && <span style={{ fontSize: 12 }}>{t.emoji}</span>}
+                    </div>
+                    <h3 style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>{t.title}</h3>
+                    <p style={{ margin: 0, fontSize: 13, color: SUB, fontFamily: SANS, lineHeight: 1.65 }}>{t.text}</p>
                   </div>
-                </section>
-              )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-              {/* Submit */}
-              <button onClick={handleSubmit} disabled={!isValid}
-                style={{ width: "100%", padding: "16px", background: isValid ? GREEN : DIM, color: "#fff", border: "none", borderRadius: 14, fontSize: 15, fontWeight: 700, fontFamily: SANS, cursor: isValid ? "pointer" : "default", transition: "background 0.2s", opacity: isValid ? 1 : 0.5, marginBottom: 12 }}>
-                {copied ? "✓ Copiado! Abrindo Telegram..." : "Copiar anúncio e abrir Telegram"}
-              </button>
+        {/* CITAÇÃO 2 */}
+        <section style={{ padding: "0 0 28px" }}>
+          <div style={{ background: "#f8f8f8", borderRadius: 14, padding: "20px", borderLeft: "3px solid " + YELLOW }}>
+            <p style={{ margin: "0 0 8px", fontSize: 15, fontStyle: "italic", color: TEXT, fontFamily: SERIF, lineHeight: 1.6 }}>"{CITACOES[1].text}"</p>
+            <p style={{ margin: 0, fontSize: 11, color: SUB, fontFamily: SANS }}><strong>{CITACOES[1].author}</strong> · {CITACOES[1].context}</p>
+          </div>
+        </section>
 
-              <p style={{ fontSize: 10, color: DIM, fontFamily: SANS, textAlign: "center", lineHeight: 1.5 }}>
-                O anúncio será copiado automaticamente. Basta colar no grupo do Telegram.
-              </p>
-            </>
-          ) : (
-            /* Success state */
-            <section style={{ textAlign: "center", padding: "20px 0" }}>
-              <div style={{ width: 72, height: 72, borderRadius: "50%", background: GREEN + "12", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              </div>
-              <h2 style={{ margin: "0 0 8px", fontSize: 22, fontWeight: 800, fontFamily: SERIF, color: TEXT }}>Anúncio pronto!</h2>
-              <p style={{ margin: "0 0 24px", fontSize: 14, color: SUB, fontFamily: SANS }}>Seu anúncio foi copiado. Cole no grupo do Telegram para publicar.</p>
+        {/* FICHA TÉCNICA */}
+        <section style={{ padding: "0 0 28px" }}>
+          <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>Ficha técnica</h2>
+          <div style={{ borderRadius: 14, overflow: "hidden", border: "1px solid " + BORDER }}>
+            {FICHA.map(function(f, i) {
+              return (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: i < FICHA.length - 1 ? "1px solid " + BORDER : "none", background: i % 2 === 0 ? "#fafafa" : "#fff" }}>
+                  <span style={{ fontSize: 12, color: SUB, fontFamily: SANS, fontWeight: 600 }}>{f[0]}</span>
+                  <span style={{ fontSize: 12, color: TEXT, fontFamily: SANS, fontWeight: 500, textAlign: "right" }}>{f[1]}</span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <a href="https://t.me/raquetesfn" target="_blank" rel="noopener noreferrer"
-                  style={{ display: "block", padding: "14px", background: "#0088cc", color: "#fff", borderRadius: 12, fontSize: 14, fontWeight: 700, fontFamily: SANS, textDecoration: "none", textAlign: "center" }}>
-                  Abrir grupo no Telegram
-                </a>
-                <button onClick={handleReset}
-                  style={{ padding: "14px", background: BG_ALT, color: TEXT, border: "1px solid " + BORDER, borderRadius: 12, fontSize: 14, fontWeight: 600, fontFamily: SANS, cursor: "pointer", textAlign: "center" }}>
-                  Criar outro anúncio
-                </button>
-                <a href="/" style={{ fontSize: 13, color: GREEN, fontFamily: SANS, textDecoration: "none", textAlign: "center", padding: "8px 0" }}>← Voltar pro Fonseca News</a>
-              </div>
-            </section>
-          )}
+        {/* CURIOSIDADES */}
+        <section style={{ padding: "0 0 28px" }}>
+          <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>Curiosidades</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {CURIOSIDADES.map(function(c, i) {
+              return (
+                <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: "#fff", fontFamily: SANS, background: GREEN, width: 20, height: 20, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 2 }}>{i + 1}</span>
+                  <p style={{ margin: 0, fontSize: 13, color: TEXT, fontFamily: SANS, lineHeight: 1.6 }}>{c}</p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
 
-          {/* Info cards */}
-          <section style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 10 }}>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", background: BG_ALT, borderRadius: 12 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="8"/></svg>
-              <div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS }}>100% gratuito</span>
-                <p style={{ margin: "2px 0 0", fontSize: 12, color: SUB, fontFamily: SANS }}>Não cobramos nada pelo anúncio. É um serviço da comunidade FN.</p>
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 16px", background: BG_ALT, borderRadius: 12 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={YELLOW} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <div>
-                <span style={{ fontSize: 13, fontWeight: 700, color: TEXT, fontFamily: SANS }}>Comunidade ativa</span>
-                <p style={{ margin: "2px 0 0", fontSize: 12, color: SUB, fontFamily: SANS }}>Fãs de tênis brasileiros comprando e vendendo equipamentos.</p>
-              </div>
-            </div>
-          </section>
+        {/* CTA */}
+        <section style={{ padding: "0 0 32px" }}>
+          <div style={{ background: "linear-gradient(135deg, #0D1726 0%, #132440 100%)", borderRadius: 16, padding: "28px 24px", textAlign: "center" }}>
+            <span style={{ fontSize: 32, display: "block", marginBottom: 8 }}>🇧🇷</span>
+            <h3 style={{ margin: "0 0 6px", fontSize: 18, fontWeight: 800, color: "#fff", fontFamily: SERIF }}>Acompanhe o João</h3>
+            <p style={{ margin: "0 0 16px", fontSize: 12, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>Notícias, palpites, quiz e countdown no Fonseca News</p>
+            <a href="/" style={{ display: "inline-block", background: GREEN, padding: "10px 24px", borderRadius: 10, color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: SANS, textDecoration: "none" }}>Ir para o site →</a>
+          </div>
+        </section>
 
-          {/* Disclaimer */}
-          <footer style={{ padding: "24px 0", textAlign: "center" }}>
-            <p style={{ fontSize: 9, color: DIM, fontFamily: SANS, lineHeight: 1.6 }}>O Fonseca News não se responsabiliza pelas transações entre compradores e vendedores. Negocie diretamente com o interessado.</p>
-            <p style={{ fontSize: 9, color: DIM, fontFamily: SANS, marginTop: 4 }}>© 2026 Fonseca News · fonsecanews.com.br</p>
-          </footer>
-        </main>
+        {/* FOOTER */}
+        <footer style={{ padding: "20px 0", borderTop: "1px solid " + BORDER, textAlign: "center" }}>
+          <p style={{ margin: 0, fontSize: 9, color: DIM, fontFamily: SANS, lineHeight: 1.6 }}>
+            Fontes: ATP Tour, Wikipedia, Laver Cup, Rolex, Olympics.com, CNN Brasil, Agência Brasil, New York Times<br />
+            Site independente de fãs · © 2026 Fonseca News
+          </p>
+        </footer>
       </div>
+
+      <style jsx global>{`
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #fff; -webkit-font-smoothing: antialiased; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+      `}</style>
     </>
   );
 }
