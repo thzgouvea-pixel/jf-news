@@ -1,17 +1,7 @@
 // Fonseca News — Clean Redesign v2 (corrigido + 5 fixes)
 import { useState, useEffect, useRef } from "react";
 import Head from "next/head";
-
-const GREEN = "#00A859";
-const YELLOW = "#FFCB05";
-const BG_ALT = "#F7F8F9";
-const TEXT = "#1a1a1a";
-const SUB = "#6b6b6b";
-const DIM = "#a0a0a0";
-const BORDER = "#e8e8e8";
-const RED = "#c0392b";
-const SERIF = "'Source Serif 4', Georgia, serif";
-const SANS = "'Inter', -apple-system, sans-serif";
+import { GREEN, YELLOW, BG_ALT, TEXT, SUB, DIM, BORDER, RED, SERIF, SANS } from "../lib/constants";
 
 const CACHE_DURATION_MS = 30 * 60 * 1000;
 const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Dura": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
