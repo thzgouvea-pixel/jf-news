@@ -20,86 +20,74 @@ export default function PlayerBlock(props) {
         var f = msValid ? matchStats.fonseca : {};
         var o = msValid ? matchStats.opponent : {};
 
-        // ===== DEFENSIVE STAT EXTRACTION =====
-        // SofaScore may use different key names across plans/versions.
-        // Try each candidate; return null if none present.
-        function pick(obj, keys) {
-          for (var i = 0; i < keys.length; i++) {
-            var v = obj[keys[i]];
-            if (v !== undefined && v !== null && v !== "") return v;
-          }
-          return null;
-        }
+        // ===== STATS — using confirmed SofaScore Pro keys =====
+        // Keys verified from real production data (19/04/2026):
+        //   aces, doublefaults, breakpointsscored, breakpointssaved, pointstotal,
+        //   firstserveaccuracy, secondserveaccuracy
 
-        // 1º serve %
+        // 1st serve % — calculated from raw counts
         var fServTotal = (f.firstserveaccuracy||0) + (f.secondserveaccuracy||0) + (f.doublefaults||0);
         var oServTotal = (o.firstserveaccuracy||0) + (o.secondserveaccuracy||0) + (o.doublefaults||0);
         var f1stPct = fServTotal > 0 ? Math.round((f.firstserveaccuracy||0) / fServTotal * 100) : 0;
         var o1stPct = oServTotal > 0 ? Math.round((o.firstserveaccuracy||0) / oServTotal * 100) : 0;
 
-        // Break points converted & opportunities (directly, if provided by SofaScore)
-        var fBpConv = pick(f, ["breakpointsconverted", "breakpointswon"]);
-        var fBpOpp  = pick(f, ["breakpoints", "breakpointsopportunities", "breakpointsfaced", "breakpointstotal"]);
-        var oBpConv = pick(o, ["breakpointsconverted", "breakpointswon"]);
-        var oBpOpp  = pick(o, ["breakpoints", "breakpointsopportunities", "breakpointsfaced", "breakpointstotal"]);
+        // Break points — derived from scored/saved counts on both sides.
+        // For any player X:
+        //   X's BP OPPORTUNITIES (while receiving) = X.breakpointsscored + Y.breakpointssaved
+        //   X's BPs FACED (while serving)          = Y.breakpointsscored + X.breakpointssaved
+        // Sanity: X.opportunities always equals Y.faced (and vice-versa).
+        var fBpConv = f.breakpointsscored || 0;
+        var oBpConv = o.breakpointsscored || 0;
+        var fBpOpp = fBpConv + (o.breakpointssaved || 0);
+        var oBpOpp = oBpConv + (f.breakpointssaved || 0);
+        var fBpFaced = oBpConv + (f.breakpointssaved || 0);
+        var oBpFaced = fBpConv + (o.breakpointssaved || 0);
 
-        // Fallback derivation: BP converted by X = BP faced by Y minus BP saved by Y.
-        // Requires `breakpointssaved` on one side AND opportunities on the other side, which is hard.
-        // If we can't get opportunities, we still can derive "converted" from the counterpart's lost BPs
-        // using: bpConverted(X) = bpFaced(Y) - bpSaved(Y). But bpFaced is the missing piece.
-        // Pragmatic approach: only show this stat when BOTH conv AND opp are numeric AND opp > 0 on at least one side.
-        var hasBp = (fBpConv !== null && fBpOpp !== null && (fBpOpp > 0 || oBpOpp > 0))
-                 && (oBpConv !== null && oBpOpp !== null);
+        var hasBpData = (f.breakpointsscored !== undefined || o.breakpointsscored !== undefined ||
+                         f.breakpointssaved !== undefined || o.breakpointssaved !== undefined) &&
+                        (fBpOpp > 0 || oBpOpp > 0 || fBpFaced > 0 || oBpFaced > 0);
 
-        // Winners (may or may not be in plan)
-        var fWinners = pick(f, ["winners", "totalwinners", "winnersandforcedwinners"]);
-        var oWinners = pick(o, ["winners", "totalwinners", "winnersandforcedwinners"]);
-        var hasWinners = (fWinners !== null || oWinners !== null) && (fWinners + oWinners) > 0;
+        // Total points
+        var fTotalPts = f.pointstotal || ((f.servicepointsscored||0) + (f.receiverpointsscored||0));
+        var oTotalPts = o.pointstotal || ((o.servicepointsscored||0) + (o.receiverpointsscored||0));
 
-        // Unforced errors
-        var fUE = pick(f, ["unforcederrors", "unforcederror"]);
-        var oUE = pick(o, ["unforcederrors", "unforcederror"]);
-        var hasUE = (fUE !== null || oUE !== null) && ((fUE||0) + (oUE||0)) > 0;
-
-        // Total points — kept as last-resort filler if winners/UE absent
-        var fTotalPts = (f.servicepointsscored||0) + (f.receiverpointsscored||0) || f.pointstotal || 0;
-        var oTotalPts = (o.servicepointsscored||0) + (o.receiverpointsscored||0) || o.pointstotal || 0;
-
-        // Build stat rows. Each entry either renders or is filtered out later.
-        // `bp` flag marks the break-points row so we can render "X / Y" instead of plain value.
+        // Build stat rows. `bp` flag marks rows that render as "X / Y"
         var statRows = [
           { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0 },
         ];
 
-        if (hasBp) {
+        if (hasBpData) {
           statRows.push({
-            label: "Break points",
+            label: "BP convertidos",
             fVal: fBpConv, oVal: oBpConv,
             fSecondary: fBpOpp, oSecondary: oBpOpp,
             bp: true,
-            // Use conversion rate for the bar (otherwise 0/3 vs 3/4 looks visually wrong by raw numbers)
             fBarVal: fBpOpp > 0 ? (fBpConv / fBpOpp) * 100 : 0,
             oBarVal: oBpOpp > 0 ? (oBpConv / oBpOpp) * 100 : 0,
-            pct: true, // sum-to-100 bar
+            pct: true,
+          });
+          statRows.push({
+            label: "BP salvos",
+            fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0,
+            fSecondary: fBpFaced, oSecondary: oBpFaced,
+            bp: true,
+            fBarVal: fBpFaced > 0 ? ((f.breakpointssaved || 0) / fBpFaced) * 100 : 0,
+            oBarVal: oBpFaced > 0 ? ((o.breakpointssaved || 0) / oBpFaced) * 100 : 0,
+            pct: true,
           });
         }
 
-        statRows.push({ label: "1\u00ba saque", fVal: f1stPct, oVal: o1stPct, pct: true });
+        statRows.push({ label: "Duplas faltas", fVal: f.doublefaults || 0, oVal: o.doublefaults || 0, invert: true });
 
-        if (hasWinners) {
-          statRows.push({ label: "Winners", fVal: fWinners || 0, oVal: oWinners || 0 });
-        }
-        if (hasUE) {
-          // invert: fewer UE is better
-          statRows.push({ label: "Erros n\u00e3o for\u00e7ados", fVal: fUE || 0, oVal: oUE || 0, invert: true });
-        }
-
-        // Fallback: if we don't have winners AND don't have UE, add Total de pontos so card has body
-        if (!hasWinners && !hasUE && (fTotalPts > 0 || oTotalPts > 0)) {
+        if (fTotalPts > 0 || oTotalPts > 0) {
           statRows.push({ label: "Total de pontos", fVal: fTotalPts, oVal: oTotalPts });
         }
 
-        statRows = statRows.filter(function(r) { return r.fVal > 0 || r.oVal > 0 || r.fSecondary > 0 || r.oSecondary > 0; });
+        // Filter: keep only rows that have meaningful values.
+        // Duplas faltas (and other invert stats) stays even when both are 0? No — if both are 0, it's not interesting.
+        statRows = statRows.filter(function(r) {
+          return r.fVal > 0 || r.oVal > 0 || r.fSecondary > 0 || r.oSecondary > 0;
+        });
         var showStats = statRows.length > 0;
 
         var oppName = (lastMatch && lastMatch.opponent_name) || "Adv.";
