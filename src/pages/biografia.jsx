@@ -3,15 +3,7 @@
 // v2: Fixed height (1.88m), coach (Franco Davin + Teixeira), Challengers (3), Nadal photo story
 import Head from "next/head";
 import { useState, useEffect } from "react";
-
-var SERIF = "'Source Serif 4', Georgia, serif";
-var SANS = "'Inter', -apple-system, sans-serif";
-var GREEN = "#00A859";
-var YELLOW = "#FFCB05";
-var TEXT = "#1a1a1a";
-var SUB = "#6b6b6b";
-var DIM = "#a0a0a0";
-var BORDER = "#e8e8e8";
+import { GREEN, YELLOW, TEXT, SUB, DIM, BORDER, SERIF, SANS } from "../lib/constants";
 
 var TIMELINE = [
   { year: "2006", age: "", title: "O começo", text: "Nasce em 21 de agosto no Rio de Janeiro, em Ipanema. Filho de Roberta, ex-jogadora de vôlei, e Christiano, CEO da IP Capital Partners." },
