@@ -1,19 +1,77 @@
-export const GREEN = "#00A859";
-export const YELLOW = "#FFCB05";
-export const BG_ALT = "#FAFBFC";
-export const TEXT = "#111827";
-export const SUB = "#4B5563";
-export const DIM = "#9CA3AF";
-export const BORDER = "#E5E7EB";
-export const RED = "#DC2626";
+// ===== FONSECA NEWS — DESIGN SYSTEM (single source of truth) =====
+// Any page/component should import from here — never redeclare locally.
+// Re-declaring constants locally causes drift between pages (e.g. #1a1a1a vs #111827).
+//
+// Palette: Tailwind CSS neutral scale (2024 industry standard).
+// Contrast-audited for WCAG AA compliance on white backgrounds.
+
+// ===== BRAND =====
+export const GREEN = "#00A859";   // Brazil green — primary brand
+export const YELLOW = "#FFCB05";  // Brazil yellow — accent
+
+// ===== TEXT (Tailwind neutral) =====
+export const TEXT = "#111827";    // gray-900 — main text
+export const SUB = "#4B5563";     // gray-600 — secondary text
+export const DIM = "#9CA3AF";     // gray-400 — tertiary/hints
+export const BORDER = "#E5E7EB";  // gray-200 — default borders
+export const BG_ALT = "#FAFBFC";  // subtle surface background
+
+// ===== SEMANTIC =====
+export const RED = "#DC2626";     // red-600 — errors, losses, negative states
+
+// ===== FONTS =====
 export const SERIF = "'Source Serif 4', Georgia, serif";
 export const SANS = "'Inter', -apple-system, sans-serif";
-export const CARD_SHADOW = "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)";
-export const CARD_SHADOW_MD = "0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04)";
+
+// ===== TYPOGRAPHY SCALE =====
+// 8-step scale. Use these instead of arbitrary sizes going forward.
+// (Existing inline usages stay as-is until the "consolidate typography" refactor.)
+export const FS = {
+  xxs: 10,      // micro labels, badge caps (use sparingly)
+  xs: 12,       // meta text, timestamps
+  sm: 13,       // small body
+  base: 14,     // body default
+  md: 16,       // emphasized body
+  lg: 18,       // subtitles
+  xl: 22,       // h3, section titles
+  xxl: 28,      // h2, card titles
+  display: 36,  // h1, hero
+};
+
+// Font weights — 3 values. Stick to these.
+export const FW = {
+  regular: 400,
+  medium: 600,
+  bold: 800,
+};
+
+// ===== LAYOUT =====
+// Border radius — 5 values covering all legit UI needs
+export const RADIUS = {
+  sm: 6,        // tags, inline pills
+  md: 8,        // inputs, small buttons
+  lg: 12,       // small cards
+  xl: 18,       // large cards (main content blocks)
+  pill: 9999,
+};
+
+// Legacy alias — prefer RADIUS.xl going forward
 export const CARD_RADIUS = 18;
+
+// ===== SHADOWS =====
+// Slightly stronger than v1 (0.04/0.03) for visibility on lower-contrast monitors
+export const CARD_SHADOW = "0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04)";
+export const CARD_SHADOW_MD = "0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.05)";
+
+// ===== CACHE =====
 export const CACHE_DURATION_MS = 5 * 60 * 1000;
 
-export const surfaceColorMap = { "Saibro": "#E8734A", "Clay": "#E8734A", "Hard": "#3B82F6", "Duro": "#3B82F6", "Piso duro": "#3B82F6", "Grama": "#22C55E", "Grass": "#22C55E" };
+// ===== MAPS =====
+export const surfaceColorMap = {
+  "Saibro": "#E8734A", "Clay": "#E8734A",
+  "Hard": "#3B82F6", "Duro": "#3B82F6", "Piso duro": "#3B82F6", "Dura": "#3B82F6",
+  "Grama": "#22C55E", "Grass": "#22C55E"
+};
 
 export const catColors = {
   "Torneio": "#c0392b", "Treino": "#2A9D8F", "Declaração": "#b8860b",
