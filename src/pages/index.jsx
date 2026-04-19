@@ -135,61 +135,62 @@ export default function JoaoFonsecaNews() {
 
   var initDone = useRef(false); var nextMatchRef = useRef(null);
 
+  // VAPID public key (copiada do env var VAPID_PUBLIC_KEY - precisa estar acessivel no client)
+  // Esta e a chave publica, pode ser exposta no frontend.
+  var VAPID_PUBLIC_KEY = "BEBtbLDE4cEvYCy-9Uvuqyxk024DltZv-VdpipAnw-cqJkh6SrGF0lezDxPai5o7C8k3vKmwshYqXs4n1qDDBPM";
+
+  // Helper: converte base64url -> Uint8Array (exigido pelo browser.pushManager.subscribe)
+  function urlBase64ToUint8Array(base64String) {
+    var padding = "=".repeat((4 - base64String.length % 4) % 4);
+    var base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
+    var rawData = window.atob(base64);
+    var outputArray = new Uint8Array(rawData.length);
+    for (var i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+    return outputArray;
+  }
+
   var handlePushSubscribe = function() {
     if (pushLoading || pushEnabled) return;
-    if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator)) return;
+    if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+      alert("Seu navegador não suporta notificações push. Tente no Chrome, Firefox, Edge ou Safari 16.4+.");
+      return;
+    }
     setPushLoading(true);
 
     Notification.requestPermission().then(function(permission) {
-      if (permission !== "granted") { setPushLoading(false); return; }
+      if (permission !== "granted") {
+        setPushLoading(false);
+        return;
+      }
 
-      navigator.serviceWorker.register("/firebase-messaging-sw.js").then(function(registration) {
-        var loadScript = function(src) {
-          return new Promise(function(resolve, reject) {
-            if (document.querySelector('script[src="' + src + '"]')) { resolve(); return; }
-            var s = document.createElement("script");
-            s.src = src; s.onload = resolve; s.onerror = reject;
-            document.head.appendChild(s);
+      // Registra o service worker novo (fn-sw.js, sem Firebase)
+      navigator.serviceWorker.register("/fn-sw.js").then(function(registration) {
+        // Espera o SW ficar ativo antes de tentar subscribe
+        return navigator.serviceWorker.ready.then(function() { return registration; });
+      }).then(function(registration) {
+        // Se ja tem subscription, reusa
+        return registration.pushManager.getSubscription().then(function(existing) {
+          if (existing) return existing;
+          return registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
           });
-        };
-
-        loadScript("https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js").then(function() {
-          return loadScript("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js");
-        }).then(function() {
-          if (!firebase.apps.length) {
-            firebase.initializeApp({
-              apiKey: "AIzaSyC-HLexrhKl8nzoSvzreVC5p5c3gSu7YBM",
-              authDomain: "fonsecanews-a8dd6.firebaseapp.com",
-              projectId: "fonsecanews-a8dd6",
-              storageBucket: "fonsecanews-a8dd6.firebasestorage.app",
-              messagingSenderId: "956348246783",
-              appId: "1:956348246783:web:175dd2d3ff5586b05c3aca"
-            });
-          }
-          var messaging = firebase.messaging();
-          return messaging.getToken({
-            vapidKey: "BImy1bs1rv3d168KaRR7lEy8LH2bLiP8cxJQvj6c-L3RIdDu8F31rFpoMDes1zfxkpebXladqku94qWaLlY-pgk",
-            serviceWorkerRegistration: registration
-          });
-        }).then(function(token) {
-          if (token) {
-            return fetch("/api/push-subscribe", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ token: token })
-            }).then(function() {
-              try { localStorage.setItem("fn_push_enabled", "1"); } catch(e) {}
-              setPushEnabled(true);
-              setPushLoading(false);
-            });
-          }
-          setPushLoading(false);
-        }).catch(function(e) {
-          console.error("[push] Error:", e);
-          setPushLoading(false);
         });
+      }).then(function(subscription) {
+        // Envia ao servidor
+        return fetch("/api/push-subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subscription: subscription.toJSON() })
+        });
+      }).then(function(res) {
+        if (res && res.ok) {
+          try { localStorage.setItem("fn_push_enabled", "1"); } catch(e) {}
+          setPushEnabled(true);
+        }
+        setPushLoading(false);
       }).catch(function(e) {
-        console.error("[push] SW registration error:", e);
+        console.error("[push] Error:", e);
         setPushLoading(false);
       });
     }).catch(function() {
@@ -238,7 +239,11 @@ export default function JoaoFonsecaNews() {
   useEffect(function() {
     var handler = function(e) { e.preventDefault(); setDeferredPrompt(e); setShowInstallBanner(true); };
     window.addEventListener("beforeinstallprompt", handler);
-    if ("serviceWorker" in navigator) { var sw = new Blob(["self.addEventListener('install',e=>{self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(clients.claim())});self.addEventListener('fetch',e=>{e.respondWith(fetch(e.request).catch(()=>new Response('Offline')))});"], { type: "application/javascript" }); navigator.serviceWorker.register(URL.createObjectURL(sw)).catch(function() {}); }
+    // Registra o fn-sw.js desde o load — ele cobre PWA (install/activate) E push.
+    // Sem bloquear nem pedir permissao — a permissao de push e pedida so quando o usuario clica no sininho.
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/fn-sw.js").catch(function() {});
+    }
     return function() { window.removeEventListener("beforeinstallprompt", handler); };
   }, []);
 
@@ -424,6 +429,20 @@ export default function JoaoFonsecaNews() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button className="pwa-install-btn" onClick={function(){ setShowAutoInstall(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "#FFCB05", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0, animation: "pulse 2s ease-in-out infinite", boxShadow: "0 0 8px #FFCB0540" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+            </button>
+            <button
+              onClick={handlePushSubscribe}
+              disabled={pushLoading}
+              title={pushEnabled ? "Notificações ativadas" : "Ativar notificações"}
+              style={{ width: 32, height: 32, borderRadius: 8, background: pushEnabled ? GREEN + "15" : "transparent", border: "none", color: pushEnabled ? GREEN : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: pushLoading ? "default" : "pointer", flexShrink: 0, padding: 0 }}
+            >
+              {pushLoading ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ animation: "spin 1s linear infinite" }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+              ) : pushEnabled ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              )}
             </button>
                     <button onClick={handleRefresh} disabled={loading} style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: loading ? DIM : SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: loading ? "default" : "pointer", flexShrink: 0, padding: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={loading ? { animation: "spin 1s linear infinite" } : {}}><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16" /></svg>
