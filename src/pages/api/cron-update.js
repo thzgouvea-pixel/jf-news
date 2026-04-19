@@ -454,6 +454,36 @@ function validateCard(label, match, items) {
   return missing;
 }
 
+// ===== PUSH NOTIFICATION HELPER =====
+// Chama /api/push-send internamente com o secret.
+// Returns true on success (at least scheduled), false on error. Nao trava o cron se falhar.
+async function sendPush(title, body, url, tag) {
+  var secret = process.env.PUSH_SECRET;
+  if (!secret) { log("push: no PUSH_SECRET, skip"); return false; }
+
+  // Monta a URL do proprio site. Em Vercel, VERCEL_URL tem o deployment URL.
+  var host = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "https://fonsecanews.com.br";
+
+  try {
+    var res = await fetch(host + "/api/push-send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-push-secret": secret },
+      body: JSON.stringify({
+        title: title || "Fonseca News",
+        body: body || "",
+        url: url || "https://fonsecanews.com.br",
+        tag: tag || "fn-default"
+      })
+    });
+    var data = await res.json().catch(function() { return {}; });
+    log("push [" + (tag || "default") + "]: " + (data.sent || 0) + " sent, " + (data.failed || 0) + " failed");
+    return res.ok;
+  } catch (e) {
+    log("push error: " + e.message);
+    return false;
+  }
+}
+
 // ===== MAIN HANDLER =====
 export default async function handler(req, res) {
   var start = Date.now();
@@ -929,6 +959,94 @@ export default async function handler(req, res) {
 
     await Promise.all(w);
     steps.kv = w.length + "k";
+
+    // ===== PUSH NOTIFICATION TRIGGERS =====
+    // Compara estado atual vs ultimo estado ja notificado (fn:pushState).
+    // Dispara push em 4 eventos: novo adversario, resultado de jogo, mudanca de ranking, jogo ao vivo.
+    // fn:pushState guarda o que ja foi notificado pra evitar duplicatas.
+    try {
+      var pushStateRaw = await kv.get("fn:pushState");
+      var pushState = {};
+      if (pushStateRaw) {
+        try { pushState = typeof pushStateRaw === "string" ? JSON.parse(pushStateRaw) : pushStateRaw; }
+        catch (e) { pushState = {}; }
+      }
+      if (!pushState || typeof pushState !== "object") pushState = {};
+
+      var pushesToSend = [];
+
+      // --- TRIGGER 1: Novo adversario definido ---
+      // Considera "novo" se nm.opponent_name existe, nao e "A definir", e e diferente do que ja foi notificado
+      if (nm && nm.opponent_name && nm.opponent_name !== "A definir") {
+        var nmKey = (nm.tournament_name || "") + "|" + nm.opponent_name + "|" + (nm.round || "");
+        if (pushState.lastNextMatch !== nmKey) {
+          var tournBit = nm.tournament_name ? " (" + nm.tournament_name + (nm.round ? " - " + nm.round : "") + ")" : "";
+          var titleT1 = "🎾 Próximo jogo do João";
+          var bodyT1 = "vs " + nm.opponent_name + tournBit;
+          pushesToSend.push({ title: titleT1, body: bodyT1, url: "https://fonsecanews.com.br", tag: "next-match", stateKey: "lastNextMatch", stateValue: nmKey });
+        }
+      }
+
+      // --- TRIGGER 2: Resultado do ultimo jogo (acabou de finalizar) ---
+      // Considera "novo resultado" se lm tem result + score, e nao foi notificado ainda (identifica por id ou opponent+date)
+      if (lm && (lm.result === "V" || lm.result === "D") && lm.score) {
+        var lmKey = String(lm.id || "") + "|" + lm.opponent_name + "|" + lm.score;
+        if (pushState.lastResult !== lmKey) {
+          var emojiT2 = lm.result === "V" ? "🏆" : "😔";
+          var verbT2 = lm.result === "V" ? "Vitória do João" : "Derrota do João";
+          var titleT2 = emojiT2 + " " + verbT2;
+          var bodyT2 = lm.score + " vs " + lm.opponent_name + (lm.tournament_name ? " (" + lm.tournament_name + ")" : "");
+          pushesToSend.push({ title: titleT2, body: bodyT2, url: "https://fonsecanews.com.br", tag: "result", stateKey: "lastResult", stateValue: lmKey });
+        }
+      }
+
+      // --- TRIGGER 3: Mudanca de ranking ATP ---
+      // Compara wiki.ranking (novo) com exRanking.ranking (antigo do KV)
+      if (wiki && wiki.ranking && exRanking && exRanking.ranking && wiki.ranking !== exRanking.ranking) {
+        var rkKey = String(wiki.ranking);
+        if (pushState.lastRanking !== rkKey) {
+          var direction, emojiT3;
+          if (wiki.ranking < exRanking.ranking) { direction = "subiu"; emojiT3 = "📈"; }
+          else { direction = "caiu"; emojiT3 = "📉"; }
+          var titleT3 = emojiT3 + " Ranking ATP atualizado";
+          var bodyT3 = "João " + direction + " pra #" + wiki.ranking + " (era #" + exRanking.ranking + ")";
+          pushesToSend.push({ title: titleT3, body: bodyT3, url: "https://fonsecanews.com.br", tag: "ranking", stateKey: "lastRanking", stateValue: rkKey });
+        }
+      }
+
+      // --- TRIGGER 4: Jogo ao vivo comecou ---
+      // Detecta match em andamento: nm existe e o startTimestamp ja passou (jogo comecou)
+      if (nm && nm.opponent_name && nm.opponent_name !== "A definir" && nm.startTimestamp) {
+        var startMs = nm.startTimestamp * 1000;
+        var nowMs = Date.now();
+        var minutesSinceStart = (nowMs - startMs) / 60000;
+        // Notificar se o jogo comecou nos ultimos 30 min (acabou de entrar em quadra)
+        if (minutesSinceStart >= 0 && minutesSinceStart <= 30) {
+          var liveKey = String(nm.id || "") + "|" + nm.opponent_name + "|" + nm.startTimestamp;
+          if (pushState.lastLive !== liveKey) {
+            var titleT4 = "🔴 AO VIVO agora";
+            var bodyT4 = "João Fonseca x " + nm.opponent_name + " — acompanhe";
+            pushesToSend.push({ title: titleT4, body: bodyT4, url: "https://fonsecanews.com.br", tag: "live", stateKey: "lastLive", stateValue: liveKey });
+          }
+        }
+      }
+
+      // Envia todos os pushes pendentes (sequencialmente pra nao spammar o push-send endpoint)
+      if (pushesToSend.length > 0) {
+        log("push triggers: " + pushesToSend.length);
+        for (var pi = 0; pi < pushesToSend.length; pi++) {
+          var pu = pushesToSend[pi];
+          var ok = await sendPush(pu.title, pu.body, pu.url, pu.tag);
+          // So marca como notificado se push foi bem sucedido (evita loss se houver erro transitorio)
+          if (ok) pushState[pu.stateKey] = pu.stateValue;
+        }
+        pushState.lastPushAt = new Date().toISOString();
+        try { await kv.set("fn:pushState", JSON.stringify(pushState)); } catch (e) { log("pushState save err: " + e.message); }
+        steps.push = pushesToSend.length + "p";
+      }
+    } catch (e) {
+      log("push trigger error: " + e.message);
+    }
 
     var elapsed = Date.now() - start;
     log("Done " + elapsed + "ms | " + JSON.stringify(steps));
