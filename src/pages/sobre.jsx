@@ -1115,60 +1115,51 @@ var PlayerBlock = function(props) {
         var f = matchStats.fonseca;
         var o = matchStats.opponent || {};
 
-        // ===== DEFENSIVE STAT EXTRACTION (same as PlayerBlock component) =====
-        function pick(obj, keys) {
-          for (var i = 0; i < keys.length; i++) {
-            var v = obj[keys[i]];
-            if (v !== undefined && v !== null && v !== "") return v;
-          }
-          return null;
-        }
-
+        // ===== STATS — confirmed SofaScore Pro keys =====
         // 1st serve %
         var fServTotal = (f.firstserveaccuracy||0) + (f.secondserveaccuracy||0) + (f.doublefaults||0);
         var oServTotal = (o.firstserveaccuracy||0) + (o.secondserveaccuracy||0) + (o.doublefaults||0);
         var f1stPct = fServTotal > 0 ? Math.round((f.firstserveaccuracy||0) / fServTotal * 100) : 0;
         var o1stPct = oServTotal > 0 ? Math.round((o.firstserveaccuracy||0) / oServTotal * 100) : 0;
 
-        // Break points (converted / opportunities)
-        var fBpConv = pick(f, ["breakpointsconverted", "breakpointswon"]);
-        var fBpOpp  = pick(f, ["breakpoints", "breakpointsopportunities", "breakpointsfaced", "breakpointstotal"]);
-        var oBpConv = pick(o, ["breakpointsconverted", "breakpointswon"]);
-        var oBpOpp  = pick(o, ["breakpoints", "breakpointsopportunities", "breakpointsfaced", "breakpointstotal"]);
-        var hasBp = (fBpConv !== null && fBpOpp !== null && (fBpOpp > 0 || oBpOpp > 0))
-                 && (oBpConv !== null && oBpOpp !== null);
+        // Break points
+        var fBpConv = f.breakpointsscored || 0;
+        var oBpConv = o.breakpointsscored || 0;
+        var fBpOpp = fBpConv + (o.breakpointssaved || 0);
+        var oBpOpp = oBpConv + (f.breakpointssaved || 0);
+        var fBpFaced = oBpConv + (f.breakpointssaved || 0);
+        var oBpFaced = fBpConv + (o.breakpointssaved || 0);
+        var hasBpData = (f.breakpointsscored !== undefined || o.breakpointsscored !== undefined ||
+                         f.breakpointssaved !== undefined || o.breakpointssaved !== undefined) &&
+                        (fBpOpp > 0 || oBpOpp > 0 || fBpFaced > 0 || oBpFaced > 0);
 
-        // Winners
-        var fWinners = pick(f, ["winners", "totalwinners", "winnersandforcedwinners"]);
-        var oWinners = pick(o, ["winners", "totalwinners", "winnersandforcedwinners"]);
-        var hasWinners = (fWinners !== null || oWinners !== null) && ((fWinners||0) + (oWinners||0)) > 0;
-
-        // Unforced errors
-        var fUE = pick(f, ["unforcederrors", "unforcederror"]);
-        var oUE = pick(o, ["unforcederrors", "unforcederror"]);
-        var hasUE = (fUE !== null || oUE !== null) && ((fUE||0) + (oUE||0)) > 0;
-
-        // Total points (fallback)
-        var fTotalPts = (f.servicepointsscored||0) + (f.receiverpointsscored||0) || f.pointstotal || 0;
-        var oTotalPts = (o.servicepointsscored||0) + (o.receiverpointsscored||0) || o.pointstotal || 0;
+        // Total points
+        var fTotalPts = f.pointstotal || ((f.servicepointsscored||0) + (f.receiverpointsscored||0));
+        var oTotalPts = o.pointstotal || ((o.servicepointsscored||0) + (o.receiverpointsscored||0));
 
         var statRows = [
           { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0, icon: "A" },
         ];
-        if (hasBp) {
+        if (hasBpData) {
           statRows.push({
-            label: "Break points", icon: "BP",
+            label: "BP convertidos", icon: "BP",
             fVal: fBpConv, oVal: oBpConv,
             fSecondary: fBpOpp, oSecondary: oBpOpp,
             bp: true, pct: true,
             fBarVal: fBpOpp > 0 ? (fBpConv / fBpOpp) * 100 : 0,
             oBarVal: oBpOpp > 0 ? (oBpConv / oBpOpp) * 100 : 0,
           });
+          statRows.push({
+            label: "BP salvos", icon: "BS",
+            fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0,
+            fSecondary: fBpFaced, oSecondary: oBpFaced,
+            bp: true, pct: true,
+            fBarVal: fBpFaced > 0 ? ((f.breakpointssaved || 0) / fBpFaced) * 100 : 0,
+            oBarVal: oBpFaced > 0 ? ((o.breakpointssaved || 0) / oBpFaced) * 100 : 0,
+          });
         }
-        statRows.push({ label: "1o saque", fVal: f1stPct, oVal: o1stPct, pct: true, icon: "1S" });
-        if (hasWinners) statRows.push({ label: "Winners", fVal: fWinners || 0, oVal: oWinners || 0, icon: "W" });
-        if (hasUE) statRows.push({ label: "Erros n\u00e3o for\u00e7ados", fVal: fUE || 0, oVal: oUE || 0, invert: true, icon: "UE" });
-        if (!hasWinners && !hasUE && (fTotalPts > 0 || oTotalPts > 0)) {
+        statRows.push({ label: "Duplas faltas", fVal: f.doublefaults || 0, oVal: o.doublefaults || 0, invert: true, icon: "DF" });
+        if (fTotalPts > 0 || oTotalPts > 0) {
           statRows.push({ label: "Total de pontos", fVal: fTotalPts, oVal: oTotalPts, icon: "TP" });
         }
         statRows = statRows.filter(function(r) { return r.fVal > 0 || r.oVal > 0 || r.fSecondary > 0 || r.oSecondary > 0; });
