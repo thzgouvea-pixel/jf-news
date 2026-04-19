@@ -1,7 +1,12 @@
-// ===== FONSECA NEWS — TWITTER BOT v9 =====
+// ===== FONSECA NEWS — TWITTER BOT v10 =====
 // Gemini-powered tweet generation, quality source filtering
 // Schedule: max 4 tweets/day, min 2h between posts, 6h-00h BRT
 // Algorithm: link in reply, max 1 hashtag, conversational tone
+//
+// v10 changes (19/04/2026):
+//  1. Fixed truncated-tweet validation — was letting prepositions ("no", "na", "em"...) pass as valid endings
+//  2. Added source normalization — "ge" -> "Globo Esporte", "uol" -> "UOL", etc
+//  3. Added semantic dedup vs last 15 posted titles (keyword overlap, threshold 50%)
 
 import crypto from "crypto";
 import { kv } from "@vercel/kv";
@@ -73,6 +78,110 @@ async function setLastPostTime() { try { await kv.set("tw:last_post", Date.now()
 async function getTodayCount() { try { var d = new Date().toISOString().split("T")[0]; var v = await kv.get("tw:count:" + d); return v ? parseInt(v, 10) : 0; } catch (e) { return 0; } }
 async function incTodayCount() { try { var d = new Date().toISOString().split("T")[0]; await kv.incr("tw:count:" + d); await kv.expire("tw:count:" + d, 172800); } catch (e) { } }
 
+// ===== SEMANTIC DEDUP (NEW in v10) =====
+// Keeps a ringbuffer of last 15 posted titles in KV.
+// New candidate is rejected if keyword overlap > 50% with any recent title.
+
+async function getRecentTitles() {
+  try {
+    var v = await kv.get("tw:recent_titles");
+    if (!v) return [];
+    if (typeof v === "string") {
+      try { return JSON.parse(v); } catch (e) { return []; }
+    }
+    return Array.isArray(v) ? v : [];
+  } catch (e) { return []; }
+}
+
+async function pushRecentTitle(title) {
+  try {
+    var current = await getRecentTitles();
+    current.push(title);
+    if (current.length > 15) current = current.slice(-15);
+    await kv.set("tw:recent_titles", JSON.stringify(current), { ex: 604800 });
+  } catch (e) { console.log("[tweet] pushRecentTitle error:", e.message); }
+}
+
+// Keyword extraction — same logic as news.js so behavior is consistent.
+// v10: added generic sport/nationality stopwords + synonym canonicalization
+// so that "Fonseca vence Shelton" and "Fonseca supera Shelton" dedupe correctly.
+var DEDUP_STOPWORDS = [
+  "o","a","os","as","de","do","da","dos","das","em","no","na","nos","nas",
+  "e","que","um","uma","com","por","para","se","ao","aos","sua","seu",
+  "mais","como","sobre","entre","ate","apos","foi","ser","vai","tem",
+  "pode","diz","disse","esta","sao","faz","ter","pelo","pela","contra",
+  "muito","mas","tambem","ja","ainda","quando","onde","qual","essa","esse","isso",
+  // Identity/sport generics — these appear in almost every Fonseca headline
+  "joao","fonseca","tenis","tenista","brasileiro","brasileira","brasil",
+  "esporte","esportes","ano","anos","hoje","amanha","ontem","semana",
+  "jogador","jogo","partida","confronto","duelo"
+];
+
+// Canonicalize synonyms so variants of same verb map to one token.
+// Key insight: news rewrites the same event with different verbs ("vence"/"supera"/"derrota"/"bate").
+var DEDUP_SYNONYMS = {
+  // WIN verbs
+  "vence": "venceu", "venceu": "venceu", "vencer": "venceu", "vencera": "venceu",
+  "supera": "venceu", "superou": "venceu", "superar": "venceu", "superara": "venceu",
+  "derrota": "venceu", "derrotou": "venceu", "derrotar": "venceu", "derrotara": "venceu",
+  "bate": "venceu", "bateu": "venceu", "bater": "venceu",
+  "atropela": "venceu", "atropelou": "venceu",
+  "elimina": "venceu", "eliminou": "venceu", "eliminar": "venceu",
+  "ganha": "venceu", "ganhou": "venceu", "ganhar": "venceu",
+  "passa": "venceu", "passou": "venceu",
+  "despacha": "venceu", "despachou": "venceu",
+  "conquista": "venceu", "conquistou": "venceu",
+  "vitoria": "venceu", "vitorias": "venceu",
+  // LOSE verbs
+  "perde": "perdeu", "perdeu": "perdeu", "perder": "perdeu",
+  "cai": "perdeu", "caiu": "perdeu",
+  "eliminado": "perdeu", "derrotado": "perdeu",
+  "derrota": "perdeu", // NOTE: same key as above, last wins — ambiguous, keep "venceu" since verb "derrota" = to defeat (win)
+  // ADVANCE verbs
+  "avanca": "avancou", "avancou": "avancou", "avancar": "avancou",
+  "classifica": "avancou", "classificou": "avancou",
+  "vai": "avancou", // "vai as semis"
+  // Round equivalents
+  "semis": "semifinal", "semifinais": "semifinal", "semifinal": "semifinal",
+  "quartas": "quartas", "quartasdefinal": "quartas",
+  "final": "final", "finais": "final", "decisao": "final",
+  "oitavas": "oitavas",
+  "rodada": "rodada",
+  // Ranking
+  "ranking": "ranking", "rank": "ranking", "posicao": "ranking",
+  "ascensao": "ranking", "sobe": "ranking", "subiu": "ranking"
+};
+
+// fix the "derrota" ambiguity — default it to "venceu" (the common verb sense)
+DEDUP_SYNONYMS["derrota"] = "venceu";
+
+function getKeywords(title) {
+  return (title || "").toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(function (w) { return w.length > 2 && DEDUP_STOPWORDS.indexOf(w) === -1; })
+    .map(function (w) { return DEDUP_SYNONYMS[w] || w; });
+}
+
+function similarityTo(title, existing) {
+  var kw1 = getKeywords(title);
+  if (kw1.length < 2) return 0;
+  var maxSim = 0;
+  var matchedTitle = null;
+  for (var i = 0; i < existing.length; i++) {
+    var kw2 = getKeywords(existing[i]);
+    if (kw2.length < 2) continue;
+    var overlap = 0;
+    for (var j = 0; j < kw1.length; j++) {
+      if (kw2.indexOf(kw1[j]) !== -1) overlap++;
+    }
+    var similarity = overlap / Math.min(kw1.length, kw2.length);
+    if (similarity > maxSim) { maxSim = similarity; matchedTitle = existing[i]; }
+  }
+  return { sim: maxSim, matched: matchedTitle };
+}
+
 // ===== SOURCE QUALITY FILTER =====
 var PREMIUM_SOURCES = [
   "espn", "ge", "globoesporte", "globo", "uol", "folha", "estadão", "estadao",
@@ -99,7 +208,98 @@ function sourceScore(source) {
   return 1;
 }
 
-// ===== TITLE HASHING & SIMILARITY =====
+// ===== SOURCE DISPLAY NORMALIZATION (NEW in v10) =====
+// Google News RSS returns sources in raw/lowercase form ("ge", "uol", "globo").
+// Normalize to pretty display names for the reply tweet.
+var SOURCE_DISPLAY_MAP = {
+  "ge": "Globo Esporte",
+  "ge.globo": "Globo Esporte",
+  "ge.globo.com": "Globo Esporte",
+  "globoesporte": "Globo Esporte",
+  "globoesporte.com": "Globo Esporte",
+  "globoesporte.globo.com": "Globo Esporte",
+  "globo": "Globo",
+  "globo.com": "Globo",
+  "g1": "G1",
+  "g1.globo": "G1",
+  "g1.globo.com": "G1",
+  "uol": "UOL",
+  "uol.com.br": "UOL",
+  "folha": "Folha de S.Paulo",
+  "folha de são paulo": "Folha de S.Paulo",
+  "folha de s.paulo": "Folha de S.Paulo",
+  "folha de spaulo": "Folha de S.Paulo",
+  "folhapress": "Folha de S.Paulo",
+  "folha.uol.com.br": "Folha de S.Paulo",
+  "estadão": "Estadão",
+  "estadao": "Estadão",
+  "estadao.com.br": "Estadão",
+  "terra": "Terra",
+  "terra.com.br": "Terra",
+  "r7": "R7",
+  "r7.com": "R7",
+  "band": "Band",
+  "band.uol.com.br": "Band",
+  "cnn": "CNN Brasil",
+  "cnn brasil": "CNN Brasil",
+  "bbc": "BBC",
+  "bbc brasil": "BBC Brasil",
+  "espn": "ESPN",
+  "espn.com.br": "ESPN",
+  "lance": "Lance!",
+  "lance!": "Lance!",
+  "lance.com.br": "Lance!",
+  "ig": "iG",
+  "ig esportes": "iG Esportes",
+  "atp": "ATP Tour",
+  "atp tour": "ATP Tour",
+  "atptour": "ATP Tour",
+  "atptour.com": "ATP Tour",
+  "tennis.com": "Tennis.com",
+  "tennisworld": "Tennis World",
+  "tennis world": "Tennis World",
+  "tennisworld usa": "Tennis World",
+  "eurosport": "Eurosport",
+  "l'equipe": "L'Équipe",
+  "lequipe": "L'Équipe",
+  "marca": "Marca",
+  "as.com": "AS",
+  "gazzetta": "La Gazzetta dello Sport",
+  "tuttosport": "Tuttosport",
+  "record": "Record",
+  "sportv": "SporTV",
+  "sportv.globo.com": "SporTV",
+  "reuters": "Reuters",
+  "the athletic": "The Athletic",
+  "associated press": "Associated Press",
+  "ap": "Associated Press",
+  "placar": "Placar",
+  "placar.abril.com.br": "Placar",
+};
+
+function normalizeSource(source) {
+  if (!source) return "Fonte";
+  var low = source.toLowerCase().trim();
+
+  // Exact match first
+  if (SOURCE_DISPLAY_MAP[low]) return SOURCE_DISPLAY_MAP[low];
+
+  // Partial match (handles "ge.globo.com/rio" or "uol.com.br/esporte" variants)
+  for (var key in SOURCE_DISPLAY_MAP) {
+    if (low === key) continue;
+    if (low.indexOf(key) !== -1) return SOURCE_DISPLAY_MAP[key];
+  }
+
+  // Fallback: Title Case (capitalizes each word)
+  return source.split(/\s+/).map(function (w) {
+    if (!w) return "";
+    // Preserve all-caps short acronyms
+    if (w.length <= 4 && w === w.toUpperCase()) return w;
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
+  }).join(" ");
+}
+
+// ===== TITLE HASHING (kept for backward compat) =====
 function normalizeTitle(title) {
   return (title || "").toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -122,7 +322,9 @@ async function geminiTweet(headline, context) {
     "Reescreva esta noticia como um tweet em portugues brasileiro.\n\n" +
     "REGRAS ABSOLUTAS:\n" +
     "- MINIMO 120 caracteres, MAXIMO 240 caracteres\n" +
-    "- O tweet precisa ser uma FRASE COMPLETA, nunca corte no meio de uma palavra\n" +
+    "- O tweet precisa ser uma FRASE COMPLETA, nunca corte no meio de uma palavra ou frase\n" +
+    "- SEMPRE termine com emoji OU com ponto final (. ! ?). NUNCA termine no meio.\n" +
+    "- NUNCA termine em preposicao ou artigo: no, na, em, de, do, da, para, com, e, ou, que, se, o, a, um, uma, pelo, pela\n" +
     "- Tom de fa apaixonado mas informativo, como um amigo contando a novidade\n" +
     "- Aproveite o espaco: inclua contexto como placar, ranking, torneio, rodada, adversario\n" +
     "- NAO use hashtags (serao adicionadas automaticamente)\n" +
@@ -137,7 +339,8 @@ async function geminiTweet(headline, context) {
     "- \"Quartas de final no BMW Open confirmadas! Joao encara Shelton na sexta as 08:20 BRT. Vai ser um jogaco 🎾\"\n" +
     "- \"Analistas apontam Fonseca como favorito contra Shelton nas quartas do BMW Open. O moleque ta pronto pro desafio 💪\"\n\n" +
     "EXEMPLOS DE TWEETS RUINS (NUNCA faca assim):\n" +
-    "- \"O Fonseca ta voando em M\" (cortado no meio, sem sentido)\n" +
+    "- \"O Fonseca ta voando em M\" (cortado no meio de palavra)\n" +
+    "- \"Nosso Fonseca tem um calendario promissor, muitas oportunidades de subir ainda mais no\" (cortado em preposicao)\n" +
     "- \"Nosso Joao ta voando no BMW\" (muito curto, sem informacao)\n" +
     "- \"Grande jogo\" (vazio, sem contexto)\n\n" +
     "CONTEXTO ATUAL:\n" +
@@ -164,25 +367,69 @@ async function geminiTweet(headline, context) {
     parts.forEach(function (p) { if (p.text && !p.thought) txt += p.text; });
     txt = txt.trim().replace(/^["']|["']$/g, "").trim();
 
-    // QUALITY VALIDATION — reject garbage
+    // ===== QUALITY VALIDATION =====
     if (!txt || txt.length < 80) {
       console.log("[tweet] Gemini too short (" + (txt ? txt.length : 0) + " chars)");
       return null;
     }
 
-    // Reject if truncated — last word is suspiciously short (cut mid-sentence)
-    var words = txt.replace(/[🔥🎾🇧🇷⚡💪🏆😂📝🏅✨🏟️👏🫡📱📲🔔]+$/g, "").trim().split(/\s+/);
-    var lastWord = words[words.length - 1] || "";
-    var shortWordsOk = ["e", "o", "a", "no", "na", "um", "ja", "so", "la", "ai", "ao", "em", "de", "do", "da", "os", "as", "se", "ou"];
-    var lastClean = lastWord.toLowerCase().replace(/[.!?…,;:)]/g, "");
-    if (lastClean.length > 0 && lastClean.length <= 2 && shortWordsOk.indexOf(lastClean) === -1) {
-      console.log("[tweet] Gemini truncated, ends with: '" + lastWord + "'");
+    // v10 FIX: robust truncation detection.
+    // Rule: strip trailing emojis+whitespace, then the text must end in
+    // strong punctuation (. ! ? …) OR the very last char (before stripping) must be an emoji.
+    // If the "last word" (post-emoji-strip) is a preposition/article/conjunction → reject.
+
+    // Blacklist of words that NEVER legitimately end a Portuguese sentence.
+    // NOTE: "para" and "pra" intentionally EXCLUDED — they're ambiguous with the
+    // verb "parar" (to stop), e.g. "A evolução não para 🇧🇷" is valid.
+    var BAD_ENDINGS = [
+      "a", "o", "e", "os", "as", "ao", "aos",
+      "no", "na", "nos", "nas",
+      "do", "da", "dos", "das",
+      "de", "em",
+      "um", "uma", "uns", "umas",
+      "por", "pela", "pelo", "pelas", "pelos",
+      "com", "sem", "sob", "sobre", "ante", "apos", "ate",
+      "ou", "mas", "que", "se", "nem", "pois",
+      "num", "numa", "nuns", "numas",
+      "meu", "minha", "seu", "sua", "teu", "tua",
+      "cujo", "cuja"
+    ];
+
+    // Strip trailing emoji cluster + whitespace. The broad Unicode ranges below
+    // cover emoticons, transport, supplemental, regional indicators, variation selectors, and ZWJ.
+    var emojiStrip = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{1F1E6}-\u{1F1FF}\uFE0F\u200D]+/gu;
+    var trimmed = txt.replace(/\s+$/g, "");
+    var stripped = trimmed.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2300}-\u{23FF}\u{1F1E6}-\u{1F1FF}\uFE0F\u200D\s]+$/gu, "");
+
+    // If stripping emojis+whitespace made text shorter than just trimming whitespace,
+    // then there was emoji content at the end. This is surrogate-pair safe.
+    var endsInEmoji = stripped.length < trimmed.length;
+
+    // Detect if stripped text ends in strong punctuation
+    var strippedLastChar = stripped.charAt(stripped.length - 1);
+    var endsInPunct = /[.!?…]/.test(strippedLastChar);
+
+    // Extract last word (after stripping punctuation too)
+    var wordForCheck = stripped.replace(/[.!?…,;:)\]"']+$/g, "").trim();
+    var lastWord = (wordForCheck.split(/\s+/).pop() || "").toLowerCase();
+    lastWord = lastWord.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+
+    if (BAD_ENDINGS.indexOf(lastWord) !== -1) {
+      console.log("[tweet] Gemini TRUNCATED — ends in preposition/article: '" + lastWord + "' | tail: '" + txt.substring(txt.length - 30) + "'");
       return null;
     }
 
-    // Reject if doesn't look like a complete sentence
-    if (!/[.!?…🔥🎾🇧🇷⚡💪🏆😂📝🏅✨a-záàâãéêíóôõúç0-9)"]$/i.test(txt.charAt(txt.length - 1))) {
-      console.log("[tweet] Gemini bad ending: '" + txt.substring(txt.length - 10) + "'");
+    if (!endsInEmoji && !endsInPunct) {
+      console.log("[tweet] Gemini BAD ENDING — no emoji/punct at end | tail: '" + txt.substring(txt.length - 30) + "'");
+      return null;
+    }
+
+    // Also reject if the last word is suspiciously short AND not a legit complete word
+    var shortWordsOk = ["ja", "so", "la", "ai", "so", "ne", "ha", "pa", "va"]; // "already", "only", "there", etc
+    if (lastWord.length > 0 && lastWord.length <= 2 && shortWordsOk.indexOf(lastWord) === -1 && BAD_ENDINGS.indexOf(lastWord) === -1) {
+      // Only reject if it's clearly not a real 2-letter Portuguese word
+      // (the emoji/punct check above already handled most of these, this is a safety net)
+      console.log("[tweet] Gemini suspicious short ending: '" + lastWord + "'");
       return null;
     }
 
@@ -247,7 +494,7 @@ export default async function handler(req, res) {
   // Test mode
   if (req.query && req.query.test === "1") {
     try {
-      var r = await postWithLinkReply("Teste do bot v9! 🎾", "🔗 fonsecanews.com.br");
+      var r = await postWithLinkReply("Teste do bot v10! 🎾", "🔗 fonsecanews.com.br");
       return res.status(200).json({ ok: true, tweetId: r.data ? r.data.id : null });
     } catch (e) { return res.status(200).json({ ok: false, error: e.message }); }
   }
@@ -337,27 +584,40 @@ export default async function handler(req, res) {
       return res.status(200).json({ skip: true, reason: "no_news" });
     }
 
+    // Load recent posted titles for semantic dedup (v10)
+    var recentTitles = await getRecentTitles();
+    var SIMILARITY_THRESHOLD = 0.5; // 50% keyword overlap = duplicate
+
     // Filter and score news
     var candidates = [];
+    var skipped = { old: 0, blocked: 0, hash_dup: 0, similar: 0, no_fonseca: 0 };
     for (var i = 0; i < newsData.news.length; i++) {
       var item = newsData.news[i];
 
       // Age filter: max 24h
       var ageH = (Date.now() - new Date(item.date).getTime()) / 3600000;
-      if (ageH > 24) continue;
+      if (ageH > 24) { skipped.old++; continue; }
 
       // Source quality
       var sq = sourceScore(item.source);
-      if (sq < 0) continue; // blocked source
+      if (sq < 0) { skipped.blocked++; continue; }
 
-      // Already posted?
+      // Already posted (literal hash)?
       var hash = titleHash(item.title);
-      if (!hash || hash.length < 5) continue;
-      if (await wasPosted(hash)) continue;
+      if (!hash || hash.length < 5) { skipped.hash_dup++; continue; }
+      if (await wasPosted(hash)) { skipped.hash_dup++; continue; }
 
       // Title must mention Fonseca
       var tLow = (item.title || "").toLowerCase();
-      if (!tLow.includes("fonseca")) continue;
+      if (!tLow.includes("fonseca")) { skipped.no_fonseca++; continue; }
+
+      // NEW in v10: semantic similarity dedup vs last 15 posted titles
+      var simResult = similarityTo(item.title, recentTitles);
+      if (simResult.sim >= SIMILARITY_THRESHOLD) {
+        console.log("[tweet] SIMILAR (" + Math.round(simResult.sim * 100) + "%) skip: '" + item.title.substring(0, 60) + "' vs '" + (simResult.matched || "").substring(0, 60) + "'");
+        skipped.similar++;
+        continue;
+      }
 
       // Score: freshness + source quality
       var freshness = Math.max(0, 1 - (ageH / 24));
@@ -370,17 +630,20 @@ export default async function handler(req, res) {
     candidates.sort(function (a, b) { return b.score - a.score; });
 
     if (candidates.length === 0) {
-      return res.status(200).json({ skip: true, reason: "no_new_news", checked: newsData.news.length });
+      return res.status(200).json({ skip: true, reason: "no_new_news", checked: newsData.news.length, skipped: skipped });
     }
 
     var best = candidates[0];
 
     // ===== GENERATE TWEET TEXT =====
     var tweetText = await geminiTweet(best.item.title, context);
+    var usedFallback = false;
 
-    // Fallback if Gemini fails
+    // Fallback if Gemini fails or returns garbage
     if (!tweetText) {
       tweetText = templateTweet(best.item.title, best.item.source);
+      usedFallback = true;
+      console.log("[tweet] Using template fallback for: " + best.item.title.substring(0, 60));
     }
 
     // Smart hashtags — pick 2-3 based on news content
@@ -409,7 +672,7 @@ export default async function handler(req, res) {
 
       // Dedup and limit to 3
       var uniqueTags = [];
-      hashtags.forEach(function(t) { if (uniqueTags.indexOf(t) === -1 && uniqueTags.length < 3) uniqueTags.push(t); });
+      hashtags.forEach(function (t) { if (uniqueTags.indexOf(t) === -1 && uniqueTags.length < 3) uniqueTags.push(t); });
 
       var tagsText = "\n\n" + uniqueTags.join(" ");
       if (tweetText.length + tagsText.length <= 280) {
@@ -424,14 +687,17 @@ export default async function handler(req, res) {
       tweetText = tweetText.substring(0, 277) + "...";
     }
 
-    // Link in reply (better for algorithm)
-    var linkReply = "📰 " + (best.item.source || "Fonte") + "\n\n🔗 www.fonsecanews.com.br";
+    // v10: normalized source name in reply
+    var prettySource = normalizeSource(best.item.source);
+    var linkReply = "📰 " + prettySource + "\n\n🔗 www.fonsecanews.com.br";
 
     console.log("[tweet] Posting: " + tweetText.substring(0, 100) + "...");
 
     var tweetResult = await postWithLinkReply(tweetText, linkReply);
 
+    // v10: also save to recent titles ringbuffer
     await markPosted(best.hash);
+    await pushRecentTitle(best.item.title);
     await setLastPostTime();
     await incTodayCount();
 
@@ -440,10 +706,13 @@ export default async function handler(req, res) {
       type: "news",
       title: best.item.title,
       source: best.item.source,
+      pretty_source: prettySource,
       tweet: tweetText,
       chars: tweetText.length,
+      used_fallback: usedFallback,
       tweetId: tweetResult.data ? tweetResult.data.id : null,
       todayTotal: todayCount + 1,
+      skipped: skipped,
     });
 
   } catch (e) {
