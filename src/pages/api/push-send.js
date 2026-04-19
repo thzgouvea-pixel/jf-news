@@ -1,11 +1,15 @@
 // src/pages/api/push-send.js
-// Sends push notification to all subscribed devices via FCM HTTP v1 API
-// POST: { title, body, url } + secret header for auth
-// Called by cron-update.js when ranking changes, next match defined, etc.
-// Uses Google OAuth2 to get access token from service account credentials.
+// Envia push notifications para todos os inscritos via Web Push nativo
+// Uses: web-push library (protocolo oficial, zero Firebase)
+//
+// POST body: { title, body, url?, tag? }
+// Auth: header "x-push-secret" com PUSH_SECRET (ou query ?secret=)
+//
+// Chamado por: cron-update.js quando detecta eventos (novo adversario, ranking, ao vivo, resultado)
 
 import { kv } from "@vercel/kv";
 import crypto from "crypto";
+import webpush from "web-push";
 
 function safeCompare(a, b) {
   if (!a || !b) return false;
@@ -15,47 +19,25 @@ function safeCompare(a, b) {
   return crypto.timingSafeEqual(bufA, bufB);
 }
 
-// Get access token from service account for FCM v1 API
-async function getAccessToken() {
-  var sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || "{}");
-  if (!sa.private_key || !sa.client_email) return null;
-
-  var now = Math.floor(Date.now() / 1000);
-  
-  // Build JWT header and claim
-  var header = { alg: "RS256", typ: "JWT" };
-  var claim = {
-    iss: sa.client_email,
-    scope: "https://www.googleapis.com/auth/firebase.messaging",
-    aud: "https://oauth2.googleapis.com/token",
-    iat: now,
-    exp: now + 3600
-  };
-
-  // Base64url encode
-  function b64url(obj) {
-    return Buffer.from(JSON.stringify(obj)).toString("base64url");
+// Configura web-push com as chaves VAPID (uma vez por cold start)
+var vapidConfigured = false;
+function configureVapid() {
+  if (vapidConfigured) return true;
+  var pub = process.env.VAPID_PUBLIC_KEY;
+  var priv = process.env.VAPID_PRIVATE_KEY;
+  var subject = process.env.VAPID_SUBJECT || "mailto:thzgouvea@gmail.com";
+  if (!pub || !priv) {
+    console.error("[push-send] VAPID keys not configured in env");
+    return false;
   }
-
-  var unsignedToken = b64url(header) + "." + b64url(claim);
-
-  // Sign with RSA-SHA256
-  var crypto = require("crypto");
-  var sign = crypto.createSign("RSA-SHA256");
-  sign.update(unsignedToken);
-  var signature = sign.sign(sa.private_key, "base64url");
-
-  var jwt = unsignedToken + "." + signature;
-
-  // Exchange JWT for access token
-  var res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: "grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=" + jwt
-  });
-
-  var data = await res.json();
-  return data.access_token || null;
+  try {
+    webpush.setVapidDetails(subject, pub, priv);
+    vapidConfigured = true;
+    return true;
+  } catch (e) {
+    console.error("[push-send] VAPID config error:", e.message);
+    return false;
+  }
 }
 
 export default async function handler(req, res) {
@@ -64,10 +46,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "POST only" });
   }
 
-  // Simple auth: check secret header
+  // Auth
   var secret = req.headers["x-push-secret"] || req.query.secret;
   if (!safeCompare(secret, process.env.PUSH_SECRET)) {
     return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  if (!configureVapid()) {
+    return res.status(500).json({ error: "VAPID not configured" });
   }
 
   try {
@@ -75,84 +61,64 @@ export default async function handler(req, res) {
     var title = String(body.title || "Fonseca News").substring(0, 200);
     var msgBody = String(body.body || "").substring(0, 500);
     var url = body.url || "https://fonsecanews.com.br";
+    var tag = body.tag || "fn-default";
 
-    // Validate URL starts with allowed domain
+    // Valida URL (so nosso dominio)
     if (!/^https:\/\/(www\.)?fonsecanews\.com\.br(\/|$)/.test(url)) {
       url = "https://fonsecanews.com.br";
     }
 
-    // Get all tokens
-    var tokens = (await kv.get("push:tokens")) || [];
-    if (tokens.length === 0) {
-      return res.status(200).json({ sent: 0, message: "No subscribers" });
+    var subs = (await kv.get("push:subs")) || [];
+    if (subs.length === 0) {
+      return res.status(200).json({ sent: 0, message: "Nenhum inscrito" });
     }
 
-    // Get FCM access token
-    var accessToken = await getAccessToken();
-    if (!accessToken) {
-      return res.status(500).json({ error: "Failed to get FCM access token" });
-    }
-
-    var projectId = "fonsecanews-a8dd6";
-    var fcmUrl = "https://fcm.googleapis.com/v1/projects/" + projectId + "/messages:send";
+    var payload = JSON.stringify({
+      title: title,
+      body: msgBody,
+      url: url,
+      tag: tag,
+      icon: "/icon-192.png"
+    });
 
     var sent = 0;
     var failed = 0;
-    var invalidTokens = [];
+    var expiredSubs = [];
 
-    // Send to each token
-    for (var i = 0; i < tokens.length; i++) {
-      try {
-        var fcmRes = await fetch(fcmUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": "Bearer " + accessToken,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: {
-              token: tokens[i],
-              notification: {
-                title: title,
-                body: msgBody
-              },
-              webpush: {
-                fcm_options: {
-                  link: url
-                }
-              }
-            }
-          })
-        });
+    // Envia para cada inscrito em paralelo (limite de conexoes)
+    var results = await Promise.allSettled(subs.map(function(sub) {
+      return webpush.sendNotification(sub, payload, {
+        TTL: 86400,   // 24h: se o device estiver offline, entrega quando voltar (em 24h)
+        urgency: "normal"
+      }).then(function() {
+        return { ok: true, sub: sub };
+      }).catch(function(err) {
+        return { ok: false, sub: sub, status: err.statusCode || 0, message: err.message };
+      });
+    }));
 
-        if (fcmRes.ok) {
-          sent++;
-        } else {
-          var errData = await fcmRes.json().catch(function() { return {}; });
-          // If token is invalid/expired, mark for removal
-          if (fcmRes.status === 404 || fcmRes.status === 410 ||
-              (errData.error && errData.error.details && 
-               errData.error.details.some(function(d) { return d.errorCode === "UNREGISTERED"; }))) {
-            invalidTokens.push(tokens[i]);
-          }
-          failed++;
-        }
-      } catch (e) {
-        failed++;
+    results.forEach(function(r) {
+      if (r.status !== "fulfilled") { failed++; return; }
+      var v = r.value;
+      if (v.ok) { sent++; return; }
+      failed++;
+      // 404 ou 410 = subscription expirou/revogada, remove do KV
+      if (v.status === 404 || v.status === 410) {
+        expiredSubs.push(v.sub.endpoint);
       }
-    }
+    });
 
-    // Clean up invalid tokens
-    if (invalidTokens.length > 0) {
-      var cleanTokens = tokens.filter(function(t) { return !invalidTokens.includes(t); });
-      await kv.set("push:tokens", cleanTokens);
+    // Limpa inscritos expirados
+    if (expiredSubs.length > 0) {
+      var cleanSubs = subs.filter(function(s) { return expiredSubs.indexOf(s.endpoint) === -1; });
+      await kv.set("push:subs", cleanSubs);
     }
 
     return res.status(200).json({
       sent: sent,
       failed: failed,
-      cleaned: invalidTokens.length,
-      total: tokens.length
+      cleaned: expiredSubs.length,
+      total: subs.length
     });
 
   } catch (error) {
