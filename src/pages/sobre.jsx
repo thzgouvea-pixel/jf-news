@@ -1113,16 +1113,65 @@ var PlayerBlock = function(props) {
 
       {matchStats && matchStats.fonseca && (function() {
         var f = matchStats.fonseca;
-        var o = matchStats.opponent;
+        var o = matchStats.opponent || {};
+
+        // ===== DEFENSIVE STAT EXTRACTION (same as PlayerBlock component) =====
+        function pick(obj, keys) {
+          for (var i = 0; i < keys.length; i++) {
+            var v = obj[keys[i]];
+            if (v !== undefined && v !== null && v !== "") return v;
+          }
+          return null;
+        }
+
+        // 1st serve %
+        var fServTotal = (f.firstserveaccuracy||0) + (f.secondserveaccuracy||0) + (f.doublefaults||0);
+        var oServTotal = (o.firstserveaccuracy||0) + (o.secondserveaccuracy||0) + (o.doublefaults||0);
+        var f1stPct = fServTotal > 0 ? Math.round((f.firstserveaccuracy||0) / fServTotal * 100) : 0;
+        var o1stPct = oServTotal > 0 ? Math.round((o.firstserveaccuracy||0) / oServTotal * 100) : 0;
+
+        // Break points (converted / opportunities)
+        var fBpConv = pick(f, ["breakpointsconverted", "breakpointswon"]);
+        var fBpOpp  = pick(f, ["breakpoints", "breakpointsopportunities", "breakpointsfaced", "breakpointstotal"]);
+        var oBpConv = pick(o, ["breakpointsconverted", "breakpointswon"]);
+        var oBpOpp  = pick(o, ["breakpoints", "breakpointsopportunities", "breakpointsfaced", "breakpointstotal"]);
+        var hasBp = (fBpConv !== null && fBpOpp !== null && (fBpOpp > 0 || oBpOpp > 0))
+                 && (oBpConv !== null && oBpOpp !== null);
+
+        // Winners
+        var fWinners = pick(f, ["winners", "totalwinners", "winnersandforcedwinners"]);
+        var oWinners = pick(o, ["winners", "totalwinners", "winnersandforcedwinners"]);
+        var hasWinners = (fWinners !== null || oWinners !== null) && ((fWinners||0) + (oWinners||0)) > 0;
+
+        // Unforced errors
+        var fUE = pick(f, ["unforcederrors", "unforcederror"]);
+        var oUE = pick(o, ["unforcederrors", "unforcederror"]);
+        var hasUE = (fUE !== null || oUE !== null) && ((fUE||0) + (oUE||0)) > 0;
+
+        // Total points (fallback)
+        var fTotalPts = (f.servicepointsscored||0) + (f.receiverpointsscored||0) || f.pointstotal || 0;
+        var oTotalPts = (o.servicepointsscored||0) + (o.receiverpointsscored||0) || o.pointstotal || 0;
+
         var statRows = [
           { label: "Aces", fVal: f.aces || 0, oVal: o.aces || 0, icon: "A" },
-          { label: "Duplas faltas", fVal: f.doublefaults || 0, oVal: o.doublefaults || 0, invert: true, icon: "DF" },
-          { label: "1o saque", fVal: f.firstserveaccuracy || 0, oVal: o.firstserveaccuracy || 0, pct: true, icon: "1S" },
-          { label: "Pts no 1o saque", fVal: f.firstservepointsaccuracy || 0, oVal: o.firstservepointsaccuracy || 0, pct: true, icon: "P1" },
-          { label: "Pts no 2o saque", fVal: f.secondservepointsaccuracy || 0, oVal: o.secondservepointsaccuracy || 0, pct: true, icon: "P2" },
-          { label: "Breaks salvos", fVal: f.breakpointssaved || 0, oVal: o.breakpointssaved || 0, icon: "BP" },
-          { label: "Total de pontos", fVal: f.pointstotal || 0, oVal: o.pointstotal || 0, icon: "TP" },
-        ].filter(function(r) { return r.fVal > 0 || r.oVal > 0; });
+        ];
+        if (hasBp) {
+          statRows.push({
+            label: "Break points", icon: "BP",
+            fVal: fBpConv, oVal: oBpConv,
+            fSecondary: fBpOpp, oSecondary: oBpOpp,
+            bp: true, pct: true,
+            fBarVal: fBpOpp > 0 ? (fBpConv / fBpOpp) * 100 : 0,
+            oBarVal: oBpOpp > 0 ? (oBpConv / oBpOpp) * 100 : 0,
+          });
+        }
+        statRows.push({ label: "1o saque", fVal: f1stPct, oVal: o1stPct, pct: true, icon: "1S" });
+        if (hasWinners) statRows.push({ label: "Winners", fVal: fWinners || 0, oVal: oWinners || 0, icon: "W" });
+        if (hasUE) statRows.push({ label: "Erros n\u00e3o for\u00e7ados", fVal: fUE || 0, oVal: oUE || 0, invert: true, icon: "UE" });
+        if (!hasWinners && !hasUE && (fTotalPts > 0 || oTotalPts > 0)) {
+          statRows.push({ label: "Total de pontos", fVal: fTotalPts, oVal: oTotalPts, icon: "TP" });
+        }
+        statRows = statRows.filter(function(r) { return r.fVal > 0 || r.oVal > 0 || r.fSecondary > 0 || r.oSecondary > 0; });
         if (statRows.length === 0) return null;
         var oppName = matchStats.opponent_name || "Adv.";
         var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
@@ -1201,31 +1250,45 @@ var PlayerBlock = function(props) {
 
               {/* FIX 5: Barras de stats — flex bar sem gaps */}
               {statRows.map(function(row, i) {
-                var fBetter = row.invert ? row.fVal < row.oVal : row.fVal >= row.oVal;
-                // Calcular proporção: ambos sobre o total, sempre somam ~100%
-                var fNum = row.fVal || 0;
-                var oNum = row.oVal || 0;
-                var total = fNum + oNum;
+                // Which side wins this stat? (inverted means lower is better)
+                var fCompare = row.bp ? (row.fBarVal || 0) : (row.fVal || 0);
+                var oCompare = row.bp ? (row.oBarVal || 0) : (row.oVal || 0);
+                var tie = fCompare === oCompare;
+                var fBetter = row.invert ? fCompare < oCompare : fCompare > oCompare;
+                var oBetter = row.invert ? oCompare < fCompare : oCompare > fCompare;
+                if (tie) { fBetter = false; oBetter = false; }
+
+                // Bar widths
                 var fPct, oPct;
-                if (row.pct) {
-                  // Para percentuais, normalizar para que somem 100
-                  var pctTotal = fNum + oNum;
-                  fPct = pctTotal > 0 ? Math.round((fNum / pctTotal) * 100) : 50;
+                if (row.bp) {
+                  var bpTot = (row.fBarVal || 0) + (row.oBarVal || 0);
+                  fPct = bpTot > 0 ? Math.round(((row.fBarVal || 0) / bpTot) * 100) : 50;
+                  oPct = 100 - fPct;
+                } else if (row.pct) {
+                  var pctTotal = (row.fVal || 0) + (row.oVal || 0);
+                  fPct = pctTotal > 0 ? Math.round(((row.fVal || 0) / pctTotal) * 100) : 50;
                   oPct = 100 - fPct;
                 } else {
-                  fPct = total > 0 ? Math.round((fNum / total) * 100) : 50;
+                  var total = (row.fVal || 0) + (row.oVal || 0);
+                  fPct = total > 0 ? Math.round(((row.fVal || 0) / total) * 100) : 50;
                   oPct = 100 - fPct;
                 }
-                // Mínimo visual de 8% para não sumir
                 if (fPct > 0 && fPct < 8) { fPct = 8; oPct = 92; }
                 if (oPct > 0 && oPct < 8) { oPct = 8; fPct = 92; }
+
+                // Rendered values
+                var fDisplay = row.bp ? (row.fVal + " / " + row.fSecondary) : (row.pct ? row.fVal + "%" : row.fVal);
+                var oDisplay = row.bp ? (row.oVal + " / " + row.oSecondary) : (row.pct ? row.oVal + "%" : row.oVal);
+
+                var fColor = fBetter ? GREEN : "#8bc9a5";
+                var oColor = oBetter ? "#e74c3c" : "#e8a9a1";
 
                 return (
                   <div key={i} style={{ marginBottom: i < statRows.length - 1 ? 14 : 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: fBetter ? GREEN : "#8bc9a5", fontFamily: SANS, minWidth: 40, textAlign: "left" }}>{row.pct ? row.fVal + "%" : row.fVal}</span>
-                      <span style={{ fontSize: 10, fontWeight: 600, color: SUB, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: "center", flex: 1 }}>{row.label}</span>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: !fBetter ? "#e74c3c" : "#e8a9a1", fontFamily: SANS, minWidth: 40, textAlign: "right" }}>{row.pct ? row.oVal + "%" : row.oVal}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: fColor, fontFamily: SANS, minWidth: 50, textAlign: "left" }}>{fDisplay}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: SUB, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", textAlign: "center", flex: 1, padding: "0 6px" }}>{row.label}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: oColor, fontFamily: SANS, minWidth: 50, textAlign: "right" }}>{oDisplay}</span>
                     </div>
                     <div style={{ display: "flex", height: 5, borderRadius: 3, overflow: "hidden" }}>
                       <div style={{ width: fPct + "%", height: 5, background: GREEN, transition: "width 0.8s ease" }} />
