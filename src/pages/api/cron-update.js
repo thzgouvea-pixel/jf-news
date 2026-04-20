@@ -787,7 +787,8 @@ export default async function handler(req, res) {
     form = form.filter(function (f) { return f.score && f.score.length > 1; }).slice(0, 10);
 
     // ── PLACEHOLDER nextMatch ──
-    // Caso 1: Ganhou ultimo jogo + torneio ainda rolando = placeholder proximo round
+    // So cria placeholder se o Joao ganhou o ultimo jogo E o torneio ainda esta rolando.
+    // Isso cobre o gap entre o resultado e a API do SofaScore publicar o adversario do proximo round.
     if (!nm && lm && lm.result === "V") {
       var todayStr = new Date().toISOString().split("T")[0];
       var tournOn = ATP_CALENDAR_2026.some(function (t) {
@@ -805,42 +806,6 @@ export default async function handler(req, res) {
           broadcast: lookupBroadcast(mT ? mT.name : lm.tournament_name) || "",
         };
         log("placeholder: " + nm.tournament_name + " " + nm.round);
-      }
-    }
-
-    // Caso 2: Nao tem nm mas existe proximo torneio no calendario comecando em ate 14 dias
-    // (ex: perdeu em Munique, Madrid comeca em 2 dias -> cria placeholder pra Madrid)
-    if (!nm) {
-      var todayForCal = new Date();
-      todayForCal.setUTCHours(0, 0, 0, 0);
-      var fourteenDaysLater = new Date(todayForCal.getTime() + 14 * 86400000);
-      var nextTourn = ATP_CALENDAR_2026.find(function (t) {
-        if (!t.start) return false;
-        var s = new Date(t.start + "T00:00:00Z");
-        return s > todayForCal && s <= fourteenDaysLater;
-      });
-      if (nextTourn) {
-        // Verifica cache de confirmacao (mesma chave usada em outra parte do codigo)
-        var confKey = "fn:gemini:tournConfirmed:" + nextTourn.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-        var confirmed = null;
-        try {
-          var cached = await kv.get(confKey);
-          if (cached !== null && cached !== undefined) confirmed = cached === "yes" || cached === true;
-        } catch (e) {}
-        // Se nao tem cache ou esta confirmado, cria placeholder (optimistic fallback)
-        if (confirmed !== false) {
-          nm = {
-            opponent_name: "A definir", opponent_ranking: null, opponent_country: "",
-            tournament_name: nextTourn.name,
-            tournament_category: nextTourn.cat,
-            surface: nextTourn.surface === "Saibro" ? "Clay" : (nextTourn.surface === "Duro" ? "Hard" : "Grass"),
-            round: "", city: nextTourn.city, country: nextTourn.country,
-            date: nextTourn.start + "T12:00:00Z", startTimestamp: Math.floor(new Date(nextTourn.start + "T12:00:00Z").getTime() / 1000),
-            court: "", finished: false,
-            broadcast: lookupBroadcast(nextTourn.name) || "",
-          };
-          log("placeholder (upcoming tournament): " + nm.tournament_name);
-        }
       }
     }
 
