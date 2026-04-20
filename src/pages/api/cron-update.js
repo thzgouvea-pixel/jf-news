@@ -354,35 +354,56 @@ async function fetchATPRankings() {
   // Fallback: Gemini com grounding (SofaScore esta 404 desde 15/04/2026)
   log("rankings: sofa fail, trying Gemini");
   var gTxt = await geminiSearch(
-    "Me de o Ranking ATP Singles ATUAL (esta semana, abril 2026). " +
-    "APENAS JSON, sem texto antes ou depois, no formato exato: " +
-    "{\"rankings\":[{\"rank\":1,\"name\":\"Jannik Sinner\",\"points\":13350}," +
-    "{\"rank\":2,\"name\":\"Carlos Alcaraz\",\"points\":13240}]}. " +
-    "Liste os 50 primeiros. Use nomes completos em ingles sem acentos."
+    "Ranking ATP Singles ATUAL (esta semana, abril 2026). Os 50 primeiros. " +
+    "SOMENTE JSON compacto, uma linha, SEM markdown, SEM quebras de linha, SEM espacos extras. " +
+    "Formato: {\"r\":[{\"k\":RANK,\"n\":\"NAME\",\"p\":POINTS}]} " +
+    "Exemplo: {\"r\":[{\"k\":1,\"n\":\"Jannik Sinner\",\"p\":13350},{\"k\":2,\"n\":\"Carlos Alcaraz\",\"p\":12960}]} " +
+    "Use nomes em ingles sem acentos. Responda APENAS o JSON, nada mais."
   );
-  if (!gTxt) {
-    log("rankings: Gemini no response");
-    return null;
-  }
+  if (!gTxt) { log("rankings: Gemini no response"); return null; }
   log("rankings: Gemini returned " + gTxt.length + " chars");
-  var parsed = parseGeminiJSON(gTxt);
-  if (!parsed) {
-    log("rankings: Gemini JSON parse failed. First 200 chars: " + gTxt.substring(0, 200));
+
+  // Parser tolerante: aceita JSON truncado e tenta recuperar o array parcial.
+  function parseTolerant(txt) {
+    if (!txt) return null;
+    var cleaned = txt.replace(/```json|```/g, "").trim();
+    // Tenta parse direto
+    try { return JSON.parse(cleaned); } catch (e) {}
+    // Procura array "r":[...] mesmo que truncado
+    var arrMatch = cleaned.match(/"r"\s*:\s*\[([\s\S]*)/);
+    if (!arrMatch) return null;
+    var arrBody = arrMatch[1];
+    // Encontra todos objetos completos {...}
+    var objs = [];
+    var depth = 0, start = -1;
+    for (var i = 0; i < arrBody.length; i++) {
+      var c = arrBody.charAt(i);
+      if (c === "{") { if (depth === 0) start = i; depth++; }
+      else if (c === "}") {
+        depth--;
+        if (depth === 0 && start >= 0) {
+          try { objs.push(JSON.parse(arrBody.substring(start, i + 1))); } catch (e) {}
+          start = -1;
+        }
+      }
+    }
+    return objs.length > 0 ? { r: objs } : null;
+  }
+
+  var parsed = parseTolerant(gTxt);
+  if (!parsed || !Array.isArray(parsed.r)) {
+    log("rankings: Gemini parse failed. First 200 chars: " + gTxt.substring(0, 200));
     return null;
   }
-  if (!Array.isArray(parsed.rankings)) {
-    log("rankings: Gemini returned no rankings array");
-    return null;
-  }
-  log("rankings: Gemini parsed " + parsed.rankings.length + " entries");
-  var cleanRankings = parsed.rankings.map(function(r) {
-    return { rank: r.rank || 0, name: r.name || "", points: r.points || 0, prev: r.rank || 0 };
+  log("rankings: Gemini parsed " + parsed.r.length + " entries");
+  var cleanRankings = parsed.r.map(function(o) {
+    return { rank: o.k || 0, name: o.n || "", points: o.p || 0, prev: o.k || 0 };
   }).filter(function(r) { return r.rank > 0 && r.name; });
   if (cleanRankings.length >= 15) {
     log("rankings: " + cleanRankings.length + " players (gemini)");
     return { rankings: cleanRankings, updatedAt: new Date().toISOString() };
   }
-  log("rankings: Gemini returned only " + cleanRankings.length + " valid entries (min 15)");
+  log("rankings: only " + cleanRankings.length + " valid entries (min 15)");
   return null;
 }
 
