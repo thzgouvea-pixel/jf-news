@@ -379,7 +379,7 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
-  var dm = nextMatch || null;   var hasNextMatch = !!(nextMatch && nextMatch.opponent_name && nextMatch.opponent_name !== "A definir");
+  var dm = nextMatch || null;   var hasNextMatch = !!(nextMatch && nextMatch.date && nextMatch.tournament_name);
   var dl = lastMatch || null;
   var dp = player || (news.length === 0 ? SAMPLE_PLAYER : null);
   var ds = season || null;
