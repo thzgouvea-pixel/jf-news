@@ -174,6 +174,11 @@ export default function JoaoFonsecaNews() {
 
     Notification.requestPermission().then(function(permission) {
       if (permission !== "granted") {
+        // Se usuario bloqueou, nao adianta mostrar o banner (navegador nao pergunta de novo)
+        if (permission === "denied") {
+          try { localStorage.setItem("fn_push_banner_dismissed", String(Date.now())); } catch(e) {}
+          setShowPushBanner(false);
+        }
         setPushLoading(false);
         return;
       }
