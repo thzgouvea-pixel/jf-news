@@ -1145,16 +1145,24 @@ export default async function handler(req, res) {
       }
 
       // --- TRIGGER 3: Mudanca de ranking ATP ---
-      // Compara wiki.ranking (novo) com exRanking.ranking (antigo do KV)
-      if (wiki && wiki.ranking && exRanking && exRanking.ranking && wiki.ranking !== exRanking.ranking) {
-        var rkKey = String(wiki.ranking);
-        if (pushState.lastRanking !== rkKey) {
+      // Compara valor ATUAL do ranking (wiki.ranking, que e o que acabou de ser salvo)
+      // vs ULTIMO valor notificado (pushState.lastRanking).
+      // Isso funciona independente se o valor veio de cache ou fetch fresh.
+      if (wiki && wiki.ranking) {
+        var currentRank = wiki.ranking;
+        var lastNotifiedRank = pushState.lastRanking ? parseInt(pushState.lastRanking) : null;
+        if (lastNotifiedRank && lastNotifiedRank !== currentRank) {
           var direction, emojiT3;
-          if (wiki.ranking < exRanking.ranking) { direction = "subiu"; emojiT3 = "📈"; }
+          if (currentRank < lastNotifiedRank) { direction = "subiu"; emojiT3 = "📈"; }
           else { direction = "caiu"; emojiT3 = "📉"; }
           var titleT3 = emojiT3 + " Ranking ATP atualizado";
-          var bodyT3 = "João " + direction + " pra #" + wiki.ranking + " (era #" + exRanking.ranking + ")";
-          pushesToSend.push({ title: titleT3, body: bodyT3, url: "https://fonsecanews.com.br", tag: "ranking", stateKey: "lastRanking", stateValue: rkKey });
+          var bodyT3 = "João " + direction + " pra #" + currentRank + " (era #" + lastNotifiedRank + ")";
+          pushesToSend.push({ title: titleT3, body: bodyT3, url: "https://fonsecanews.com.br", tag: "ranking", stateKey: "lastRanking", stateValue: String(currentRank) });
+        } else if (!lastNotifiedRank) {
+          // Primeira vez rodando: nao notifica, so salva o baseline.
+          pushState.lastRanking = String(currentRank);
+          try { await kv.set("fn:pushState", JSON.stringify(pushState)); } catch(e) {}
+          log("pushState: baseline ranking = " + currentRank);
         }
       }
 
