@@ -1172,26 +1172,58 @@ export default async function handler(req, res) {
 
       // --- TRIGGER 1: Novo adversario definido ---
       // Considera "novo" se nm.opponent_name existe, nao e "A definir", e e diferente do que ja foi notificado
+      // SALVAGUARDA: se pushState nunca teve NENHUM trigger antes (primeira exec do sistema),
+      // estabelece baseline sem notificar — evita spam em migracoes/restarts.
       if (nm && nm.opponent_name && nm.opponent_name !== "A definir") {
         var nmKey = (nm.tournament_name || "") + "|" + nm.opponent_name + "|" + (nm.round || "");
         if (pushState.lastNextMatch !== nmKey) {
-          var tournBit = nm.tournament_name ? " (" + nm.tournament_name + (nm.round ? " - " + nm.round : "") + ")" : "";
-          var titleT1 = "🎾 Próximo jogo do João";
-          var bodyT1 = "vs " + nm.opponent_name + tournBit;
-          pushesToSend.push({ title: titleT1, body: bodyT1, url: "https://fonsecanews.com.br", tag: "next-match", stateKey: "lastNextMatch", stateValue: nmKey });
+          // "Baseline geral": pushState ja teve QUALQUER trigger antes (lastResult, lastRanking, lastLive, ou lastPushAt)
+          var hasAnyBaseline = !!(pushState.lastResult || pushState.lastRanking || pushState.lastLive || pushState.lastPushAt);
+          if (!hasAnyBaseline) {
+            pushState.lastNextMatch = nmKey;
+            try { await kv.set("fn:pushState", JSON.stringify(pushState)); } catch(e) {}
+            log("pushState: baseline lastNextMatch = " + nmKey + " (sem notificar — primeira exec)");
+          } else {
+            var tournBit = nm.tournament_name ? " (" + nm.tournament_name + (nm.round ? " - " + nm.round : "") + ")" : "";
+            var titleT1 = "\ud83c\udfbe Próximo jogo do João";
+            var bodyT1 = "vs " + nm.opponent_name + tournBit;
+            pushesToSend.push({ title: titleT1, body: bodyT1, url: "https://fonsecanews.com.br", tag: "next-match", stateKey: "lastNextMatch", stateValue: nmKey });
+          }
         }
       }
 
       // --- TRIGGER 2: Resultado do ultimo jogo (acabou de finalizar) ---
       // Considera "novo resultado" se lm tem result + score, e nao foi notificado ainda (identifica por id ou opponent+date)
+      // SALVAGUARDAS:
+      //  a) Partida precisa ter terminado nas ultimas 6h (evita notificar jogos antigos quando baseline muda)
+      //  b) Se pushState.lastResult nunca foi setado (primeira execucao apos push voltar), so estabelece baseline — nao notifica
       if (lm && (lm.result === "V" || lm.result === "D") && lm.score) {
         var lmKey = String(lm.id || "") + "|" + lm.opponent_name + "|" + lm.score;
+        var lmTs = lm.startTimestamp ? lm.startTimestamp * 1000 : (lm.date ? new Date(lm.date).getTime() : 0);
+        var lmAgeMs = lmTs ? (Date.now() - lmTs) : Infinity;
+        var SIX_HOURS = 6 * 3600 * 1000;
+        var isRecentResult = lmAgeMs > 0 && lmAgeMs < SIX_HOURS;
+        var hasBaseline = !!pushState.lastResult;
+
         if (pushState.lastResult !== lmKey) {
-          var emojiT2 = lm.result === "V" ? "🏆" : "😔";
-          var verbT2 = lm.result === "V" ? "Vitória do João" : "Derrota do João";
-          var titleT2 = emojiT2 + " " + verbT2;
-          var bodyT2 = lm.score + " vs " + lm.opponent_name + (lm.tournament_name ? " (" + lm.tournament_name + ")" : "");
-          pushesToSend.push({ title: titleT2, body: bodyT2, url: "https://fonsecanews.com.br", tag: "result", stateKey: "lastResult", stateValue: lmKey });
+          if (!hasBaseline) {
+            // Primeira execucao: estabelece baseline sem notificar (evita spam em migracoes/restarts)
+            pushState.lastResult = lmKey;
+            try { await kv.set("fn:pushState", JSON.stringify(pushState)); } catch(e) {}
+            log("pushState: baseline lastResult = " + lmKey + " (sem notificar — jogo ja passou)");
+          } else if (!isRecentResult) {
+            // Nao e recente — so avanca o baseline silenciosamente
+            pushState.lastResult = lmKey;
+            try { await kv.set("fn:pushState", JSON.stringify(pushState)); } catch(e) {}
+            log("pushState: lastResult avancado sem push (jogo tem " + Math.round(lmAgeMs / 3600000) + "h)");
+          } else {
+            // Resultado realmente novo E recente: notifica
+            var emojiT2 = lm.result === "V" ? "\ud83c\udfc6" : "\ud83d\ude14";
+            var verbT2 = lm.result === "V" ? "Vitória do João" : "Derrota do João";
+            var titleT2 = emojiT2 + " " + verbT2;
+            var bodyT2 = lm.score + " vs " + lm.opponent_name + (lm.tournament_name ? " (" + lm.tournament_name + ")" : "");
+            pushesToSend.push({ title: titleT2, body: bodyT2, url: "https://fonsecanews.com.br", tag: "result", stateKey: "lastResult", stateValue: lmKey });
+          }
         }
       }
 
@@ -1199,16 +1231,31 @@ export default async function handler(req, res) {
       // Compara valor ATUAL do ranking (wiki.ranking, que e o que acabou de ser salvo)
       // vs ULTIMO valor notificado (pushState.lastRanking).
       // Isso funciona independente se o valor veio de cache ou fetch fresh.
+      // SALVAGUARDAS:
+      //  a) Ignora mudanca de apenas 1 posicao (pode ser ruido de calculo da ATP/Gemini)
+      //  b) Max 1 notificacao de ranking por 24h (evita spam se houver flutuacao)
       if (wiki && wiki.ranking) {
         var currentRank = wiki.ranking;
         var lastNotifiedRank = pushState.lastRanking ? parseInt(pushState.lastRanking) : null;
         if (lastNotifiedRank && lastNotifiedRank !== currentRank) {
-          var direction, emojiT3;
-          if (currentRank < lastNotifiedRank) { direction = "subiu"; emojiT3 = "📈"; }
-          else { direction = "caiu"; emojiT3 = "📉"; }
-          var titleT3 = emojiT3 + " Ranking ATP atualizado";
-          var bodyT3 = "João " + direction + " pra #" + currentRank + " (era #" + lastNotifiedRank + ")";
-          pushesToSend.push({ title: titleT3, body: bodyT3, url: "https://fonsecanews.com.br", tag: "ranking", stateKey: "lastRanking", stateValue: String(currentRank) });
+          var rankDiff = Math.abs(currentRank - lastNotifiedRank);
+          var lastRankingNotifAt = pushState.lastRankingNotifAt ? new Date(pushState.lastRankingNotifAt).getTime() : 0;
+          var hoursSinceRankingPush = (Date.now() - lastRankingNotifAt) / 3600000;
+          var canSendRanking = rankDiff >= 2 && hoursSinceRankingPush >= 24;
+
+          if (canSendRanking) {
+            var direction, emojiT3;
+            if (currentRank < lastNotifiedRank) { direction = "subiu"; emojiT3 = "\ud83d\udcc8"; }
+            else { direction = "caiu"; emojiT3 = "\ud83d\udcc9"; }
+            var titleT3 = emojiT3 + " Ranking ATP atualizado";
+            var bodyT3 = "João " + direction + " pra #" + currentRank + " (era #" + lastNotifiedRank + ")";
+            pushesToSend.push({ title: titleT3, body: bodyT3, url: "https://fonsecanews.com.br", tag: "ranking", stateKey: "lastRanking", stateValue: String(currentRank), markRankingNotif: true });
+          } else {
+            // Atualiza baseline silenciosamente (nao notifica mas evita acumular "pendencia")
+            pushState.lastRanking = String(currentRank);
+            try { await kv.set("fn:pushState", JSON.stringify(pushState)); } catch(e) {}
+            log("pushState: ranking " + lastNotifiedRank + "\u2192" + currentRank + " sem push (diff=" + rankDiff + ", " + Math.round(hoursSinceRankingPush) + "h desde ultima)");
+          }
         } else if (!lastNotifiedRank) {
           // Primeira vez rodando: nao notifica, so salva o baseline.
           pushState.lastRanking = String(currentRank);
@@ -1219,19 +1266,40 @@ export default async function handler(req, res) {
 
       // --- TRIGGER 4: Jogo ao vivo comecou ---
       // Detecta match em andamento: nm existe e o startTimestamp ja passou (jogo comecou)
+      // SALVAGUARDA: janela de 60 min (nao 30). Cron roda a cada 30min, entao 60min garante
+      // que NAO perdemos o trigger se um cron falhar ou atrasar.
       if (nm && nm.opponent_name && nm.opponent_name !== "A definir" && nm.startTimestamp) {
         var startMs = nm.startTimestamp * 1000;
         var nowMs = Date.now();
         var minutesSinceStart = (nowMs - startMs) / 60000;
-        // Notificar se o jogo comecou nos ultimos 30 min (acabou de entrar em quadra)
-        if (minutesSinceStart >= 0 && minutesSinceStart <= 30) {
+        if (minutesSinceStart >= 0 && minutesSinceStart <= 60) {
           var liveKey = String(nm.id || "") + "|" + nm.opponent_name + "|" + nm.startTimestamp;
           if (pushState.lastLive !== liveKey) {
-            var titleT4 = "🔴 AO VIVO agora";
-            var bodyT4 = "João Fonseca x " + nm.opponent_name + " — acompanhe";
+            var titleT4 = "\ud83d\udd34 AO VIVO agora";
+            var bodyT4 = "João Fonseca x " + nm.opponent_name + " \u2014 acompanhe";
             pushesToSend.push({ title: titleT4, body: bodyT4, url: "https://fonsecanews.com.br", tag: "live", stateKey: "lastLive", stateValue: liveKey });
           }
         }
+      }
+
+      // SALVAGUARDA GLOBAL: maximo 1 push por execucao do cron.
+      // Evita spam em caso multiplos triggers simultaneos (ex: jogo comecou + ranking mudou + resultado antigo).
+      // Prioridade: live > result > next-match > ranking (do mais urgente pro menos).
+      if (pushesToSend.length > 1) {
+        var priorityOrder = { "live": 1, "result": 2, "next-match": 3, "ranking": 4 };
+        pushesToSend.sort(function(a, b) {
+          return (priorityOrder[a.tag] || 99) - (priorityOrder[b.tag] || 99);
+        });
+        var skipped = pushesToSend.slice(1);
+        pushesToSend = pushesToSend.slice(0, 1);
+        log("push: " + (skipped.length + 1) + " triggers, priorizando '" + pushesToSend[0].tag + "'");
+        // Avanca silenciosamente o baseline dos triggers que nao foram enviados
+        // (evita que fiquem "pendentes" e disparem no proximo cron)
+        skipped.forEach(function(sk) {
+          if (sk.stateKey && sk.stateValue !== undefined) {
+            pushState[sk.stateKey] = sk.stateValue;
+          }
+        });
       }
 
       // Envia todos os pushes pendentes (sequencialmente pra nao spammar o push-send endpoint)
@@ -1241,11 +1309,17 @@ export default async function handler(req, res) {
           var pu = pushesToSend[pi];
           var ok = await sendPush(pu.title, pu.body, pu.url, pu.tag);
           // So marca como notificado se push foi bem sucedido (evita loss se houver erro transitorio)
-          if (ok) pushState[pu.stateKey] = pu.stateValue;
+          if (ok) {
+            pushState[pu.stateKey] = pu.stateValue;
+            if (pu.markRankingNotif) pushState.lastRankingNotifAt = new Date().toISOString();
+          }
         }
         pushState.lastPushAt = new Date().toISOString();
         try { await kv.set("fn:pushState", JSON.stringify(pushState)); } catch (e) { log("pushState save err: " + e.message); }
         steps.push = pushesToSend.length + "p";
+      } else {
+        // Mesmo sem pushes enviados, se baselines foram atualizados silenciosamente salva pushState
+        try { await kv.set("fn:pushState", JSON.stringify(pushState)); } catch (e) {}
       }
     } catch (e) {
       log("push trigger error: " + e.message);
