@@ -353,13 +353,34 @@ async function fetchATPRankings() {
 
   // Fallback: Gemini com grounding (SofaScore esta 404 desde 15/04/2026)
   log("rankings: sofa fail, trying Gemini");
-  var gTxt = await geminiSearch(
-    "Ranking ATP Singles ATUAL (esta semana, abril 2026). Os 50 primeiros. " +
-    "SOMENTE JSON compacto, uma linha, SEM markdown, SEM quebras de linha, SEM espacos extras. " +
-    "Formato: {\"r\":[{\"k\":RANK,\"n\":\"NAME\",\"p\":POINTS}]} " +
-    "Exemplo: {\"r\":[{\"k\":1,\"n\":\"Jannik Sinner\",\"p\":13350},{\"k\":2,\"n\":\"Carlos Alcaraz\",\"p\":12960}]} " +
-    "Use nomes em ingles sem acentos. Responda APENAS o JSON, nada mais."
-  );
+  // Chamada inline com maxOutputTokens maior (geminiSearch padrao usa 4096, insuficiente pra 50 jogadores)
+  var gTxt = null;
+  var gk = process.env.GEMINI_API_KEY;
+  if (gk) {
+    try {
+      var rankPrompt = "Ranking ATP Singles ATUAL (esta semana, abril 2026). Os 50 primeiros. " +
+        "SOMENTE JSON compacto, uma linha, SEM markdown, SEM quebras de linha, SEM espacos extras. " +
+        "Formato: {\"r\":[{\"k\":RANK,\"n\":\"NAME\",\"p\":POINTS}]} " +
+        "Exemplo: {\"r\":[{\"k\":1,\"n\":\"Jannik Sinner\",\"p\":13350},{\"k\":2,\"n\":\"Carlos Alcaraz\",\"p\":12960}]} " +
+        "Use nomes em ingles sem acentos. Responda APENAS o JSON, nada mais.";
+      var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: rankPrompt }] }],
+          tools: [{ google_search: {} }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 16384 }
+        })
+      });
+      if (r.ok) {
+        var d = await r.json();
+        var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+        if (parts) {
+          gTxt = "";
+          parts.forEach(function (p) { if (p.text && !p.thought) gTxt += p.text; });
+        }
+      }
+    } catch (e) { log("rankings: Gemini call error: " + e.message); }
+  }
   if (!gTxt) { log("rankings: Gemini no response"); return null; }
   log("rankings: Gemini returned " + gTxt.length + " chars");
 
@@ -367,13 +388,10 @@ async function fetchATPRankings() {
   function parseTolerant(txt) {
     if (!txt) return null;
     var cleaned = txt.replace(/```json|```/g, "").trim();
-    // Tenta parse direto
     try { return JSON.parse(cleaned); } catch (e) {}
-    // Procura array "r":[...] mesmo que truncado
     var arrMatch = cleaned.match(/"r"\s*:\s*\[([\s\S]*)/);
     if (!arrMatch) return null;
     var arrBody = arrMatch[1];
-    // Encontra todos objetos completos {...}
     var objs = [];
     var depth = 0, start = -1;
     for (var i = 0; i < arrBody.length; i++) {
