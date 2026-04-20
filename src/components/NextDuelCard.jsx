@@ -159,8 +159,10 @@ export default function NextDuelCard(props) {
   var isLive = liveData && liveData.live;
 
   var oppName = isLive ? (liveData.opponent && liveData.opponent.name || match.opponent_name || "A definir") : (match.opponent_name || "A definir");
-  var oppRanking = match.opponent_ranking || (oppProfile && oppProfile.ranking ? oppProfile.ranking : null);
-  var oppCountry = match.opponent_country || (oppProfile && oppProfile.country ? oppProfile.country : "");
+  // Se adversário é placeholder/TBD, ignora dados cached do oppProfile (evita vazar info do último adversário)
+  var isOppTBD = !match.opponent_id || oppName === "A definir" || /^R\d+P\d+$/i.test(oppName) || /^Q\d+$/i.test(oppName);
+  var oppRanking = isOppTBD ? null : (match.opponent_ranking || (oppProfile && oppProfile.ranking ? oppProfile.ranking : null));
+  var oppCountry = isOppTBD ? "" : (match.opponent_country || (oppProfile && oppProfile.country ? oppProfile.country : ""));
   var oppFlag = countryFlags[oppCountry] || "";
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { var fp = findPlayer(oppName); if (fp && fp.data.slug) oppAtpSlug = fp.data.slug; }
