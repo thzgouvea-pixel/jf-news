@@ -121,6 +121,21 @@ export default function JoaoFonsecaNews() {
   var _pushEnabled = useState(function() { try { return localStorage.getItem("fn_push_enabled") === "1"; } catch(e) { return false; } });
   var pushEnabled = _pushEnabled[0]; var setPushEnabled = _pushEnabled[1];
   var _pushLoading = useState(false); var pushLoading = _pushLoading[0]; var setPushLoading = _pushLoading[1];
+  // Banner de push: mostra se nunca se inscreveu E nao dismissou nos ultimos 30 dias
+  var _showPushBanner = useState(function() {
+    try {
+      if (localStorage.getItem("fn_push_enabled") === "1") return false;  // ja inscrito
+      var dismissedAt = localStorage.getItem("fn_push_banner_dismissed");
+      if (!dismissedAt) return true;  // nunca dismissou
+      var thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+      return (Date.now() - parseInt(dismissedAt)) > thirtyDaysMs;  // dismissou ha mais de 30d
+    } catch(e) { return true; }
+  });
+  var showPushBanner = _showPushBanner[0]; var setShowPushBanner = _showPushBanner[1];
+  var dismissPushBanner = function() {
+    try { localStorage.setItem("fn_push_banner_dismissed", String(Date.now())); } catch(e) {}
+    setShowPushBanner(false);
+  };
   var _showAutoInstall = useState(false); var showAutoInstall = _showAutoInstall[0]; var setShowAutoInstall = _showAutoInstall[1];
   var _showMiniBanner = useState(false); var showMiniBanner = _showMiniBanner[0]; var setShowMiniBanner = _showMiniBanner[1];
   var _autoInstallStep = useState(0); var autoInstallStep = _autoInstallStep[0]; var setAutoInstallStep = _autoInstallStep[1];
@@ -187,6 +202,7 @@ export default function JoaoFonsecaNews() {
         if (res && res.ok) {
           try { localStorage.setItem("fn_push_enabled", "1"); } catch(e) {}
           setPushEnabled(true);
+          setShowPushBanner(false);  // esconde banner quando inscreve com sucesso
         }
         setPushLoading(false);
       }).catch(function(e) {
@@ -475,6 +491,75 @@ export default function JoaoFonsecaNews() {
       </header>
 
       <main className="mobile-pad" style={{ maxWidth: 640, margin: "0 auto", padding: "0 12px" }}>
+
+        {showPushBanner && !pushEnabled && (
+          <div style={{
+            margin: "12px 0 0",
+            padding: "14px 14px 12px",
+            borderRadius: 14,
+            background: "linear-gradient(135deg, " + GREEN + "18 0%, " + YELLOW + "22 100%)",
+            border: "1px solid " + GREEN + "33",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            position: "relative",
+            fontFamily: SANS
+          }}>
+            <button
+              onClick={dismissPushBanner}
+              aria-label="Fechar"
+              style={{ position: "absolute", top: 8, right: 8, width: 24, height: 24, borderRadius: 6, border: "none", background: "transparent", color: SUB, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, opacity: 0.6 }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, paddingRight: 24 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: TEXT, marginBottom: 6, lineHeight: 1.3 }}>
+                  🎾 Acompanhe o João em tempo real
+                </div>
+                <ul style={{ margin: "0 0 10px", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 3 }}>
+                  <li style={{ fontSize: 12, color: SUB, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: GREEN, fontWeight: 700 }}>•</span> Novo adversário definido
+                  </li>
+                  <li style={{ fontSize: 12, color: SUB, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: GREEN, fontWeight: 700 }}>•</span> Jogo ao vivo começando
+                  </li>
+                  <li style={{ fontSize: 12, color: SUB, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: GREEN, fontWeight: 700 }}>•</span> Resultado ao final da partida
+                  </li>
+                  <li style={{ fontSize: 12, color: SUB, lineHeight: 1.4, display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ color: GREEN, fontWeight: 700 }}>•</span> Mudança no ranking ATP
+                  </li>
+                </ul>
+                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <button
+                    onClick={handlePushSubscribe}
+                    disabled={pushLoading}
+                    style={{
+                      padding: "8px 16px",
+                      borderRadius: 8,
+                      background: GREEN,
+                      color: "#fff",
+                      border: "none",
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: pushLoading ? "default" : "pointer",
+                      fontFamily: SANS,
+                      boxShadow: "0 1px 3px " + GREEN + "40",
+                      opacity: pushLoading ? 0.7 : 1
+                    }}
+                  >
+                    {pushLoading ? "Ativando..." : "Ativar notificações"}
+                  </button>
+                  <button
+                    onClick={dismissPushBanner}
+                    style={{ padding: "8px 10px", borderRadius: 8, background: "transparent", color: SUB, border: "none", fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: SANS }}
+                  >
+                    Agora não
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {!loading && news.length === 0 && (
   <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "12px 16px", background: "#FFFBEB", borderRadius: 12, margin: "12px 0 0", border: "1px solid #F59E0B22", boxShadow: "0 1px 4px rgba(245,158,11,0.06)" }}>
