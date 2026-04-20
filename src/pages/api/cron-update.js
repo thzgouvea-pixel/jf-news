@@ -176,39 +176,18 @@ async function discoverMatches() {
     if (scrapedId && !seen.has(scrapedId)) {
       log("scrape: matchId " + scrapedId + " encontrado");
       var scrapedMatch = await sofaFetch("/v1/match/details?match_id=" + scrapedId);
-      var cacheKey = "fn:matchDetailsCache:" + scrapedId;
-      if (scrapedMatch) {
-        // Sucesso: salva no cache pra proximos crons poderem usar se a API falhar
-        try {
-          await kv.set(cacheKey, JSON.stringify({ data: scrapedMatch, savedAt: Date.now() }));
-          // TTL 48h — se o jogo passar, deixa expirar naturalmente
-          await kv.expire(cacheKey, 172800);
-        } catch (e) { log("cache save err: " + e.message); }
-      } else {
-        // Falhou: tenta usar cache recente
-        log("scrape: match/details retornou vazio pro id " + scrapedId + ", tentando cache KV...");
-        try {
-          var cached = await kv.get(cacheKey);
-          if (cached) {
-            var parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
-            var ageMin = Math.round((Date.now() - parsed.savedAt) / 60000);
-            scrapedMatch = parsed.data;
-            log("scrape: usando cache KV (savedAt " + ageMin + "min atras)");
-          } else {
-            log("scrape: sem cache KV pro id " + scrapedId);
-          }
-        } catch (e) { log("cache read err: " + e.message); }
-      }
       if (scrapedMatch) {
         var matchObj = scrapedMatch.event || scrapedMatch;
         matchObj = normalizeScrapedMatch(matchObj);
         if (matchObj.id && isFonseca(matchObj) && isSingles(matchObj) && isUpcoming(matchObj)) {
           seen.add(matchObj.id);
           results.upcoming.push(matchObj);
-          log("scrape: upcoming adicionado (" + matchObj.id + ")");
+          log("scrape: upcoming adicionado via scrape (" + matchObj.id + ")");
         } else {
           log("scrape: match nao passou filtros (id:" + matchObj.id + " fonseca:" + isFonseca(matchObj) + " singles:" + isSingles(matchObj) + " upcoming:" + isUpcoming(matchObj) + ")");
         }
+      } else {
+        log("scrape: match/details retornou vazio pro id " + scrapedId);
       }
     }
   }
@@ -1041,17 +1020,50 @@ export default async function handler(req, res) {
       w.push(kv.set("fn:nextMatch", JSON.stringify(nm), { ex: T7 }));
       try { await kv.del("fn:nextTournament"); } catch (e) { }
     } else {
-      try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); await kv.del("fn:bracketUrl"); } catch (e) { }
+      // PROTECAO: antes de deletar fn:nextMatch, verifica se:
+      //  a) O scrape achou um match_id (significa que SofaScore SABE que existe jogo) -> API so falhou, mantem KV antigo
+      //  b) OU o KV atual tem um jogo futuro valido (data ainda no futuro) -> mantem
+      // So deleta se REALMENTE nao ha proximo jogo (Fonseca eliminado ou sem torneio inscrito)
+      var shouldKeepNextMatch = false;
 
-      // Select only FUTURE tournaments (start date > today), never ongoing ones
-      var todayForTourn = new Date();
-      todayForTourn.setUTCHours(0, 0, 0, 0);
-      var nextT = ATP_CALENDAR_2026.find(function (t) {
-        if (!t.start) return false;
-        return new Date(t.start + "T00:00:00Z") > todayForTourn;
-      });
+      // (a) Scrape achou ID? Entao existe jogo, API so falhou temporariamente
+      // (a variavel scrapedId so existe no escopo do discoverMatches, entao vamos checar exKvNextMatch)
+      try {
+        var exKvNextMatchRaw = await kv.get("fn:nextMatch");
+        if (exKvNextMatchRaw) {
+          var exKvNextMatch = typeof exKvNextMatchRaw === "string" ? JSON.parse(exKvNextMatchRaw) : exKvNextMatchRaw;
+          // (b) Se o jogo no KV ainda e futuro (ou esta rolando agora), mantem
+          if (exKvNextMatch && exKvNextMatch.startTimestamp) {
+            var gameTimeMs = exKvNextMatch.startTimestamp * 1000;
+            var nowCheck = Date.now();
+            // Mantem se o jogo esta nas proximas 72h OU aconteceu nas ultimas 6h (ainda rolando)
+            var hoursUntil = (gameTimeMs - nowCheck) / 3600000;
+            if (hoursUntil >= -6 && hoursUntil <= 72) {
+              shouldKeepNextMatch = true;
+              log("nm null mas fn:nextMatch no KV ainda valido (jogo em " + Math.round(hoursUntil) + "h) — mantendo");
+              steps.next = "kept (API falhou)";
+            }
+          }
+        }
+      } catch (e) { log("check kv nextMatch err: " + e.message); }
 
-      if (nextT) {
+      if (!shouldKeepNextMatch) {
+        try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); await kv.del("fn:bracketUrl"); } catch (e) { }
+      } else {
+        // Mantem fn:nextMatch como esta, mas limpa winProb/bracketUrl (dados derivados que podem estar stale)
+        // Na proxima execucao com API OK, eles sao recalculados
+      }
+
+      if (!shouldKeepNextMatch) {
+        // Select only FUTURE tournaments (start date > today), never ongoing ones
+        var todayForTourn = new Date();
+        todayForTourn.setUTCHours(0, 0, 0, 0);
+        var nextT = ATP_CALENDAR_2026.find(function (t) {
+          if (!t.start) return false;
+          return new Date(t.start + "T00:00:00Z") > todayForTourn;
+        });
+
+        if (nextT) {
         // Check if Fonseca is confirmed to play — cache 3 days per tournament
         var confirmedCacheKey = "fn:gemini:tournConfirmed:" + nextT.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
         var fonsecaConfirmed = null;
@@ -1093,6 +1105,7 @@ export default async function handler(req, res) {
         }), { ex: T2 }));
         log("nextTournament: " + nextT.name + " (confirmed=" + fonsecaConfirmed + ")");
       }
+      }  // fim do if (!shouldKeepNextMatch)
     }
 
     if (ms && lm) {
