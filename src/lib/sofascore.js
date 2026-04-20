@@ -186,22 +186,40 @@ export function detectCategory(tName) {
 
 // ===== SOFASCORE API =====
 
-export async function sofaFetch(path) {
+export async function sofaFetch(path, opts) {
+  opts = opts || {};
   var apiKey = process.env.RAPIDAPI_KEY;
   if (!apiKey) return null;
-  try {
-    var res = await fetch("https://" + RAPIDAPI_HOST + "/api/sofascore" + path, {
-      headers: { "x-rapidapi-host": RAPIDAPI_HOST, "x-rapidapi-key": apiKey },
-    });
-    if (!res.ok) {
-      log("sofa", res.status + " for " + path);
+  var timeoutMs = opts.timeoutMs || 8000;  // 8s default. Se API travar, aborta ao inves de ficar esperando.
+  var maxRetries = opts.retries === undefined ? 1 : opts.retries;  // 1 retry em caso de 502/503.
+
+  async function attempt(n) {
+    var ctrl = new AbortController();
+    var to = setTimeout(function() { ctrl.abort(); }, timeoutMs);
+    try {
+      var res = await fetch("https://" + RAPIDAPI_HOST + "/api/sofascore" + path, {
+        headers: { "x-rapidapi-host": RAPIDAPI_HOST, "x-rapidapi-key": apiKey },
+        signal: ctrl.signal,
+      });
+      clearTimeout(to);
+      if (!res.ok) {
+        log("sofa", res.status + " for " + path + (n > 0 ? " (retry " + n + ")" : ""));
+        // Retry em erro transiente
+        if ((res.status === 502 || res.status === 503 || res.status === 504) && n < maxRetries) {
+          return attempt(n + 1);
+        }
+        return null;
+      }
+      return await res.json();
+    } catch (e) {
+      clearTimeout(to);
+      var isAbort = e.name === "AbortError";
+      log("sofa", (isAbort ? "timeout " + timeoutMs + "ms" : "error: " + e.message) + " for " + path + (n > 0 ? " (retry " + n + ")" : ""));
+      if (isAbort && n < maxRetries) return attempt(n + 1);
       return null;
     }
-    return await res.json();
-  } catch (e) {
-    log("sofa", "error: " + e.message + " for " + path);
-    return null;
   }
+  return attempt(0);
 }
 
 // ===== MATCH DETECTION =====
