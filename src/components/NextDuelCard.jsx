@@ -401,12 +401,12 @@ export default function NextDuelCard(props) {
           )}
 
           {/* Opponent */}
-          <div style={{ textAlign: "center" }} onClick={onOppClick ? function(){ onOppClick(); } : undefined} role={onOppClick ? "button" : undefined} tabIndex={onOppClick ? 0 : undefined}>
+          <div style={{ textAlign: "center" }} onClick={(onOppClick && !isOppTBD) ? function(){ onOppClick(); } : undefined} role={(onOppClick && !isOppTBD) ? "button" : undefined} tabIndex={(onOppClick && !isOppTBD) ? 0 : undefined}>
             <div style={{ position: "relative", width: 72, height: 72, margin: "0 auto 8px" }}>
-              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#152035", border: "2.5px solid " + (isLive ? "#ef444450" : "rgba(255,255,255,0.12)"), overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: onOppClick ? "pointer" : "default" }}>
+              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#152035", border: "2.5px solid " + (isLive ? "#ef444450" : "rgba(255,255,255,0.12)"), overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: (onOppClick && !isOppTBD) ? "pointer" : "default" }}>
                 {oppImg ? <img src={oppImg} alt={oppName} referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried && oppImgFallback) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else if (e.target.dataset.tried === "1" && oppImgFallback2) { e.target.dataset.tried = "2"; e.target.src = oppImgFallback2; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
               </div>
-              {!isLive && onOppClick && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
+              {!isLive && onOppClick && !isOppTBD && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
             </div>
             <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppName}</span>
             {isLive && liveServing === "opponent" ? (
