@@ -358,11 +358,12 @@ async function fetchATPRankings() {
   var gk = process.env.GEMINI_API_KEY;
   if (gk) {
     try {
-      var rankPrompt = "Ranking ATP Singles ATUAL (esta semana, abril 2026). Os 50 primeiros. " +
-        "SOMENTE JSON compacto, uma linha, SEM markdown, SEM quebras de linha, SEM espacos extras. " +
-        "Formato: {\"r\":[{\"k\":RANK,\"n\":\"NAME\",\"p\":POINTS}]} " +
-        "Exemplo: {\"r\":[{\"k\":1,\"n\":\"Jannik Sinner\",\"p\":13350},{\"k\":2,\"n\":\"Carlos Alcaraz\",\"p\":12960}]} " +
-        "Use nomes em ingles sem acentos. Responda APENAS o JSON, nada mais.";
+      var rankPrompt = "RANKING ATP SINGLES DESTA SEMANA (abril 2026). Preciso da lista COMPLETA das posicoes 1 ate 50. " +
+        "NAO pare no top 10 nem no top 20. Preciso de 50 jogadores, incluindo Joao Fonseca (brasileiro, atualmente rank 31). " +
+        "SOMENTE JSON compacto em uma linha. SEM markdown. SEM quebras de linha. " +
+        "Formato: {\"r\":[{\"k\":1,\"n\":\"Jannik Sinner\",\"p\":13350},{\"k\":2,\"n\":\"Carlos Alcaraz\",\"p\":12960}, ... ate k:50]} " +
+        "Nomes em ingles sem acentos. Responda APENAS o JSON com as 50 entradas, nada mais. " +
+        "Confira: sua resposta DEVE ter 50 objetos dentro do array.";
       var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
