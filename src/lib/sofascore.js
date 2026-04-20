@@ -56,7 +56,7 @@ export var BROADCAST_MAP = {
   "Monte Carlo Masters": "ESPN",
   "Indian Wells Masters": "ESPN",
   "Miami Open": "ESPN",
-  "Madrid Open": "ESPN",
+  "Madrid Open": "ESPN / Disney+",
   "Italian Open": "ESPN",
   "Roland Garros": "Globoplay",
   "Wimbledon": "ESPN",
@@ -82,10 +82,10 @@ export var BROADCAST_MAP = {
 export var ROUND_MAP = {
   "round 1": "1ª rodada",
   "round of 128": "1ª rodada",
-  "round of 64": "2ª rodada",
-  "round 2": "2ª rodada",
-  "round of 32": "3ª rodada",
-  "round 3": "3ª rodada",
+  "round of 64": "32avos de final",
+  "round 2": "32avos de final",
+  "round of 32": "16avos de final",
+  "round 3": "16avos de final",
   "round of 16": "Oitavas de final",
   "round 4": "Oitavas de final",
   "quarterfinal": "Quartas de final",
@@ -101,16 +101,16 @@ export var ROUND_MAP = {
   "q2": "Quali 2ª rodada",
   "q3": "Quali 3ª rodada",
   "1st round": "1ª rodada",
-  "2nd round": "2ª rodada",
-  "3rd round": "3ª rodada",
+  "2nd round": "32avos de final",
+  "3rd round": "16avos de final",
   "4th round": "Oitavas de final",
 };
 
 // Next round progression
 export var NEXT_ROUND = {
-  "1ª rodada": "2ª rodada",
-  "2ª rodada": "3ª rodada",
-  "3ª rodada": "Oitavas de final",
+  "1ª rodada": "32avos de final",
+  "32avos de final": "16avos de final",
+  "16avos de final": "Oitavas de final",
   "Oitavas de final": "Quartas de final",
   "Quartas de final": "Semifinal",
   "Semifinal": "Final",
@@ -291,13 +291,6 @@ export function extractMatch(match) {
 
   // Round
   var roundStr = translateRound(round.name) || "";
-  // Masters 1000 e ATP 500/250 começam o main draw em R64 ou R32, não R128 como Grand Slam.
-  // O ROUND_MAP default assume Grand Slam. Quando não é GS, ajustar:
-  var rawRoundName = (round.name || "").toLowerCase();
-  if (cat && cat !== "Grand Slam") {
-    if (rawRoundName === "round of 64") roundStr = "1ª rodada";
-    else if (rawRoundName === "round of 32") roundStr = "2ª rodada";
-  }
 
   // Timestamps
   var date = (match.startTimestamp || match.timestamp) ? new Date((match.startTimestamp || match.timestamp) * 1000).toISOString() : null;
