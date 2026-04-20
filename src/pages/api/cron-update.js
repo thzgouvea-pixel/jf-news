@@ -49,6 +49,47 @@ function parseGeminiJSON(txt) {
   return null;
 }
 
+// ===== SCRAPE FALLBACK: pega matchId da pagina publica do Fonseca no sofascore.com =====
+// Necessario pq o proxy sofascore6 esconde jogos com adversario placeholder (R64P14, etc)
+async function scrapeNextMatchIdFromSofa() {
+  try {
+    var r = await fetch("https://www.sofascore.com/tennis/player/fonseca-joao/403869", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Accept": "text/html",
+      },
+    });
+    if (!r.ok) { log("scrape: status " + r.status); return null; }
+    var html = await r.text();
+    // Procura o #id que aparece DEPOIS de "next match" (antes é trending/irrelevante seria idem)
+    var idx = html.indexOf("next match");
+    if (idx < 0) { log("scrape: 'next match' nao encontrado"); return null; }
+    var after = html.substring(idx);
+    var m = after.match(/#id:(\d+)/);
+    if (m && m[1]) return parseInt(m[1], 10);
+    log("scrape: #id nao encontrado apos 'next match'");
+  } catch (e) { log("scrape error: " + e.message); }
+  return null;
+}
+
+// Normaliza match vindo do match/details: converte placeholder (R64P14) pra "A definir"
+// e copia round -> roundInfo (match/details usa "round", extractMatch espera "roundInfo")
+function normalizeScrapedMatch(m) {
+  if (!m) return m;
+  if (m.awayTeam && /^R\d+P\d+$/i.test(m.awayTeam.name || "")) {
+    m.awayTeam.name = "A definir";
+    m.awayTeam.shortName = "A definir";
+    m.awayTeam.id = null;
+  }
+  if (m.homeTeam && /^R\d+P\d+$/i.test(m.homeTeam.name || "")) {
+    m.homeTeam.name = "A definir";
+    m.homeTeam.shortName = "A definir";
+    m.homeTeam.id = null;
+  }
+  if (m.round && !m.roundInfo) m.roundInfo = m.round;
+  return m;
+}
+
 // ===== PHASE 1: DISCOVER =====
 async function discoverMatches() {
   log("DISCOVER: date scan -3 to +7 days...");
@@ -111,6 +152,31 @@ async function discoverMatches() {
 
   var NOW_TS = Math.floor(Date.now() / 1000);
   function getTs(m) { return m.startTimestamp || m.timestamp || 0; }
+
+  // FALLBACK: se matchList nao achou upcoming, fazer scraping da pagina publica do Fonseca
+  // (matchList do proxy sofascore6 esconde jogos com adversario placeholder tipo R64P14)
+  if (results.upcoming.length === 0) {
+    log("discover: 0 upcoming, tentando scrape fallback...");
+    var scrapedId = await scrapeNextMatchIdFromSofa();
+    if (scrapedId && !seen.has(scrapedId)) {
+      log("scrape: matchId " + scrapedId + " encontrado");
+      var scrapedMatch = await sofaFetch("/v1/match/details?match_id=" + scrapedId);
+      if (scrapedMatch) {
+        var matchObj = scrapedMatch.event || scrapedMatch;
+        matchObj = normalizeScrapedMatch(matchObj);
+        if (matchObj.id && isFonseca(matchObj) && isSingles(matchObj) && isUpcoming(matchObj)) {
+          seen.add(matchObj.id);
+          results.upcoming.push(matchObj);
+          log("scrape: upcoming adicionado via scrape (" + matchObj.id + ")");
+        } else {
+          log("scrape: match nao passou filtros (id:" + matchObj.id + " fonseca:" + isFonseca(matchObj) + " singles:" + isSingles(matchObj) + " upcoming:" + isUpcoming(matchObj) + ")");
+        }
+      } else {
+        log("scrape: match/details retornou vazio pro id " + scrapedId);
+      }
+    }
+  }
+
   results.finished.sort(function (a, b) { return (getTs(b) || NOW_TS) - (getTs(a) || NOW_TS); });
   results.upcoming.sort(function (a, b) { return (getTs(a) || 0) - (getTs(b) || 0); });
   results.upcoming = results.upcoming.filter(function (m) {
