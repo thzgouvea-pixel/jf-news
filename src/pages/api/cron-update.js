@@ -176,18 +176,39 @@ async function discoverMatches() {
     if (scrapedId && !seen.has(scrapedId)) {
       log("scrape: matchId " + scrapedId + " encontrado");
       var scrapedMatch = await sofaFetch("/v1/match/details?match_id=" + scrapedId);
+      var cacheKey = "fn:matchDetailsCache:" + scrapedId;
+      if (scrapedMatch) {
+        // Sucesso: salva no cache pra proximos crons poderem usar se a API falhar
+        try {
+          await kv.set(cacheKey, JSON.stringify({ data: scrapedMatch, savedAt: Date.now() }));
+          // TTL 48h — se o jogo passar, deixa expirar naturalmente
+          await kv.expire(cacheKey, 172800);
+        } catch (e) { log("cache save err: " + e.message); }
+      } else {
+        // Falhou: tenta usar cache recente
+        log("scrape: match/details retornou vazio pro id " + scrapedId + ", tentando cache KV...");
+        try {
+          var cached = await kv.get(cacheKey);
+          if (cached) {
+            var parsed = typeof cached === "string" ? JSON.parse(cached) : cached;
+            var ageMin = Math.round((Date.now() - parsed.savedAt) / 60000);
+            scrapedMatch = parsed.data;
+            log("scrape: usando cache KV (savedAt " + ageMin + "min atras)");
+          } else {
+            log("scrape: sem cache KV pro id " + scrapedId);
+          }
+        } catch (e) { log("cache read err: " + e.message); }
+      }
       if (scrapedMatch) {
         var matchObj = scrapedMatch.event || scrapedMatch;
         matchObj = normalizeScrapedMatch(matchObj);
         if (matchObj.id && isFonseca(matchObj) && isSingles(matchObj) && isUpcoming(matchObj)) {
           seen.add(matchObj.id);
           results.upcoming.push(matchObj);
-          log("scrape: upcoming adicionado via scrape (" + matchObj.id + ")");
+          log("scrape: upcoming adicionado (" + matchObj.id + ")");
         } else {
           log("scrape: match nao passou filtros (id:" + matchObj.id + " fonseca:" + isFonseca(matchObj) + " singles:" + isSingles(matchObj) + " upcoming:" + isUpcoming(matchObj) + ")");
         }
-      } else {
-        log("scrape: match/details retornou vazio pro id " + scrapedId);
       }
     }
   }
