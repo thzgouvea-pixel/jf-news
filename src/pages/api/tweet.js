@@ -544,15 +544,23 @@ async function pickFromPool(pool, historyKey, maxHistory) {
 // ===== HASHTAG BUILDER (for news tweets) =====
 function addNewsHashtags(tweetText, sourceTitle) {
   if (tweetText.includes("#")) return tweetText;
+  var tagsText = buildHashtagsBlock(tweetText, sourceTitle);
+  if (tweetText.length + tagsText.length <= 280) return tweetText + tagsText;
+  if (tweetText.length + 16 <= 280) return tweetText + "\n\n#JoãoFonseca";
+  return tweetText;
+}
+
+// Retorna SO o bloco de hashtags ("\n\n#tag1 #tag2 #tag3"), sem anexar nada
+function buildHashtagsBlock(refText, sourceTitle) {
   var hashtags = ["#JoãoFonseca"];
   var titleLow = (sourceTitle || "").toLowerCase();
-  var combined = titleLow + " " + tweetText.toLowerCase();
+  var combined = titleLow + " " + (refText || "").toLowerCase();
   if (combined.includes("roland garros") || combined.includes("french open")) hashtags.push("#RolandGarros");
   else if (combined.includes("wimbledon")) hashtags.push("#Wimbledon");
   else if (combined.includes("us open")) hashtags.push("#USOpen");
   else if (combined.includes("australian open") || combined.includes("aus open")) hashtags.push("#AusOpen");
   else if (combined.includes("monte carlo")) hashtags.push("#MonteCarlo");
-  else if (combined.includes("madrid")) hashtags.push("#MadridOpen");
+  else if (combined.includes("madrid") || combined.includes("madri ") || combined.endsWith("madri")) hashtags.push("#MadridOpen");
   else if (combined.includes("roma") || combined.includes("italian open")) hashtags.push("#IBI");
   else if (combined.includes("miami")) hashtags.push("#MiamiOpen");
   else if (combined.includes("indian wells")) hashtags.push("#IndianWells");
@@ -563,10 +571,7 @@ function addNewsHashtags(tweetText, sourceTitle) {
 
   var uniqueTags = [];
   hashtags.forEach(function (t) { if (uniqueTags.indexOf(t) === -1 && uniqueTags.length < 3) uniqueTags.push(t); });
-  var tagsText = "\n\n" + uniqueTags.join(" ");
-  if (tweetText.length + tagsText.length <= 280) return tweetText + tagsText;
-  if (tweetText.length + 16 <= 280) return tweetText + "\n\n#JoãoFonseca";
-  return tweetText;
+  return "\n\n" + uniqueTags.join(" ");
 }
 
 // ===== MAIN HANDLER =====
@@ -685,14 +690,38 @@ export default async function handler(req, res) {
     } catch (e) { console.log("[tweet] News level error:", e.message); }
 
     if (newsFound) {
-      var tweetText = addNewsHashtags(newsFound.text, newsFound.item.title);
-      if (tweetText.length > 280) tweetText = tweetText.substring(0, 277) + "...";
+      // NOVO FORMATO (1 post so):
+      //   <manchete>
+      //
+      //   Via <Fonte> → www.fonsecanews.com.br
+      //
+      //   #hashtags
+      //
+      // Hashtags sao opcionais: se passar de 280 chars o X esconde, que e o comportamento desejado.
       var prettySource = normalizeSource(newsFound.item.source);
-      var linkReply = "📰 " + prettySource + "\n\n🔗 www.fonsecanews.com.br";
+      var mainText = newsFound.text;
+      var sourceLine = "\n\nVia " + prettySource + " \u2192 www.fonsecanews.com.br";
+
+      // Monta hashtags (so o bloco "\n\n#tag1 #tag2 ...", sem anexar nada)
+      var hashtagsBlock = mainText.includes("#") ? "" : buildHashtagsBlock(mainText, newsFound.item.title);
+
+      // Monta na ordem: manchete + fonte/link + hashtags
+      var full = mainText + sourceLine + hashtagsBlock;
+
+      // Se passar de 280, X automaticamente trunca mostrando "..." + link.
+      // Thomaz prefere que as hashtags fiquem escondidas nesses casos — OK.
+      // Mas se a manchete + fonte sozinhas ja passam de 280, truncar manchete pra preservar link.
+      var MAX = 280;
+      if (mainText.length + sourceLine.length > MAX) {
+        var room = MAX - sourceLine.length - 3;  // 3 pro "..."
+        if (room < 50) room = 50;  // sanidade
+        mainText = mainText.substring(0, room).trim() + "...";
+        full = mainText + sourceLine;  // nesse caso sem hashtags
+      }
 
       try {
-        console.log("[tweet] Posting NEWS: " + tweetText.substring(0, 100) + "...");
-        var tweetResult = await postWithLinkReply(tweetText, linkReply);
+        console.log("[tweet] Posting NEWS (" + full.length + " chars): " + full.substring(0, 100) + "...");
+        var tweetResult = await postTweet(full);
         await markPosted(newsFound.hash);
         await pushRecentTitle(newsFound.item.title);
         await setLastPostTime();
