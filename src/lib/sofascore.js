@@ -166,11 +166,19 @@ export function lookupBroadcast(tournamentName) {
 export function translateRound(rawRound) {
   if (!rawRound) return "";
   var low = rawRound.toLowerCase().trim();
+  // Match exato primeiro
   if (ROUND_MAP[low]) return ROUND_MAP[low];
+  // Se ja esta em portugues (ja foi traduzido antes), retorna as-is pra nao re-traduzir
+  // (evita bug: "32avos de final" contem "final" -> retornaria "Final")
+  if (/[áéíóúãõçâêôà]/i.test(low) ||
+      /\b(rodada|oitavas|quartas|semifinal|final|qualificat|quali)\b/i.test(low) ||
+      /\d+avos/i.test(low)) {
+    return rawRound;
+  }
+  // Fallback: includes() apenas se nenhum match exato — pra termos em ingles raros
   for (var k in ROUND_MAP) {
     if (low.includes(k)) return ROUND_MAP[k];
   }
-  // Already in Portuguese? Return as-is
   return rawRound;
 }
 
