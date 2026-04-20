@@ -354,20 +354,35 @@ async function fetchATPRankings() {
   // Fallback: Gemini com grounding (SofaScore esta 404 desde 15/04/2026)
   log("rankings: sofa fail, trying Gemini");
   var gTxt = await geminiSearch(
-    "Ranking ATP Singles ATUAL (abril 2026). Liste os 50 primeiros. " +
-    "APENAS JSON: {\"rankings\":[{\"rank\":N,\"name\":\"Firstname Lastname\",\"points\":N}]}. " +
-    "50 entradas. Use nomes completos dos jogadores em ingles."
+    "Me de o Ranking ATP Singles ATUAL (esta semana, abril 2026). " +
+    "APENAS JSON, sem texto antes ou depois, no formato exato: " +
+    "{\"rankings\":[{\"rank\":1,\"name\":\"Jannik Sinner\",\"points\":13350}," +
+    "{\"rank\":2,\"name\":\"Carlos Alcaraz\",\"points\":13240}]}. " +
+    "Liste os 50 primeiros. Use nomes completos em ingles sem acentos."
   );
-  var parsed = parseGeminiJSON(gTxt);
-  if (parsed && Array.isArray(parsed.rankings) && parsed.rankings.length >= 20) {
-    var cleanRankings = parsed.rankings.map(function(r) {
-      return { rank: r.rank || 0, name: r.name || "", points: r.points || 0, prev: r.rank || 0 };
-    }).filter(function(r) { return r.rank > 0 && r.name; });
-    if (cleanRankings.length >= 20) {
-      log("rankings: " + cleanRankings.length + " players (gemini)");
-      return { rankings: cleanRankings, updatedAt: new Date().toISOString() };
-    }
+  if (!gTxt) {
+    log("rankings: Gemini no response");
+    return null;
   }
+  log("rankings: Gemini returned " + gTxt.length + " chars");
+  var parsed = parseGeminiJSON(gTxt);
+  if (!parsed) {
+    log("rankings: Gemini JSON parse failed. First 200 chars: " + gTxt.substring(0, 200));
+    return null;
+  }
+  if (!Array.isArray(parsed.rankings)) {
+    log("rankings: Gemini returned no rankings array");
+    return null;
+  }
+  log("rankings: Gemini parsed " + parsed.rankings.length + " entries");
+  var cleanRankings = parsed.rankings.map(function(r) {
+    return { rank: r.rank || 0, name: r.name || "", points: r.points || 0, prev: r.rank || 0 };
+  }).filter(function(r) { return r.rank > 0 && r.name; });
+  if (cleanRankings.length >= 15) {
+    log("rankings: " + cleanRankings.length + " players (gemini)");
+    return { rankings: cleanRankings, updatedAt: new Date().toISOString() };
+  }
+  log("rankings: Gemini returned only " + cleanRankings.length + " valid entries (min 15)");
   return null;
 }
 
