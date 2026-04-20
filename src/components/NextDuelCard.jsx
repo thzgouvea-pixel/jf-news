@@ -63,7 +63,10 @@ export default function NextDuelCard(props) {
 
   var nextTournament = props.nextTournament || null;
 
-  if (!match || !match.opponent_name || match.opponent_name === "A definir" || match.opponent_name === "A+definir") {
+  // Cai no placeholder "Proximo torneio" APENAS quando nao temos nenhuma partida agendada.
+  // Se temos match com data/torneio (mesmo com adversario "A definir"/placeholder), renderiza o card completo.
+  var hasScheduledMatch = match && match.date && match.tournament_name;
+  if (!hasScheduledMatch) {
     if (!nextTournament) return null;
 
     var surfaceTranslatePrev = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama" };
