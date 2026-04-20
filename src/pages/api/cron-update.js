@@ -330,23 +330,43 @@ async function fetchWinProb(nm) {
 
 // ===== PHASE 5: ATP RANKINGS =====
 async function fetchATPRankings() {
+  // Tenta SofaScore primeiro
   var data = await sofaFetch("/v1/rankings/type/6");
-  if (!data) return null;
-  var rankings = [];
-  var rows = data.rankings || data.rankingRows || data.rows || (Array.isArray(data) ? data : null);
-  if (!rows) { for (var k in data) { if (Array.isArray(data[k]) && data[k].length > 10) { rows = data[k]; break; } } }
-  if (rows && Array.isArray(rows)) {
-    rows.slice(0, 100).forEach(function (r) {
-      var team = r.team || r.player || r;
-      var name = team.name || team.shortName || "";
-      var rank = r.ranking || r.rank || r.position || 0;
-      var pts = r.points || r.rowPoints || 0;
-      if (name && rank) rankings.push({ rank: rank, name: name, points: pts, prev: rank });
-    });
+  if (data) {
+    var rankings = [];
+    var rows = data.rankings || data.rankingRows || data.rows || (Array.isArray(data) ? data : null);
+    if (!rows) { for (var k in data) { if (Array.isArray(data[k]) && data[k].length > 10) { rows = data[k]; break; } } }
+    if (rows && Array.isArray(rows)) {
+      rows.slice(0, 100).forEach(function (r) {
+        var team = r.team || r.player || r;
+        var name = team.name || team.shortName || "";
+        var rank = r.ranking || r.rank || r.position || 0;
+        var pts = r.points || r.rowPoints || 0;
+        if (name && rank) rankings.push({ rank: rank, name: name, points: pts, prev: rank });
+      });
+    }
+    if (rankings.length >= 20) {
+      log("rankings: " + rankings.length + " players (sofa)");
+      return { rankings: rankings, updatedAt: new Date().toISOString() };
+    }
   }
-  if (rankings.length >= 20) {
-    log("rankings: " + rankings.length + " players");
-    return { rankings: rankings, updatedAt: new Date().toISOString() };
+
+  // Fallback: Gemini com grounding (SofaScore esta 404 desde 15/04/2026)
+  log("rankings: sofa fail, trying Gemini");
+  var gTxt = await geminiSearch(
+    "Ranking ATP Singles ATUAL (abril 2026). Liste os 50 primeiros. " +
+    "APENAS JSON: {\"rankings\":[{\"rank\":N,\"name\":\"Firstname Lastname\",\"points\":N}]}. " +
+    "50 entradas. Use nomes completos dos jogadores em ingles."
+  );
+  var parsed = parseGeminiJSON(gTxt);
+  if (parsed && Array.isArray(parsed.rankings) && parsed.rankings.length >= 20) {
+    var cleanRankings = parsed.rankings.map(function(r) {
+      return { rank: r.rank || 0, name: r.name || "", points: r.points || 0, prev: r.rank || 0 };
+    }).filter(function(r) { return r.rank > 0 && r.name; });
+    if (cleanRankings.length >= 20) {
+      log("rankings: " + cleanRankings.length + " players (gemini)");
+      return { rankings: cleanRankings, updatedAt: new Date().toISOString() };
+    }
   }
   return null;
 }
@@ -596,9 +616,20 @@ export default async function handler(req, res) {
     var H6 = 6 * 3600000, H24 = 24 * 3600000, D7 = 7 * H24;
     var T7 = 604800, T2 = 172800;
 
-    // ── ATP RANKINGS (daily) ──
+    // ── ATP RANKINGS (weekly on monday 10h UTC) ──
+    // Usa mesmo threshold do ranking individual ("lastMonday10UTC" definido mais abaixo em rankingFresh).
+    // Como esse check acontece antes do rankingFresh, recalcula aqui.
+    var _lastMonday10UTC_forList = (function() {
+      var d = new Date();
+      var day = d.getUTCDay();
+      var daysSinceMonday = day === 0 ? 6 : day - 1;
+      d.setUTCDate(d.getUTCDate() - daysSinceMonday);
+      d.setUTCHours(10, 0, 0, 0);
+      if (d.getTime() > Date.now()) d.setUTCDate(d.getUTCDate() - 7);
+      return d.getTime();
+    })();
     var rankingsListFresh = exRankingsList && exRankingsList.updatedAt &&
-      (now - new Date(exRankingsList.updatedAt).getTime()) < H24 &&
+      new Date(exRankingsList.updatedAt).getTime() >= _lastMonday10UTC_forList &&
       exRankingsList.rankings && exRankingsList.rankings.length >= 40;
     if (!rankingsListFresh) {
       var newRankings = await fetchATPRankings();
