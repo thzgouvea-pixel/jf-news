@@ -291,6 +291,13 @@ export function extractMatch(match) {
 
   // Round
   var roundStr = translateRound(round.name) || "";
+  // Masters 1000 e ATP 500/250 começam o main draw em R64 ou R32, não R128 como Grand Slam.
+  // O ROUND_MAP default assume Grand Slam. Quando não é GS, ajustar:
+  var rawRoundName = (round.name || "").toLowerCase();
+  if (cat && cat !== "Grand Slam") {
+    if (rawRoundName === "round of 64") roundStr = "1ª rodada";
+    else if (rawRoundName === "round of 32") roundStr = "2ª rodada";
+  }
 
   // Timestamps
   var date = (match.startTimestamp || match.timestamp) ? new Date((match.startTimestamp || match.timestamp) * 1000).toISOString() : null;
