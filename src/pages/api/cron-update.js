@@ -655,7 +655,18 @@ export default async function handler(req, res) {
 
     // ── PLAYER DATA (weekly) ──
     var wiki = null;
-    var rankingFresh = exRanking && exRanking.updatedAt && (now - new Date(exRanking.updatedAt).getTime()) < D7;
+    // rankingFresh = true se o ranking foi atualizado apos a ultima segunda-feira 10:00 UTC (madrugada BRT).
+    // ATP publica ranking oficial toda segunda-feira.
+    var lastMonday10UTC = (function() {
+      var d = new Date();
+      var day = d.getUTCDay(); // 0=dom 1=seg 2=ter ...
+      var daysSinceMonday = day === 0 ? 6 : day - 1;
+      d.setUTCDate(d.getUTCDate() - daysSinceMonday);
+      d.setUTCHours(10, 0, 0, 0);
+      if (d.getTime() > Date.now()) d.setUTCDate(d.getUTCDate() - 7); // se ainda nao passou das 10h, usa semana passada
+      return d.getTime();
+    })();
+    var rankingFresh = exRanking && exRanking.updatedAt && new Date(exRanking.updatedAt).getTime() >= lastMonday10UTC;
     var careerFresh = exCareer && exCareer.wins !== undefined;
     if (!rankingFresh || !careerFresh) {
       wiki = await fetchPlayerData();
@@ -897,7 +908,17 @@ export default async function handler(req, res) {
     if (form.length > 0) w.push(kv.set("fn:recentForm", JSON.stringify(form), { ex: T7 }));
 
     if (wiki) {
-      if (wiki.ranking) w.push(kv.set("fn:ranking", JSON.stringify({ ranking: wiki.ranking, bestRanking: wiki.bestRanking || null, updatedAt: new Date().toISOString() }), { ex: T7 }));
+      if (wiki.ranking) {
+        // Preserva updatedAt antigo se o valor nao mudou e veio do cache.
+        // Isso permite que D7 funcione: depois de 7d sem mudanca, vai refetch.
+        var rankingUpdatedAt;
+        if (rankingFresh && exRanking && exRanking.ranking === wiki.ranking) {
+          rankingUpdatedAt = exRanking.updatedAt;  // mantem antigo
+        } else {
+          rankingUpdatedAt = new Date().toISOString();  // foi fetchado de verdade
+        }
+        w.push(kv.set("fn:ranking", JSON.stringify({ ranking: wiki.ranking, bestRanking: wiki.bestRanking || null, updatedAt: rankingUpdatedAt }), { ex: T7 }));
+      }
       if (wiki.prizeMoney) w.push(kv.set("fn:prizeMoney", JSON.stringify({ amount: wiki.prizeMoney }), { ex: T7 }));
       if (wiki.wins !== undefined) {
         var cW = wiki.wins, cL = wiki.losses || 0;
