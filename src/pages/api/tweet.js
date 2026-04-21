@@ -299,86 +299,101 @@ async function geminiTweet(headline, context, category, source) {
   var gk = process.env.GEMINI_API_KEY;
   if (!gk) return null;
 
-  // Enriched context block
+  // Enriched context block (keep compact)
   var ctxLines = [];
-  if (context.ranking) ctxLines.push("- Ranking ATP atual do Joao: #" + context.ranking);
-  if (context.lastResult) ctxLines.push("- Ultimo resultado: " + context.lastResult);
-  if (context.nextOpponent) ctxLines.push("- Proximo adversario: " + context.nextOpponent);
-  if (context.tournament) ctxLines.push("- Torneio atual: " + context.tournament);
-  if (context.seasonWins) ctxLines.push("- Vitorias na temporada 2026: " + context.seasonWins);
-  var ctxBlock = ctxLines.length > 0 ? ctxLines.join("\n") : "- (sem contexto extra disponivel)";
+  if (context.ranking) ctxLines.push("#" + context.ranking + " ATP");
+  if (context.lastResult) ctxLines.push("ultimo: " + context.lastResult);
+  if (context.nextOpponent) ctxLines.push("proximo: " + context.nextOpponent);
+  if (context.tournament) ctxLines.push("torneio: " + context.tournament);
+  if (context.seasonWins) ctxLines.push("vitorias 2026: " + context.seasonWins);
+  var ctxBlock = ctxLines.length > 0 ? ctxLines.join(" | ") : "";
 
-  // Category hint
+  // Category hint (compact)
   var categoryHint = "";
-  if (category === "Ranking") categoryHint = "É noticia sobre ranking ATP. Reaja com admiracao pela ascensao, compare com marcos historicos se fizer sentido.\n";
-  else if (category === "Resultado") categoryHint = "É noticia sobre resultado. Reaja emocionalmente (comemore vitoria ou lamente derrota com classe).\n";
-  else if (category === "Declaração") categoryHint = "É noticia sobre declaracao (fala). Comente se concorda/discorda, traga perspectiva.\n";
-  else if (category === "Torneio") categoryHint = "É noticia sobre torneio. Crie expectativa, fale do desafio pela frente.\n";
-  else if (category === "Treino") categoryHint = "É noticia sobre treino/preparacao. Fale dos bastidores, da dedicacao.\n";
+  if (category === "Ranking") categoryHint = "Reaja admirando a ascensao.";
+  else if (category === "Resultado") categoryHint = "Reaja emocionalmente ao resultado (vitoria=comemore, derrota=lamente com classe).";
+  else if (category === "Declaração") categoryHint = "Comente a fala: concorda ou discorda?";
+  else if (category === "Torneio") categoryHint = "Crie expectativa pro desafio.";
+  else if (category === "Treino") categoryHint = "Fale dos bastidores/dedicacao.";
 
-  var prompt =
-    "Voce e o social media do Fonseca News (@JFonsecaNews), um perfil de fa apaixonado do Joao Fonseca.\n" +
-    "Seu trabalho NAO e reescrever a manchete. E COMENTAR, REAGIR, dar SAL e alma ao que aconteceu.\n\n" +
-    "REGRAS DE VOZ:\n" +
-    "- Tom de fa brasileiro torcendo. As vezes em 1a pessoa (\"eu aqui surtando\", \"me arrepiei\", \"admito que ja tava preocupado\"). As vezes em 3a pessoa analitica e apaixonada (\"impressionante o que o Joao tem feito\", \"o menino e diferente\").\n" +
-    "- Varie! Nao use sempre o mesmo formato.\n" +
-    "- Tem opiniao. Torce. Se empolga. Se frustra. Admira. Mas sempre com classe e respeito.\n" +
-    "- Fale 'Joao' ou 'Fonseca' ou 'o menino' ou 'nosso brasileiro'. Nunca 'Joao Fonseca' completo.\n\n" +
-    "EXEMPLOS DO TOM QUE QUERO (siga esse estilo):\n\n" +
-    "Manchete: \"João Fonseca sobe 3 posições no ranking ATP\"\n" +
-    "Tweet: Mais 3 posicoes no ranking ATP pro Joao. Ja to acostumado com essa escadinha toda semana, mas cada degrau me impressiona. O que esse moleque de 19 anos ta fazendo e surreal 🚀\n\n" +
-    "Manchete: \"Becker exalta, mas prega cautela com Fonseca: 'Precisamos dar tempo'\"\n" +
-    "Tweet: Becker elogiou o Joao mas pediu calma: \"precisamos dar tempo e maturidade\". Concordo em genero, numero e grau. O menino ta voando mas tem 19 anos — deixa o processo rolar que a gente ta vendo historia sendo escrita 🇧🇷\n\n" +
-    "Manchete: \"Por que altitude menor preocupa Fonseca em Madri\"\n" +
-    "Tweet: Madri tem altitude menor que Sao Paulo, mas a bola voa mais la e isso mexe com todo mundo. Saque mais potente, trocas mais rapidas, menos tempo pra reagir. Vai ser um teste e tanto de adaptacao nessa estreia 🎾\n\n" +
-    "REGRAS TECNICAS:\n" +
-    "- MINIMO 120 caracteres, MAXIMO 290 caracteres (se passar um pouco tudo bem, mas mire em 290)\n" +
-    "- Frase COMPLETA. Nunca corte no meio.\n" +
-    "- SEMPRE termine com emoji OU ponto final (. ! ?). NUNCA termine no meio.\n" +
-    "- NUNCA termine em preposicao/artigo (no, na, em, de, do, da, para, com, e, ou, que, se, o, a, um, uma)\n" +
-    "- NAO use hashtags (sao adicionadas automaticamente)\n" +
-    "- Pode usar 1-2 emojis no meio ou fim, NUNCA no inicio\n" +
-    "- NAO comece com emoji\n" +
-    "- NAO use aspas ao redor do tweet inteiro\n" +
-    "- Citacoes curtas com aspas sao OK (ex: disse \"vou dar meu melhor\")\n" +
-    "- NUNCA invente fatos que nao estao na manchete ou contexto. Se nao sabe detalhe, nao mencione.\n" +
-    "- Responda APENAS o texto do tweet, nada mais. Sem explicacoes, sem rotulos.\n\n" +
-    "CONTEXTO ATUAL DO JOAO (use se fizer sentido):\n" +
-    ctxBlock + "\n\n" +
-    categoryHint +
-    "NOTICIA PARA COMENTAR:\n" +
-    "Titulo: \"" + headline + "\"\n" +
-    (source ? "Fonte: " + source + "\n" : "") +
-    "\nTWEET:";
+  // PROMPT COMPACTO (v2): ~1200 chars em vez de 2500+
+  function buildPrompt(includeExamples) {
+    var p =
+      "Voce e fa apaixonado do Joao Fonseca, social media do @JFonsecaNews.\n" +
+      "Nao reescreva a manchete — COMENTE, REAJA, tenha opiniao.\n\n" +
+      "VOZ: Varie entre 1a pessoa (\"eu aqui surtando\", \"me arrepiei\") e 3a pessoa analitica (\"impressionante o que o Joao tem feito\"). Tom de torcedor brasileiro com classe. Fale 'Joao', 'Fonseca', 'o menino' ou 'nosso brasileiro' — nunca nome completo.\n\n";
 
-  try {
-    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.85, maxOutputTokens: 600 },
-      }),
-    });
-    if (!r.ok) { console.log("[tweet] Gemini news " + r.status); return null; }
-    var d = await r.json();
-    var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
-    if (!parts) return null;
-    var txt = "";
-    parts.forEach(function (p) { if (p.text && !p.thought) txt += p.text; });
-    txt = txt.trim().replace(/^["']|["']$/g, "").trim();
-
-    var validation = validateTweetText(txt, 80);
-    if (!validation.ok) {
-      console.log("[tweet] Gemini news rejected: " + validation.reason + " | tail: '" + txt.substring(txt.length - 30) + "'");
-      return null;
+    if (includeExamples) {
+      p += "EXEMPLOS:\n" +
+        "Manchete \"João sobe 3 posições no ranking\" → Tweet: Mais 3 posicoes pro Joao. Cada degrau me impressiona mais. O que esse moleque de 19 anos ta fazendo e surreal 🚀\n" +
+        "Manchete \"Becker prega cautela com Fonseca\" → Tweet: Becker elogiou mas pediu calma: \"precisamos dar tempo\". Concordo em genero, numero e grau. O menino ta voando mas tem 19 anos 🇧🇷\n\n";
     }
 
-    // Limite interno: permite ate 400 chars (conta tem X Premium, limite real e 25k).
-    // Mas se Gemini gerar algo absurdamente longo (>400), trunca — provavelmente viajou.
-    if (txt.length > 400) txt = txt.substring(0, 397) + "...";
-    return txt;
-  } catch (e) { console.log("[tweet] Gemini news error:", e.message); return null; }
+    p += "REGRAS:\n" +
+      "- 120-290 chars, frase completa\n" +
+      "- Termine com emoji OU ponto final — NUNCA em preposicao\n" +
+      "- 1-2 emojis no meio/fim (nunca no inicio)\n" +
+      "- Sem hashtags, sem aspas em volta do tweet\n" +
+      "- NUNCA invente fatos fora da manchete\n" +
+      "- Responda APENAS o tweet\n\n";
+
+    if (ctxBlock) p += "CONTEXTO: " + ctxBlock + "\n";
+    if (categoryHint) p += categoryHint + "\n";
+    p += "\nMANCHETE: \"" + headline + "\"" + (source ? " (" + source + ")" : "") + "\n\nTWEET:";
+    return p;
+  }
+
+  // Helper: faz UMA tentativa com timeout explicito
+  async function callGemini(prompt, timeoutMs) {
+    var ctrl = new AbortController();
+    var to = setTimeout(function () { ctrl.abort(); }, timeoutMs);
+    try {
+      var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.85, maxOutputTokens: 500 },
+        }),
+        signal: ctrl.signal,
+      });
+      clearTimeout(to);
+      if (!r.ok) { console.log("[tweet] Gemini news HTTP " + r.status); return null; }
+      var d = await r.json();
+      var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+      if (!parts) return null;
+      var txt = "";
+      parts.forEach(function (p) { if (p.text && !p.thought) txt += p.text; });
+      return txt.trim().replace(/^["']|["']$/g, "").trim();
+    } catch (e) {
+      clearTimeout(to);
+      var isAbort = e.name === "AbortError";
+      console.log("[tweet] Gemini news " + (isAbort ? "TIMEOUT " + timeoutMs + "ms" : "error: " + e.message));
+      return null;
+    }
+  }
+
+  // TENTATIVA 1: prompt completo com exemplos, timeout 15s
+  var txt = await callGemini(buildPrompt(true), 15000);
+
+  // TENTATIVA 2 (retry): prompt minimo sem exemplos, timeout 10s
+  if (!txt) {
+    console.log("[tweet] Gemini news retry with compact prompt");
+    txt = await callGemini(buildPrompt(false), 10000);
+  }
+
+  if (!txt) return null;
+
+  // Validacao final (mesma de antes)
+  var validation = validateTweetText(txt, 80);
+  if (!validation.ok) {
+    console.log("[tweet] Gemini news rejected: " + validation.reason + " | tail: '" + txt.substring(txt.length - 30) + "'");
+    return null;
+  }
+
+  // Limite interno: 400 chars (X Premium permite ate 25k, entao folga enorme).
+  if (txt.length > 400) txt = txt.substring(0, 397) + "...";
+  return txt;
 }
 
 // ===== GEMINI: COMMENTARY (new in v11) =====
