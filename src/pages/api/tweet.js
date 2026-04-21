@@ -353,7 +353,9 @@ async function geminiTweet(headline, context, category, source) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.85, maxOutputTokens: 500 },
+          // maxOutputTokens 1200: Portugues consome mais tokens que ingles (acentos viram multi-byte),
+          // 500 era insuficiente e cortava tweets no meio (causando "too_short" na validacao).
+          generationConfig: { temperature: 0.85, maxOutputTokens: 1200 },
         }),
         signal: ctrl.signal,
       });
@@ -373,27 +375,33 @@ async function geminiTweet(headline, context, category, source) {
     }
   }
 
+  // Valida e normaliza o resultado do Gemini. Retorna o texto ou null se invalido.
+  function processResult(txt, attemptLabel) {
+    if (!txt) return null;
+    // Threshold mais permissivo (60 ao inves de 80): tweet curto com sal > tweet longo frio.
+    var validation = validateTweetText(txt, 60);
+    if (!validation.ok) {
+      console.log("[tweet] Gemini " + attemptLabel + " rejected: " + validation.reason + " | tail: '" + txt.substring(Math.max(0, txt.length - 30)) + "'");
+      return null;
+    }
+    // Limite interno: 400 chars (X Premium permite 25k, folga enorme).
+    if (txt.length > 400) txt = txt.substring(0, 397) + "...";
+    return txt;
+  }
+
   // TENTATIVA 1: prompt completo com exemplos, timeout 15s
-  var txt = await callGemini(buildPrompt(true), 15000);
+  var raw1 = await callGemini(buildPrompt(true), 15000);
+  var result = processResult(raw1, "attempt1");
+  if (result) return result;
 
-  // TENTATIVA 2 (retry): prompt minimo sem exemplos, timeout 10s
-  if (!txt) {
-    console.log("[tweet] Gemini news retry with compact prompt");
-    txt = await callGemini(buildPrompt(false), 10000);
-  }
+  // TENTATIVA 2 (retry): prompt compacto sem exemplos, timeout 10s.
+  // Gatilho: timeout OU rejeicao na validacao (muito curto, preposicao, etc).
+  console.log("[tweet] Gemini news retry with compact prompt");
+  var raw2 = await callGemini(buildPrompt(false), 10000);
+  var result2 = processResult(raw2, "attempt2");
+  if (result2) return result2;
 
-  if (!txt) return null;
-
-  // Validacao final (mesma de antes)
-  var validation = validateTweetText(txt, 80);
-  if (!validation.ok) {
-    console.log("[tweet] Gemini news rejected: " + validation.reason + " | tail: '" + txt.substring(txt.length - 30) + "'");
-    return null;
-  }
-
-  // Limite interno: 400 chars (X Premium permite ate 25k, entao folga enorme).
-  if (txt.length > 400) txt = txt.substring(0, 397) + "...";
-  return txt;
+  return null;
 }
 
 // ===== GEMINI: COMMENTARY (new in v11) =====
