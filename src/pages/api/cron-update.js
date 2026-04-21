@@ -175,7 +175,9 @@ async function discoverMatches() {
     var scrapedId = await scrapeNextMatchIdFromSofa();
     if (scrapedId && !seen.has(scrapedId)) {
       log("scrape: matchId " + scrapedId + " encontrado");
-      var scrapedMatch = await sofaFetch("/v1/match/details?match_id=" + scrapedId);
+      // Timeout estendido (15s) porque esse e o caminho critico pro card da proxima partida aparecer.
+      // match/details as vezes tem picos lentos no proxy; 8s era agressivo demais.
+      var scrapedMatch = await sofaFetch("/v1/match/details?match_id=" + scrapedId, { timeoutMs: 15000 });
       if (scrapedMatch) {
         var matchObj = scrapedMatch.event || scrapedMatch;
         matchObj = normalizeScrapedMatch(matchObj);
