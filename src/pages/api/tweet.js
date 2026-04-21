@@ -295,31 +295,61 @@ function validateTweetText(txt, minLen) {
 }
 
 // ===== GEMINI: NEWS REWRITE =====
-async function geminiTweet(headline, context) {
+async function geminiTweet(headline, context, category, source) {
   var gk = process.env.GEMINI_API_KEY;
   if (!gk) return null;
 
-  var prompt = "Voce e o social media do Fonseca News (@JFonsecaNews), site de fas do tenista brasileiro Joao Fonseca.\n\n" +
-    "Reescreva esta noticia como um tweet em portugues brasileiro.\n\n" +
-    "REGRAS ABSOLUTAS:\n" +
-    "- MINIMO 120 caracteres, MAXIMO 240 caracteres\n" +
-    "- O tweet precisa ser uma FRASE COMPLETA, nunca corte no meio de uma palavra ou frase\n" +
-    "- SEMPRE termine com emoji OU com ponto final (. ! ?). NUNCA termine no meio.\n" +
-    "- NUNCA termine em preposicao ou artigo: no, na, em, de, do, da, para, com, e, ou, que, se, o, a, um, uma, pelo, pela\n" +
-    "- Tom de fa apaixonado mas informativo, como um amigo contando a novidade\n" +
-    "- Aproveite o espaco: inclua contexto como placar, ranking, torneio, rodada, adversario\n" +
-    "- NAO use hashtags (serao adicionadas automaticamente)\n" +
+  // Enriched context block
+  var ctxLines = [];
+  if (context.ranking) ctxLines.push("- Ranking ATP atual do Joao: #" + context.ranking);
+  if (context.lastResult) ctxLines.push("- Ultimo resultado: " + context.lastResult);
+  if (context.nextOpponent) ctxLines.push("- Proximo adversario: " + context.nextOpponent);
+  if (context.tournament) ctxLines.push("- Torneio atual: " + context.tournament);
+  if (context.seasonWins) ctxLines.push("- Vitorias na temporada 2026: " + context.seasonWins);
+  var ctxBlock = ctxLines.length > 0 ? ctxLines.join("\n") : "- (sem contexto extra disponivel)";
+
+  // Category hint
+  var categoryHint = "";
+  if (category === "Ranking") categoryHint = "É noticia sobre ranking ATP. Reaja com admiracao pela ascensao, compare com marcos historicos se fizer sentido.\n";
+  else if (category === "Resultado") categoryHint = "É noticia sobre resultado. Reaja emocionalmente (comemore vitoria ou lamente derrota com classe).\n";
+  else if (category === "Declaração") categoryHint = "É noticia sobre declaracao (fala). Comente se concorda/discorda, traga perspectiva.\n";
+  else if (category === "Torneio") categoryHint = "É noticia sobre torneio. Crie expectativa, fale do desafio pela frente.\n";
+  else if (category === "Treino") categoryHint = "É noticia sobre treino/preparacao. Fale dos bastidores, da dedicacao.\n";
+
+  var prompt =
+    "Voce e o social media do Fonseca News (@JFonsecaNews), um perfil de fa apaixonado do Joao Fonseca.\n" +
+    "Seu trabalho NAO e reescrever a manchete. E COMENTAR, REAGIR, dar SAL e alma ao que aconteceu.\n\n" +
+    "REGRAS DE VOZ:\n" +
+    "- Tom de fa brasileiro torcendo. As vezes em 1a pessoa (\"eu aqui surtando\", \"me arrepiei\", \"admito que ja tava preocupado\"). As vezes em 3a pessoa analitica e apaixonada (\"impressionante o que o Joao tem feito\", \"o menino e diferente\").\n" +
+    "- Varie! Nao use sempre o mesmo formato.\n" +
+    "- Tem opiniao. Torce. Se empolga. Se frustra. Admira. Mas sempre com classe e respeito.\n" +
+    "- Fale 'Joao' ou 'Fonseca' ou 'o menino' ou 'nosso brasileiro'. Nunca 'Joao Fonseca' completo.\n\n" +
+    "EXEMPLOS DO TOM QUE QUERO (siga esse estilo):\n\n" +
+    "Manchete: \"João Fonseca sobe 3 posições no ranking ATP\"\n" +
+    "Tweet: Mais 3 posicoes no ranking ATP pro Joao. Ja to acostumado com essa escadinha toda semana, mas cada degrau me impressiona. O que esse moleque de 19 anos ta fazendo e surreal 🚀\n\n" +
+    "Manchete: \"Becker exalta, mas prega cautela com Fonseca: 'Precisamos dar tempo'\"\n" +
+    "Tweet: Becker elogiou o Joao mas pediu calma: \"precisamos dar tempo e maturidade\". Concordo em genero, numero e grau. O menino ta voando mas tem 19 anos — deixa o processo rolar que a gente ta vendo historia sendo escrita 🇧🇷\n\n" +
+    "Manchete: \"Por que altitude menor preocupa Fonseca em Madri\"\n" +
+    "Tweet: Madri tem altitude menor que Sao Paulo, mas a bola voa mais la e isso mexe com todo mundo. Saque mais potente, trocas mais rapidas, menos tempo pra reagir. Vai ser um teste e tanto de adaptacao nessa estreia 🎾\n\n" +
+    "REGRAS TECNICAS:\n" +
+    "- MINIMO 120 caracteres, MAXIMO 290 caracteres (se passar um pouco tudo bem, mas mire em 290)\n" +
+    "- Frase COMPLETA. Nunca corte no meio.\n" +
+    "- SEMPRE termine com emoji OU ponto final (. ! ?). NUNCA termine no meio.\n" +
+    "- NUNCA termine em preposicao/artigo (no, na, em, de, do, da, para, com, e, ou, que, se, o, a, um, uma)\n" +
+    "- NAO use hashtags (sao adicionadas automaticamente)\n" +
     "- Pode usar 1-2 emojis no meio ou fim, NUNCA no inicio\n" +
     "- NAO comece com emoji\n" +
-    "- NAO use aspas ao redor do tweet\n" +
-    "- Fale 'Joao' ou 'Fonseca', nunca 'Joao Fonseca' completo\n" +
-    "- Responda APENAS o texto do tweet, nada mais\n\n" +
-    "CONTEXTO ATUAL:\n" +
-    (context.ranking ? "- Ranking ATP: #" + context.ranking + "\n" : "") +
-    (context.lastResult ? "- Ultimo resultado: " + context.lastResult + "\n" : "") +
-    (context.nextOpponent ? "- Proximo adversario: " + context.nextOpponent + "\n" : "") +
-    (context.tournament ? "- Torneio atual: " + context.tournament + "\n" : "") +
-    "\nNOTICIA: \"" + headline + "\"\n\nTWEET:";
+    "- NAO use aspas ao redor do tweet inteiro\n" +
+    "- Citacoes curtas com aspas sao OK (ex: disse \"vou dar meu melhor\")\n" +
+    "- NUNCA invente fatos que nao estao na manchete ou contexto. Se nao sabe detalhe, nao mencione.\n" +
+    "- Responda APENAS o texto do tweet, nada mais. Sem explicacoes, sem rotulos.\n\n" +
+    "CONTEXTO ATUAL DO JOAO (use se fizer sentido):\n" +
+    ctxBlock + "\n\n" +
+    categoryHint +
+    "NOTICIA PARA COMENTAR:\n" +
+    "Titulo: \"" + headline + "\"\n" +
+    (source ? "Fonte: " + source + "\n" : "") +
+    "\nTWEET:";
 
   try {
     var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
@@ -327,7 +357,7 @@ async function geminiTweet(headline, context) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.5, maxOutputTokens: 500 },
+        generationConfig: { temperature: 0.85, maxOutputTokens: 600 },
       }),
     });
     if (!r.ok) { console.log("[tweet] Gemini news " + r.status); return null; }
@@ -344,7 +374,9 @@ async function geminiTweet(headline, context) {
       return null;
     }
 
-    if (txt.length > 260) txt = txt.substring(0, 257) + "...";
+    // Limite interno: permite ate 400 chars (conta tem X Premium, limite real e 25k).
+    // Mas se Gemini gerar algo absurdamente longo (>400), trunca — provavelmente viajou.
+    if (txt.length > 400) txt = txt.substring(0, 397) + "...";
     return txt;
   } catch (e) { console.log("[tweet] Gemini news error:", e.message); return null; }
 }
@@ -678,7 +710,7 @@ export default async function handler(req, res) {
 
           if (candidates.length > 0) {
             var best = candidates[0];
-            var tweetText = await geminiTweet(best.item.title, context);
+            var tweetText = await geminiTweet(best.item.title, context, best.item.category, best.item.source);
             if (!tweetText) {
               tweetText = templateTweet(best.item.title, best.item.source);
               console.log("[tweet] News: using template fallback");
@@ -691,13 +723,14 @@ export default async function handler(req, res) {
 
     if (newsFound) {
       // NOVO FORMATO (1 post so):
-      //   <manchete>
+      //   <manchete/comentario>
       //
       //   Via <Fonte> → www.fonsecanews.com.br
       //
       //   #hashtags
       //
-      // Hashtags sao opcionais: se passar de 280 chars o X esconde, que e o comportamento desejado.
+      // Conta tem X Premium, entao pode passar de 280 chars tranquilamente (limite real e 25k).
+      // Hashtags sao opcionais: se passar, X trunca no mobile mas mantem no desktop — OK.
       var prettySource = normalizeSource(newsFound.item.source);
       var mainText = newsFound.text;
       var sourceLine = "\n\nVia " + prettySource + " \u2192 www.fonsecanews.com.br";
@@ -708,15 +741,15 @@ export default async function handler(req, res) {
       // Monta na ordem: manchete + fonte/link + hashtags
       var full = mainText + sourceLine + hashtagsBlock;
 
-      // Se passar de 280, X automaticamente trunca mostrando "..." + link.
-      // Thomaz prefere que as hashtags fiquem escondidas nesses casos — OK.
-      // Mas se a manchete + fonte sozinhas ja passam de 280, truncar manchete pra preservar link.
-      var MAX = 280;
-      if (mainText.length + sourceLine.length > MAX) {
-        var room = MAX - sourceLine.length - 3;  // 3 pro "..."
-        if (room < 50) room = 50;  // sanidade
+      // Protecao sanitaria: se Gemini viajar e gerar texto absurdamente longo (>500 chars),
+      // trunca o mainText preservando fonte+link. Isso nao deve acontecer na pratica pois
+      // o prompt pede max 290 chars, mas eh uma rede de seguranca.
+      var SANITY_MAX = 500;
+      if (full.length > SANITY_MAX) {
+        var room = SANITY_MAX - sourceLine.length - hashtagsBlock.length - 3;
+        if (room < 100) room = 100;
         mainText = mainText.substring(0, room).trim() + "...";
-        full = mainText + sourceLine;  // nesse caso sem hashtags
+        full = mainText + sourceLine + hashtagsBlock;
       }
 
       try {
