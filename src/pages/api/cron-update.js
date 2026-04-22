@@ -873,7 +873,8 @@ export default async function handler(req, res) {
       return d.getTime();
     })();
     var rankingFresh = exRanking && exRanking.updatedAt && new Date(exRanking.updatedAt).getTime() >= lastMonday10UTC;
-    var careerFresh = exCareer && exCareer.wins !== undefined;
+    // careerStats tambem revalida semanalmente (antes so checava se wins existia — cache perpetuo de dados falsos)
+    var careerFresh = exCareer && exCareer.wins !== undefined && exCareer.updatedAt && new Date(exCareer.updatedAt).getTime() >= lastMonday10UTC;
     if (!rankingFresh || !careerFresh) {
       wiki = await fetchPlayerData();
       steps.player = wiki ? "#" + (wiki.ranking || "?") : "fail";
@@ -1164,11 +1165,15 @@ export default async function handler(req, res) {
       if (wiki.prizeMoney) w.push(kv.set("fn:prizeMoney", JSON.stringify({ amount: wiki.prizeMoney }), { ex: T7 }));
       if (wiki.wins !== undefined) {
         var cW = wiki.wins, cL = wiki.losses || 0;
-        if (wiki.surface) {
-          var sW = (wiki.surface.hard ? wiki.surface.hard.w : 0) + (wiki.surface.clay ? wiki.surface.clay.w : 0) + (wiki.surface.grass ? wiki.surface.grass.w : 0);
-          if (sW > cW) { cW = sW; cL = (wiki.surface.hard ? wiki.surface.hard.l : 0) + (wiki.surface.clay ? wiki.surface.clay.l : 0) + (wiki.surface.grass ? wiki.surface.grass.l : 0); }
-        }
-        w.push(kv.set("fn:careerStats", JSON.stringify({ wins: cW, losses: cL, winPct: (cW + cL) > 0 ? Math.round(cW / (cW + cL) * 100) : 0, surface: wiki.surface || null, titles: wiki.titles || null }), { ex: T7 }));
+        // Nao mais usa surface — Wikipedia nao tem dado consolidado e Gemini inventa
+        // careerStats sempre inclui updatedAt pra cache semanal funcionar
+        w.push(kv.set("fn:careerStats", JSON.stringify({
+          wins: cW,
+          losses: cL,
+          winPct: (cW + cL) > 0 ? Math.round(cW / (cW + cL) * 100) : 0,
+          titles: wiki.titles || null,
+          updatedAt: new Date().toISOString()
+        }), { ex: T7 }));
       }
     }
 
