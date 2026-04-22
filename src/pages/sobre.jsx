@@ -1743,28 +1743,22 @@ export default function JoaoFonsecaNews() {
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>João em números</p>
           {(function() {
             var cs = careerStats || {};
-            var cW = cs.wins || 42; var cL = cs.losses || 28;
-            var cPct = cs.winPct || Math.round((cW / (cW + cL)) * 100);
-            var surf = cs.surface || {};
-            var hardW = surf.hard ? surf.hard.w : 16; var hardL = surf.hard ? surf.hard.l : 11;
-            var clayW = surf.clay ? surf.clay.w : 14; var clayL = surf.clay ? surf.clay.l : 12;
-            var grassW = surf.grass ? surf.grass.w : 3; var grassL = surf.grass ? surf.grass.l : 4;
+            var cW = cs.wins; var cL = cs.losses;
+            var hasCareerData = (typeof cW === "number" && typeof cL === "number" && (cW + cL) > 0);
+            var cPct = hasCareerData ? (cs.winPct || Math.round((cW / (cW + cL)) * 100)) : null;
             return (
           <div style={{ background: BG_ALT, borderRadius: 16, padding: "18px", border: "1px solid " + BORDER }}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 16 }}>
+            <div style={{ display: "grid", gridTemplateColumns: cs.vsTop10 ? "repeat(4, 1fr)" : "repeat(3, 1fr)", gap: 8, marginBottom: 16 }}>
               {(function() {
-                var t10 = cs.vsTop10 || { w: 1, l: 4 };
-                var t10w = t10.w || 1; var t10l = t10.l || 4;
-                return [{v:cW+"V "+cL+"D",l:"Carreira",c:TEXT},{v:cPct+"%",l:"Aprov.",c:GREEN},{v:t10w+"V "+t10l+"D",l:"vs Top 10",c:TEXT},{v:prizeMoney ? (prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "$2.9M",l:"Prize Money",c:GREEN}];
+                var t10 = cs.vsTop10 || null;
+                var items = [
+                  {v: hasCareerData ? (cW+"V "+cL+"D") : "N/D", l:"Carreira", c: hasCareerData ? TEXT : DIM},
+                  {v: cPct !== null ? (cPct+"%") : "N/D", l:"Aprov.", c: cPct !== null ? GREEN : DIM}
+                ];
+                if (t10) { items.push({v:t10.w+"V "+t10.l+"D",l:"vs Top 10",c:TEXT}); }
+                items.push({v:prizeMoney != null ? (prizeMoney >= 1000000 ? "$" + (Math.floor(prizeMoney / 100000) / 10).toFixed(1) + "M" : "$" + Math.round(prizeMoney / 1000) + "K") : "N/D",l:"Prize Money",c: prizeMoney != null ? GREEN : DIM});
+                return items;
               })().map(function(s,i){return(<div key={i} style={{textAlign:"center"}}><span style={{fontSize:17,fontWeight:800,color:s.c,fontFamily:SANS,display:"block",lineHeight:1}}>{s.v}</span><span style={{fontSize:9,fontWeight:600,color:DIM,fontFamily:SANS,textTransform:"uppercase",letterSpacing:"0.04em",marginTop:2,display:"block"}}>{s.l}</span></div>);})}
-            </div>
-            <div style={{ height: 1, background: BORDER, marginBottom: 14 }} />
-            <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Por superfície</p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
-              {[{ surface: "Piso duro", wins: hardW, losses: hardL, color: "#3B82F6" },{ surface: "Saibro", wins: clayW, losses: clayL, color: "#D97706" },{ surface: "Grama", wins: grassW, losses: grassL, color: "#16A34A" }].map(function(s) {
-                var total = s.wins + s.losses; var pct = total > 0 ? Math.round((s.wins / total) * 100) : 0;
-                return (<div key={s.surface} style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 12, width: 80, fontWeight: 600, color: TEXT, fontFamily: SANS }}>{s.surface}</span><div style={{ flex: 1, height: 6, background: "#e8e8e8", borderRadius: 3, overflow: "hidden" }}><div style={{ height: 6, background: s.color, borderRadius: 3, width: pct + "%", transition: "width 0.8s ease" }} /></div><span style={{ fontSize: 11, fontWeight: 700, color: TEXT, fontFamily: SANS, minWidth: 44, textAlign: "right" }}>{s.wins}-{s.losses}</span><span style={{ fontSize: 10, color: DIM, fontFamily: SANS, minWidth: 28 }}>{pct}%</span></div>);
-              })}
             </div>
             <div style={{ height: 1, background: BORDER, marginBottom: 14 }} />
             <p style={{ margin: "0 0 10px", fontSize: 10, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em" }}>Recordes</p>
