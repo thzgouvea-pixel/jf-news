@@ -556,45 +556,77 @@ async function fetchSeasonFromGemini() {
   return null;
 }
 
-// ===== PHASE 6: PLAYER DATA (career stats via Gemini) =====
+// ===== PHASE 6: PLAYER DATA — Wikipedia FIRST (reliable), Gemini fallback =====
 async function fetchPlayerData() {
-  var gTxt = await geminiSearch(
-    "Dados ATUALIZADOS de abril 2026 sobre o tenista brasileiro Jo\u00e3o Fonseca. " +
-    "Preciso: ranking ATP atual, career-high, record carreira singles (W-L total), " +
-    "record temporada 2026 (W-L), record por superf\u00edcie (hard/clay/grass), prize money USD, t\u00edtulos ATP. " +
-    "APENAS JSON: {\"ranking\":N,\"bestRanking\":N,\"wins\":N,\"losses\":N,\"seasonWins\":N,\"seasonLosses\":N," +
-    "\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}},\"prizeMoney\":N,\"titles\":N}"
-  );
-  var result = parseGeminiJSON(gTxt);
-  if (result && result.ranking) {
-    log("player: #" + result.ranking + " | " + (result.wins || 0) + "W-" + (result.losses || 0) + "L");
-    return result;
-  }
-
+  // === WIKIPEDIA PRIMARY ===
   try {
-    var res = await fetch("https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json&section=0", { headers: { "User-Agent": "FonsecaNews/1.0" } });
-    if (!res.ok) return null;
+    var ctrl = new AbortController();
+    var to = setTimeout(function () { ctrl.abort(); }, 10000);
+    var res = await fetch(
+      "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json&section=0",
+      { headers: { "User-Agent": "FonsecaNews/1.0 (https://fonsecanews.com.br)" }, signal: ctrl.signal }
+    );
+    clearTimeout(to);
+    if (!res.ok) throw new Error("HTTP " + res.status);
     var data = await res.json();
     var text = data && data.parse && data.parse.wikitext && data.parse.wikitext["*"];
-    if (!text) return null;
+    if (!text) throw new Error("no wikitext");
+
     var wp = {};
-    function extractWL(field) {
-      var p1 = new RegExp("\\|\\s*" + field + "\\s*=\\s*\\{\\{[^}]*wins\\s*=\\s*(\\d+)\\s*\\|\\s*losses\\s*=\\s*(\\d+)", "i");
-      var p2 = new RegExp("\\|\\s*" + field + "\\s*=\\s*(\\d+)\\s*[\u2013\\-]\\s*(\\d+)", "i");
-      var m = text.match(p1) || text.match(p2);
-      return m ? { w: parseInt(m[1]), l: parseInt(m[2]) } : null;
+
+    // Career W-L: campo "singlesrecord" no infobox tennis biography
+    // Formato real: "| singlesrecord = 38\u201327 (at ATP Tour level...)" ou "38-27"
+    var srMatch = text.match(/\|\s*singlesrecord\s*=\s*(\d+)\s*[\u2013\-]\s*(\d+)/i);
+    if (srMatch) {
+      wp.wins = parseInt(srMatch[1], 10);
+      wp.losses = parseInt(srMatch[2], 10);
     }
-    var overall = extractWL("singlesrecord");
-    if (overall) { wp.wins = overall.w; wp.losses = overall.l; }
-    var hard = extractWL("singlesrecord_hard"), clay = extractWL("singlesrecord_clay"), grass = extractWL("singlesrecord_grass");
-    if (hard || clay || grass) wp.surface = { hard: hard || { w: 0, l: 0 }, clay: clay || { w: 0, l: 0 }, grass: grass || { w: 0, l: 0 } };
-    var rm = text.match(/\|\s*current_ranking\s*=\s*(?:No\.\s*)?(\d+)/i); if (rm) wp.ranking = parseInt(rm[1]);
-    var hm = text.match(/\|\s*highest_ranking\s*=\s*(?:No\.\s*)?(\d+)/i); if (hm) wp.bestRanking = parseInt(hm[1]);
-    var pm = text.match(/\|\s*prize\s*=\s*\$?([\d,]+)/i); if (pm) wp.prizeMoney = parseInt(pm[1].replace(/,/g, ""));
-    var tm = text.match(/\|\s*titles\s*=\s*(\d+)/i); if (tm) wp.titles = parseInt(tm[1]);
-    log("player: Wikipedia #" + (wp.ranking || "?"));
-    return wp;
-  } catch (e) { log("player: Wikipedia error: " + e.message); }
+
+    // Singles titles: "| singlestitles = 2"
+    var stMatch = text.match(/\|\s*singlestitles\s*=\s*(\d+)/i);
+    if (stMatch) wp.titles = parseInt(stMatch[1], 10);
+
+    // Highest singles ranking: "| highestsinglesranking = No. 24..." ou variações
+    var hrMatch = text.match(/\|\s*highestsinglesranking\s*=\s*(?:No\.\s*|\u2116\s*|#)?(\d+)/i);
+    if (hrMatch) wp.bestRanking = parseInt(hrMatch[1], 10);
+
+    // Current singles ranking: "| currentsinglesranking = No. 38..."
+    var crMatch = text.match(/\|\s*currentsinglesranking\s*=\s*(?:No\.\s*|\u2116\s*|#)?(\d+)/i);
+    if (crMatch) wp.ranking = parseInt(crMatch[1], 10);
+
+    // Prize money: "| plays = ... | coach = ... | prizemoney = US $2,816,305"
+    // ou "| prizemoney = $2,816,305"
+    var pmMatch = text.match(/\|\s*prizemoney\s*=\s*(?:US\s*)?\$?\s*([\d,]+)/i);
+    if (pmMatch) {
+      var amount = parseInt(pmMatch[1].replace(/,/g, ""), 10);
+      if (!isNaN(amount) && amount > 0) wp.prizeMoney = amount;
+    }
+
+    // Validate: precisamos pelo menos de wins+losses OU ranking
+    var hasMinimum = (wp.wins !== undefined && wp.losses !== undefined) || wp.ranking;
+    if (hasMinimum) {
+      log("player: Wikipedia OK | " + (wp.wins || "?") + "W-" + (wp.losses || "?") + "L | #" + (wp.ranking || "?") + " | $" + (wp.prizeMoney || "?") + " | titles:" + (wp.titles || "?"));
+      return wp;
+    }
+    log("player: Wikipedia matched but insufficient data, trying Gemini");
+  } catch (e) {
+    log("player: Wikipedia error: " + e.message + ", trying Gemini");
+  }
+
+  // === GEMINI FALLBACK (only if Wikipedia fails) ===
+  // NOTA: Gemini frequentemente alucina numeros. Use somente se Wikipedia falhar completamente.
+  // Sem surface (Wikipedia nao tem dado consolidado e Gemini inventa).
+  var gTxt = await geminiSearch(
+    "Dados oficiais ATUALIZADOS de abril 2026 sobre o tenista brasileiro Jo\u00e3o Fonseca segundo a Wikipedia. " +
+    "Ele tem cerca de 38-27 W-L na carreira. Confirme: ranking ATP atual, career-high, W-L total, prize money USD, t\u00edtulos ATP. " +
+    "APENAS JSON: {\"ranking\":N,\"bestRanking\":N,\"wins\":N,\"losses\":N,\"prizeMoney\":N,\"titles\":N}"
+  );
+  var result = parseGeminiJSON(gTxt);
+  if (result && (result.ranking || result.wins !== undefined)) {
+    log("player: Gemini fallback | " + (result.wins || "?") + "W-" + (result.losses || "?") + "L | #" + (result.ranking || "?"));
+    return result;
+  }
+  log("player: ALL SOURCES FAILED");
   return null;
 }
 
