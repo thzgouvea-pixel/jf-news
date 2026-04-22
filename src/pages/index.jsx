@@ -796,8 +796,8 @@ export default function JoaoFonsecaNews() {
         </Modal>
       )}
 
-      {/* Mobile Tab Bar — floating Instagram-style */}
-      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 16, left: 12, right: 12, zIndex: 200, background: "rgba(255,255,255,0.82)", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", border: "1px solid rgba(255,255,255,0.5)", borderRadius: 28, boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)", transition: "transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease", transform: tabBarHidden ? "translateY(calc(100% + 20px))" : "translateY(0)", opacity: tabBarHidden ? 0 : 1 }}>
+      {/* Mobile Tab Bar — floating Instagram-style, compacta ao rolar */}
+      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 16, left: 12, right: 12, zIndex: 200, background: "rgba(255,255,255,0.82)", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", border: "1px solid rgba(255,255,255,0.5)", borderRadius: 28, boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)", transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)" }}>
         {showMaisMenu && (
           <div style={{ position: "absolute", bottom: "100%", right: 8, background: "white", borderRadius: 16, boxShadow: "0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)", border: "1px solid " + BORDER, padding: "6px 0", minWidth: 180, marginBottom: 10 }}>
             {[
@@ -808,7 +808,7 @@ export default function JoaoFonsecaNews() {
             })}
           </div>
         )}
-        <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", padding: "10px 8px" }}>
+        <div style={{ display: "flex", justifyContent: "space-around", alignItems: "center", padding: tabBarHidden ? "6px 8px" : "10px 8px", transition: "padding 0.35s cubic-bezier(0.4, 0, 0.2, 1)" }}>
           {[
             { label: "Biografia", action: function(){ window.location.href="/biografia"; setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>; } },
             { label: "Ranking", action: function(){ setShowRanking(true); setShowMaisMenu(false); }, icon: function(a){ return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={a?"#4FC3F7":"rgba(0,0,0,0.3)"} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>; } },
@@ -819,7 +819,7 @@ export default function JoaoFonsecaNews() {
             return (
               <button key={i} onClick={tab.action} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, background: "none", border: "none", cursor: "pointer", padding: "3px 10px", minWidth: 52 }}>
                 {tab.icon(isActive)}
-                <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, color: isActive ? "#4FC3F7" : "rgba(0,0,0,0.35)", fontFamily: SANS }}>{tab.label}</span>
+                <span style={{ fontSize: 10, fontWeight: isActive ? 700 : 500, color: isActive ? "#4FC3F7" : "rgba(0,0,0,0.35)", fontFamily: SANS, maxHeight: tabBarHidden ? 0 : 14, opacity: tabBarHidden ? 0 : 1, overflow: "hidden", transition: "max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease" }}>{tab.label}</span>
               </button>
             );
           })}
