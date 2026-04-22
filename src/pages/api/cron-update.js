@@ -559,59 +559,116 @@ async function fetchSeasonFromGemini() {
 // ===== PHASE 6: PLAYER DATA — Wikipedia FIRST (reliable), Gemini fallback =====
 async function fetchPlayerData() {
   // === WIKIPEDIA PRIMARY ===
+  // Estrategia: HTML renderizado primeiro (formato mais estavel), wikitext como fallback
+  var wp = {};
+  var source = "";
+
+  // --- TENTATIVA 1: HTML renderizado via action=parse&prop=text ---
   try {
-    var ctrl = new AbortController();
-    var to = setTimeout(function () { ctrl.abort(); }, 10000);
-    var res = await fetch(
-      "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json&section=0",
-      { headers: { "User-Agent": "FonsecaNews/1.0 (https://fonsecanews.com.br)" }, signal: ctrl.signal }
+    var ctrl1 = new AbortController();
+    var to1 = setTimeout(function () { ctrl1.abort(); }, 10000);
+    var res1 = await fetch(
+      "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=text&format=json&section=0",
+      { headers: { "User-Agent": "FonsecaNews/1.0 (https://fonsecanews.com.br)" }, signal: ctrl1.signal }
     );
-    clearTimeout(to);
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    var data = await res.json();
-    var text = data && data.parse && data.parse.wikitext && data.parse.wikitext["*"];
-    if (!text) throw new Error("no wikitext");
+    clearTimeout(to1);
+    if (res1.ok) {
+      var data1 = await res1.json();
+      var html = data1 && data1.parse && data1.parse.text && data1.parse.text["*"];
+      if (html) {
+        // Remove tags HTML pra texto simples (ex: "Career record: 38–27")
+        var plainText = html
+          .replace(/<[^>]*>/g, " ")          // remove tags
+          .replace(/&nbsp;/g, " ")
+          .replace(/&amp;/g, "&")
+          .replace(/&#91;[^\]]*&#93;/g, "")  // remove [numero] citations
+          .replace(/\[\d+\]/g, "")
+          .replace(/\s+/g, " ");
 
-    var wp = {};
+        // Career record: "Career record: 38–27" (en-dash ou hyphen)
+        var m = plainText.match(/Career\s+record\s*:?\s*(\d+)\s*[\u2013\-]\s*(\d+)/i);
+        if (m) { wp.wins = parseInt(m[1], 10); wp.losses = parseInt(m[2], 10); }
 
-    // Career W-L: campo "singlesrecord" no infobox tennis biography
-    // Formato real: "| singlesrecord = 38\u201327 (at ATP Tour level...)" ou "38-27"
-    var srMatch = text.match(/\|\s*singlesrecord\s*=\s*(\d+)\s*[\u2013\-]\s*(\d+)/i);
-    if (srMatch) {
-      wp.wins = parseInt(srMatch[1], 10);
-      wp.losses = parseInt(srMatch[2], 10);
+        // Career titles: "Career titles: 2"
+        m = plainText.match(/Career\s+titles\s*:?\s*(\d+)/i);
+        if (m) wp.titles = parseInt(m[1], 10);
+
+        // Highest ranking: "Highest ranking: No. 24"
+        m = plainText.match(/Highest\s+ranking\s*:?\s*No\.\s*(\d+)/i);
+        if (m) wp.bestRanking = parseInt(m[1], 10);
+
+        // Current ranking: "Current ranking: No. 38"
+        m = plainText.match(/Current\s+ranking\s*:?\s*No\.\s*(\d+)/i);
+        if (m) wp.ranking = parseInt(m[1], 10);
+
+        // Prize money: "Prize money: US $2,816,305"
+        m = plainText.match(/Prize\s+money\s*:?\s*(?:US\s*)?\$?\s*([\d,]+)/i);
+        if (m) {
+          var amount = parseInt(m[1].replace(/,/g, ""), 10);
+          if (!isNaN(amount) && amount > 0) wp.prizeMoney = amount;
+        }
+
+        if (wp.wins !== undefined || wp.ranking || wp.prizeMoney) source = "HTML";
+      }
     }
-
-    // Singles titles: "| singlestitles = 2"
-    var stMatch = text.match(/\|\s*singlestitles\s*=\s*(\d+)/i);
-    if (stMatch) wp.titles = parseInt(stMatch[1], 10);
-
-    // Highest singles ranking: "| highestsinglesranking = No. 24..." ou variações
-    var hrMatch = text.match(/\|\s*highestsinglesranking\s*=\s*(?:No\.\s*|\u2116\s*|#)?(\d+)/i);
-    if (hrMatch) wp.bestRanking = parseInt(hrMatch[1], 10);
-
-    // Current singles ranking: "| currentsinglesranking = No. 38..."
-    var crMatch = text.match(/\|\s*currentsinglesranking\s*=\s*(?:No\.\s*|\u2116\s*|#)?(\d+)/i);
-    if (crMatch) wp.ranking = parseInt(crMatch[1], 10);
-
-    // Prize money: "| plays = ... | coach = ... | prizemoney = US $2,816,305"
-    // ou "| prizemoney = $2,816,305"
-    var pmMatch = text.match(/\|\s*prizemoney\s*=\s*(?:US\s*)?\$?\s*([\d,]+)/i);
-    if (pmMatch) {
-      var amount = parseInt(pmMatch[1].replace(/,/g, ""), 10);
-      if (!isNaN(amount) && amount > 0) wp.prizeMoney = amount;
-    }
-
-    // Validate: precisamos pelo menos de wins+losses OU ranking
-    var hasMinimum = (wp.wins !== undefined && wp.losses !== undefined) || wp.ranking;
-    if (hasMinimum) {
-      log("player: Wikipedia OK | " + (wp.wins || "?") + "W-" + (wp.losses || "?") + "L | #" + (wp.ranking || "?") + " | $" + (wp.prizeMoney || "?") + " | titles:" + (wp.titles || "?"));
-      return wp;
-    }
-    log("player: Wikipedia matched but insufficient data, trying Gemini");
   } catch (e) {
-    log("player: Wikipedia error: " + e.message + ", trying Gemini");
+    log("player: Wikipedia HTML error: " + e.message);
   }
+
+  // --- TENTATIVA 2: Wikitext como fallback se HTML incompleto ---
+  if (wp.wins === undefined || !wp.ranking || !wp.prizeMoney) {
+    try {
+      var ctrl2 = new AbortController();
+      var to2 = setTimeout(function () { ctrl2.abort(); }, 10000);
+      var res2 = await fetch(
+        "https://en.wikipedia.org/w/api.php?action=parse&page=Jo%C3%A3o_Fonseca_(tennis)&prop=wikitext&format=json&section=0",
+        { headers: { "User-Agent": "FonsecaNews/1.0 (https://fonsecanews.com.br)" }, signal: ctrl2.signal }
+      );
+      clearTimeout(to2);
+      if (res2.ok) {
+        var data2 = await res2.json();
+        var text = data2 && data2.parse && data2.parse.wikitext && data2.parse.wikitext["*"];
+        if (text) {
+          // Wikitext pode ter templates complexos. Regex mais permissiva: qualquer numero apos o campo
+          if (wp.wins === undefined) {
+            var srM = text.match(/singlesrecord\s*=[^\n|]*?(\d+)\s*[\u2013\-]\s*(\d+)/i);
+            if (srM) { wp.wins = parseInt(srM[1], 10); wp.losses = parseInt(srM[2], 10); }
+          }
+          if (wp.titles === undefined) {
+            var stM = text.match(/singlestitles\s*=\s*(\d+)/i);
+            if (stM) wp.titles = parseInt(stM[1], 10);
+          }
+          if (!wp.bestRanking) {
+            var hrM = text.match(/highestsinglesranking\s*=[^\n|]*?(?:No\.\s*|\u2116\s*|#)?(\d+)/i);
+            if (hrM) wp.bestRanking = parseInt(hrM[1], 10);
+          }
+          if (!wp.ranking) {
+            var crM = text.match(/currentsinglesranking\s*=[^\n|]*?(?:No\.\s*|\u2116\s*|#)?(\d+)/i);
+            if (crM) wp.ranking = parseInt(crM[1], 10);
+          }
+          if (!wp.prizeMoney) {
+            var pmM = text.match(/prizemoney\s*=[^\n|]*?\$?\s*([\d,]+)/i);
+            if (pmM) {
+              var amt = parseInt(pmM[1].replace(/,/g, ""), 10);
+              if (!isNaN(amt) && amt > 0) wp.prizeMoney = amt;
+            }
+          }
+          if (source === "HTML" && (wp.wins !== undefined || wp.ranking)) source = "HTML+wikitext";
+          else if (wp.wins !== undefined || wp.ranking) source = "wikitext";
+        }
+      }
+    } catch (e) {
+      log("player: Wikipedia wikitext error: " + e.message);
+    }
+  }
+
+  // Validate: precisamos pelo menos de wins+losses OU ranking
+  var hasMinimum = (wp.wins !== undefined && wp.losses !== undefined) || wp.ranking;
+  if (hasMinimum) {
+    log("player: Wikipedia OK (" + source + ") | " + (wp.wins !== undefined ? wp.wins : "?") + "W-" + (wp.losses !== undefined ? wp.losses : "?") + "L | #" + (wp.ranking || "?") + " | $" + (wp.prizeMoney || "?") + " | titles:" + (wp.titles !== undefined ? wp.titles : "?"));
+    return wp;
+  }
+  log("player: Wikipedia matched but insufficient data, trying Gemini");
 
   // === GEMINI FALLBACK (only if Wikipedia fails) ===
   // NOTA: Gemini frequentemente alucina numeros. Use somente se Wikipedia falhar completamente.
