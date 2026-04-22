@@ -629,25 +629,34 @@ async function fetchPlayerData() {
         var data2 = await res2.json();
         var text = data2 && data2.parse && data2.parse.wikitext && data2.parse.wikitext["*"];
         if (text) {
-          // Wikitext pode ter templates complexos. Regex mais permissiva: qualquer numero apos o campo
+          // CAMPOS REAIS DO INFOBOX (testados contra wikitext real 22/04/2026):
+          // - singlesrecord usa TEMPLATE: {{tennis record|won=48|lost=31}}
+          // - careerprizemoney (NAO prizemoney): "US $3,233,646"
+          // - currentsinglesranking: "No. 31 (20 April 2026)"
+          // - highestsinglesranking: "No. 24 (3 November 2025)"
+          // - singlestitles: "2"
+
+          // Career W-L: PRIMEIRO tenta template, DEPOIS formato direto (compatibilidade futura)
           if (wp.wins === undefined) {
-            var srM = text.match(/singlesrecord\s*=[^\n|]*?(\d+)\s*[\u2013\-]\s*(\d+)/i);
+            var srM = text.match(/\{\{tennis\s+record\|won=(\d+)\|lost=(\d+)\}\}/i);
+            if (!srM) srM = text.match(/\|\s*singlesrecord\s*=\s*(\d+)\s*[\u2013\-]\s*(\d+)/i);
             if (srM) { wp.wins = parseInt(srM[1], 10); wp.losses = parseInt(srM[2], 10); }
           }
           if (wp.titles === undefined) {
-            var stM = text.match(/singlestitles\s*=\s*(\d+)/i);
+            var stM = text.match(/\|\s*singlestitles\s*=\s*(\d+)/i);
             if (stM) wp.titles = parseInt(stM[1], 10);
           }
           if (!wp.bestRanking) {
-            var hrM = text.match(/highestsinglesranking\s*=[^\n|]*?(?:No\.\s*|\u2116\s*|#)?(\d+)/i);
+            var hrM = text.match(/\|\s*highestsinglesranking\s*=\s*No\.\s*(\d+)/i);
             if (hrM) wp.bestRanking = parseInt(hrM[1], 10);
           }
           if (!wp.ranking) {
-            var crM = text.match(/currentsinglesranking\s*=[^\n|]*?(?:No\.\s*|\u2116\s*|#)?(\d+)/i);
+            var crM = text.match(/\|\s*currentsinglesranking\s*=\s*No\.\s*(\d+)/i);
             if (crM) wp.ranking = parseInt(crM[1], 10);
           }
           if (!wp.prizeMoney) {
-            var pmM = text.match(/prizemoney\s*=[^\n|]*?\$?\s*([\d,]+)/i);
+            // ATENCAO: campo correto eh 'careerprizemoney', NAO 'prizemoney'
+            var pmM = text.match(/\|\s*careerprizemoney\s*=\s*(?:US\s*)?\$\s*([\d,]+)/i);
             if (pmM) {
               var amt = parseInt(pmM[1].replace(/,/g, ""), 10);
               if (!isNaN(amt) && amt > 0) wp.prizeMoney = amt;
@@ -934,7 +943,18 @@ export default async function handler(req, res) {
     var careerFresh = exCareer && exCareer.wins !== undefined && exCareer.updatedAt && new Date(exCareer.updatedAt).getTime() >= lastMonday10UTC;
     if (!rankingFresh || !careerFresh) {
       wiki = await fetchPlayerData();
-      steps.player = wiki ? "#" + (wiki.ranking || "?") : "fail";
+      // FALLBACK: se Wikipedia nao retornou ranking, busca em fn:atpRankings (SofaScore semanal)
+      if (!wiki) wiki = {};
+      if (!wiki.ranking && exRankingsList && exRankingsList.rankings) {
+        var fonsecaInList = exRankingsList.rankings.find(function (p) {
+          return p.name && (p.name.indexOf("Fonseca") !== -1 || p.name.indexOf("fonseca") !== -1);
+        });
+        if (fonsecaInList && fonsecaInList.rank) {
+          wiki.ranking = fonsecaInList.rank;
+          log("player: ranking fallback from SofaScore atpRankings: #" + wiki.ranking);
+        }
+      }
+      steps.player = wiki && wiki.ranking ? "#" + wiki.ranking : "fail";
     } else {
       wiki = { ranking: exRanking.ranking, bestRanking: exRanking.bestRanking };
       if (exCareer) { wiki.wins = exCareer.wins; wiki.losses = exCareer.losses; wiki.surface = exCareer.surface; wiki.titles = exCareer.titles; }
@@ -987,31 +1007,21 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── GEMINI SWEEP (remaining gaps) ──
+    // ── GEMINI SWEEP (apenas para matchDate quando faltar) ──
+    // ANTES: tentava preencher wins/losses/prizeMoney/ranking via Gemini, mas alucinava muito.
+    // AGORA: esses campos vem APENAS de Wikipedia (autom\u00e1tico) ou /api/manual-stats (manual).
+    // Gemini sweep s\u00f3 atua se faltar a data de uma partida confirmada.
     var gaps = [];
-    if (!wiki || !wiki.ranking) gaps.push("ranking ATP");
-    if (!wiki || wiki.wins === undefined) gaps.push("career record");
-    if (wiki && wiki.wins !== undefined && wiki.seasonWins === undefined) gaps.push("season 2026");
-    if (!wiki || !wiki.prizeMoney) gaps.push("prize money");
     if (nm && nm.opponent_name !== "A definir" && !nm.date) gaps.push("date of match vs " + nm.opponent_name);
 
     if (gaps.length > 0) {
       log("sweep: " + gaps.join(", "));
       var sweepTxt = await geminiSearch(
         "Dados de abril 2026 sobre Jo\u00e3o Fonseca. Preciso: " + gaps.join("; ") + ". " +
-        "JSON: {\"ranking\":N,\"wins\":N,\"losses\":N,\"seasonWins\":N,\"seasonLosses\":N," +
-        "\"surface\":{\"hard\":{\"w\":N,\"l\":N},\"clay\":{\"w\":N,\"l\":N},\"grass\":{\"w\":N,\"l\":N}}," +
-        "\"prizeMoney\":N,\"titles\":N,\"matchDate\":\"ISO_OR_NULL\"}"
+        "APENAS JSON: {\"matchDate\":\"ISO_OR_NULL\"}"
       );
       var sweep = parseGeminiJSON(sweepTxt);
       if (sweep) {
-        if (!wiki) wiki = {};
-        if (!wiki.ranking && sweep.ranking) wiki.ranking = sweep.ranking;
-        if (wiki.wins === undefined && sweep.wins != null) { wiki.wins = sweep.wins; wiki.losses = sweep.losses || 0; }
-        if (wiki.seasonWins === undefined && sweep.seasonWins != null) { wiki.seasonWins = sweep.seasonWins; wiki.seasonLosses = sweep.seasonLosses || 0; }
-        if (!wiki.prizeMoney && sweep.prizeMoney) wiki.prizeMoney = sweep.prizeMoney;
-        if (!wiki.titles && sweep.titles) wiki.titles = sweep.titles;
-        if (sweep.surface && (!wiki.surface || !wiki.surface.hard || (!wiki.surface.hard.w && !wiki.surface.clay.w))) wiki.surface = sweep.surface;
         if (nm && !nm.date && sweep.matchDate) nm.date = sweep.matchDate;
         steps.sweep = gaps.length + " filled";
       }
@@ -1208,29 +1218,52 @@ export default async function handler(req, res) {
     if (form.length > 0) w.push(kv.set("fn:recentForm", JSON.stringify(form), { ex: T7 }));
 
     if (wiki) {
-      if (wiki.ranking) {
+      // RANKING: s\u00f3 sobrescreve se Wikipedia retornou ranking E (KV vazio OU source != manual)
+      if (wiki.ranking && (!exRanking || exRanking.source !== "manual")) {
         // Preserva updatedAt antigo se o valor nao mudou e veio do cache.
-        // Isso permite que D7 funcione: depois de 7d sem mudanca, vai refetch.
         var rankingUpdatedAt;
         if (rankingFresh && exRanking && exRanking.ranking === wiki.ranking) {
-          rankingUpdatedAt = exRanking.updatedAt;  // mantem antigo
+          rankingUpdatedAt = exRanking.updatedAt;
         } else {
-          rankingUpdatedAt = new Date().toISOString();  // foi fetchado de verdade
+          rankingUpdatedAt = new Date().toISOString();
         }
-        w.push(kv.set("fn:ranking", JSON.stringify({ ranking: wiki.ranking, bestRanking: wiki.bestRanking || null, updatedAt: rankingUpdatedAt }), { ex: T7 }));
-      }
-      if (wiki.prizeMoney) w.push(kv.set("fn:prizeMoney", JSON.stringify({ amount: wiki.prizeMoney }), { ex: T7 }));
-      if (wiki.wins !== undefined) {
-        var cW = wiki.wins, cL = wiki.losses || 0;
-        // Nao mais usa surface — Wikipedia nao tem dado consolidado e Gemini inventa
-        // careerStats sempre inclui updatedAt pra cache semanal funcionar
-        w.push(kv.set("fn:careerStats", JSON.stringify({
-          wins: cW,
-          losses: cL,
-          winPct: (cW + cL) > 0 ? Math.round(cW / (cW + cL) * 100) : 0,
-          titles: wiki.titles || null,
-          updatedAt: new Date().toISOString()
+        w.push(kv.set("fn:ranking", JSON.stringify({
+          ranking: wiki.ranking,
+          bestRanking: wiki.bestRanking || (exRanking && exRanking.bestRanking) || null,
+          updatedAt: rankingUpdatedAt,
+          source: "wikipedia"
         }), { ex: T7 }));
+      }
+
+      // PRIZE MONEY: s\u00f3 sobrescreve se Wikipedia retornou valor v\u00e1lido E source atual != manual
+      if (wiki.prizeMoney) {
+        try {
+          var exPrize = await kv.get("fn:prizeMoney");
+          var parsedPrize = exPrize ? (typeof exPrize === "string" ? JSON.parse(exPrize) : exPrize) : null;
+          if (!parsedPrize || parsedPrize.source !== "manual") {
+            w.push(kv.set("fn:prizeMoney", JSON.stringify({
+              amount: wiki.prizeMoney,
+              updatedAt: new Date().toISOString(),
+              source: "wikipedia"
+            }), { ex: T7 }));
+          }
+        } catch (e) { }
+      }
+
+      // CAREER STATS: s\u00f3 sobrescreve se Wikipedia retornou wins+losses (ambos) E source atual != manual
+      // CRITICAL: nunca grava parcial. Se faltar wins ou losses, n\u00e3o sobrescreve.
+      if (wiki.wins !== undefined && wiki.losses !== undefined && wiki.wins > 0 && wiki.losses > 0) {
+        if (!exCareer || exCareer.source !== "manual") {
+          var cW = wiki.wins, cL = wiki.losses;
+          w.push(kv.set("fn:careerStats", JSON.stringify({
+            wins: cW,
+            losses: cL,
+            winPct: (cW + cL) > 0 ? Math.round(cW / (cW + cL) * 100) : 0,
+            titles: wiki.titles || (exCareer && exCareer.titles) || null,
+            updatedAt: new Date().toISOString(),
+            source: "wikipedia"
+          }), { ex: T7 }));
+        }
       }
     }
 
