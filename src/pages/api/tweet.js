@@ -353,9 +353,9 @@ async function geminiTweet(headline, context, category, source) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          // maxOutputTokens 1200: Portugues consome mais tokens que ingles (acentos viram multi-byte),
-          // 500 era insuficiente e cortava tweets no meio (causando "too_short" na validacao).
-          generationConfig: { temperature: 0.85, maxOutputTokens: 1200 },
+          // maxOutputTokens 2000: Portugues + emojis consomem MUITO mais tokens que esperado
+          // (1 emoji bandeira = 8 tokens). 1200 ainda truncava no meio. 2000 garante folga.
+          generationConfig: { temperature: 0.85, maxOutputTokens: 2000 },
         }),
         signal: ctrl.signal,
       });
@@ -375,18 +375,78 @@ async function geminiTweet(headline, context, category, source) {
     }
   }
 
+  // Tenta consertar tweet truncado: se o texto eh longo (>=80 chars) mas terminou
+  // sem pontuacao/emoji (ex: cortado no meio por max_tokens), corta a ultima
+  // sentenca incompleta e fecha com pontuacao apropriada.
+  function tryAutoFix(txt) {
+    if (!txt || txt.length < 80) return null;
+    // Procura ultima pontuacao final antes do corte
+    var lastEnd = -1;
+    var endChars = [".", "!", "?", "…"];
+    for (var i = txt.length - 1; i >= 60; i--) {
+      var c = txt.charAt(i);
+      if (endChars.indexOf(c) !== -1) {
+        // Verifica se nao eh ponto de abreviacao (ex: "Dr.")
+        var nextC = txt.charAt(i + 1);
+        if (!nextC || nextC === " " || nextC === "\n") {
+          lastEnd = i;
+          break;
+        }
+      }
+    }
+    if (lastEnd > 0 && lastEnd < txt.length - 1) {
+      // Trunca apos a ultima sentenca completa
+      var fixed = txt.substring(0, lastEnd + 1).trim();
+      // Garante que tem pelo menos 80 chars depois do fix
+      if (fixed.length >= 80) {
+        console.log("[tweet] Auto-fix: removed truncated tail, kept " + fixed.length + " chars");
+        return fixed;
+      }
+    }
+    // Sem ponto antes do corte: adiciona "." no fim do texto cru se for longo
+    if (txt.length >= 100) {
+      // Remove palavra final incompleta (ate proximo espaco)
+      var lastSpace = txt.lastIndexOf(" ");
+      if (lastSpace > 80) {
+        var fixed2 = txt.substring(0, lastSpace).trim();
+        // Remove pontuacao incompleta no fim (ex: vírgula)
+        fixed2 = fixed2.replace(/[,;:]+$/, "");
+        // Se ja termina em emoji, nao adiciona ponto
+        var lastChar = fixed2.charAt(fixed2.length - 1);
+        if (!/[.!?…]/.test(lastChar)) fixed2 += ".";
+        console.log("[tweet] Auto-fix: trimmed last word, length " + fixed2.length);
+        return fixed2;
+      }
+    }
+    return null;
+  }
+
   // Valida e normaliza o resultado do Gemini. Retorna o texto ou null se invalido.
   function processResult(txt, attemptLabel) {
     if (!txt) return null;
     // Threshold mais permissivo (60 ao inves de 80): tweet curto com sal > tweet longo frio.
     var validation = validateTweetText(txt, 60);
-    if (!validation.ok) {
-      console.log("[tweet] Gemini " + attemptLabel + " rejected: " + validation.reason + " | tail: '" + txt.substring(Math.max(0, txt.length - 30)) + "'");
-      return null;
+    if (validation.ok) {
+      // Limite interno: 400 chars (X Premium permite 25k, folga enorme).
+      if (txt.length > 400) txt = txt.substring(0, 397) + "...";
+      return txt;
     }
-    // Limite interno: 400 chars (X Premium permite 25k, folga enorme).
-    if (txt.length > 400) txt = txt.substring(0, 397) + "...";
-    return txt;
+
+    // Tenta auto-corrigir antes de rejeitar (problema comum: corte por max_tokens)
+    if (validation.reason === "no_emoji_no_punct" || validation.reason === "too_short") {
+      var fixed = tryAutoFix(txt);
+      if (fixed) {
+        var revalidation = validateTweetText(fixed, 60);
+        if (revalidation.ok) {
+          console.log("[tweet] Gemini " + attemptLabel + " auto-fixed (was: " + validation.reason + ")");
+          if (fixed.length > 400) fixed = fixed.substring(0, 397) + "...";
+          return fixed;
+        }
+      }
+    }
+
+    console.log("[tweet] Gemini " + attemptLabel + " rejected: " + validation.reason + " | tail: '" + txt.substring(Math.max(0, txt.length - 30)) + "'");
+    return null;
   }
 
   // TENTATIVA 1: prompt completo com exemplos, timeout 15s
