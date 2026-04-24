@@ -1152,6 +1152,42 @@ export default async function handler(req, res) {
       } catch (e) { log("check kv nextMatch err: " + e.message); }
 
       if (!shouldKeepNextMatch) {
+        // NOVO: Se Fonseca ganhou a ultima partida e o torneio ainda esta rolando,
+        // cria placeholder "A definir" em vez de limpar (ele AVANCOU, proxima rodada existe)
+        var lmIsRecentWin = lm && lm.result === "V" && lm.tournament_name && lm.startTimestamp;
+        if (lmIsRecentWin) {
+          var hoursSinceLm = (Date.now() - (lm.startTimestamp * 1000)) / 3600000;
+          // Se venceu nas ultimas 72h, assume torneio em andamento
+          if (hoursSinceLm >= 0 && hoursSinceLm <= 72) {
+            var placeholderNm = {
+              id: null,
+              result: "",
+              score: "",
+              opponent_name: "A definir",
+              opponent_id: null,
+              opponent_ranking: null,
+              opponent_country: "",
+              tournament_name: lm.tournament_name,
+              tournament_category: lm.tournament_category || "",
+              surface: lm.surface || "",
+              round: "",
+              date: null,
+              startTimestamp: null,
+              court: "",
+              isFonsecaHome: true,
+              finished: false,
+              broadcast: "",
+            };
+            w.push(kv.set("fn:nextMatch", JSON.stringify(placeholderNm), { ex: T7 }));
+            try { await kv.del("fn:winProb"); await kv.del("fn:bracketUrl"); } catch (e) { }
+            shouldKeepNextMatch = true; // evita o del abaixo
+            steps.next = "placeholder (avancou)";
+            log("nm placeholder criado: Fonseca avancou em " + lm.tournament_name + " vs A definir");
+          }
+        }
+      }
+
+      if (!shouldKeepNextMatch) {
         try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); await kv.del("fn:bracketUrl"); } catch (e) { }
       } else {
         // Mantem fn:nextMatch como esta, mas limpa winProb/bracketUrl (dados derivados que podem estar stale)
