@@ -5,10 +5,6 @@
       "schedule": "*/30 * * * *"
     },
     {
-      "path": "/api/tweet",
-      "schedule": "0 0,9,12,15,18,21 * * *"
-    },
-    {
       "path": "/api/cron-calendar",
       "schedule": "0 6 * * 1"
     }
