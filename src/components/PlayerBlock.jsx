@@ -1,5 +1,5 @@
 import { GREEN, RED, BG_ALT, TEXT, SUB, DIM, BORDER, SANS, SERIF, CARD_RADIUS, CARD_SHADOW, surfaceColorMap, countryFlags, FONSECA_IMG, FONSECA_IMG_FALLBACK } from '../lib/constants';
-import { getATPImage, getESPNImage } from '../lib/utils';
+import { getATPImage, getESPNImage, getSofaScoreImage } from '../lib/utils';
 
 export default function PlayerBlock(props) {
   var lastMatch = props.lastMatch;
@@ -104,7 +104,7 @@ export default function PlayerBlock(props) {
         var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
         var isWin = (lastMatch && lastMatch.result) === "V";
         var oppFlag = countryFlags[(lastMatch && lastMatch.opponent_country) || ""] || "";
-        var oppImg = getATPImage(oppName);
+        var oppImg = getSofaScoreImage(oppName, lastMatch && lastMatch.opponent_id) || getATPImage(oppName);
         var oppImgFallback = getESPNImage(oppName);
         var oppProfileMatch = opponentProfile && opponentProfile.name && oppName.indexOf(opponentProfile.name.split(" ").pop()) !== -1;
         var oppRanking = (lastMatch && lastMatch.opponent_ranking) || (oppProfileMatch ? opponentProfile.ranking : null);
