@@ -1157,8 +1157,9 @@ export default async function handler(req, res) {
         var lmIsRecentWin = lm && lm.result === "V" && lm.tournament_name && lm.startTimestamp;
         if (lmIsRecentWin) {
           var hoursSinceLm = (Date.now() - (lm.startTimestamp * 1000)) / 3600000;
-          // Se venceu nas ultimas 72h, assume torneio em andamento
-          if (hoursSinceLm >= 0 && hoursSinceLm <= 72) {
+          // Aceita janela ampla: -24h (jogo era pra ser hoje mas foi WO, startTimestamp no futuro)
+          // ate +72h (jogo recente). Assume torneio em andamento.
+          if (hoursSinceLm >= -24 && hoursSinceLm <= 72) {
             var placeholderNm = {
               id: null,
               result: "",
