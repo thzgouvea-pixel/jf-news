@@ -301,7 +301,7 @@ export default function JoaoFonsecaNews() {
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(function(prev) { return pickNewerLastMatch(prev, d.lastMatch); });
-      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
+      if (d.nextMatch && d.nextMatch.tournament_name) setNextMatch(d.nextMatch); else setNextMatch(null);
       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
@@ -329,7 +329,7 @@ export default function JoaoFonsecaNews() {
       if (d.ranking && d.ranking.ranking) setPlayer(function(prev) { return prev ? Object.assign({}, prev, { ranking: d.ranking.ranking }) : { ranking: d.ranking.ranking }; });
       if (d.season && d.season.wins !== undefined) setSeason(d.season);
       if (d.lastMatch && d.lastMatch.result) setLastMatch(function(prev) { return pickNewerLastMatch(prev, d.lastMatch); });
-      if (d.nextMatch && d.nextMatch.date) setNextMatch(d.nextMatch); else setNextMatch(null);
+      if (d.nextMatch && d.nextMatch.tournament_name) setNextMatch(d.nextMatch); else setNextMatch(null);
       if (d.winProb) setWinProb(d.winProb); else setWinProb(null);
       if (d.biography) setBiography(d.biography);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
@@ -379,7 +379,7 @@ export default function JoaoFonsecaNews() {
   }, []);
 
   var dn = news.length > 0 ? news : SAMPLE_NEWS;
-  var dm = nextMatch || null;   var hasNextMatch = !!(nextMatch && nextMatch.date && nextMatch.tournament_name);
+  var dm = nextMatch || null;   var hasNextMatch = !!(nextMatch && nextMatch.tournament_name);
   var dl = lastMatch || null;
   var dp = player || (news.length === 0 ? SAMPLE_PLAYER : null);
   var ds = season || null;
