@@ -772,9 +772,11 @@ export default async function handler(req, res) {
         var lmEv = lmDetail.event || lmDetail;
         if (lmEv.homeTeam && lmEv.awayTeam) {
           var lmFromDetail = extractMatch(lmEv);
-          if (lmFromDetail.result || lmFromDetail.score) {
+          // CRITICAL: aceitar WO/retired tamb\u00e9m. Antes s\u00f3 aceitava se tivesse result OU score,
+          // mas o bug era que isso bloqueava casos como WO que ja vem com result valido mas score "W.O"
+          if (lmFromDetail.result || lmFromDetail.score || lmFromDetail.walkover || lmFromDetail.retired) {
             lm = lmFromDetail;
-            log("lm updated from details: " + lm.opponent_name + " " + lm.result + " " + lm.score);
+            log("lm updated from details: " + lm.opponent_name + " " + lm.result + " " + lm.score + (lm.walkover ? " [WO]" : "") + (lm.retired ? " [RET]" : ""));
           }
         }
         var ts = lmEv.startTimestamp || lmEv.timestamp || null;
