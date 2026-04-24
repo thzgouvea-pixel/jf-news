@@ -17,6 +17,16 @@ export default function PlayerBlock(props) {
     <div>
       {(matchStats && matchStats.fonseca || lastMatch) && (function() {
         var msValid = matchStats && matchStats.fonseca && lastMatch && lastMatch.opponent_name && matchStats.opponent_name && matchStats.opponent_name.split(" ").pop() === lastMatch.opponent_name.split(" ").pop();
+        // W.O / retirement: esconde stats (nao houve jogo efetivo ou foi interrompido)
+        // Detecta por flag walkover/retired OU por score contendo "W.O" OU por todos os campos = 0 (indicativo de WO nao-flagado)
+        var isWO = lastMatch && (lastMatch.walkover || lastMatch.retired || (lastMatch.score && lastMatch.score.indexOf("W.O") !== -1));
+        if (!isWO && matchStats && matchStats.fonseca) {
+          // Heur\u00edstica extra: se TODOS os campos da Fonseca s\u00e3o 0, eh WO nao-flagado
+          var mf = matchStats.fonseca;
+          var allZero = (mf.pointstotal || 0) === 0 && (mf.gameswon || 0) === 0 && (mf.aces || 0) === 0 && (mf.servicepointsscored || 0) === 0;
+          if (allZero) isWO = true;
+        }
+        if (isWO) msValid = false;
         var f = msValid ? matchStats.fonseca : {};
         var o = msValid ? matchStats.opponent : {};
 
