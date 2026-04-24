@@ -63,7 +63,7 @@ nav::-webkit-scrollbar {
     flex-direction: column;
   }
   .mobile-pad {
-    padding-bottom: calc(95px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: 105px !important;
   }
 }
 
