@@ -797,7 +797,7 @@ export default function JoaoFonsecaNews() {
       )}
 
       {/* Mobile Tab Bar — floating Instagram-style, compacta ao rolar */}
-      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: "calc(20px + env(safe-area-inset-bottom))", left: 12, right: 12, zIndex: 200, background: "rgba(255,255,255,0.82)", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", border: "1px solid rgba(255,255,255,0.5)", borderRadius: 28, boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)", transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)" }}>
+      <div className="mobile-tab-bar" style={{ display: "none", position: "fixed", bottom: 32, left: 12, right: 12, zIndex: 200, background: "rgba(255,255,255,0.82)", backdropFilter: "blur(24px) saturate(180%)", WebkitBackdropFilter: "blur(24px) saturate(180%)", border: "1px solid rgba(255,255,255,0.5)", borderRadius: 28, boxShadow: "0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)", transition: "all 0.35s cubic-bezier(0.4, 0, 0.2, 1)" }}>
         {showMaisMenu && (
           <div style={{ position: "absolute", bottom: "100%", right: 8, background: "white", borderRadius: 16, boxShadow: "0 8px 40px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06)", border: "1px solid " + BORDER, padding: "6px 0", minWidth: 180, marginBottom: 10 }}>
             {[
