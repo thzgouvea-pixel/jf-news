@@ -294,6 +294,46 @@ export function extractMatch(match) {
   var fW = 0, oW = 0;
   fSets.forEach(function (s, idx) { if (s > oSets[idx]) fW++; else oW++; });
 
+  // ===== WALKOVER / RETIREMENT DETECTION =====
+  // SofaScore usa status.code para identificar esses casos:
+  // - code 92 = walkover (jogador desistiu antes do jogo)
+  // - code 93 = retired (jogador desistiu durante o jogo)
+  // - code 90 = cancelled
+  // winnerCode: 1 = home venceu, 2 = away venceu
+  var statusCode = match.status && match.status.code;
+  var statusType = (match.status && (match.status.type || match.status.description) || "").toLowerCase();
+  var isWalkover = statusCode === 92 || statusType === "walkover" || statusType.indexOf("walkover") !== -1;
+  var isRetired = statusCode === 93 || statusType === "retired" || statusType.indexOf("retired") !== -1;
+
+  // DEBUG: log status raw quando nao tem sets — ajuda diagnosticar WO/cancellation
+  if (!scoreStr && match.id && typeof console !== "undefined" && console.log) {
+    try {
+      console.log("[extractMatch] no-sets match id=" + match.id + " status=" + JSON.stringify(match.status || {}) + " winnerCode=" + match.winnerCode);
+    } catch (e) { }
+  }
+
+  var resolvedResult = "";
+  var resolvedScore = scoreStr;
+
+  if (isWalkover || isRetired) {
+    // Usa winnerCode pra saber se Fonseca ganhou ou perdeu
+    var winnerCode = match.winnerCode;
+    if (winnerCode === 1) {
+      resolvedResult = isFHome ? "V" : "D";
+    } else if (winnerCode === 2) {
+      resolvedResult = isFHome ? "D" : "V";
+    }
+    // Score especial
+    if (isWalkover) {
+      resolvedScore = scoreStr ? scoreStr + " W.O" : "W.O";
+    } else if (isRetired) {
+      resolvedScore = scoreStr ? scoreStr + " (ret.)" : "(ret.)";
+    }
+  } else {
+    // Caso normal — usa contagem de sets
+    resolvedResult = fW > oW ? "V" : (fW < oW ? "D" : (scoreStr ? "D" : ""));
+  }
+
   // Surface
   var gt = (match.groundType || tournament.groundType || "").toLowerCase();
   var surface = gt.includes("clay") ? "Clay" : (gt.includes("grass") ? "Grass" : "Hard");
@@ -323,8 +363,8 @@ export function extractMatch(match) {
 
   return {
     id: match.id,
-    result: fW > oW ? "V" : (fW < oW ? "D" : (scoreStr ? "D" : "")),
-    score: scoreStr,
+    result: resolvedResult,
+    score: resolvedScore,
     opponent_name: opp.shortName || opp.name || "A definir",
     opponent_id: opp.id || null,
     opponent_ranking: opp.ranking || null,
@@ -339,6 +379,8 @@ export function extractMatch(match) {
     isFonsecaHome: isFHome,
     finished: isFinished(match),
     broadcast: broadcast,
+    walkover: isWalkover || false,
+    retired: isRetired || false,
   };
 }
 
