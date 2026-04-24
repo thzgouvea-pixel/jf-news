@@ -316,14 +316,16 @@ export function extractMatch(match) {
   var resolvedScore = scoreStr;
 
   if (isWalkover || isRetired) {
-    // Usa winnerCode pra saber se Fonseca ganhou ou perdeu
     var winnerCode = match.winnerCode;
     if (winnerCode === 1) {
       resolvedResult = isFHome ? "V" : "D";
     } else if (winnerCode === 2) {
       resolvedResult = isFHome ? "D" : "V";
+    } else {
+      // Sem winnerCode: SofaScore so mostra esse match no scan de Fonseca se ele avancou.
+      // Default seguro: V (vitoria). Tweet bot pode validar cruzando com outras fontes se necessario.
+      resolvedResult = "V";
     }
-    // Score especial
     if (isWalkover) {
       resolvedScore = scoreStr ? scoreStr + " W.O" : "W.O";
     } else if (isRetired) {
