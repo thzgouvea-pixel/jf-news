@@ -127,7 +127,13 @@ async function discoverMatches() {
       if (!m || !m.id || seen.has(m.id)) return;
       if (!isFonseca(m) || !isSingles(m)) return;
       seen.add(m.id);
-      if (isFinished(m)) results.finished.push(m);
+      // Detecta jogos AO VIVO: status.type "inprogress" ou flag isInProgress.
+      // Matches ao vivo entram em upcoming pra que sirvam de nm e o T4 dispare o push.
+      // Sem isso o filter de score parcial (linha ~200) os removeria, deixando nm null.
+      var st = m.status || {};
+      var isLive = st.isInProgress === true || st.type === "inprogress" || st.type === "in_progress";
+      if (isLive) results.upcoming.push(m);
+      else if (isFinished(m)) results.finished.push(m);
       else if (isUpcoming(m)) results.upcoming.push(m);
     });
   });
@@ -197,6 +203,9 @@ async function discoverMatches() {
   results.finished.sort(function (a, b) { return (getTs(b) || NOW_TS) - (getTs(a) || NOW_TS); });
   results.upcoming.sort(function (a, b) { return (getTs(a) || 0) - (getTs(b) || 0); });
   results.upcoming = results.upcoming.filter(function (m) {
+    // Preserva matches ao vivo mesmo com score parcial — eles sao tratados como nm
+    var stF = m.status || {};
+    if (stF.isInProgress === true || stF.type === "inprogress" || stF.type === "in_progress") return true;
     var ex = extractMatch(m);
     return !(ex.score && ex.score.length > 2);
   });
