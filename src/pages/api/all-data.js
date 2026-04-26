@@ -59,6 +59,7 @@ export default async function handler(req, res) {
       getKV("fn:atpCalendar"),
       getKV("fn:h2h"),
       getKV("fn:pregameForm"),
+      getKV("fn:careerNarrative"),
     ]);
 
     var matchStats = results[0];
@@ -84,6 +85,7 @@ export default async function handler(req, res) {
     var atpCalendar = results[20];
     var h2h = results[21];
     var pregameForm = results[22];
+    var careerNarrative = results[23];
 
     var parse = function(val) {
       if (!val) return null;
@@ -135,6 +137,7 @@ export default async function handler(req, res) {
       highlightVideo: highlightVideo || null,
       h2h: h2h || null,
       pregameForm: pregameForm || null,
+      careerNarrative: careerNarrative || null,
     });
   } catch (e) {
     return res.status(500).json({ error: e.message });
