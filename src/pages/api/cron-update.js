@@ -509,8 +509,63 @@ async function fetchATPRankings() {
   return null;
 }
 
-// ===== SEASON CALCULATION =====
-function calculateSeason(recentForm, storedSeason) {
+// ===== CAREER NARRATIVE (biografia 2026) =====
+// Gera 1 paragrafo factual sobre o ano de 2026 do Joao Fonseca usando Gemini com grounding.
+// Atualizado 1x por dia. Usado na pagina /biografia (timeline 2026).
+async function fetchCareerNarrative(season, ranking, recentForm) {
+  var gk = process.env.GEMINI_API_KEY;
+  if (!gk) { log("narrative: no GEMINI_API_KEY, skip"); return null; }
+
+  // Resumo dos ultimos 10 jogos pra dar contexto factual ao prompt
+  var recentSummary = "";
+  if (Array.isArray(recentForm) && recentForm.length > 0) {
+    recentSummary = recentForm.slice(0, 10).map(function(m) {
+      return (m.result === "V" ? "V" : "D") + " " + m.score + " vs " + m.opponent_name + " (" + m.tournament + ")";
+    }).join("; ");
+  }
+
+  var seasonStr = season ? (season.wins + "V-" + season.losses + "D em 2026") : "estatistica nao disponivel";
+  var rankStr = ranking && ranking.ranking ? "#" + ranking.ranking + " ATP" : "ranking nao disponivel";
+
+  var prompt = "Voce e um redator esportivo brasileiro objetivo. Escreva UM unico paragrafo (max 80 palavras) " +
+    "em portugues sobre a TEMPORADA 2026 de Joao Fonseca no tenis profissional, em ordem cronologica. " +
+    "Use APENAS fatos verificaveis do que ele jogou em 2026 (Australian Open, Indian Wells, Miami, Monte Carlo, BMW Open, Madrid Open, etc). " +
+    "Mencione resultados marcantes: titulos, vitorias importantes, derrotas notaveis, lesoes, mudancas de tecnico. " +
+    "Use o presente do indicativo. Tom: factual, conciso, sem hiperbole. NAO inicie com 'em 2026' nem 'temporada'. " +
+    "Comece direto com o fato mais relevante do inicio do ano. Termine com a situacao atual.\n\n" +
+    "Dados objetivos para referencia:\n" +
+    "- Ranking atual: " + rankStr + "\n" +
+    "- Recorde 2026: " + seasonStr + "\n" +
+    "- Ultimos jogos: " + (recentSummary || "nao disponivel") + "\n\n" +
+    "Responda APENAS o paragrafo, sem markdown, sem aspas, sem prefixo. " +
+    "MAXIMO 80 palavras. Use grounding pra verificar fatos antes de escrever.";
+
+  try {
+    var r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + gk, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ google_search: {} }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 2048 }
+      })
+    });
+    if (!r.ok) { log("narrative: Gemini status " + r.status); return null; }
+    var d = await r.json();
+    var parts = d.candidates && d.candidates[0] && d.candidates[0].content && d.candidates[0].content.parts;
+    if (!parts) { log("narrative: no parts in response"); return null; }
+    var txt = "";
+    parts.forEach(function (p) { if (p.text && !p.thought) txt += p.text; });
+    txt = (txt || "").trim().replace(/^["']+|["']+$/g, "").replace(/\s+/g, " ");
+    if (txt.length < 50 || txt.length > 800) { log("narrative: invalid length " + txt.length); return null; }
+    log("narrative: generated " + txt.length + " chars");
+    return { text: txt, updatedAt: new Date().toISOString() };
+  } catch (e) {
+    log("narrative: error " + e.message);
+    return null;
+  }
+}
+
+
   if (!recentForm || !Array.isArray(recentForm)) return storedSeason || null;
   var yearStart = new Date("2026-01-01T00:00:00Z").getTime();
   var wins2026 = 0, losses2026 = 0;
@@ -814,7 +869,7 @@ export default async function handler(req, res) {
     var kvReads = await Promise.all([
       kv.get("fn:ranking"), kv.get("fn:opponentProfile"), kv.get("fn:atpRankings"),
       kv.get("fn:lastOddsCheck"), kv.get("fn:careerStats"), kv.get("fn:recentForm"),
-      kv.get("fn:lastMatch"),
+      kv.get("fn:lastMatch"), kv.get("fn:careerNarrative"),
     ]);
     function pk(val) { if (!val) return null; return typeof val === "string" ? JSON.parse(val) : val; }
     var exRanking = pk(kvReads[0]);
@@ -823,6 +878,7 @@ export default async function handler(req, res) {
     var lastOddsTs = kvReads[3] ? parseInt(kvReads[3]) : 0;
     var exCareer = pk(kvReads[4]);
     var exForm = pk(kvReads[5]);
+    var exNarrative = pk(kvReads[7]);
     var exLastMatch = pk(kvReads[6]);
 
     // SMART MERGE lastMatch with KV
@@ -859,20 +915,12 @@ export default async function handler(req, res) {
     var H6 = 6 * 3600000, H24 = 24 * 3600000, D7 = 7 * H24;
     var T7 = 604800, T2 = 172800;
 
-    // ── ATP RANKINGS (weekly on monday 10h UTC) ──
-    // Usa mesmo threshold do ranking individual ("lastMonday10UTC" definido mais abaixo em rankingFresh).
-    // Como esse check acontece antes do rankingFresh, recalcula aqui.
-    var _lastMonday10UTC_forList = (function() {
-      var d = new Date();
-      var day = d.getUTCDay();
-      var daysSinceMonday = day === 0 ? 6 : day - 1;
-      d.setUTCDate(d.getUTCDate() - daysSinceMonday);
-      d.setUTCHours(10, 0, 0, 0);
-      if (d.getTime() > Date.now()) d.setUTCDate(d.getUTCDate() - 7);
-      return d.getTime();
-    })();
+    // ── ATP RANKINGS (atualiza a cada 24h) ──
+    // SofaScore atualiza ranking mais frequente que 1x/semana (live ranking durante torneios).
+    // 24h e um equilibrio entre frescor e economia de API calls.
+    var TWENTY_FOUR_HOURS_MS = 24 * 3600 * 1000;
     var rankingsListFresh = exRankingsList && exRankingsList.updatedAt &&
-      new Date(exRankingsList.updatedAt).getTime() >= _lastMonday10UTC_forList &&
+      (Date.now() - new Date(exRankingsList.updatedAt).getTime()) < TWENTY_FOUR_HOURS_MS &&
       exRankingsList.rankings && exRankingsList.rankings.length >= 40;
     if (!rankingsListFresh) {
       var newRankings = await fetchATPRankings();
@@ -1352,6 +1400,27 @@ export default async function handler(req, res) {
     if (exRankingsList && !rankingsListFresh) w.push(kv.set("fn:atpRankings", JSON.stringify(exRankingsList), { ex: T7 }));
     if (h2hData) w.push(kv.set("fn:h2h", JSON.stringify(h2hData), { ex: T2 }));
     if (pregameFormData) w.push(kv.set("fn:pregameForm", JSON.stringify(pregameFormData), { ex: T2 }));
+
+    // ── CAREER NARRATIVE (1 paragrafo da temporada 2026 pra biografia) ──
+    // Atualizado 1x a cada 24h. Usa Gemini com grounding.
+    try {
+      var narrativeFresh = exNarrative && exNarrative.updatedAt &&
+        (Date.now() - new Date(exNarrative.updatedAt).getTime()) < TWENTY_FOUR_HOURS_MS &&
+        exNarrative.text && exNarrative.text.length > 50;
+      if (!narrativeFresh) {
+        var newNarrative = await fetchCareerNarrative(seasonToWrite || null, wiki || exRanking, form);
+        if (newNarrative) {
+          w.push(kv.set("fn:careerNarrative", JSON.stringify(newNarrative), { ex: T7 }));
+          steps.narrative = "fresh";
+        } else {
+          // Mantem o existente em caso de falha
+          steps.narrative = "fail";
+        }
+      } else {
+        steps.narrative = "cached";
+      }
+    } catch (e) { log("narrative error: " + e.message); steps.narrative = "err"; }
+
     w.push(kv.set("fn:cronLastRun", new Date().toISOString(), { ex: T7 }));
 
     await Promise.all(w);
