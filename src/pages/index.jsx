@@ -293,6 +293,10 @@ export default function JoaoFonsecaNews() {
     try { localStorage.removeItem("jf-news-v5"); } catch(e) {}
     if ("caches" in window) { caches.keys().then(function(names) { names.forEach(function(n) { caches.delete(n); }); }); }
     fetchNews(true);
+    // Forca refetch de /api/live pra resetar o "Atualizado ha Xs" no card ao vivo.
+    fetch("/api/live?t=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d && d.live) setLiveMatch(d); else setLiveMatch(null);
+    }).catch(function() {});
     fetch("/api/all-data?t=" + Date.now(), { cache: "no-store" }).then(function(r) { return r.json(); }).then(function(d) {
       if (d.matchStats) setMatchStats(d.matchStats);
       if (d.recentForm) setRecentForm(d.recentForm);
