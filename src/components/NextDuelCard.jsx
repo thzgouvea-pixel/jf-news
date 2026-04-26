@@ -190,6 +190,28 @@ export default function NextDuelCard(props) {
     return { weekday: weekdayClean, date: diaNum.replace(".", ""), time: h };
   })() : null;
 
+  // DETECCAO DE ATRASO: compara horario original (scheduledTimestamp, congelado no inicio do dia)
+  // com o startTimestamp atual (atualizado pelo SofaScore quando o jogo atrasa).
+  // Mostra badge informativo abaixo do horario quando diff >= 15min.
+  // Esconde quando: ao vivo, finalizado, sem oponente, ou diff irrelevante.
+  var delayInfo = null;
+  if (match.scheduledTimestamp && match.startTimestamp && !isLive && match.opponent_name && match.opponent_name !== "A definir") {
+    var schedDiffSec = match.startTimestamp - match.scheduledTimestamp;
+    if (Math.abs(schedDiffSec) >= 15 * 60) {
+      var origDate = new Date(match.scheduledTimestamp * 1000);
+      var origTimeBR = origDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+      var diffMin = Math.round(Math.abs(schedDiffSec) / 60);
+      var diffH = Math.floor(diffMin / 60);
+      var diffM = diffMin % 60;
+      var diffText = diffH > 0 ? (diffH + "h" + (diffM > 0 ? (diffM < 10 ? "0" + diffM : diffM) + "min" : "")) : (diffMin + "min");
+      var direction = schedDiffSec > 0 ? "Atrasado" : "Antecipado";
+      delayInfo = {
+        text: direction + " " + diffText + " — previsto " + origTimeBR,
+        isDelayed: schedDiffSec > 0,
+      };
+    }
+  }
+
   var downloadICS = function() {
     if (!matchDate) return;
     var d = new Date(matchDate);
@@ -513,9 +535,14 @@ export default function NextDuelCard(props) {
               </div>
             )}
             {dateInfo && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
+              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid " + (delayInfo ? "rgba(251,146,60,0.3)" : "rgba(255,255,255,0.06)"), borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
                 <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário (BRT)</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{dateInfo.time}</div>
+                {delayInfo && (
+                  <div style={{ marginTop: 6, fontSize: 9, fontWeight: 700, color: "#fb923c", fontFamily: SANS, lineHeight: 1.35, letterSpacing: "0.01em" }}>
+                    🟠 {delayInfo.text}
+                  </div>
+                )}
               </div>
             )}
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
