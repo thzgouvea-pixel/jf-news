@@ -19,9 +19,66 @@ var FLAGS = {
   "Holanda": "🇳🇱", "Netherlands": "🇳🇱",
 };
 
+// Landmark/elemento da cidade — emoji renderizado em silhueta cinza no header
+// Match por substring no nome do torneio ou cidade. Fallback: 🎾
+var CITY_EMOJI = {
+  // Grand Slams
+  "australian open": "🦘",
+  "melbourne": "🦘",
+  "roland garros": "🗼",
+  "paris": "🗼",
+  "wimbledon": "👑",
+  "londres": "👑",
+  "london": "👑",
+  "us open": "🗽",
+  "nova york": "🗽",
+  "new york": "🗽",
+  // Masters 1000
+  "indian wells": "🌴",
+  "miami": "🌴",
+  "monte carlo": "🎰",
+  "monte-carlo": "🎰",
+  "madrid": "🐻",
+  "madri": "🐻",
+  "roma": "🏛️",
+  "rome": "🏛️",
+  "italian": "🏛️",
+  "canadian": "🍁",
+  "canada": "🍁",
+  "toronto": "🍁",
+  "montreal": "🍁",
+  "cincinnati": "🏙️",
+  "shanghai": "🏯",
+  "paris masters": "🥐",
+  // ATP 500/250
+  "rio": "⛰️",
+  "rio de janeiro": "⛰️",
+  "buenos aires": "💃",
+  "barcelona": "🏖️",
+  "munique": "🍺",
+  "munich": "🍺",
+  "bmw": "🍺",
+  "hamburgo": "⚓",
+  "halle": "🌳",
+  "queens": "👑",
+  "doha": "🕌",
+  "dubai": "🏙️",
+  "acapulco": "🌊",
+  "tóquio": "🗼",
+  "tokyo": "🗼",
+  "viena": "🎼",
+  "vienna": "🎼",
+  // Finals
+  "atp finals": "🏆",
+  "turim": "🏆",
+  "turin": "🏆",
+  "next gen": "🏆",
+};
+
 var SURFACE_PT = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
-var SURFACE_COLOR_BG = { "Saibro": "rgba(217,119,6,0.18)", "Duro": "rgba(59,130,246,0.18)", "Grama": "rgba(22,163,74,0.18)" };
-var SURFACE_COLOR_FG = { "Saibro": "#fbbf24", "Duro": "#60a5fa", "Grama": "#34d399" };
+var SURFACE_BAR = { "Saibro": "#fb923c", "Duro": "#60a5fa", "Grama": "#4ade80" };
+var SURFACE_GLOW = { "Saibro": "rgba(217,119,6,0.18)", "Duro": "rgba(37,99,235,0.18)", "Grama": "rgba(22,163,74,0.18)" };
+var SURFACE_TEXT = { "Saibro": "#fb923c", "Duro": "#60a5fa", "Grama": "#4ade80" };
 
 // Pontos ao campeão por categoria — estável ao longo do tempo
 var POINTS_BY_CAT = { "Grand Slam": 2000, "Masters 1000": 1000, "ATP 500": 500, "ATP 250": 250, "Finals": 1500 };
@@ -48,6 +105,21 @@ function flagOf(country, city) {
   return FLAGS[country] || FLAGS[city] || "🎾";
 }
 
+// Acha o emoji do landmark da cidade. Procura match por substring.
+function landmarkOf(name, city) {
+  var n = (name || "").toLowerCase();
+  var c = (city || "").toLowerCase();
+  // Tenta match exato/substring no nome do torneio primeiro
+  for (var k in CITY_EMOJI) {
+    if (n.indexOf(k) !== -1) return CITY_EMOJI[k];
+  }
+  // Depois tenta na cidade
+  for (var k2 in CITY_EMOJI) {
+    if (c.indexOf(k2) !== -1) return CITY_EMOJI[k2];
+  }
+  return "🎾";
+}
+
 function formatDateRange(start, end) {
   if (!start) return "";
   var mShort = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
@@ -72,7 +144,6 @@ function daysUntilStart(start) {
 
 export default function NextTournamentCard(props) {
   var t = props.tournament || {};
-  // Aceita nomes em snake_case (do Gemini/cron) ou camelCase
   var name = t.name || t.tournament_name || "";
   var cat = t.category || t.tournament_category || t.cat || "";
   var surface = SURFACE_PT[t.surface] || t.surface || "";
@@ -92,12 +163,15 @@ export default function NextTournamentCard(props) {
   var dRange = formatDateRange(startDate, endDate);
   var days = daysUntilStart(startDate);
   var inProgress = days !== null && days <= 0;
-  var firstMatch = t.first_match_date || null;
 
   var pointsToWinner = POINTS_BY_CAT[cat] || null;
   var flag = flagOf(country, city);
-  var surfBg = SURFACE_COLOR_BG[surface] || "rgba(255,255,255,0.08)";
-  var surfFg = SURFACE_COLOR_FG[surface] || "rgba(255,255,255,0.7)";
+  var landmark = landmarkOf(name, city);
+
+  // Cores da superfície
+  var bar = SURFACE_BAR[surface] || "rgba(255,255,255,0.15)";
+  var glow = SURFACE_GLOW[surface] || "rgba(255,255,255,0.05)";
+  var surfaceText = SURFACE_TEXT[surface] || "rgba(255,255,255,0.7)";
 
   var statBox = function(label, value, valueColor) {
     return (
@@ -113,10 +187,22 @@ export default function NextTournamentCard(props) {
   };
 
   return (
-    <div style={{ padding: "22px 20px", color: "white", fontFamily: SANS }}>
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
+    <div style={{ position: "relative", padding: "22px 20px 22px 23px", color: "white", fontFamily: SANS }}>
+      {/* Borda lateral colorida indicando a superfície (substitui o pill) */}
+      <div style={{ position: "absolute", top: 22, bottom: 22, left: 0, width: 3, borderRadius: "0 2px 2px 0", background: bar, pointerEvents: "none" }} />
+
+      {/* Header com glow + landmark da cidade */}
+      <div style={{ position: "relative", margin: "-22px -20px 18px -23px", padding: "22px 20px 18px 23px", overflow: "hidden", minHeight: 110 }}>
+        {/* Glow radial sutil cor-da-superfície */}
+        <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at top right, " + glow + " 0%, transparent 65%)", pointerEvents: "none" }} />
+
+        {/* Landmark emoji em silhueta cinza */}
+        <div style={{ position: "absolute", top: 8, right: 12, fontSize: 78, lineHeight: 1, filter: "grayscale(1) brightness(0.7) contrast(1.4)", opacity: 0.18, pointerEvents: "none", userSelect: "none" }}>
+          {landmark}
+        </div>
+
+        {/* Conteúdo */}
+        <div style={{ position: "relative", zIndex: 2, maxWidth: 220 }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#4FC3F7", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
             <span>{flag}</span>
             <span>Próximo torneio</span>
@@ -124,40 +210,25 @@ export default function NextTournamentCard(props) {
           <div style={{ fontFamily: SERIF, fontSize: 22, fontWeight: 800, lineHeight: 1.1, letterSpacing: "-0.015em" }}>
             {name}
           </div>
-          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 4, lineHeight: 1.5 }}>
             {cat && <span>{cat}</span>}
-            {cat && dRange && <span> · </span>}
+            {cat && surface && <span> · </span>}
+            {surface && <span style={{ color: surfaceText, fontWeight: 700 }}>{surface}</span>}
+            {(cat || surface) && dRange && <span> · </span>}
             {dRange && <span>{dRange}</span>}
           </div>
         </div>
-        {surface && (
-          <div style={{ background: surfBg, color: surfFg, padding: "4px 10px", borderRadius: 14, fontSize: 9, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase", flexShrink: 0, marginTop: 4 }}>
-            {surface}
-          </div>
-        )}
       </div>
 
-      {/* Countdown */}
+      {/* Countdown — só dias até o início (sem horário, ainda não sabemos) */}
       {days !== null && (
-        <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, borderLeft: "3px solid " + (inProgress ? "#FFCB05" : GREEN) }}>
-          <div>
-            <div style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 800, lineHeight: 1, color: "white" }}>
-              {inProgress ? "•" : days}
-            </div>
-            <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", letterSpacing: "0.05em", textTransform: "uppercase", marginTop: 2 }}>
-              {inProgress ? "torneio em andamento" : (days === 1 ? "dia até o início" : "dias até o início")}
-            </div>
+        <div style={{ background: "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px", marginBottom: 14, borderLeft: "3px solid " + (inProgress ? "#FFCB05" : GREEN) }}>
+          <div style={{ fontFamily: SERIF, fontSize: 24, fontWeight: 800, lineHeight: 1, color: "white" }}>
+            {inProgress ? "•" : days}
           </div>
-          {firstMatch && !inProgress && (
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>
-                {firstMatch}
-              </div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", letterSpacing: "0.05em", textTransform: "uppercase", marginTop: 2 }}>
-                primeira partida
-              </div>
-            </div>
-          )}
+          <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", letterSpacing: "0.05em", textTransform: "uppercase", marginTop: 2 }}>
+            {inProgress ? "torneio em andamento" : (days === 1 ? "dia até o início" : "dias até o início")}
+          </div>
         </div>
       )}
 
@@ -172,7 +243,7 @@ export default function NextTournamentCard(props) {
         {statBox("Cabeça de chave", seed ? "#" + seed : "Não")}
       </div>
 
-      {/* Histórico */}
+      {/* Histórico do João */}
       {lastYear && (
         <div style={{ background: "rgba(0,168,89,0.06)", border: "1px solid rgba(0,168,89,0.15)", borderRadius: 10, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
           <div style={{ width: 28, height: 28, borderRadius: 8, background: "rgba(0,168,89,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
