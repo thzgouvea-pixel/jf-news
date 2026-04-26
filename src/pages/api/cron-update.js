@@ -208,6 +208,22 @@ async function discoverMatches() {
 async function enrichNextMatch(nm) {
   if (!nm || !nm.id) return { nm: nm, h2h: null, pregameForm: null };
 
+  // SCHEDULED TIMESTAMP: memoria do horario original do dia da partida.
+  // Preserva entre execucoes do cron pro mesmo match (mesmo nm.id).
+  // Reseta automaticamente quando o match muda de id (proxima rodada/torneio)
+  // ou quando o scheduledTimestamp tem mais de 36h (jogo passou e nao foi limpo).
+  // Usado pelo card pra detectar atrasos (compara com startTimestamp atual).
+  try {
+    var exNmRawForSched = await kv.get("fn:nextMatch");
+    var exNmForSched = exNmRawForSched ? (typeof exNmRawForSched === "string" ? JSON.parse(exNmRawForSched) : exNmRawForSched) : null;
+    if (exNmForSched && exNmForSched.id === nm.id && exNmForSched.scheduledTimestamp) {
+      var schedAgeHours = (Date.now() - exNmForSched.scheduledTimestamp * 1000) / 3600000;
+      if (schedAgeHours < 36) {
+        nm.scheduledTimestamp = exNmForSched.scheduledTimestamp;
+      }
+    }
+  } catch (e) { log("scheduledTs read err: " + e.message); }
+
   // a) Event detail — ALWAYS refresh time/court/round from SofaScore
   var detail = await sofaFetch("/v1/match/details?match_id=" + nm.id);
   if (detail) {
@@ -283,6 +299,14 @@ async function enrichNextMatch(nm) {
 
   var h2h = null;
   var pregameForm = null;
+
+  // SCHEDULED TIMESTAMP fallback: se nao foi recuperado do KV (match novo),
+  // congela o startTimestamp atual como referencia do horario original do dia.
+  if (!nm.scheduledTimestamp && nm.startTimestamp) {
+    nm.scheduledTimestamp = nm.startTimestamp;
+    log("scheduledTs frozen: " + nm.scheduledTimestamp);
+  }
+
   return { nm: nm, h2h: h2h, pregameForm: pregameForm };
 }
 
@@ -1580,26 +1604,36 @@ export default async function handler(req, res) {
         }
       }
 
-      // --- TRIGGER 6: Mudanca de horario do jogo ---
-      // Mesmo nm.id mas startTimestamp mudou em mais de 30 min.
-      // Cobre atrasos por chuva, antecipacoes, mudancas de programacao.
+      // --- TRIGGER 6: Mudanca de horario PLANEJADA (antes da hora original) ---
+      // Dispara apenas se a NOVA hora ainda esta no futuro (>5min) — mudanca avisada antes do jogo.
+      // Cooldown: max 1 push por jogo a cada 2h (evita spam quando SofaScore ajusta varias vezes).
+      // Mutex: silencia se T8 (atraso real) ja disparou pra esse jogo.
+      // Quando a hora marcada ja passou, T6 fica silencioso e T8 assume.
       if (nm && nm.id && nm.startTimestamp && nm.opponent_name && nm.opponent_name !== "A definir") {
         var timeKey = String(nm.id);
         var lastTimeRecord = pushState.lastMatchTime || {};
         var prevTimestamp = lastTimeRecord[timeKey];
+        var t8AlreadySent = !!(pushState.delayedSent && pushState.delayedSent[timeKey]);
+
         if (prevTimestamp && prevTimestamp !== nm.startTimestamp) {
           var diffMin = Math.abs(nm.startTimestamp - prevTimestamp) / 60;
-          if (diffMin >= 30) {
+          var newTimeIsFuture = (nm.startTimestamp * 1000) > (Date.now() + 5 * 60 * 1000);
+          var lastT6At = (pushState.timeChangeSent && pushState.timeChangeSent[timeKey]) ? pushState.timeChangeSent[timeKey] : 0;
+          var hoursSinceT6 = (Date.now() - lastT6At) / 3600000;
+
+          if (diffMin >= 30 && newTimeIsFuture && hoursSinceT6 >= 2 && !t8AlreadySent) {
             var direction6 = nm.startTimestamp > prevTimestamp ? "atrasou" : "antecipado";
             var newTimeBR = new Date(nm.startTimestamp * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
             var titleT6 = "\u23f1\ufe0f Horário do jogo mudou";
             var bodyT6 = "Jogo do João vs " + nm.opponent_name + " " + direction6 + " — agora " + newTimeBR + " (BRT)";
-            // stateKey gerencia o objeto inteiro pra evitar spam de mudancas
             var newTimeRecord = Object.assign({}, lastTimeRecord);
             newTimeRecord[timeKey] = nm.startTimestamp;
+            // Marca timeChangeSent direto em pushState pro cooldown de 2h
+            pushState.timeChangeSent = Object.assign({}, pushState.timeChangeSent || {});
+            pushState.timeChangeSent[timeKey] = Date.now();
             pushesToSend.push({ title: titleT6, body: bodyT6, url: "https://fonsecanews.com.br", tag: "time-change", stateKey: "lastMatchTime", stateValue: newTimeRecord });
           } else {
-            // Diferenca pequena (< 30 min) — atualiza silenciosamente
+            // Atualiza prevTimestamp silenciosamente (sem disparar) — mantem a sequencia em dia
             lastTimeRecord[timeKey] = nm.startTimestamp;
             pushState.lastMatchTime = lastTimeRecord;
           }
@@ -1607,6 +1641,27 @@ export default async function handler(req, res) {
           // Primeira vez vendo esse match — registra silenciosamente
           lastTimeRecord[timeKey] = nm.startTimestamp;
           pushState.lastMatchTime = lastTimeRecord;
+        }
+      }
+
+      // --- TRIGGER 8: Atraso REAL (hora marcada passou e jogo nao comecou) ---
+      // Dispara 1x apenas: hora atual passou +10min da marcada E SofaScore confirma "notstarted".
+      // Mensagem deixa claro que nao tem hora exata (depende do jogo anterior).
+      // Apos disparar, marca delayedSent[matchId] que silencia T6 permanentemente pra esse jogo.
+      // Janela max 240min (4h) — evita disparar pra jogos absurdamente atrasados.
+      if (nm && nm.id && nm.startTimestamp && nm.opponent_name && nm.opponent_name !== "A definir") {
+        var t8Key = String(nm.id);
+        var t8Already = !!(pushState.delayedSent && pushState.delayedSent[t8Key]);
+        var minutesSinceStart8 = (Date.now() - nm.startTimestamp * 1000) / 60000;
+        var liveStatusLower8 = (nm.liveStatus || "").toLowerCase();
+        var isStillNotStarted = liveStatusLower8 === "notstarted" || liveStatusLower8 === "not_started";
+
+        if (minutesSinceStart8 >= 10 && minutesSinceStart8 < 240 && isStillNotStarted && !t8Already) {
+          var titleT8 = "\u23f0 Jogo atrasado";
+          var bodyT8 = "João vs " + nm.opponent_name + " — sem hora exata, depende do término da partida anterior";
+          var newDelayedSent = Object.assign({}, pushState.delayedSent || {});
+          newDelayedSent[t8Key] = true;
+          pushesToSend.push({ title: titleT8, body: bodyT8, url: "https://fonsecanews.com.br", tag: "delayed", stateKey: "delayedSent", stateValue: newDelayedSent });
         }
       }
 
@@ -1624,9 +1679,9 @@ export default async function handler(req, res) {
 
       // SALVAGUARDA GLOBAL: maximo 1 push por execucao do cron.
       // Evita spam em caso multiplos triggers simultaneos.
-      // Prioridade: cancel > live > result > time-change > reminder > next-match > ranking
+      // Prioridade: cancel > live > delayed > result > time-change > reminder > next-match > ranking
       if (pushesToSend.length > 1) {
-        var priorityOrder = { "cancel": 0, "live": 1, "result": 2, "time-change": 3, "reminder": 4, "next-match": 5, "ranking": 6 };
+        var priorityOrder = { "cancel": 0, "live": 1, "delayed": 2, "result": 3, "time-change": 4, "reminder": 5, "next-match": 6, "ranking": 7 };
         pushesToSend.sort(function(a, b) {
           return (priorityOrder[a.tag] || 99) - (priorityOrder[b.tag] || 99);
         });
