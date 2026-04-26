@@ -1327,10 +1327,52 @@ export default async function handler(req, res) {
           }
         }
 
+        // ===== ENRICHMENT: defending_points, seed, joao_last_year =====
+        // 1 chamada Gemini por torneio, cache 3 dias. Resultados podem ser null.
+        var extrasCacheKey = "fn:gemini:tournExtras:" + nextT.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+        var tournExtras = null;
+        try {
+          var cachedExtras = await kv.get(extrasCacheKey);
+          if (cachedExtras) {
+            tournExtras = typeof cachedExtras === "string" ? JSON.parse(cachedExtras) : cachedExtras;
+            log("tournament extras (cached): " + nextT.name);
+          }
+        } catch (e) { }
+
+        if (!tournExtras) {
+          var startYear = parseInt((nextT.start || "").substring(0, 4)) || new Date().getUTCFullYear();
+          var prevYear = startYear - 1;
+          var extrasPrompt = "Sobre o tenista brasileiro Joao Fonseca no torneio " + nextT.name + " (" + nextT.city + ", " + nextT.country + ", " + nextT.start + "). " +
+            "Responda APENAS um JSON valido (sem markdown, sem explicacoes), com tres campos: " +
+            "{\"defending_points\": <numero inteiro de pontos ATP que ele defende neste torneio em " + startYear + ", baseado no resultado dele neste mesmo torneio em " + prevYear + ". Use 0 se ele nao jogou em " + prevYear + ", ou null se nao souber>, " +
+            "\"seed\": <numero inteiro da cabeca de chave dele neste torneio se ja foi divulgada, ou null se ainda nao foi sorteado ou se ele nao for cabeca de chave>, " +
+            "\"joao_last_year\": \"<frase curta em portugues do Brasil descrevendo o desempenho dele neste mesmo torneio em " + prevYear + ", maximo 60 caracteres. Exemplos: 'Em " + prevYear + ": caiu na R64 vs Tabilo' ou 'Em " + prevYear + ": chegou as oitavas' ou 'Estreia oficial em " + nextT.city + "'. Use null se nao souber.>\"}. " +
+            "Apenas JSON, nada mais.";
+          var extrasTxt = await geminiSearch(extrasPrompt);
+          if (extrasTxt) {
+            var parsed = parseGeminiJSON(extrasTxt);
+            if (parsed) {
+              tournExtras = {
+                defending_points: typeof parsed.defending_points === "number" ? parsed.defending_points : null,
+                seed: typeof parsed.seed === "number" && parsed.seed > 0 ? parsed.seed : null,
+                joao_last_year: typeof parsed.joao_last_year === "string" && parsed.joao_last_year.length > 2 && parsed.joao_last_year.length < 120 ? parsed.joao_last_year : null,
+              };
+              try { await kv.set(extrasCacheKey, JSON.stringify(tournExtras), { ex: 259200 }); } catch (e) { }
+              log("tournament extras (Gemini): " + nextT.name + " " + JSON.stringify(tournExtras));
+            } else {
+              log("tournament extras parse failed: " + nextT.name);
+            }
+          }
+        }
+        var extrasObj = tournExtras || {};
+
         w.push(kv.set("fn:nextTournament", JSON.stringify({
           tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface,
           city: nextT.city, country: nextT.country, start_date: nextT.start, end_date: nextT.end,
           fonsecaConfirmed: fonsecaConfirmed,
+          defending_points: extrasObj.defending_points != null ? extrasObj.defending_points : null,
+          seed: extrasObj.seed != null ? extrasObj.seed : null,
+          joao_last_year: extrasObj.joao_last_year || null,
           source: "calendar", updatedAt: new Date().toISOString(),
         }), { ex: T2 }));
         log("nextTournament: " + nextT.name + " (confirmed=" + fonsecaConfirmed + ")");
