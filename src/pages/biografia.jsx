@@ -79,6 +79,17 @@ export default function Biografia() {
   var seasonW = season.wins || 0;
   var seasonL = season.losses || 0;
 
+  // Career narrative dinamico (Gemini, atualizado 1x/dia) — substitui o texto hardcoded de 2026
+  var careerNarrative = (data && data.careerNarrative && data.careerNarrative.text) || null;
+
+  // Constroi a TIMELINE final com 2026 dinamico se disponivel
+  var TIMELINE_RENDER = TIMELINE.map(function(t) {
+    if (t.year === "2026" && careerNarrative) {
+      return Object.assign({}, t, { text: careerNarrative });
+    }
+    return t;
+  });
+
   var STATS_DYNAMIC = [
     { label: "Ranking ATP", value: "#" + ranking, detail: "Best: #" + bestRanking },
     { label: "Carreira", value: wins + "V " + losses + "D", detail: Math.round(wins/(wins+losses)*100) + "% aprov." },
@@ -169,8 +180,8 @@ export default function Biografia() {
           <h2 style={{ margin: "0 0 16px", fontSize: 20, fontWeight: 800, color: TEXT, fontFamily: SERIF }}>Trajetória</h2>
           <div style={{ position: "relative", paddingLeft: 28 }}>
             <div style={{ position: "absolute", left: 8, top: 6, bottom: 6, width: 2, background: "linear-gradient(" + GREEN + ", " + YELLOW + ")", borderRadius: 2 }} />
-            {TIMELINE.map(function(t, i) {
-              var isLast = i === TIMELINE.length - 1;
+            {TIMELINE_RENDER.map(function(t, i) {
+              var isLast = i === TIMELINE_RENDER.length - 1;
               return (
                 <div key={i} style={{ position: "relative", marginBottom: isLast ? 0 : 20 }}>
                   <div style={{ position: "absolute", left: -23, top: 5, width: 12, height: 12, borderRadius: "50%", background: isLast ? GREEN : "#fff", border: "2px solid " + GREEN, zIndex: 1 }} />
