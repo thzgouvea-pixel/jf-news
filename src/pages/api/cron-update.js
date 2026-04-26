@@ -233,6 +233,12 @@ async function enrichNextMatch(nm) {
       else nm.postponed = false;
       if (ev.status.isCancelled) { nm.cancelled = true; log("status: CANCELLED"); }
       else nm.cancelled = false;
+      // Status real do match: "notstarted", "inprogress", "finished", "postponed", "canceled" etc.
+      // Usado pelo trigger T4 (push de jogo ao vivo) pra evitar disparo falso quando o jogo atrasa.
+      var rawStatus = ((ev.status.type || ev.status.description || "") + "").toLowerCase();
+      nm.liveStatus = rawStatus;
+      if (ev.status.isInProgress === true) nm.liveStatus = "inprogress";
+      if (ev.status.isFinished === true) nm.liveStatus = "finished";
     }
     log("match details: court=" + (nm.court || "\u2014") + " round=" + (nm.round || "\u2014") + " ts=" + (nm.startTimestamp || "\u2014"));
   } else {
@@ -1538,14 +1544,17 @@ export default async function handler(req, res) {
       }
 
       // --- TRIGGER 4: Jogo ao vivo comecou ---
-      // Detecta match em andamento: nm existe e o startTimestamp ja passou (jogo comecou)
-      // SALVAGUARDA: janela de 60 min (nao 30). Cron roda a cada 30min, entao 60min garante
-      // que NAO perdemos o trigger se um cron falhar ou atrasar.
+      // Dispara APENAS quando o SofaScore confirma status "inprogress".
+      // Antes: disparava quando startTimestamp passava — gerava falsos positivos
+      // quando o jogo atrasava (chuva, jogo anterior longo, etc).
+      // Agora: usa nm.liveStatus (vindo de ev.status.type do match/details).
       if (nm && nm.opponent_name && nm.opponent_name !== "A definir" && nm.startTimestamp) {
-        var startMs = nm.startTimestamp * 1000;
-        var nowMs = Date.now();
-        var minutesSinceStart = (nowMs - startMs) / 60000;
-        if (minutesSinceStart >= 0 && minutesSinceStart <= 60) {
+        var liveStatusLower = (nm.liveStatus || "").toLowerCase();
+        var isActuallyLive = liveStatusLower === "inprogress" ||
+                             liveStatusLower === "in_progress" ||
+                             liveStatusLower === "live" ||
+                             liveStatusLower === "started";
+        if (isActuallyLive) {
           var liveKey = String(nm.id || "") + "|" + nm.opponent_name + "|" + nm.startTimestamp;
           if (pushState.lastLive !== liveKey) {
             var titleT4 = "\ud83d\udd34 AO VIVO agora";
