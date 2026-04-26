@@ -566,6 +566,8 @@ async function fetchCareerNarrative(season, ranking, recentForm) {
 }
 
 
+// ===== SEASON CALCULATION =====
+function calculateSeason(recentForm, storedSeason) {
   if (!recentForm || !Array.isArray(recentForm)) return storedSeason || null;
   var yearStart = new Date("2026-01-01T00:00:00Z").getTime();
   var wins2026 = 0, losses2026 = 0;
