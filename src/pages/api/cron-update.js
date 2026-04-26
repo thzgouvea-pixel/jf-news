@@ -1397,14 +1397,14 @@ export default async function handler(req, res) {
       // --- TRIGGER 2: Resultado do ultimo jogo (acabou de finalizar) ---
       // Considera "novo resultado" se lm tem result + score, e nao foi notificado ainda (identifica por id ou opponent+date)
       // SALVAGUARDAS:
-      //  a) Partida precisa ter terminado nas ultimas 6h (evita notificar jogos antigos quando baseline muda)
+      //  a) Partida precisa ter terminado nas ultimas 12h (evita notificar jogos antigos quando baseline muda)
       //  b) Se pushState.lastResult nunca foi setado (primeira execucao apos push voltar), so estabelece baseline — nao notifica
       if (lm && (lm.result === "V" || lm.result === "D") && lm.score) {
         var lmKey = String(lm.id || "") + "|" + lm.opponent_name + "|" + lm.score;
         var lmTs = lm.startTimestamp ? lm.startTimestamp * 1000 : (lm.date ? new Date(lm.date).getTime() : 0);
         var lmAgeMs = lmTs ? (Date.now() - lmTs) : Infinity;
-        var SIX_HOURS = 6 * 3600 * 1000;
-        var isRecentResult = lmAgeMs > 0 && lmAgeMs < SIX_HOURS;
+        var TWELVE_HOURS = 12 * 3600 * 1000;
+        var isRecentResult = lmAgeMs > 0 && lmAgeMs < TWELVE_HOURS;
         var hasBaseline = !!pushState.lastResult;
 
         if (pushState.lastResult !== lmKey) {
@@ -1484,11 +1484,69 @@ export default async function handler(req, res) {
         }
       }
 
+      // --- TRIGGER 5: Lembrete pre-jogo (1h antes) ---
+      // Dispara quando faltam entre 50 e 70 minutos pro inicio.
+      // Janela de 20 min cobre o cron de 30min com folga.
+      if (nm && nm.opponent_name && nm.opponent_name !== "A definir" && nm.startTimestamp) {
+        var startMs5 = nm.startTimestamp * 1000;
+        var minutesUntilStart = (startMs5 - Date.now()) / 60000;
+        if (minutesUntilStart >= 50 && minutesUntilStart <= 70) {
+          var reminderKey = String(nm.id || "") + "|" + nm.startTimestamp;
+          if (pushState.lastReminder !== reminderKey) {
+            var titleT5 = "\u23f0 Falta 1 hora pro jogo";
+            var bodyT5 = "João x " + nm.opponent_name + (nm.tournament_name ? " \u2014 " + nm.tournament_name : "");
+            pushesToSend.push({ title: titleT5, body: bodyT5, url: "https://fonsecanews.com.br", tag: "reminder", stateKey: "lastReminder", stateValue: reminderKey });
+          }
+        }
+      }
+
+      // --- TRIGGER 6: Mudanca de horario do jogo ---
+      // Mesmo nm.id mas startTimestamp mudou em mais de 30 min.
+      // Cobre atrasos por chuva, antecipacoes, mudancas de programacao.
+      if (nm && nm.id && nm.startTimestamp && nm.opponent_name && nm.opponent_name !== "A definir") {
+        var timeKey = String(nm.id);
+        var lastTimeRecord = pushState.lastMatchTime || {};
+        var prevTimestamp = lastTimeRecord[timeKey];
+        if (prevTimestamp && prevTimestamp !== nm.startTimestamp) {
+          var diffMin = Math.abs(nm.startTimestamp - prevTimestamp) / 60;
+          if (diffMin >= 30) {
+            var direction6 = nm.startTimestamp > prevTimestamp ? "atrasou" : "antecipado";
+            var newTimeBR = new Date(nm.startTimestamp * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+            var titleT6 = "\u23f1\ufe0f Horário do jogo mudou";
+            var bodyT6 = "Jogo do João vs " + nm.opponent_name + " " + direction6 + " — agora " + newTimeBR + " (BRT)";
+            // stateKey gerencia o objeto inteiro pra evitar spam de mudancas
+            var newTimeRecord = Object.assign({}, lastTimeRecord);
+            newTimeRecord[timeKey] = nm.startTimestamp;
+            pushesToSend.push({ title: titleT6, body: bodyT6, url: "https://fonsecanews.com.br", tag: "time-change", stateKey: "lastMatchTime", stateValue: newTimeRecord });
+          } else {
+            // Diferenca pequena (< 30 min) — atualiza silenciosamente
+            lastTimeRecord[timeKey] = nm.startTimestamp;
+            pushState.lastMatchTime = lastTimeRecord;
+          }
+        } else if (!prevTimestamp) {
+          // Primeira vez vendo esse match — registra silenciosamente
+          lastTimeRecord[timeKey] = nm.startTimestamp;
+          pushState.lastMatchTime = lastTimeRecord;
+        }
+      }
+
+      // --- TRIGGER 7: Cancelamento ou adiamento ---
+      // Dispara quando nm.cancelled ou nm.postponed e true.
+      if (nm && nm.opponent_name && nm.opponent_name !== "A definir" && (nm.cancelled === true || nm.postponed === true)) {
+        var statusT7 = nm.cancelled ? "cancelado" : "adiado";
+        var cancelKey = String(nm.id || "") + "|" + statusT7;
+        if (pushState.lastCancelStatus !== cancelKey) {
+          var titleT7 = nm.cancelled ? "\u274c Jogo cancelado" : "\u23f8\ufe0f Jogo adiado";
+          var bodyT7 = "João x " + nm.opponent_name + (nm.tournament_name ? " \u2014 " + nm.tournament_name : "") + " foi " + statusT7;
+          pushesToSend.push({ title: titleT7, body: bodyT7, url: "https://fonsecanews.com.br", tag: "cancel", stateKey: "lastCancelStatus", stateValue: cancelKey });
+        }
+      }
+
       // SALVAGUARDA GLOBAL: maximo 1 push por execucao do cron.
-      // Evita spam em caso multiplos triggers simultaneos (ex: jogo comecou + ranking mudou + resultado antigo).
-      // Prioridade: live > result > next-match > ranking (do mais urgente pro menos).
+      // Evita spam em caso multiplos triggers simultaneos.
+      // Prioridade: cancel > live > result > time-change > reminder > next-match > ranking
       if (pushesToSend.length > 1) {
-        var priorityOrder = { "live": 1, "result": 2, "next-match": 3, "ranking": 4 };
+        var priorityOrder = { "cancel": 0, "live": 1, "result": 2, "time-change": 3, "reminder": 4, "next-match": 5, "ranking": 6 };
         pushesToSend.sort(function(a, b) {
           return (priorityOrder[a.tag] || 99) - (priorityOrder[b.tag] || 99);
         });
