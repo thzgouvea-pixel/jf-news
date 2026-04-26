@@ -24,6 +24,7 @@ import WinProbBar from "../components/WinProbBar";
 import InstallBanner from "../components/InstallBanner";
 import Modal from "../components/Modal";
 import Skeleton from "../components/Skeleton";
+import NextTournamentCard from "../components/NextTournamentCard";
 
 var SAMPLE_PLAYER = { ranking: 40, rankingChange: "+4" };
 var SAMPLE_LAST_MATCH = { result: "V", score: "6-3 6-4", opponent: "T. Nakashima", opponent_name: "T. Nakashima", tournament: "Indian Wells", tournament_name: "Indian Wells", round: "R2" };
@@ -592,7 +593,7 @@ export default function JoaoFonsecaNews() {
         </section>
         <section style={{ padding: "12px 0 0" }}>
           <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
-            <NextDuelCard match={dm} player={dp} onOppClick={opponentProfile ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={opponentProfile} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} bracketUrl={bracketUrl} />
+            <NextTournamentCard tournament={nextTournament} onCalendarClick={function(){ setShowCalendar(true); }} />
           </div>
         </section>
         <NextStopCard nextMatch={dm} lastMatch={dl} atpCalendar={atpCalendar} nextTournament={nextTournament} />
