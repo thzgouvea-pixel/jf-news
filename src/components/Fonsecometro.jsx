@@ -7,6 +7,7 @@ function calcHype(recentForm) {
   var score = 50;
   last10.forEach(function(m, i) {
     var weight = last10.length - i;
+    if (i === 0) weight *= 1.5; // Última partida pesa 50% mais
     var rank = m.opponent_ranking || 80;
     var isWin = (m.result || "").toUpperCase() === "V";
     if (isWin) {
@@ -25,9 +26,9 @@ function calcHype(recentForm) {
   var mood;
   if (pct >= 80) mood = "Imparável";
   else if (pct >= 70) mood = "Em grande fase";
-  else if (pct >= 60) mood = "Moral em alta";
-  else if (pct >= 50) mood = "Confiante";
-  else if (pct >= 40) mood = "Estável";
+  else if (pct >= 60) mood = "Confiante";
+  else if (pct >= 50) mood = "Estável";
+  else if (pct >= 40) mood = "Pé no chão";
   else if (pct >= 30) mood = "Oscilando";
   else if (pct >= 20) mood = "Buscando ritmo";
   else mood = "Fase de adaptação";
