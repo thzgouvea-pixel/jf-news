@@ -9,6 +9,13 @@ function formatSets(s) {
   return clean.split(/\s+/).join(" | ");
 }
 
+// Retorna sobrenome lowercased pra match — ignora pontos finais e acentos basicos
+function lastNameKey(fullName) {
+  if (!fullName) return "";
+  var parts = String(fullName).trim().split(/\s+/);
+  return parts[parts.length - 1].toLowerCase().replace(/\.$/, "");
+}
+
 export default function PlayerBlock(props) {
   var lastMatch = props.lastMatch;
   var matchStats = props.matchStats;
@@ -114,9 +121,24 @@ export default function PlayerBlock(props) {
         var oppFlag = countryFlags[(lastMatch && lastMatch.opponent_country) || ""] || "";
         var oppImg = getSofaScoreImage(oppName, lastMatch && lastMatch.opponent_id) || getATPImage(oppName);
         var oppImgFallback = getESPNImage(oppName);
-        var oppProfileMatch = opponentProfile && opponentProfile.name && oppName.indexOf(opponentProfile.name.split(" ").pop()) !== -1;
-        var oppRanking = (lastMatch && lastMatch.opponent_ranking) || (oppProfileMatch ? opponentProfile.ranking : null);
+        // Match opponentProfile (Gemini) ao oppName via sobrenome
+        var oppProfileMatch = opponentProfile && opponentProfile.name && lastNameKey(opponentProfile.name) === lastNameKey(oppName);
+        // PRIORIZA opponentProfile.ranking (Gemini eh mais confiavel; SofaScore as vezes retorna ranking de outro jogador).
+        // Fallback pra lastMatch.opponent_ranking apenas se nao houver match de profile.
+        var oppRanking = (oppProfileMatch && opponentProfile.ranking) ? opponentProfile.ranking : ((lastMatch && lastMatch.opponent_ranking) || null);
         var formMatches = recentForm ? recentForm.slice(0, 5) : [];
+
+        // Resolve ranking pra cada item da Forma Recente: usa o do item, OU usa opponentProfile se sobrenome bate.
+        // Cobre o caso onde o item da forma nao tem ranking (cron nao conseguiu) mas o opponentProfile tem.
+        function rankingForFormItem(m) {
+          if (m && m.opponent_ranking) return m.opponent_ranking;
+          if (opponentProfile && opponentProfile.ranking && opponentProfile.name && m && m.opponent_name) {
+            if (lastNameKey(opponentProfile.name) === lastNameKey(m.opponent_name)) {
+              return opponentProfile.ranking;
+            }
+          }
+          return null;
+        }
 
         // ===== PARSE SCORE into sets =====
         var scoreStr = (lastMatch && lastMatch.score) || "";
@@ -296,12 +318,13 @@ var matchDate = (lastMatch && lastMatch.date) ? (function() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {formMatches.map(function(m, i) {
                       var w = m.result === "V";
+                      var rk = rankingForFormItem(m);
                       return (
                         <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", background: "rgba(255,255,255,0.03)", borderRadius: 10, border: "1px solid rgba(255,255,255,0.04)" }}>
                           <span style={{ fontSize: 10, fontWeight: 800, color: w ? GREEN : "#ef4444", fontFamily: SANS, width: 16, textAlign: "center" }}>{w ? "V" : "D"}</span>
                           <span style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.7)", fontFamily: SANS, flex: 1 }}>
                             {m.opponent_name}
-                            {m.opponent_ranking && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS, marginLeft: 4 }}>{"#" + m.opponent_ranking}</span>}
+                            {rk && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS, marginLeft: 4 }}>{"#" + rk}</span>}
                           </span>
                           <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{formatSets(m.score)}</span>
                         </div>
