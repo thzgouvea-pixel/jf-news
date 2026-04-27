@@ -1437,7 +1437,40 @@ export default async function handler(req, res) {
         }
       }
     }
+}
 
+    // ── RANKING HISTORY (snapshot semanal) ──
+    // Grava 1 ponto por semana (segunda UTC) em fn:rankingHistory pra montar grafico historico.
+    // Idempotente: nao duplica snapshot da mesma segunda. Mantem ultimos 78 pontos (~1.5 ano).
+    if (wiki && wiki.ranking) {
+      try {
+        var historyRaw = await kv.get("fn:rankingHistory");
+        var history = historyRaw ? (typeof historyRaw === "string" ? JSON.parse(historyRaw) : historyRaw) : [];
+        if (!Array.isArray(history)) history = [];
+        var nowD = new Date();
+        var dayOfWeek = nowD.getUTCDay();
+        var daysSinceMon = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        var thisMondayUTC = new Date(nowD);
+        thisMondayUTC.setUTCDate(thisMondayUTC.getUTCDate() - daysSinceMon);
+        thisMondayUTC.setUTCHours(0, 0, 0, 0);
+        var thisMondayStr = thisMondayUTC.toISOString().split("T")[0];
+        var lastEntry = history.length > 0 ? history[history.length - 1] : null;
+        if (!lastEntry || lastEntry.date !== thisMondayStr) {
+          var fonsecaPts = null;
+          if (exRankingsList && exRankingsList.rankings) {
+            var fEntry = exRankingsList.rankings.find(function(p) {
+              return p.name && p.name.toLowerCase().indexOf("fonseca") !== -1;
+            });
+            if (fEntry) fonsecaPts = fEntry.points;
+          }
+          history.push({ date: thisMondayStr, rank: wiki.ranking, points: fonsecaPts });
+          if (history.length > 78) history = history.slice(-78);
+          w.push(kv.set("fn:rankingHistory", JSON.stringify(history)));
+          log("rankingHistory: snapshot " + thisMondayStr + " #" + wiki.ranking + " (" + history.length + " total)");
+        }
+      } catch (e) { log("rankingHistory error: " + e.message); }
+    }
+  
     // ── SEASON ──
     try {
       var exSeason = await kv.get("fn:season");
