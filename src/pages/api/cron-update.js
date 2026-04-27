@@ -1436,7 +1436,6 @@ export default async function handler(req, res) {
           }), { ex: T7 }));
         }
       }
-    }
 
     // ── RANKING HISTORY (snapshot semanal) ──
     // Grava 1 ponto por semana (segunda UTC) em fn:rankingHistory pra montar grafico historico.
