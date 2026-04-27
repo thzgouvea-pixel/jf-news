@@ -118,7 +118,7 @@ export default function ATPCalendar(props) {
         var cc = catColors2[ev.cat] || DIM;
         var isNext = ev.next;
         return (
-          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 4px", borderBottom: i < events.length - 1 ? "1px solid #f0f0f0" : "none", background: ev.status === "live" ? "#ef444408" : (ev.status === "upcoming" ? "#f9731608" : "transparent"), borderRadius: ev.status === "live" || ev.status === "upcoming" ? 8 : 0
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 4px", borderBottom: i < events.length - 1 ? "1px solid #f0f0f0" : "none", background: ev.status === "live" ? "#ef444408" : (ev.status === "upcoming" ? "#f9731608" : "transparent"), borderRadius: ev.status === "live" || ev.status === "upcoming" ? 8 : 0}}>
             <div style={{ width: 36, textAlign: "center", flexShrink: 0 }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: ev.done ? DIM : cc, fontFamily: SANS }}>{ev.month}</span>
             </div>
