@@ -1,6 +1,14 @@
 import { GREEN, RED, BG_ALT, TEXT, SUB, DIM, BORDER, SANS, SERIF, CARD_RADIUS, CARD_SHADOW, surfaceColorMap, countryFlags, FONSECA_IMG, FONSECA_IMG_FALLBACK } from '../lib/constants';
 import { getATPImage, getESPNImage, getSofaScoreImage } from '../lib/utils';
 
+// Formata score "6-3 6-4 1-6" em "6-3 | 6-4 | 1-6". Preserva 1-set ou strings sem espaco (W.O, ret. etc).
+function formatSets(s) {
+  if (!s) return "";
+  var clean = String(s).trim();
+  if (clean.indexOf(" ") === -1) return clean;
+  return clean.split(/\s+/).join(" | ");
+}
+
 export default function PlayerBlock(props) {
   var lastMatch = props.lastMatch;
   var matchStats = props.matchStats;
@@ -295,7 +303,7 @@ var matchDate = (lastMatch && lastMatch.date) ? (function() {
                             {m.opponent_name}
                             {m.opponent_ranking && <span style={{ fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", fontFamily: SANS, marginLeft: 4 }}>{"#" + m.opponent_ranking}</span>}
                           </span>
-                          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{m.score}</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.5)", fontFamily: SANS }}>{formatSets(m.score)}</span>
                         </div>
                       );
                     })}
