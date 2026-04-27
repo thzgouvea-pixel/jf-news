@@ -57,9 +57,9 @@ export default function Biografia() {
     ["Naturalidade", "Ipanema, Rio de Janeiro 🇧🇷"],
     ["Altura", "1,88m"],
     ["Mão", "Destro, backhand com duas mãos"],
-    ["Técnico", "Franco Davin / Guilherme Teixeira"],
+    ["Técnico", "Guilherme Teixeira (Franco Davin, auxiliar)"],
     ["Profissional desde", "2024"],
-    ["Patrocinadores", "Nike, Rolex"],
+    ["Patrocinadores", "ON, Yonex, Rolex, XP"],
     ["Ídolos", "Roger Federer, Gustavo Kuerten"],
   ];
 
