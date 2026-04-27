@@ -46,7 +46,9 @@ export default function ATPCalendar(props) {
   var calSource = dynamicCalendar || CALENDAR;
   var events = calSource.map(function(ev) {
     var tournStart = new Date(ev.start);
-    var isPast = now > new Date(tournStart.getTime() + 14 * 86400000);
+    var tournEnd = ev.end ? new Date(ev.end) : new Date(tournStart.getTime() + 14 * 86400000);
+    var isPast = now > tournEnd;
+    var isLive = now >= tournStart && now <= tournEnd;
 
     var matches = recentForm.filter(function(m) { return matchesTournament(m, ev); });
 
@@ -102,7 +104,12 @@ export default function ATPCalendar(props) {
       if (firstUndone && firstUndone.name === ev.name) isNext = true;
     }
 
-    return { month: ev.month, name: ev.name, cat: ev.cat, surface: ev.surface, city: ev.city, date: ev.date, done: done, result: result, next: isNext };
+    var status = "future";
+    if (done && result !== "—") status = "completed";
+    else if (done) status = "missed";
+    else if (isNext && isLive) status = "live";
+    else if (isNext) status = "upcoming";
+    return { month: ev.month, name: ev.name, cat: ev.cat, surface: ev.surface, city: ev.city, date: ev.date, done: done, result: result, next: isNext, status: status };
   });
 
   return (
@@ -111,14 +118,15 @@ export default function ATPCalendar(props) {
         var cc = catColors2[ev.cat] || DIM;
         var isNext = ev.next;
         return (
-          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 4px", borderBottom: i < events.length - 1 ? "1px solid #f0f0f0" : "none", background: isNext ? GREEN + "06" : "transparent", borderRadius: isNext ? 8 : 0 }}>
+          <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "10px 4px", borderBottom: i < events.length - 1 ? "1px solid #f0f0f0" : "none", background: ev.status === "live" ? "#ef444408" : (ev.status === "upcoming" ? "#f9731608" : "transparent"), borderRadius: ev.status === "live" || ev.status === "upcoming" ? 8 : 0
             <div style={{ width: 36, textAlign: "center", flexShrink: 0 }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: ev.done ? DIM : cc, fontFamily: SANS }}>{ev.month}</span>
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: ev.done ? DIM : TEXT, fontFamily: SERIF }}>{ev.name}</span>
-                {isNext && <span style={{ fontSize: 9, fontWeight: 600, color: GREEN, fontFamily: SANS, background: GREEN + "0A", padding: "1px 6px", borderRadius: 999 }}>Atual</span>}
+                {ev.status === "live" && <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", fontFamily: SANS, background: "#ef4444", padding: "2px 7px", borderRadius: 999, letterSpacing: "0.05em" }}>● AGORA</span>}
+                {ev.status === "upcoming" && <span style={{ fontSize: 9, fontWeight: 700, color: "#f97316", fontFamily: SANS, background: "#f9731612", padding: "2px 7px", borderRadius: 999, letterSpacing: "0.05em" }}>PRÓXIMO</span>}
               </div>
               <span style={{ fontSize: 10, color: DIM, fontFamily: SANS }}>{ev.cat} · {ev.city} · {ev.date}</span>
             </div>
