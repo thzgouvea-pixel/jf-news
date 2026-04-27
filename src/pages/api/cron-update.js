@@ -1176,7 +1176,10 @@ export default async function handler(req, res) {
           return newData;
         }
         var REFRESHABLE = ["round", "court", "tournament_name", "tournament_category", "surface", "broadcast", "date", "startTimestamp"];
+        // OVERWRITE_NULLABLE: campos que SEMPRE refletem o novo payload (mesmo null). Evita perpetuacao de stale.
+        var OVERWRITE_NULLABLE = ["opponent_ranking"];
         for (var f in old) {
+          if (OVERWRITE_NULLABLE.indexOf(f) !== -1) continue;
           var isRefreshable = REFRESHABLE.indexOf(f) !== -1;
           if (isRefreshable) {
             if (newData[f] === null || newData[f] === undefined || newData[f] === "" || newData[f] === 0) {
@@ -1201,8 +1204,6 @@ export default async function handler(req, res) {
 
     var w = [];
 
-    if (lm) lm = protectData(lm, await kv.get("fn:lastMatch"));
-    if (nm) nm = protectData(nm, await kv.get("fn:nextMatch"));
     if (!wp) { try { var exWp3 = await kv.get("fn:winProb"); if (exWp3) wp = typeof exWp3 === "string" ? JSON.parse(exWp3) : exWp3; } catch(e){} }
 
     if (lm) {
