@@ -1,9 +1,21 @@
 // src/pages/biografia.jsx
 // Aesthetic biography page for João Fonseca
-// v2: Fixed height (1.88m), coach (Franco Davin + Teixeira), Challengers (3), Nadal photo story
+// v3: Idade dinâmica calculada da data de nascimento (21/08/2006)
 import Head from "next/head";
 import { useState, useEffect } from "react";
 import { GREEN, YELLOW, TEXT, SUB, DIM, BORDER, SERIF, SANS } from "../lib/constants";
+
+// Calcula idade atual a partir da data de nascimento. Atualiza sozinho a cada aniversário.
+function calcAge() {
+  var birthDate = new Date(2006, 7, 21); // 21 ago 2006 (mes 7 = agosto, 0-indexed)
+  var today = new Date();
+  var age = today.getFullYear() - birthDate.getFullYear();
+  var m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
 
 var TIMELINE = [
   { year: "2006", age: "", title: "O começo", text: "Nasce em 21 de agosto no Rio de Janeiro, em Ipanema. Filho de Roberta, ex-jogadora de vôlei, e Christiano, CEO da IP Capital Partners." },
@@ -25,29 +37,6 @@ var STATS = [
   { label: "Nº1 Brasil", value: "✓", detail: "Atual" },
 ];
 
-var FICHA = [
-  ["Nome completo", "João Franca Guimarães Fonseca"],
-  ["Nascimento", "21 de agosto de 2006 (19 anos)"],
-  ["Naturalidade", "Ipanema, Rio de Janeiro 🇧🇷"],
-  ["Altura", "1,88m"],
-  ["Mão", "Destro, backhand com duas mãos"],
-  ["Técnico", "Franco Davin / Guilherme Teixeira"],
-  ["Profissional desde", "2024"],
-  ["Patrocinadores", "Nike, Rolex"],
-  ["Ídolos", "Roger Federer, Gustavo Kuerten"],
-];
-
-var CURIOSIDADES = [
-  "Aos 2 anos, o professor de yoga do pai já notava coordenação fora do normal",
-  "Cresceu a 10 minutos do Rio Open — assistia o torneio todo ano desde criança",
-  "Em 2014, aos 8 anos, assistiu Nadal da primeira fileira no Rio Open e tirou foto com Bellucci — ali nasceu o sonho",
-  "Aos 19, já tem mais títulos ATP que Federer e Djokovic tinham na mesma idade",
-  "O New York Times o chamou de 'futura estrela' e comparou seu forehand a uma 'bola de demolição'",
-  "Foi o primeiro sul-americano campeão do NextGen ATP Finals",
-  "Torneios viram 'carnaval brasileiro' quando ele joga, segundo a imprensa internacional",
-  "Testimonee da Rolex desde 2024 — a mesma marca que patrocina Federer",
-];
-
 var CITACOES = [
   { text: "Estou muito feliz com o momento em que estou agora, mas claro que quero mais.", author: "João Fonseca", context: "ao New York Times" },
   { text: "Sou confiante e acho que posso fazer grandes coisas, mas também preciso manter os pés no chão.", author: "João Fonseca", context: "ao New York Times" },
@@ -57,6 +46,34 @@ export default function Biografia() {
   var _openSection = useState(null);
   var openSection = _openSection[0];
   var setOpenSection = _openSection[1];
+
+  // Idade dinâmica (atualiza no aniversário automaticamente)
+  var age = calcAge();
+
+  // Ficha técnica com idade dinâmica
+  var FICHA = [
+    ["Nome completo", "João Franca Guimarães Fonseca"],
+    ["Nascimento", "21 de agosto de 2006 (" + age + " anos)"],
+    ["Naturalidade", "Ipanema, Rio de Janeiro 🇧🇷"],
+    ["Altura", "1,88m"],
+    ["Mão", "Destro, backhand com duas mãos"],
+    ["Técnico", "Franco Davin / Guilherme Teixeira"],
+    ["Profissional desde", "2024"],
+    ["Patrocinadores", "Nike, Rolex"],
+    ["Ídolos", "Roger Federer, Gustavo Kuerten"],
+  ];
+
+  // Curiosidades — substituida a comparativa-com-idade por uma timeless (factual)
+  var CURIOSIDADES = [
+    "Aos 2 anos, o professor de yoga do pai já notava coordenação fora do normal",
+    "Cresceu a 10 minutos do Rio Open — assistia o torneio todo ano desde criança",
+    "Em 2014, aos 8 anos, assistiu Nadal da primeira fileira no Rio Open e tirou foto com Bellucci — ali nasceu o sonho",
+    "Mais jovem brasileiro a vencer um ATP 250 — superou recorde de Perez-Roldan, de 1987",
+    "O New York Times o chamou de 'futura estrela' e comparou seu forehand a uma 'bola de demolição'",
+    "Foi o primeiro sul-americano campeão do NextGen ATP Finals",
+    "Torneios viram 'carnaval brasileiro' quando ele joga, segundo a imprensa internacional",
+    "Testimonee da Rolex desde 2024 — a mesma marca que patrocina Federer",
+  ];
 
   // Dynamic stats from API
   var _data = useState(null); var data = _data[0]; var setData = _data[1];
@@ -139,7 +156,7 @@ export default function Biografia() {
           <h1 style={{ margin: "0 0 4px", fontSize: 28, fontWeight: 900, color: TEXT, fontFamily: SERIF, letterSpacing: "-0.03em" }}>João Fonseca</h1>
           <p style={{ margin: "0 0 12px", fontSize: 14, color: SUB, fontFamily: SANS }}>Tenista profissional 🇧🇷</p>
           <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
-            {[["🎂", "19 anos"], ["📍", "Rio de Janeiro"], ["📏", "1,88m"], ["🎾", "Destro"], ["🏆", "#" + ranking + " ATP"]].map(function(p, i) {
+            {[["🎂", age + " anos"], ["📍", "Rio de Janeiro"], ["📏", "1,88m"], ["🎾", "Destro"], ["🏆", "#" + ranking + " ATP"]].map(function(p, i) {
               return <span key={i} style={{ fontSize: 11, color: SUB, fontFamily: SANS, background: "#f5f5f5", padding: "4px 10px", borderRadius: 8 }}>{p[0]} {p[1]}</span>;
             })}
           </div>
@@ -148,7 +165,7 @@ export default function Biografia() {
         {/* INTRO */}
         <section style={{ padding: "0 0 24px" }}>
           <p style={{ margin: 0, fontSize: 15, color: TEXT, fontFamily: SERIF, lineHeight: 1.8 }}>
-            De um menino que jogava mini-tênis no quarto com o pai em Ipanema ao jogador que fez Sinner suar em dois tiebreaks diante de milhares de pessoas em Indian Wells. João Fonseca não é uma promessa — é uma realidade do tênis mundial aos 19 anos.
+            De um menino que jogava mini-tênis no quarto com o pai em Ipanema ao jogador que fez Sinner suar em dois tiebreaks diante de milhares de pessoas em Indian Wells. João Fonseca não é uma promessa — é uma realidade do tênis mundial aos {age} anos.
           </p>
         </section>
 
