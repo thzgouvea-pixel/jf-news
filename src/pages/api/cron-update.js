@@ -58,16 +58,17 @@ function parseGeminiJSON(txt) {
   return null;
 }
 
-// ===== SCRAPE FALLBACK: pega matchId da pagina publica do Fonseca no sofascore.com =====
-// Necessario pq o proxy sofascore6 esconde jogos com adversario placeholder (R64P14, etc)
-// Estrategia em 3 niveis (mais robusto pra mais frageis):
-//   1. API publica do SofaScore (api.sofascore.com) — retorna JSON com eventos futuros incluindo placeholders
-//   2. Scrape do HTML em ingles (Accept-Language en-US)
+// ===== SCRAPE FALLBACK: pega proximo match do Fonseca quando o proxy sofascore6 esconde placeholders (R64P19) =====
+// Retorna { id, event? } onde event eh o objeto completo (vindo da API publica) — economiza fetch redundante.
+// Estrategia em 3 niveis (do mais robusto pro mais fragil):
+//   1. API publica oficial sofascore.com — retorna evento JSON completo com todos os campos
+//   2. Scrape do HTML em ingles — multi-idioma (PT-BR/EN) — so ID, precisa fetch posterior
 //   3. Fallback agressivo: extrai PRIMEIRO #id:N do HTML
 async function scrapeNextMatchIdFromSofa() {
   // ===== NIVEL 1: API publica direta =====
-  // Endpoint oficial do site sofascore.com (NAO o proxy sofascore6 do RapidAPI).
-  // Retorna eventos futuros do jogador incluindo matches com adversario placeholder (R64P19 etc).
+  // Endpoint oficial sofascore.com (NAO o proxy sofascore6). Retorna placeholders R64P19 etc.
+  // Vantagem: ja vem com homeTeam/awayTeam/startTimestamp/status/tournament/roundInfo — nao precisa
+  // de chamada adicional ao match/details (que esta lento no proxy).
   try {
     var ctrlApi = new AbortController();
     var toApi = setTimeout(function() { ctrlApi.abort(); }, 8000);
@@ -83,12 +84,11 @@ async function scrapeNextMatchIdFromSofa() {
       var dataApi = await rApi.json();
       var eventsApi = dataApi && dataApi.events ? dataApi.events : [];
       log("scrape API: " + eventsApi.length + " upcoming events");
-      // Pega o primeiro singles do Fonseca
       for (var iApi = 0; iApi < eventsApi.length; iApi++) {
         var evApi = eventsApi[iApi];
         if (evApi && evApi.id && isFonseca(evApi) && isSingles(evApi)) {
-          log("scrape API: encontrou match id=" + evApi.id);
-          return evApi.id;
+          log("scrape API: encontrou match id=" + evApi.id + " (event completo)");
+          return { id: evApi.id, event: evApi };
         }
       }
       log("scrape API: nenhum singles do Fonseca nos eventos");
@@ -99,6 +99,51 @@ async function scrapeNextMatchIdFromSofa() {
     log("scrape API " + (eApi.name === "AbortError" ? "timeout 8s" : "error: " + eApi.message));
   }
 
+  // ===== NIVEL 2 + 3: Scrape do HTML (so ID) =====
+  var ctrl = new AbortController();
+  var to = setTimeout(function() { ctrl.abort(); }, 12000);
+  try {
+    var r = await fetch("https://www.sofascore.com/tennis/player/fonseca-joao/403869", {
+      signal: ctrl.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Accept": "text/html",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+    });
+    clearTimeout(to);
+    if (!r.ok) { log("scrape: status " + r.status); return null; }
+    var html = await r.text();
+
+    var anchors = ["next match", "Next match", "Next Match", "proxima partida", "próxima partida", "Próxima partida", "proximo jogo", "próximo jogo", "Próximo jogo", "Upcoming"];
+    var idx = -1;
+    var anchorUsed = "";
+    for (var ai = 0; ai < anchors.length; ai++) {
+      var foundIdx = html.indexOf(anchors[ai]);
+      if (foundIdx >= 0) { idx = foundIdx; anchorUsed = anchors[ai]; break; }
+    }
+    if (idx >= 0) {
+      var after = html.substring(idx);
+      var m = after.match(/#id:(\d+)/);
+      if (m && m[1]) { log("scrape HTML: ancora '" + anchorUsed + "' -> id " + m[1]); return { id: parseInt(m[1], 10) }; }
+      log("scrape HTML: ancora encontrada mas #id nao");
+    } else {
+      log("scrape HTML: nenhuma ancora multi-idioma encontrada");
+    }
+
+    var allIds = html.match(/#id:(\d+)/g);
+    if (allIds && allIds.length > 0) {
+      var firstId = allIds[0].replace("#id:", "");
+      log("scrape HTML fallback: primeiro #id = " + firstId);
+      return { id: parseInt(firstId, 10) };
+    }
+    log("scrape HTML: nenhum #id encontrado em " + html.length + " chars");
+  } catch (e) {
+    clearTimeout(to);
+    log("scrape HTML " + (e.name === "AbortError" ? "timeout 12s" : "error: " + e.message));
+  }
+  return null;
+}
   // ===== NIVEL 2 + 3: Scrape do HTML =====
   var ctrl = new AbortController();
   var to = setTimeout(function() { ctrl.abort(); }, 12000);
@@ -238,24 +283,29 @@ async function discoverMatches() {
   // (matchList do proxy sofascore6 esconde jogos com adversario placeholder tipo R64P14)
   if (results.upcoming.length === 0) {
     log("discover: 0 upcoming, tentando scrape fallback...");
-    var scrapedId = await scrapeNextMatchIdFromSofa();
-    if (scrapedId && !seen.has(scrapedId)) {
-      log("scrape: matchId " + scrapedId + " encontrado");
-      // Timeout estendido (15s) porque esse e o caminho critico pro card da proxima partida aparecer.
-      // match/details as vezes tem picos lentos no proxy; 8s era agressivo demais.
-      var scrapedMatch = await sofaFetch("/v1/match/details?match_id=" + scrapedId, { timeoutMs: 15000 });
-      if (scrapedMatch) {
-        var matchObj = scrapedMatch.event || scrapedMatch;
+    var scraped = await scrapeNextMatchIdFromSofa();
+    if (scraped && scraped.id && !seen.has(scraped.id)) {
+      var matchObj = null;
+      if (scraped.event) {
+        // NIVEL 1 (API publica) — evento ja vem completo, sem precisar refetch
+        matchObj = scraped.event;
+        log("scrape: usando event direto da API publica (id " + scraped.id + ")");
+      } else {
+        // NIVEL 2/3 (HTML scrape) — precisa pedir detalhes do proxy
+        log("scrape: matchId " + scraped.id + " do HTML, buscando detalhes no proxy");
+        var scrapedMatch = await sofaFetch("/v1/match/details?match_id=" + scraped.id, { timeoutMs: 15000 });
+        if (scrapedMatch) matchObj = scrapedMatch.event || scrapedMatch;
+        else log("scrape: match/details retornou vazio pro id " + scraped.id);
+      }
+      if (matchObj) {
         matchObj = normalizeScrapedMatch(matchObj);
         if (matchObj.id && isFonseca(matchObj) && isSingles(matchObj) && isUpcoming(matchObj)) {
           seen.add(matchObj.id);
           results.upcoming.push(matchObj);
-          log("scrape: upcoming adicionado via scrape (" + matchObj.id + ")");
+          log("scrape: upcoming adicionado (" + matchObj.id + ")");
         } else {
           log("scrape: match nao passou filtros (id:" + matchObj.id + " fonseca:" + isFonseca(matchObj) + " singles:" + isSingles(matchObj) + " upcoming:" + isUpcoming(matchObj) + ")");
         }
-      } else {
-        log("scrape: match/details retornou vazio pro id " + scrapedId);
       }
     }
   }
