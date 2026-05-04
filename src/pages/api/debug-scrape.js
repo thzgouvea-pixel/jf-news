@@ -1,17 +1,17 @@
-// ===== FONSECA NEWS — DEBUG SCRAPE v4 =====
-// Foco: descobrir se proxy sofascore6 retorna jogos do Joao em Roma
-// via match/list (que ja sabemos funciona) ou match/details com ID conhecido.
+// ===== FONSECA NEWS — DEBUG SCRAPE v5 =====
+// Prefix CORRETO: /api/sofascore antes de /v1/...
+// Testa team/events/next que pode retornar placeholders R64P19.
 
 async function tryProxy(label, path) {
   var rkey = process.env.RAPIDAPI_KEY;
-  var url = "https://sofascore6.p.rapidapi.com" + path;
+  var url = "https://sofascore6.p.rapidapi.com/api/sofascore" + path;
   var ctrl = new AbortController();
   var to = setTimeout(function() { ctrl.abort(); }, 8000);
   var t0 = Date.now();
   try {
     var r = await fetch(url, {
       signal: ctrl.signal,
-      headers: { "X-RapidAPI-Key": rkey, "X-RapidAPI-Host": "sofascore6.p.rapidapi.com" }
+      headers: { "x-rapidapi-key": rkey, "x-rapidapi-host": "sofascore6.p.rapidapi.com" }
     });
     clearTimeout(to);
     var elapsed = Date.now() - t0;
@@ -20,10 +20,9 @@ async function tryProxy(label, path) {
     try {
       var data = JSON.parse(text);
       info.parsedKeys = Object.keys(data || {}).slice(0, 8);
-      var events = (data && data.events) || (data && data.event ? [data.event] : null) || (Array.isArray(data) ? data : null);
+      var events = (data && data.events) || (Array.isArray(data) ? data : null);
       if (events && Array.isArray(events)) {
         info.eventsCount = events.length;
-        // Filtra eventos relacionados ao Fonseca
         var fonsecaEvents = events.filter(function(ev) {
           if (!ev) return false;
           var hn = ev.homeTeam ? (ev.homeTeam.name || "").toLowerCase() : "";
@@ -39,19 +38,20 @@ async function tryProxy(label, path) {
             startISO: ev.startTimestamp ? new Date(ev.startTimestamp * 1000).toISOString() : null,
             tournament: ev.tournament ? ev.tournament.name : null,
             status: ev.status ? ev.status.type : null,
-            round: ev.roundInfo || ev.round || null,
+            round: ev.roundInfo ? ev.roundInfo.name : (ev.round ? ev.round.name : null),
           };
         });
       } else if (data && data.event) {
-        // match/details retorna { event: {...} }
         var ev = data.event;
-        info.eventId = ev.id;
-        info.eventHome = ev.homeTeam ? ev.homeTeam.name : null;
-        info.eventAway = ev.awayTeam ? ev.awayTeam.name : null;
-        info.eventStart = ev.startTimestamp ? new Date(ev.startTimestamp * 1000).toISOString() : null;
-        info.eventTournament = ev.tournament ? ev.tournament.name : null;
-        info.eventStatus = ev.status ? ev.status.type : null;
-        info.eventRound = ev.roundInfo || ev.round || null;
+        info.eventDetails = {
+          id: ev.id,
+          home: ev.homeTeam ? ev.homeTeam.name : null,
+          away: ev.awayTeam ? ev.awayTeam.name : null,
+          startISO: ev.startTimestamp ? new Date(ev.startTimestamp * 1000).toISOString() : null,
+          tournament: ev.tournament ? ev.tournament.name : null,
+          status: ev.status ? ev.status.type : null,
+          round: ev.roundInfo ? ev.roundInfo.name : (ev.round ? ev.round.name : null),
+        };
       } else {
         info.bodyStart = text.substring(0, 300);
       }
@@ -67,23 +67,26 @@ async function tryProxy(label, path) {
 }
 
 export default async function handler(req, res) {
-  // Datas chave: Roma comeca 06/05, Joao deve jogar 06-08/05
   var tests = [
-    // 1. match/list pra cada dia que pode ter Joao em Roma
+    // 1. Endpoints que sabemos funcionam (validacao do path)
+    { label: "matchlist_today", path: "/v1/match/list?sport_slug=tennis&date=2026-05-04" },
+
+    // 2. team/X/events/next/0 (provavelmente EXISTE com prefix correto)
+    { label: "team_next_0", path: "/v1/team/403869/events/next/0" },
+    { label: "team_next_1", path: "/v1/team/403869/events/next/1" },
+    { label: "team_last_0", path: "/v1/team/403869/events/last/0" },
+    { label: "team_info", path: "/v1/team/403869" },
+
+    // 3. match/list pra dias que podem ter Joao em Roma
     { label: "matchlist_2026-05-06", path: "/v1/match/list?sport_slug=tennis&date=2026-05-06" },
     { label: "matchlist_2026-05-07", path: "/v1/match/list?sport_slug=tennis&date=2026-05-07" },
     { label: "matchlist_2026-05-08", path: "/v1/match/list?sport_slug=tennis&date=2026-05-08" },
-    { label: "matchlist_2026-05-09", path: "/v1/match/list?sport_slug=tennis&date=2026-05-09" },
 
-    // 2. match/details com ID que VI nas memorias (Roma R64P19 16098942)
+    // 4. match/details direto com ID das memorias
     { label: "matchdetails_16098942", path: "/v1/match/details?match_id=16098942" },
 
-    // 3. Tentativas de descoberta de endpoints alternativos do proxy
-    { label: "tournaments", path: "/v1/tournament/2473" },          // Roma uniqueTournament guess
-    { label: "tournament_seasons", path: "/v1/unique-tournament/2473/seasons" },
-    { label: "team_search", path: "/v1/team/search?name=fonseca" },
-    { label: "events_team", path: "/v1/events/team/403869" },
-    { label: "players_search", path: "/v1/players/search?name=fonseca" },
+    // 5. search/all
+    { label: "search_fonseca", path: "/v1/search/all?q=fonseca" },
   ];
 
   var results = await Promise.all(tests.map(function(t) {
