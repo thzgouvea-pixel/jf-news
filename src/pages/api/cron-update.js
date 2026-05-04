@@ -1284,6 +1284,46 @@ export default async function handler(req, res) {
         // Mantem fn:nextMatch como esta, mas limpa winProb/bracketUrl (dados derivados que podem estar stale)
         // Na proxima execucao com API OK, eles sao recalculados
       }
+      // FALLBACK: torneio futuro com Fonseca confirmado (estado "Sem adversario" do site cycle)
+      // Cobre eliminacao de torneio anterior + inscricao em proximo torneio com chave ja sorteada
+      // (ex: perdeu Madrid, Roma comeca em 2 dias com placeholder no SofaScore).
+      if (!shouldKeepNextMatch) {
+        try {
+          var nextTRawPh = await kv.get("fn:nextTournament");
+          var nextT_KV = nextTRawPh ? (typeof nextTRawPh === "string" ? JSON.parse(nextTRawPh) : nextTRawPh) : null;
+          if (nextT_KV && nextT_KV.fonsecaConfirmed === true && nextT_KV.start_date) {
+            var startMsTour = new Date(nextT_KV.start_date + "T00:00:00Z").getTime();
+            var endMsTour = nextT_KV.end_date ? new Date(nextT_KV.end_date + "T23:59:59Z").getTime() : (startMsTour + 14 * 86400000);
+            var daysUntilTour = (startMsTour - Date.now()) / 86400000;
+            // Janela: confirmacao <=7 dias antes do start, e estamos antes do end_date
+            if (daysUntilTour <= 7 && Date.now() < endMsTour) {
+              var placeholderFromTourn = {
+                id: null, result: "", score: "",
+                opponent_name: "A definir",
+                opponent_id: null, opponent_ranking: null, opponent_country: "",
+                tournament_name: nextT_KV.tournament_name,
+                tournament_category: nextT_KV.tournament_category || "",
+                surface: nextT_KV.surface || "",
+                round: "", date: null, startTimestamp: null, court: "",
+                isFonsecaHome: true, finished: false,
+                broadcast: lookupBroadcast(nextT_KV.tournament_name) || "",
+              };
+              w.push(kv.set("fn:nextMatch", JSON.stringify(placeholderFromTourn), { ex: T7 }));
+              try { await kv.del("fn:winProb"); await kv.del("fn:bracketUrl"); } catch (e) { }
+              shouldKeepNextMatch = true;
+              steps.next = "placeholder (proximo torneio)";
+              log("nm placeholder criado: torneio confirmado " + nextT_KV.tournament_name + " (em " + Math.round(daysUntilTour) + "d)");
+            }
+          }
+        } catch (e) { log("placeholder tourn err: " + e.message); }
+      }
+
+      if (!shouldKeepNextMatch) {
+        try { await kv.del("fn:nextMatch"); await kv.del("fn:winProb"); await kv.del("fn:bracketUrl"); } catch (e) { }
+      } else {
+        // Mantem fn:nextMatch como esta, mas limpa winProb/bracketUrl (dados derivados que podem estar stale)
+        // Na proxima execucao com API OK, eles sao recalculados
+      }
 
       if (!shouldKeepNextMatch) {
         // Select only FUTURE tournaments (start date > today), never ongoing ones
