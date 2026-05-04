@@ -60,29 +60,89 @@ function parseGeminiJSON(txt) {
 
 // ===== SCRAPE FALLBACK: pega matchId da pagina publica do Fonseca no sofascore.com =====
 // Necessario pq o proxy sofascore6 esconde jogos com adversario placeholder (R64P14, etc)
+// Estrategia em 3 niveis (mais robusto pra mais frageis):
+//   1. API publica do SofaScore (api.sofascore.com) — retorna JSON com eventos futuros incluindo placeholders
+//   2. Scrape do HTML em ingles (Accept-Language en-US)
+//   3. Fallback agressivo: extrai PRIMEIRO #id:N do HTML
 async function scrapeNextMatchIdFromSofa() {
+  // ===== NIVEL 1: API publica direta =====
+  // Endpoint oficial do site sofascore.com (NAO o proxy sofascore6 do RapidAPI).
+  // Retorna eventos futuros do jogador incluindo matches com adversario placeholder (R64P19 etc).
+  try {
+    var ctrlApi = new AbortController();
+    var toApi = setTimeout(function() { ctrlApi.abort(); }, 8000);
+    var rApi = await fetch("https://api.sofascore.com/api/v1/team/403869/events/next/0", {
+      signal: ctrlApi.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+        "Accept": "application/json",
+      },
+    });
+    clearTimeout(toApi);
+    if (rApi.ok) {
+      var dataApi = await rApi.json();
+      var eventsApi = dataApi && dataApi.events ? dataApi.events : [];
+      log("scrape API: " + eventsApi.length + " upcoming events");
+      // Pega o primeiro singles do Fonseca
+      for (var iApi = 0; iApi < eventsApi.length; iApi++) {
+        var evApi = eventsApi[iApi];
+        if (evApi && evApi.id && isFonseca(evApi) && isSingles(evApi)) {
+          log("scrape API: encontrou match id=" + evApi.id);
+          return evApi.id;
+        }
+      }
+      log("scrape API: nenhum singles do Fonseca nos eventos");
+    } else {
+      log("scrape API: status " + rApi.status);
+    }
+  } catch (eApi) {
+    log("scrape API " + (eApi.name === "AbortError" ? "timeout 8s" : "error: " + eApi.message));
+  }
+
+  // ===== NIVEL 2 + 3: Scrape do HTML =====
   var ctrl = new AbortController();
-  var to = setTimeout(function() { ctrl.abort(); }, 8000);
+  var to = setTimeout(function() { ctrl.abort(); }, 12000);
   try {
     var r = await fetch("https://www.sofascore.com/tennis/player/fonseca-joao/403869", {
       signal: ctrl.signal,
       headers: {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
         "Accept": "text/html",
+        "Accept-Language": "en-US,en;q=0.9",
       },
     });
     clearTimeout(to);
     if (!r.ok) { log("scrape: status " + r.status); return null; }
     var html = await r.text();
-    var idx = html.indexOf("next match");
-    if (idx < 0) { log("scrape: 'next match' nao encontrado"); return null; }
-    var after = html.substring(idx);
-    var m = after.match(/#id:(\d+)/);
-    if (m && m[1]) return parseInt(m[1], 10);
-    log("scrape: #id nao encontrado apos 'next match'");
+
+    // Multi-idioma: HTML pode vir em PT-BR mesmo com Accept-Language en-US
+    var anchors = ["next match", "Next match", "Next Match", "proxima partida", "próxima partida", "Próxima partida", "proximo jogo", "próximo jogo", "Próximo jogo", "Upcoming"];
+    var idx = -1;
+    var anchorUsed = "";
+    for (var ai = 0; ai < anchors.length; ai++) {
+      var foundIdx = html.indexOf(anchors[ai]);
+      if (foundIdx >= 0) { idx = foundIdx; anchorUsed = anchors[ai]; break; }
+    }
+    if (idx >= 0) {
+      var after = html.substring(idx);
+      var m = after.match(/#id:(\d+)/);
+      if (m && m[1]) { log("scrape HTML: ancora '" + anchorUsed + "' -> id " + m[1]); return parseInt(m[1], 10); }
+      log("scrape HTML: ancora encontrada mas #id nao");
+    } else {
+      log("scrape HTML: nenhuma ancora multi-idioma encontrada");
+    }
+
+    // Fallback: pega PRIMEIRO #id:N do HTML (geralmente eh o proximo jogo no topo)
+    var allIds = html.match(/#id:(\d+)/g);
+    if (allIds && allIds.length > 0) {
+      var firstId = allIds[0].replace("#id:", "");
+      log("scrape HTML fallback: primeiro #id encontrado = " + firstId);
+      return parseInt(firstId, 10);
+    }
+    log("scrape HTML: nenhum #id encontrado em " + html.length + " chars");
   } catch (e) {
     clearTimeout(to);
-    log("scrape " + (e.name === "AbortError" ? "timeout 8s" : "error: " + e.message));
+    log("scrape HTML " + (e.name === "AbortError" ? "timeout 12s" : "error: " + e.message));
   }
   return null;
 }
