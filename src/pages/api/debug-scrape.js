@@ -1,7 +1,6 @@
-// ===== FONSECA NEWS — DEBUG SCRAPE =====
-// Endpoint de diagnostico: testa NIVEL 1 (API publica) e NIVEL 2/3 (HTML scrape)
-// e retorna JSON detalhado pra revelar exatamente onde o fluxo trava.
-// NAO escreve nada em KV. Pode ser chamado quantas vezes precisar.
+// ===== FONSECA NEWS — DEBUG SCRAPE v2 =====
+// Adiciona NIVEL 2.5: regex de links com "fonseca" no slug
+// Vai retornar APENAS IDs de jogos do Fonseca, nao do dia inteiro.
 
 export default async function handler(req, res) {
   var result = {
@@ -10,61 +9,22 @@ export default async function handler(req, res) {
     level2_html: null,
   };
 
-  // ===== NIVEL 1: API publica oficial =====
+  // ===== NIVEL 1: API publica (sabemos que da 403) =====
   try {
     var t0 = Date.now();
     var ctrl = new AbortController();
     var to = setTimeout(function() { ctrl.abort(); }, 8000);
     var r = await fetch("https://api.sofascore.com/api/v1/team/403869/events/next/0", {
       signal: ctrl.signal,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-        "Accept": "application/json",
-      },
+      headers: { "User-Agent": "Mozilla/5.0", "Accept": "application/json" },
     });
     clearTimeout(to);
-    var elapsed = Date.now() - t0;
-    var info = {
-      status: r.status,
-      ok: r.ok,
-      elapsedMs: elapsed,
-      headers: {},
-      body: null,
-      bodyTextSample: null,
-      eventsCount: null,
-      firstEvents: [],
-    };
-    var hdrs = ["content-type", "cf-ray", "cf-cache-status", "server", "x-content-type-options"];
-    hdrs.forEach(function(h) { info.headers[h] = r.headers.get(h); });
-
-    var text = await r.text();
-    info.bodyTextSample = text.substring(0, 600);
-    try {
-      var data = JSON.parse(text);
-      info.body = "json_parsed";
-      var events = (data && data.events) || [];
-      info.eventsCount = events.length;
-      info.firstEvents = events.slice(0, 3).map(function(ev) {
-        return {
-          id: ev.id,
-          home: ev.homeTeam ? { name: ev.homeTeam.name, id: ev.homeTeam.id, slug: ev.homeTeam.slug, sport: ev.homeTeam.sport ? ev.homeTeam.sport.slug : null, type: ev.homeTeam.type } : null,
-          away: ev.awayTeam ? { name: ev.awayTeam.name, id: ev.awayTeam.id, slug: ev.awayTeam.slug, sport: ev.awayTeam.sport ? ev.awayTeam.sport.slug : null, type: ev.awayTeam.type } : null,
-          startTimestamp: ev.startTimestamp,
-          startTimeISO: ev.startTimestamp ? new Date(ev.startTimestamp * 1000).toISOString() : null,
-          tournament: ev.tournament ? { name: ev.tournament.name, slug: ev.tournament.slug, uniqueId: ev.tournament.uniqueTournament ? ev.tournament.uniqueTournament.id : null } : null,
-          status: ev.status ? { type: ev.status.type, code: ev.status.code, description: ev.status.description } : null,
-          round: ev.roundInfo || ev.round || null,
-        };
-      });
-    } catch (eParse) {
-      info.body = "parse_error: " + eParse.message;
-    }
-    result.level1_api = info;
+    result.level1_api = { status: r.status, elapsedMs: Date.now() - t0 };
   } catch (e) {
     result.level1_api = { error: e.name + ": " + e.message };
   }
 
-  // ===== NIVEL 2: HTML scrape =====
+  // ===== NIVEL 2: HTML scrape com regex melhorada =====
   try {
     var t1 = Date.now();
     var ctrl2 = new AbortController();
@@ -79,28 +39,48 @@ export default async function handler(req, res) {
     });
     clearTimeout(to2);
     var elapsed2 = Date.now() - t1;
+    var html = await r2.text();
+
     var info2 = {
       status: r2.status,
-      ok: r2.ok,
       elapsedMs: elapsed2,
-      headers: {},
-      htmlLength: 0,
-      htmlStart: null,
-      anchorMatches: {},
-      idMatches: [],
+      htmlLength: html.length,
     };
-    var hdrs2 = ["content-type", "cf-ray", "cf-cache-status", "server", "content-length", "content-encoding"];
-    hdrs2.forEach(function(h) { info2.headers[h] = r2.headers.get(h); });
-    var html = await r2.text();
-    info2.htmlLength = html.length;
-    info2.htmlStart = html.substring(0, 400);
-    var anchors = ["next match", "Next match", "Next Match", "proxima partida", "próxima partida", "Próxima partida", "proximo jogo", "próximo jogo", "Upcoming", "Roma", "Italian Open", "16098942"];
+
+    // STRATEGY A: regex pra links de match com "fonseca" no slug
+    // URLs tipicas: /tennis/match/joao-fonseca-rafael-jodar/abc123#id:16012167
+    var fonsecaLinkRegex = /\/tennis\/match\/[^"'\s>]*?fonseca[^"'\s>]*?#id[:=](\d+)/gi;
+    var fonsecaMatches = [];
+    var fmatch;
+    var seenIds = {};
+    while ((fmatch = fonsecaLinkRegex.exec(html)) !== null && fonsecaMatches.length < 10) {
+      var matchId = parseInt(fmatch[1], 10);
+      if (!seenIds[matchId]) {
+        seenIds[matchId] = true;
+        var ctxStart = Math.max(0, fmatch.index - 60);
+        var ctxEnd = Math.min(html.length, fmatch.index + 200);
+        fonsecaMatches.push({
+          id: matchId,
+          fullMatch: fmatch[0],
+          context: html.substring(ctxStart, ctxEnd),
+        });
+      }
+    }
+    info2.fonsecaLinks = fonsecaMatches;
+
+    // STRATEGY B: regex pra qualquer URL com "fonseca" mesmo sem #id
+    var allFonsecaUrls = html.match(/\/tennis\/match\/[^"'\s>]*?fonseca[^"'\s>]{0,100}/gi);
+    info2.allFonsecaUrlsCount = allFonsecaUrls ? allFonsecaUrls.length : 0;
+    info2.firstFonsecaUrls = allFonsecaUrls ? allFonsecaUrls.slice(0, 5) : [];
+
+    // STRATEGY C: contexto ao redor de cada anchor (200 chars depois)
+    var anchors = ["next match", "Next match", "Upcoming"];
+    var anchorContexts = {};
     anchors.forEach(function(a) {
       var idx = html.indexOf(a);
-      if (idx >= 0) info2.anchorMatches[a] = idx;
+      if (idx >= 0) anchorContexts[a] = { idx: idx, snippet: html.substring(idx, Math.min(html.length, idx + 600)) };
     });
-    var allIds = html.match(/#id:(\d+)/g);
-    if (allIds) info2.idMatches = allIds.slice(0, 10);
+    info2.anchorContexts = anchorContexts;
 
     result.level2_html = info2;
   } catch (e) {
