@@ -1,34 +1,37 @@
-// ===== FONSECA NEWS — DEBUG SCRAPE v3 =====
-// HTML scrape NAO funciona (HTML nao tem dados de match dinamicos).
-// API publica api.sofascore.com bloqueada pra IPs Vercel (Cloudflare 403).
-// Aqui testamos VARIOS endpoints do proxy sofascore6 (autenticado, pago)
-// e tambem subdomains alternativos da API publica pra achar o que funciona.
+// ===== FONSECA NEWS — DEBUG SCRAPE v4 =====
+// Foco: descobrir se proxy sofascore6 retorna jogos do Joao em Roma
+// via match/list (que ja sabemos funciona) ou match/details com ID conhecido.
 
-async function tryEndpoint(label, url, headers, timeoutMs) {
+async function tryProxy(label, path) {
+  var rkey = process.env.RAPIDAPI_KEY;
+  var url = "https://sofascore6.p.rapidapi.com" + path;
   var ctrl = new AbortController();
-  var to = setTimeout(function() { ctrl.abort(); }, timeoutMs || 6000);
+  var to = setTimeout(function() { ctrl.abort(); }, 8000);
   var t0 = Date.now();
   try {
-    var r = await fetch(url, { signal: ctrl.signal, headers: headers });
+    var r = await fetch(url, {
+      signal: ctrl.signal,
+      headers: { "X-RapidAPI-Key": rkey, "X-RapidAPI-Host": "sofascore6.p.rapidapi.com" }
+    });
     clearTimeout(to);
     var elapsed = Date.now() - t0;
     var text = await r.text();
-    var info = {
-      status: r.status,
-      ok: r.ok,
-      elapsedMs: elapsed,
-      bodyLength: text.length,
-      bodyStart: text.substring(0, 250),
-    };
-    // Tenta parse JSON
+    var info = { label: label, path: path, status: r.status, elapsedMs: elapsed, bodyLength: text.length };
     try {
       var data = JSON.parse(text);
-      info.parsedKeys = Object.keys(data || {}).slice(0, 10);
-      // Procura por eventos
-      var events = (data && data.events) || (data && data.results && data.results.events);
-      if (Array.isArray(events)) {
+      info.parsedKeys = Object.keys(data || {}).slice(0, 8);
+      var events = (data && data.events) || (data && data.event ? [data.event] : null) || (Array.isArray(data) ? data : null);
+      if (events && Array.isArray(events)) {
         info.eventsCount = events.length;
-        info.firstEventSummary = events.slice(0, 3).map(function(ev) {
+        // Filtra eventos relacionados ao Fonseca
+        var fonsecaEvents = events.filter(function(ev) {
+          if (!ev) return false;
+          var hn = ev.homeTeam ? (ev.homeTeam.name || "").toLowerCase() : "";
+          var an = ev.awayTeam ? (ev.awayTeam.name || "").toLowerCase() : "";
+          return hn.indexOf("fonseca") !== -1 || an.indexOf("fonseca") !== -1;
+        });
+        info.fonsecaCount = fonsecaEvents.length;
+        info.fonsecaEvents = fonsecaEvents.slice(0, 5).map(function(ev) {
           return {
             id: ev.id,
             home: ev.homeTeam ? ev.homeTeam.name : null,
@@ -36,65 +39,59 @@ async function tryEndpoint(label, url, headers, timeoutMs) {
             startISO: ev.startTimestamp ? new Date(ev.startTimestamp * 1000).toISOString() : null,
             tournament: ev.tournament ? ev.tournament.name : null,
             status: ev.status ? ev.status.type : null,
+            round: ev.roundInfo || ev.round || null,
           };
         });
-      }
-      // Search results
-      if (data && data.results && Array.isArray(data.results)) {
-        info.searchResults = data.results.slice(0, 5).map(function(it) {
-          return { type: it.type, entity: it.entity ? { id: it.entity.id, name: it.entity.name, slug: it.entity.slug, sport: it.entity.sport ? it.entity.sport.slug : null } : null };
-        });
+      } else if (data && data.event) {
+        // match/details retorna { event: {...} }
+        var ev = data.event;
+        info.eventId = ev.id;
+        info.eventHome = ev.homeTeam ? ev.homeTeam.name : null;
+        info.eventAway = ev.awayTeam ? ev.awayTeam.name : null;
+        info.eventStart = ev.startTimestamp ? new Date(ev.startTimestamp * 1000).toISOString() : null;
+        info.eventTournament = ev.tournament ? ev.tournament.name : null;
+        info.eventStatus = ev.status ? ev.status.type : null;
+        info.eventRound = ev.roundInfo || ev.round || null;
+      } else {
+        info.bodyStart = text.substring(0, 300);
       }
     } catch (e) {
       info.parseError = e.message.substring(0, 100);
+      info.bodyStart = text.substring(0, 300);
     }
-    return { label: label, url: url, ...info };
+    return info;
   } catch (e) {
     clearTimeout(to);
-    return { label: label, url: url, error: e.name + ": " + e.message };
+    return { label: label, path: path, error: e.name + ": " + e.message };
   }
 }
 
 export default async function handler(req, res) {
-  var rkey = process.env.RAPIDAPI_KEY;
-  var proxyHeaders = {
-    "X-RapidAPI-Key": rkey || "",
-    "X-RapidAPI-Host": "sofascore6.p.rapidapi.com",
-  };
-  var browserHeaders = {
-    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
-    "Accept": "application/json, text/plain, */*",
-    "Accept-Language": "en-US,en;q=0.9",
-    "Origin": "https://www.sofascore.com",
-    "Referer": "https://www.sofascore.com/",
-  };
-
+  // Datas chave: Roma comeca 06/05, Joao deve jogar 06-08/05
   var tests = [
-    // Proxy sofascore6 (autenticado, pago)
-    { label: "proxy_team_next_events_0", url: "https://sofascore6.p.rapidapi.com/v1/team/403869/events/next/0", headers: proxyHeaders },
-    { label: "proxy_team_next_events_1", url: "https://sofascore6.p.rapidapi.com/v1/team/403869/events/next/1", headers: proxyHeaders },
-    { label: "proxy_team_last_events_0", url: "https://sofascore6.p.rapidapi.com/v1/team/403869/events/last/0", headers: proxyHeaders },
-    { label: "proxy_team_info", url: "https://sofascore6.p.rapidapi.com/v1/team/403869", headers: proxyHeaders },
-    { label: "proxy_team_performance", url: "https://sofascore6.p.rapidapi.com/v1/team/403869/performance", headers: proxyHeaders },
-    { label: "proxy_search_fonseca", url: "https://sofascore6.p.rapidapi.com/v1/search/all?q=fonseca", headers: proxyHeaders },
-    { label: "proxy_team_404869_search", url: "https://sofascore6.p.rapidapi.com/v1/search/all?q=joao+fonseca", headers: proxyHeaders },
+    // 1. match/list pra cada dia que pode ter Joao em Roma
+    { label: "matchlist_2026-05-06", path: "/v1/match/list?sport_slug=tennis&date=2026-05-06" },
+    { label: "matchlist_2026-05-07", path: "/v1/match/list?sport_slug=tennis&date=2026-05-07" },
+    { label: "matchlist_2026-05-08", path: "/v1/match/list?sport_slug=tennis&date=2026-05-08" },
+    { label: "matchlist_2026-05-09", path: "/v1/match/list?sport_slug=tennis&date=2026-05-09" },
 
-    // API publica alternativa: subdomain do app mobile
-    { label: "public_app_team_next", url: "https://api.sofascore.app/api/v1/team/403869/events/next/0", headers: browserHeaders },
-    // API publica via www (em vez de api.) — pode nao ter Cloudflare
-    { label: "public_www_team_next", url: "https://www.sofascore.com/api/v1/team/403869/events/next/0", headers: browserHeaders },
-    // Tentar referer pode passar bot detection
-    { label: "public_api_team_next_referer", url: "https://api.sofascore.com/api/v1/team/403869/events/next/0", headers: browserHeaders },
+    // 2. match/details com ID que VI nas memorias (Roma R64P19 16098942)
+    { label: "matchdetails_16098942", path: "/v1/match/details?match_id=16098942" },
+
+    // 3. Tentativas de descoberta de endpoints alternativos do proxy
+    { label: "tournaments", path: "/v1/tournament/2473" },          // Roma uniqueTournament guess
+    { label: "tournament_seasons", path: "/v1/unique-tournament/2473/seasons" },
+    { label: "team_search", path: "/v1/team/search?name=fonseca" },
+    { label: "events_team", path: "/v1/events/team/403869" },
+    { label: "players_search", path: "/v1/players/search?name=fonseca" },
   ];
 
   var results = await Promise.all(tests.map(function(t) {
-    return tryEndpoint(t.label, t.url, t.headers, 6000);
+    return tryProxy(t.label, t.path);
   }));
 
   res.status(200).json({
     timestamp: new Date().toISOString(),
-    rapidapiKeyPresent: !!rkey,
-    rapidapiKeyLength: rkey ? rkey.length : 0,
     tests: results,
   });
 }
