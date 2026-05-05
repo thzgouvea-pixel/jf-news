@@ -601,16 +601,30 @@ export default function NextDuelCard(props) {
                     <span style={{ fontSize: 18 }}>⏳</span>
                     <span style={{ fontSize: 13, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "-0.01em" }}>Adversário ainda não definido</span>
                   </div>
-                  <p style={{ margin: "0 0 10px", fontSize: 13, color: "rgba(255,255,255,0.78)", fontFamily: SANS, lineHeight: 1.55 }}>
-                    {hasTournamentDates ? (
-                      <>João disputará o <strong style={{ color: "#fff", fontWeight: 700 }}>{tournamentDisplayName}</strong> entre <strong style={{ color: "#fff", fontWeight: 700 }}>{dateRangeText}</strong>{cityCountry ? <>, em <strong style={{ color: "#fff", fontWeight: 700 }}>{cityCountry}</strong></> : ""}.</>
-                    ) : (
-                      <>João disputará o <strong style={{ color: "#fff", fontWeight: 700 }}>{tournamentDisplayName}</strong>{cityCountry ? <>, em <strong style={{ color: "#fff", fontWeight: 700 }}>{cityCountry}</strong></> : ""}.</>
-                    )}
-                  </p>
-                  <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.55)", fontFamily: SANS, lineHeight: 1.55 }}>
-                    O adversário será definido após o término dos jogos da rodada anterior. Assim que houver definição, atualizamos automaticamente <strong style={{ color: "rgba(255,255,255,0.75)", fontWeight: 600 }}>data, horário, quadra e prognóstico</strong> aqui.
-                  </p>
+                  {(function(){
+                    var category = match.tournament_category || "";
+                    var ranking = player && player.ranking ? player.ranking : null;
+                    var isMastersWithBye = category === "Masters 1000" && ranking && ranking <= 32;
+                    var hasTournamentStarted = nt.start_date && new Date(nt.start_date + "T00:00:00Z").getTime() <= Date.now();
+                    var daysUntilStart = nt.start_date ? Math.ceil((new Date(nt.start_date + "T00:00:00Z").getTime() - Date.now()) / 86400000) : null;
+                    var d;
+                    if (daysUntilStart === null) d = null;
+                    else if (isMastersWithBye) d = daysUntilStart + 2;
+                    else d = daysUntilStart + 1;
+                    var primaryText;
+                    if (hasTournamentStarted) primaryText = "João avançou e aguarda o vencedor da rodada anterior.";
+                    else if (isMastersWithBye) primaryText = "Pelo ranking, João tem bye e estreia na 2ª rodada.";
+                    else primaryText = "Aguardando o sorteio da chave do torneio.";
+                    var deadlineText;
+                    if (d === null || d <= 0) deadlineText = "Adversário, data e horário em breve.";
+                    else deadlineText = "Adversário, data e horário em até " + d + (d === 1 ? " dia." : " dias.");
+                    return (
+                      <>
+                        <p style={{ margin: "0 0 8px", fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: SANS, lineHeight: 1.55 }}>{primaryText}</p>
+                        <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.55)", fontFamily: SANS, lineHeight: 1.55 }}>{deadlineText}</p>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Pills de informação contextual */}
