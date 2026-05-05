@@ -27,6 +27,25 @@ function getBroadcastUrl(broadcast) {
   return null;
 }
 
+// Formata range de datas ISO (YYYY-MM-DD) em texto pt-BR
+// Ex: "2026-05-06" + "2026-05-17" -> "6 e 17 de maio"
+//     "2026-05-24" + "2026-06-07" -> "24 de maio a 7 de junho"
+function formatDateRangePT(start, end) {
+  if (!start) return "";
+  var months = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+  var sd = new Date(start + "T12:00:00Z");
+  if (isNaN(sd.getTime())) return "";
+  var sDay = sd.getUTCDate();
+  var sMon = months[sd.getUTCMonth()];
+  if (!end) return sDay + " de " + sMon;
+  var ed = new Date(end + "T12:00:00Z");
+  if (isNaN(ed.getTime())) return sDay + " de " + sMon;
+  var eDay = ed.getUTCDate();
+  var eMon = months[ed.getUTCMonth()];
+  if (sMon === eMon) return sDay + " e " + eDay + " de " + sMon;
+  return sDay + " de " + sMon + " a " + eDay + " de " + eMon;
+}
+
 function useCountdown(targetDate) {
   var _s = useState({ days: 0, hours: 0, minutes: 0, seconds: 0, expired: true });
   var countdown = _s[0]; var setCountdown = _s[1];
@@ -176,6 +195,14 @@ export default function NextDuelCard(props) {
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
   var surfaceLabel = surfaceTranslate[match.surface] || match.surface || "";
 
+  // ===== ESTADO PLACEHOLDER (entre torneios / aguardando definição do adversário) =====
+  // Detecta quando o nextMatch tem torneio + categoria + superfície (vindos do fluxo
+  // de fallback nextTournament em cron-update.js) mas adversário não está definido
+  // E ainda não tem data/horário concreto. Mostra um aviso elaborado em vez de
+  // info grid com campos vazios. Quando o jogo concretizar (qua/qui), startTimestamp
+  // aparece e o card volta automaticamente ao layout prematch normal.
+  var isPlaceholderMatch = !isLive && isOppTBD && !match.startTimestamp && !match.date;
+
   var fPct = winProb && winProb.fonseca ? Math.round(winProb.fonseca) : null;
   var oPct = winProb && winProb.opponent ? Math.round(winProb.opponent) : null;
   var probSource = winProb ? (winProb.source || "api") : null;
@@ -226,6 +253,35 @@ export default function NextDuelCard(props) {
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     a.href = url; a.download = "fonseca-vs-" + oppName.replace(/[^a-zA-Z]/g, "").toLowerCase() + ".ics";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  // ICS pra periodo do torneio (estado placeholder, sem horario exato)
+  var downloadTournamentICS = function() {
+    if (!nextTournament || !nextTournament.start_date) return;
+    var sd = new Date(nextTournament.start_date + "T08:00:00Z");
+    var ed = nextTournament.end_date ? new Date(nextTournament.end_date + "T22:00:00Z") : new Date(sd.getTime() + 14 * 86400000);
+    var pad = function(n) { return String(n).padStart(2, "0"); };
+    var formatICSDay = function(dt) { return dt.getUTCFullYear() + pad(dt.getUTCMonth() + 1) + pad(dt.getUTCDate()); };
+    var title = "João Fonseca — " + (nextTournament.tournament_name || match.tournament_name || "Torneio ATP");
+    var location = (nextTournament.city || "") + (nextTournament.country ? ", " + nextTournament.country : "");
+    var description = (nextTournament.tournament_category || match.tournament_category || "") + " · acompanhe em fonsecanews.com.br";
+    var ics = [
+      "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//FonsecaNews//PT",
+      "BEGIN:VEVENT",
+      "DTSTART;VALUE=DATE:" + formatICSDay(sd),
+      "DTEND;VALUE=DATE:" + formatICSDay(new Date(ed.getTime() + 86400000)),
+      "SUMMARY:" + title,
+      "LOCATION:" + location,
+      "DESCRIPTION:" + description,
+      "END:VEVENT", "END:VCALENDAR"
+    ].join("\r\n");
+    var blob = new Blob([ics], { type: "text/calendar;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "fonseca-" + (nextTournament.tournament_name || "torneio").replace(/[^a-zA-Z]/g, "").toLowerCase() + ".ics";
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
@@ -374,7 +430,7 @@ export default function NextDuelCard(props) {
               {elapsedText && <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, marginLeft: 2 }}>· {elapsedText}</span>}
             </>
           ) : (
-            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(79,195,247,0.7)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próximo jogo</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(79,195,247,0.7)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>{isPlaceholderMatch ? "Próximo torneio" : "Próximo jogo"}</span>
           )}
           {(liveRound || match.round) && <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: SANS }}>{liveRound || match.round}</span>}
         </div>
@@ -425,12 +481,16 @@ export default function NextDuelCard(props) {
           {/* Opponent */}
           <div style={{ textAlign: "center" }} onClick={(onOppClick && !isOppTBD) ? function(){ onOppClick(); } : undefined} role={(onOppClick && !isOppTBD) ? "button" : undefined} tabIndex={(onOppClick && !isOppTBD) ? 0 : undefined}>
             <div style={{ position: "relative", width: 72, height: 72, margin: "0 auto 8px" }}>
-              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#152035", border: "2.5px solid " + (isLive ? "#ef444450" : "rgba(255,255,255,0.12)"), overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: (onOppClick && !isOppTBD) ? "pointer" : "default" }}>
-                {oppImg ? <img src={oppImg} alt={oppName} referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried && oppImgFallback) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else if (e.target.dataset.tried === "1" && oppImgFallback2) { e.target.dataset.tried = "2"; e.target.src = oppImgFallback2; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>}
+              <div style={{ width: 72, height: 72, borderRadius: "50%", background: "#152035", border: "2.5px " + (isPlaceholderMatch ? "dashed rgba(255,255,255,0.1)" : "solid " + (isLive ? "#ef444450" : "rgba(255,255,255,0.12)")), overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center", cursor: (onOppClick && !isOppTBD) ? "pointer" : "default" }}>
+                {isPlaceholderMatch ? (
+                  <span style={{ fontSize: 28, color: "rgba(255,255,255,0.12)" }}>?</span>
+                ) : (
+                  oppImg ? <img src={oppImg} alt={oppName} referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={function(e) { if (!e.target.dataset.tried && oppImgFallback) { e.target.dataset.tried = "1"; e.target.src = oppImgFallback; } else if (e.target.dataset.tried === "1" && oppImgFallback2) { e.target.dataset.tried = "2"; e.target.src = oppImgFallback2; } else { e.target.style.display = "none"; e.target.parentNode.innerHTML = "<span style='font-size:18px;font-weight:700;color:rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;width:100%;height:100%'>" + oppName.charAt(0) + "</span>"; } }} /> : <span style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.35)" }}>{oppName.charAt(0)}</span>
+                )}
               </div>
-              {!isLive && onOppClick && !isOppTBD && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
+              {!isLive && !isPlaceholderMatch && onOppClick && !isOppTBD && <div style={{ position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%", background: "#4FC3F7", border: "2.5px solid #111d33", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2 }}><span style={{ color: "#fff", fontSize: 15, fontWeight: 700, lineHeight: 1 }}>+</span></div>}
             </div>
-            <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{oppName}</span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: isPlaceholderMatch ? "rgba(255,255,255,0.4)" : "#fff", fontFamily: SERIF, display: "block", lineHeight: 1.2 }}>{isPlaceholderMatch ? "A definir" : oppName}</span>
             {isLive && liveServing === "opponent" ? (
               <span style={{ fontSize: 11, color: YELLOW, fontFamily: SANS, display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 3 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: YELLOW, display: "inline-block" }} />
@@ -522,6 +582,84 @@ export default function NextDuelCard(props) {
               {checkedSecsAgo !== null ? (checkedSecsAgo < 10 ? "Atualizado agora" : "Atualizado há " + checkedSecsAgo + "s") : "Ao vivo"}
             </span>
           </div>
+        </>
+      ) : isPlaceholderMatch ? (
+        <>
+          {/* ===== PLACEHOLDER NOTICE: torneio confirmado, aguardando definição da chave ===== */}
+          {(function() {
+            var nt = nextTournament || {};
+            var dateRangeText = formatDateRangePT(nt.start_date, nt.end_date);
+            var cityCountry = (nt.city || "") + (nt.country ? ", " + nt.country : "");
+            var tournamentDisplayName = match.tournament_name || nt.tournament_name || "torneio";
+            var hasTournamentDates = !!nt.start_date;
+
+            return (
+              <>
+                {/* Banner principal — texto explicativo */}
+                <div style={{ margin: "18px 20px 0", background: "linear-gradient(135deg, rgba(79,195,247,0.08) 0%, rgba(79,195,247,0.03) 100%)", border: "1px solid rgba(79,195,247,0.18)", borderRadius: 14, padding: "18px 18px 16px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <span style={{ fontSize: 18 }}>⏳</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "-0.01em" }}>Adversário ainda não definido</span>
+                  </div>
+                  <p style={{ margin: "0 0 10px", fontSize: 13, color: "rgba(255,255,255,0.78)", fontFamily: SANS, lineHeight: 1.55 }}>
+                    {hasTournamentDates ? (
+                      <>João disputará o <strong style={{ color: "#fff", fontWeight: 700 }}>{tournamentDisplayName}</strong> entre <strong style={{ color: "#fff", fontWeight: 700 }}>{dateRangeText}</strong>{cityCountry ? <>, em <strong style={{ color: "#fff", fontWeight: 700 }}>{cityCountry}</strong></> : ""}.</>
+                    ) : (
+                      <>João disputará o <strong style={{ color: "#fff", fontWeight: 700 }}>{tournamentDisplayName}</strong>{cityCountry ? <>, em <strong style={{ color: "#fff", fontWeight: 700 }}>{cityCountry}</strong></> : ""}.</>
+                    )}
+                  </p>
+                  <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.55)", fontFamily: SANS, lineHeight: 1.55 }}>
+                    O adversário será definido após o término dos jogos da rodada anterior. Assim que houver definição, atualizamos automaticamente <strong style={{ color: "rgba(255,255,255,0.75)", fontWeight: 600 }}>data, horário, quadra e prognóstico</strong> aqui.
+                  </p>
+                </div>
+
+                {/* Pills de informação contextual */}
+                {(match.broadcast || (nt.defending_points !== null && nt.defending_points !== undefined) || nt.joao_last_year) && (
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "14px 20px 0", justifyContent: "center" }}>
+                    {match.broadcast && (
+                      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 999, padding: "7px 14px", display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 11 }}>📺</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)", fontFamily: SANS }}>{match.broadcast}</span>
+                      </div>
+                    )}
+                    {(nt.defending_points !== null && nt.defending_points !== undefined) && (
+                      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 999, padding: "7px 14px", display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: 11 }}>🏆</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)", fontFamily: SANS }}>{nt.defending_points} pts a defender</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Subtitle: histórico do João neste torneio */}
+                {nt.joao_last_year && (
+                  <div style={{ padding: "12px 20px 0", textAlign: "center" }}>
+                    <span style={{ fontSize: 11, fontStyle: "italic", color: "rgba(255,255,255,0.45)", fontFamily: SANS, lineHeight: 1.4 }}>{nt.joao_last_year}</span>
+                  </div>
+                )}
+
+                {/* Action buttons */}
+                <div style={{ padding: "18px 20px 22px", display: "grid", gridTemplateColumns: hasTournamentDates ? "1fr 1fr" : "1fr", gap: 10 }}>
+                  <a href="https://www.atptour.com/en/tournaments" target="_blank" rel="noopener noreferrer" style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    padding: "14px", background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.2)",
+                    borderRadius: 14, textDecoration: "none", color: "#4FC3F7", fontSize: 13, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
+                  }}>
+                    Calendário ATP
+                  </a>
+                  {hasTournamentDates && (
+                    <button onClick={downloadTournamentICS} style={{
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
+                    }}>
+                      Adicionar ao Calendário
+                    </button>
+                  )}
+                </div>
+              </>
+            );
+          })()}
         </>
       ) : (
         <>
