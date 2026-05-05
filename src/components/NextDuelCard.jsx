@@ -239,6 +239,30 @@ export default function NextDuelCard(props) {
     }
   }
 
+  // Textos do aviso quando placeholder (sem adversario/data definidos)
+  // Calculados aqui no escopo para usar no banner que aparece embaixo do card padrao.
+  var placeholderTexts = (function() {
+    if (!isPlaceholderMatch) return null;
+    var nt = nextTournament || {};
+    var category = match.tournament_category || "";
+    var ranking = player && player.ranking ? player.ranking : null;
+    var isMastersWithBye = category === "Masters 1000" && ranking && ranking <= 32;
+    var hasTournamentStarted = nt.start_date && new Date(nt.start_date + "T00:00:00Z").getTime() <= Date.now();
+    var daysUntilStart = nt.start_date ? Math.ceil((new Date(nt.start_date + "T00:00:00Z").getTime() - Date.now()) / 86400000) : null;
+    var d;
+    if (daysUntilStart === null) d = null;
+    else if (isMastersWithBye) d = daysUntilStart + 2;
+    else d = daysUntilStart + 1;
+    var primary;
+    if (hasTournamentStarted) primary = "João avançou e aguarda o vencedor da rodada anterior.";
+    else if (isMastersWithBye) primary = "Pelo ranking, João tem bye e estreia na 2ª rodada.";
+    else primary = "Aguardando o sorteio da chave do torneio.";
+    var deadline;
+    if (d === null || d <= 0) deadline = "Adversário, data e horário em breve.";
+    else deadline = "Adversário, data e horário em até " + d + (d === 1 ? " dia." : " dias.");
+    return { primary: primary, deadline: deadline };
+  })();
+
   var downloadICS = function() {
     if (!matchDate) return;
     var d = new Date(matchDate);
@@ -430,7 +454,7 @@ export default function NextDuelCard(props) {
               {elapsedText && <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", fontFamily: SANS, marginLeft: 2 }}>· {elapsedText}</span>}
             </>
           ) : (
-            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(79,195,247,0.7)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>{isPlaceholderMatch ? "Próximo torneio" : "Próximo jogo"}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(79,195,247,0.7)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em" }}>Próximo jogo</span>
           )}
           {(liveRound || match.round) && <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", fontFamily: SANS }}>{liveRound || match.round}</span>}
         </div>
@@ -583,120 +607,24 @@ export default function NextDuelCard(props) {
             </span>
           </div>
         </>
-      ) : isPlaceholderMatch ? (
-        <>
-          {/* ===== PLACEHOLDER NOTICE: torneio confirmado, aguardando definição da chave ===== */}
-          {(function() {
-            var nt = nextTournament || {};
-            var dateRangeText = formatDateRangePT(nt.start_date, nt.end_date);
-            var cityCountry = (nt.city || "") + (nt.country ? ", " + nt.country : "");
-            var tournamentDisplayName = match.tournament_name || nt.tournament_name || "torneio";
-            var hasTournamentDates = !!nt.start_date;
-
-            return (
-              <>
-                {/* Banner principal — texto explicativo */}
-                <div style={{ margin: "18px 20px 0", background: "linear-gradient(135deg, rgba(79,195,247,0.08) 0%, rgba(79,195,247,0.03) 100%)", border: "1px solid rgba(79,195,247,0.18)", borderRadius: 14, padding: "18px 18px 16px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                    <span style={{ fontSize: 18 }}>⏳</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "-0.01em" }}>Adversário ainda não definido</span>
-                  </div>
-                  {(function(){
-                    var category = match.tournament_category || "";
-                    var ranking = player && player.ranking ? player.ranking : null;
-                    var isMastersWithBye = category === "Masters 1000" && ranking && ranking <= 32;
-                    var hasTournamentStarted = nt.start_date && new Date(nt.start_date + "T00:00:00Z").getTime() <= Date.now();
-                    var daysUntilStart = nt.start_date ? Math.ceil((new Date(nt.start_date + "T00:00:00Z").getTime() - Date.now()) / 86400000) : null;
-                    var d;
-                    if (daysUntilStart === null) d = null;
-                    else if (isMastersWithBye) d = daysUntilStart + 2;
-                    else d = daysUntilStart + 1;
-                    var primaryText;
-                    if (hasTournamentStarted) primaryText = "João avançou e aguarda o vencedor da rodada anterior.";
-                    else if (isMastersWithBye) primaryText = "Pelo ranking, João tem bye e estreia na 2ª rodada.";
-                    else primaryText = "Aguardando o sorteio da chave do torneio.";
-                    var deadlineText;
-                    if (d === null || d <= 0) deadlineText = "Adversário, data e horário em breve.";
-                    else deadlineText = "Adversário, data e horário em até " + d + (d === 1 ? " dia." : " dias.");
-                    return (
-                      <>
-                        <p style={{ margin: "0 0 8px", fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: SANS, lineHeight: 1.55 }}>{primaryText}</p>
-                        <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.55)", fontFamily: SANS, lineHeight: 1.55 }}>{deadlineText}</p>
-                      </>
-                    );
-                  })()}
-                </div>
-
-                {/* Pills de informação contextual */}
-                {(match.broadcast || (nt.defending_points !== null && nt.defending_points !== undefined) || nt.joao_last_year) && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8, padding: "14px 20px 0", justifyContent: "center" }}>
-                    {match.broadcast && (
-                      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 999, padding: "7px 14px", display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 11 }}>📺</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)", fontFamily: SANS }}>{match.broadcast}</span>
-                      </div>
-                    )}
-                    {(nt.defending_points !== null && nt.defending_points !== undefined) && (
-                      <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 999, padding: "7px 14px", display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: 11 }}>🏆</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)", fontFamily: SANS }}>{nt.defending_points} pts a defender</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Subtitle: histórico do João neste torneio */}
-                {nt.joao_last_year && (
-                  <div style={{ padding: "12px 20px 0", textAlign: "center" }}>
-                    <span style={{ fontSize: 11, fontStyle: "italic", color: "rgba(255,255,255,0.45)", fontFamily: SANS, lineHeight: 1.4 }}>{nt.joao_last_year}</span>
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div style={{ padding: "18px 20px 22px", display: "grid", gridTemplateColumns: hasTournamentDates ? "1fr 1fr" : "1fr", gap: 10 }}>
-                  <a href="https://www.atptour.com/en/tournaments" target="_blank" rel="noopener noreferrer" style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    padding: "14px", background: "rgba(79,195,247,0.1)", border: "1px solid rgba(79,195,247,0.2)",
-                    borderRadius: 14, textDecoration: "none", color: "#4FC3F7", fontSize: 13, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
-                  }}>
-                    Calendário ATP
-                  </a>
-                  {hasTournamentDates && (
-                    <button onClick={downloadTournamentICS} style={{
-                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                      padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 700, fontFamily: SANS, width: "100%", boxSizing: "border-box",
-                    }}>
-                      Adicionar ao Calendário
-                    </button>
-                  )}
-                </div>
-              </>
-            );
-          })()}
-        </>
       ) : (
         <>
           {/* ===== PREMATCH CONTENT ===== */}
           {/* Info grid 2x2 — uniform cells */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "22px 20px 0" }}>
-            {dateInfo && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Data</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{dateInfo.weekday + ", " + dateInfo.date}</div>
-              </div>
-            )}
-            {dateInfo && (
-              <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid " + (delayInfo ? "rgba(251,146,60,0.3)" : "rgba(255,255,255,0.06)"), borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário (BRT)</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{dateInfo.time}</div>
-                {delayInfo && (
-                  <div style={{ marginTop: 6, fontSize: 9, fontWeight: 700, color: "#fb923c", fontFamily: SANS, lineHeight: 1.35, letterSpacing: "0.01em" }}>
-                    🟠 {delayInfo.text}
-                  </div>
-                )}
-              </div>
-            )}
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Data</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: dateInfo ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)", fontFamily: SANS }}>{dateInfo ? dateInfo.weekday + ", " + dateInfo.date : "A definir"}</div>
+            </div>
+            <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid " + (delayInfo ? "rgba(251,146,60,0.3)" : "rgba(255,255,255,0.06)"), borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário (BRT)</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: dateInfo ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)", fontFamily: SANS }}>{dateInfo ? dateInfo.time : "A definir"}</div>
+              {delayInfo && (
+                <div style={{ marginTop: 6, fontSize: 9, fontWeight: 700, color: "#fb923c", fontFamily: SANS, lineHeight: 1.35, letterSpacing: "0.01em" }}>
+                  🟠 {delayInfo.text}
+                </div>
+              )}
+            </div>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
               <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Quadra</div>
               <div style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.9)", fontFamily: SANS }}>{match.court || "A definir"}</div>
@@ -793,6 +721,25 @@ export default function NextDuelCard(props) {
             )}
           </div>
         </>
+      )}
+
+      {/* Aviso elaborado quando aguardando definição da chave (placeholder) */}
+      {placeholderTexts && (
+        <div style={{
+          margin: "16px 20px 8px",
+          background: "linear-gradient(135deg, rgba(79,195,247,0.14) 0%, rgba(79,195,247,0.05) 100%)",
+          border: "1px solid rgba(79,195,247,0.3)",
+          borderRadius: 14,
+          padding: "16px 18px",
+          boxShadow: "0 4px 20px rgba(79,195,247,0.08)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 16 }}>⏳</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.08em", textTransform: "uppercase" }}>Aguardando definição da chave</span>
+          </div>
+          <p style={{ margin: 0, fontSize: 14, color: "rgba(255,255,255,0.95)", fontFamily: SANS, lineHeight: 1.45, fontWeight: 600 }}>{placeholderTexts.primary}</p>
+          <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "rgba(255,255,255,0.6)", fontFamily: SANS, lineHeight: 1.45 }}>{placeholderTexts.deadline}</p>
+        </div>
       )}
 
     </section>
