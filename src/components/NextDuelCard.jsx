@@ -236,7 +236,11 @@ export default function NextDuelCard(props) {
   var delayInfo = null;
   if (match.scheduledTimestamp && match.startTimestamp && !isLive && match.opponent_name && match.opponent_name !== "A definir") {
     var schedDiffSec = match.startTimestamp - match.scheduledTimestamp;
-    if (Math.abs(schedDiffSec) >= 15 * 60) {
+    var schedDiffMin = Math.abs(schedDiffSec) / 60;
+    var hoursUntilSched = (match.scheduledTimestamp - Date.now() / 1000) / 3600;
+    var isOperationalDelay = schedDiffMin >= 15 && schedDiffMin <= 12 * 60;
+    var isNearScheduledTime = hoursUntilSched <= 6;
+  if (isOperationalDelay && isNearScheduledTime) {
       var origDate = new Date(match.scheduledTimestamp * 1000);
       var origTimeBR = origDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
       var diffMin = Math.round(Math.abs(schedDiffSec) / 60);
