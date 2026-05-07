@@ -272,6 +272,25 @@ export default function JoaoFonsecaNews() {
   var handleInstall = function() { if (!deferredPrompt) return; deferredPrompt.prompt(); deferredPrompt.userChoice.then(function(r) { if (r.outcome === "accepted") setShowInstallBanner(false); setDeferredPrompt(null); }); };
   var dismissPopup = function() { setShowInstallPopup(false); setPopupDismissed(true); };
 
+  var handleShare = function() {
+    var shareData = {
+      title: "Fonseca News — Guia de bolso sobre João Fonseca",
+      text: "Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas e próximos jogos.",
+      url: "https://fonsecanews.com.br"
+    };
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share(shareData).catch(function(){});
+    } else if (typeof navigator !== "undefined" && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(shareData.url).then(function(){
+        alert("Link copiado para a área de transferência!");
+      }).catch(function(){
+        window.prompt("Copie o link:", shareData.url);
+      });
+    } else {
+      window.prompt("Copie o link:", shareData.url);
+    }
+  };
+
   var loadCache = function() {
     try { var raw = localStorage.getItem("jf-news-v5"); if (raw) { var c = JSON.parse(raw); if (Date.now() - c.timestamp < CACHE_DURATION_MS && c.news && c.news.length) { setNews(c.news); setNextMatch(c.nextMatch||null); setLastMatch(c.lastMatch||null); setPlayer(c.player||null); setSeason(c.season||null); setLastUpdate(new Date(c.timestamp).toISOString()); return true; } } } catch(e) {}
     return false;
@@ -453,6 +472,9 @@ export default function JoaoFonsecaNews() {
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button onClick={handleShare} title="Compartilhar" style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          </button>
           <button className="pwa-install-btn" onClick={function(){ setShowAutoInstall(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "#FFCB05", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0, animation: "pulse 2s ease-in-out infinite", boxShadow: "0 0 8px #FFCB0540" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             </button>
