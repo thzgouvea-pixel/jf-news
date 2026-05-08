@@ -150,6 +150,14 @@ export default function JoaoFonsecaNews() {
   var _showOppPopup = useState(false); var showOppPopup = _showOppPopup[0]; var setShowOppPopup = _showOppPopup[1];
 
   var initDone = useRef(false); var nextMatchRef = useRef(null);
+  // GA4 event tracking helper
+  function trackEvent(name, params) {
+    try {
+      if (typeof window !== "undefined" && typeof window.gtag === "function") {
+        window.gtag("event", name, params || {});
+      }
+    } catch(e) {}
+  }
 
   // VAPID public key (copiada do env var VAPID_PUBLIC_KEY - precisa estar acessivel no client)
   // Esta e a chave publica, pode ser exposta no frontend.
@@ -166,6 +174,7 @@ export default function JoaoFonsecaNews() {
   }
 
   var handlePushSubscribe = function() {
+    trackEvent("push_subscribe_click", { already_enabled: pushEnabled });
     if (pushLoading || pushEnabled) return;
     if (typeof window === "undefined" || !("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
       alert("Seu navegador não suporta notificações push. Tente no Chrome, Firefox, Edge ou Safari 16.4+.");
@@ -273,6 +282,7 @@ export default function JoaoFonsecaNews() {
   var dismissPopup = function() { setShowInstallPopup(false); setPopupDismissed(true); };
 
   var handleShare = function() {
+    trackEvent("share_click", { location: "header" });
     var shareData = {
       title: "Fonseca News — Guia de bolso sobre João Fonseca",
       text: "Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas e próximos jogos.",
@@ -310,6 +320,7 @@ export default function JoaoFonsecaNews() {
   };
 
   var handleRefresh = function() {
+    trackEvent("refresh_click", {});
     try { localStorage.removeItem("jf-news-v5"); } catch(e) {}
     if ("caches" in window) { caches.keys().then(function(names) { names.forEach(function(n) { caches.delete(n); }); }); }
     fetchNews(true);
@@ -475,7 +486,7 @@ export default function JoaoFonsecaNews() {
           <button onClick={handleShare} title="Compartilhar" style={{ width: 32, height: 32, borderRadius: 8, background: "transparent", border: "none", color: SUB, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
           </button>
-          <button className="pwa-install-btn" onClick={function(){ setShowAutoInstall(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "#FFCB05", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0, animation: "pulse 2s ease-in-out infinite", boxShadow: "0 0 8px #FFCB0540" }}>
+          <button className="pwa-install-btn" onClick={function(){ trackEvent("pwa_install_click", { location: "header" }); setShowAutoInstall(true); }} style={{ width: 32, height: 32, borderRadius: 8, background: "#FFCB05", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, padding: 0, animation: "pulse 2s ease-in-out infinite", boxShadow: "0 0 8px #FFCB0540" }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
             </button>
             <button
