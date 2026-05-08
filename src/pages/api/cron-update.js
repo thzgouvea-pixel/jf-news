@@ -1809,10 +1809,16 @@ export default async function handler(req, res) {
           var hoursSinceT6 = (Date.now() - lastT6At) / 3600000;
 
           if (diffMin >= 30 && newTimeIsFuture && hoursSinceT6 >= 2 && !t8AlreadySent) {
-            var direction6 = nm.startTimestamp > prevTimestamp ? "atrasou" : "antecipado";
             var newTimeBR = new Date(nm.startTimestamp * 1000).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-            var titleT6 = "\u23f1\ufe0f Horário do jogo mudou";
-            var bodyT6 = "Jogo do João vs " + nm.opponent_name + " " + direction6 + " — agora " + newTimeBR + " (BRT)";
+var hoursUntilNew6 = (nm.startTimestamp * 1000 - Date.now()) / 3600000;
+var titleT6 = "\u23f1\ufe0f Horário do jogo mudou";
+var bodyT6;
+if (hoursUntilNew6 <= 6) {
+  var direction6 = nm.startTimestamp > prevTimestamp ? "atrasou" : "antecipado";
+  bodyT6 = "Jogo do João vs " + nm.opponent_name + " " + direction6 + " — agora " + newTimeBR + " (BRT)";
+} else {
+  bodyT6 = "Jogo do João vs " + nm.opponent_name + " — novo horário: " + newTimeBR + " (BRT)";
+}
             var newTimeRecord = Object.assign({}, lastTimeRecord);
             newTimeRecord[timeKey] = nm.startTimestamp;
             // Marca timeChangeSent direto em pushState pro cooldown de 2h
