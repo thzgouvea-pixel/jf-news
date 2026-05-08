@@ -13,8 +13,8 @@ function calcHype(recentForm) {
     if (isWin) {
       if (rank <= 10) score += weight * 2.0;
       else if (rank <= 20) score += weight * 1.5;
-      else if (rank <= 50) score += weight * 1.0;
-      else score += weight * 0.5;
+      else if (rank <= 50) score += weight * 1.1;
+      else score += weight * 0.7;
     } else {
       if (rank <= 5) score -= weight * 0.3;
       else if (rank <= 10) score -= weight * 0.5;
