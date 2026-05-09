@@ -1,20 +1,6 @@
 import { useState } from "react";
 import { SANS, SERIF, GREEN, TEXT, SUB, DIM } from "../lib/constants";
-  if (!recentForm || recentForm.length === 0) return null;
-  var last10 = recentForm.slice(0, 10);
-  var current = 0;
-  var currentType = (last10[0].result || "").toUpperCase();
-  for (var i = 0; i < last10.length; i++) {
-    if ((last10[i].result || "").toUpperCase() === currentType) current++;
-    else break;
-  }
-  var maxWin = 0, run = 0;
-  last10.forEach(function(m) {
-    if ((m.result || "").toUpperCase() === "V") { run++; if (run > maxWin) maxWin = run; }
-    else run = 0;
-  });
-  return { currentCount: current, currentType: currentType, maxWinStreak: maxWin };
-}
+
 function calcHype(recentForm) {
   if (!recentForm || recentForm.length === 0) return { pct: 50, mood: "Sem dados" };
   var last10 = recentForm.slice(0, 10);
