@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { SANS, SERIF, GREEN, TEXT, SUB, DIM } from "../lib/constants";
-function calcStreak(recentForm) {
   if (!recentForm || recentForm.length === 0) return null;
   var last10 = recentForm.slice(0, 10);
   var current = 0;
@@ -54,7 +53,6 @@ export default function Fonsecometro({ recentForm }) {
   if (!recentForm || recentForm.length === 0) return null;
   var _show = useState(false); var showPopup = _show[0]; var setShowPopup = _show[1];
   var h = calcHype(recentForm);
-  var streak = calcStreak(recentForm);
   var barColor = h.pct >= 60 ? "#22C55E" : (h.pct >= 40 ? "#EAB308" : (h.pct >= 20 ? "#F97316" : "#60A5FA"));
   var wins = recentForm.slice(0, 10).filter(function(m) { return (m.result || "").toUpperCase() === "V"; }).length;
   var losses = recentForm.slice(0, 10).length - wins;
@@ -72,18 +70,6 @@ export default function Fonsecometro({ recentForm }) {
         <div style={{ height: 5, background: "#f0f0f0", borderRadius: 3, overflow: "hidden" }}>
           <div style={{ height: 5, borderRadius: 3, width: h.pct + "%", background: "linear-gradient(90deg, " + barColor + "90, " + barColor + ")", boxShadow: "0 0 8px " + barColor + "30", transition: "width 1.2s ease" }} />
         </div>
-        {streak && (streak.currentCount >= 2 || streak.maxWinStreak >= 3) && (
-          <div style={{ display: "flex", gap: 12, marginTop: 6, fontSize: 10, fontFamily: SANS, color: SUB }}>
-            {streak.currentCount >= 2 && (
-              <span style={{ fontWeight: 600, color: streak.currentType === "V" ? GREEN : SUB }}>
-                {streak.currentType === "V" ? "🔥 " : ""}{streak.currentCount}{streak.currentType} seguidas
-              </span>
-            )}
-            {streak.maxWinStreak >= 3 && streak.maxWinStreak > (streak.currentType === "V" ? streak.currentCount : 0) && (
-              <span>💪 Maior: {streak.maxWinStreak}V</span>
-            )}
-          </div>
-        )}
       </div>
 
       {showPopup && (
