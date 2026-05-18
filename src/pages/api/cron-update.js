@@ -715,6 +715,27 @@ async function fetchSeasonFromGemini() {
   return null;
 }
 
+// Extrai o numero do ranking de um valor de infobox, tolerando markup wiki.
+// Cobre: "No. 29", "29", "No. 29 (12 May 2026)", "[[ATP rankings|No. 29]]",
+// "{{ATP rankings|29}}", "'''No. 24'''". Retorna null se nao achar 1..5000.
+function extractRankNum(raw) {
+  if (raw == null) return null;
+  var s = String(raw);
+  var paren = s.indexOf("("); // descarta a data: "No. 29 (12 May 2026)"
+  if (paren !== -1) s = s.slice(0, paren);
+  s = s
+    .replace(/\[\[[^\]|]*\|/g, " ") // "[[ATP rankings|" -> mantem o rotulo apos o pipe
+    .replace(/[\[\]'{}|]/g, " ")    // colchetes, aspas, chaves, pipes
+    .replace(/&nbsp;|&#160;/gi, " ")
+    .replace(/No\.?/gi, " ")        // remove "No." / "No"
+    .replace(/\s+/g, " ")
+    .trim();
+  var m = s.match(/\d{1,4}/);
+  if (!m) return null;
+  var n = parseInt(m[0], 10);
+  return (n >= 1 && n <= 5000) ? n : null;
+}
+
 // ===== PHASE 6: PLAYER DATA — Wikipedia FIRST (reliable), Gemini fallback =====
 async function fetchPlayerData() {
   // === WIKIPEDIA PRIMARY ===
@@ -752,12 +773,12 @@ async function fetchPlayerData() {
         m = plainText.match(/Career\s+titles\s*:?\s*(\d+)/i);
         if (m) wp.titles = parseInt(m[1], 10);
 
-        // Highest ranking: "Highest ranking: No. 24"
-        m = plainText.match(/Highest\s+ranking\s*:?\s*No\.\s*(\d+)/i);
+        // Highest ranking: "Highest ranking: No. 24" (No. opcional apos strip de tags)
+        m = plainText.match(/Highest\s+ranking\s*:?\s*(?:No\.?\s*)?(\d{1,4})/i);
         if (m) wp.bestRanking = parseInt(m[1], 10);
 
-        // Current ranking: "Current ranking: No. 38"
-        m = plainText.match(/Current\s+ranking\s*:?\s*No\.\s*(\d+)/i);
+        // Current ranking: "Current ranking: No. 38" (No. opcional apos strip de tags)
+        m = plainText.match(/Current\s+ranking\s*:?\s*(?:No\.?\s*)?(\d{1,4})/i);
         if (m) wp.ranking = parseInt(m[1], 10);
 
         // Prize money: "Prize money: US $2,816,305"
@@ -806,12 +827,15 @@ async function fetchPlayerData() {
             if (stM) wp.titles = parseInt(stM[1], 10);
           }
           if (!wp.bestRanking) {
-            var hrM = text.match(/\|\s*highestsinglesranking\s*=\s*No\.\s*(\d+)/i);
-            if (hrM) wp.bestRanking = parseInt(hrM[1], 10);
+            // Captura o valor inteiro da linha (pode ter [[link]], {{template}}, data)
+            var hrM = text.match(/\|\s*highestsinglesranking\s*=\s*([^\n]+)/i);
+            var hrN = hrM ? extractRankNum(hrM[1]) : null;
+            if (hrN) wp.bestRanking = hrN;
           }
           if (!wp.ranking) {
-            var crM = text.match(/\|\s*currentsinglesranking\s*=\s*No\.\s*(\d+)/i);
-            if (crM) wp.ranking = parseInt(crM[1], 10);
+            var crM = text.match(/\|\s*currentsinglesranking\s*=\s*([^\n]+)/i);
+            var crN = crM ? extractRankNum(crM[1]) : null;
+            if (crN) wp.ranking = crN;
           }
           if (!wp.prizeMoney) {
             // ATENCAO: campo correto eh 'careerprizemoney', NAO 'prizemoney'
@@ -1079,10 +1103,13 @@ export default async function handler(req, res) {
       steps.odds = wp ? wp.fonseca + "%(c)" : "skip";
     }
 
-    // ── PLAYER DATA (weekly) ──
-    var wiki = null;
-    // rankingFresh = true se o ranking foi atualizado apos a ultima segunda-feira 10:00 UTC (madrugada BRT).
-    // ATP publica ranking oficial toda segunda-feira.
+    // ── PLAYER DATA ──
+    // SEMPRE rebusca a Wikipedia. O cache semanal antigo (rankingFresh/careerFresh
+    // pulava o fetch) congelava ranking velho a semana toda: a ATP publica na
+    // segunda mas a Wikipedia so e atualizada por editores com atraso de horas/dias,
+    // e o 1o cron pos-segunda gravava o numero velho com timestamp novo, travando-o.
+    // rankingFresh continua sendo usado adiante para preservar o updatedAt quando o
+    // valor nao muda (evita "atualizado ha X" resetar todo dia).
     var lastMonday10UTC = (function() {
       var d = new Date();
       var day = d.getUTCDay(); // 0=dom 1=seg 2=ter ...
@@ -1093,27 +1120,30 @@ export default async function handler(req, res) {
       return d.getTime();
     })();
     var rankingFresh = exRanking && exRanking.updatedAt && new Date(exRanking.updatedAt).getTime() >= lastMonday10UTC;
-    // careerStats tambem revalida semanalmente (antes so checava se wins existia — cache perpetuo de dados falsos)
-    var careerFresh = exCareer && exCareer.wins !== undefined && exCareer.updatedAt && new Date(exCareer.updatedAt).getTime() >= lastMonday10UTC;
-    if (!rankingFresh || !careerFresh) {
-      wiki = await fetchPlayerData();
-      // FALLBACK: se Wikipedia nao retornou ranking, busca em fn:atpRankings (SofaScore semanal)
-      if (!wiki) wiki = {};
-      if (!wiki.ranking && exRankingsList && exRankingsList.rankings) {
-        var fonsecaInList = exRankingsList.rankings.find(function (p) {
-          return p.name && (p.name.indexOf("Fonseca") !== -1 || p.name.indexOf("fonseca") !== -1);
-        });
-        if (fonsecaInList && fonsecaInList.rank) {
-          wiki.ranking = fonsecaInList.rank;
-          log("player: ranking fallback from SofaScore atpRankings: #" + wiki.ranking);
-        }
+
+    var wiki = await fetchPlayerData();
+    if (!wiki) wiki = {};
+    // FALLBACK 1: Wikipedia sem ranking -> lista ATP semanal (fn:atpRankings)
+    if (!wiki.ranking && exRankingsList && exRankingsList.rankings) {
+      var fonsecaInList = exRankingsList.rankings.find(function (p) {
+        return p.name && (p.name.indexOf("Fonseca") !== -1 || p.name.indexOf("fonseca") !== -1);
+      });
+      if (fonsecaInList && fonsecaInList.rank) {
+        wiki.ranking = fonsecaInList.rank;
+        log("player: ranking fallback from atpRankings list: #" + wiki.ranking);
       }
-      steps.player = wiki && wiki.ranking ? "#" + wiki.ranking : "fail";
-    } else {
-      wiki = { ranking: exRanking.ranking, bestRanking: exRanking.bestRanking };
-      if (exCareer) { wiki.wins = exCareer.wins; wiki.losses = exCareer.losses; wiki.surface = exCareer.surface; wiki.titles = exCareer.titles; }
-      steps.player = "cached";
     }
+    // FALLBACK 2: nada novo -> preserva o ultimo valor bom do KV (nunca zera o site)
+    if (!wiki.ranking && exRanking && exRanking.ranking) {
+      wiki.ranking = exRanking.ranking;
+      wiki.bestRanking = wiki.bestRanking || (exRanking && exRanking.bestRanking) || null;
+      log("player: ranking kept from last good KV: #" + wiki.ranking);
+    }
+    if (wiki.wins === undefined && exCareer && exCareer.wins !== undefined) {
+      wiki.wins = exCareer.wins; wiki.losses = exCareer.losses;
+      wiki.surface = exCareer.surface; wiki.titles = wiki.titles || exCareer.titles;
+    }
+    steps.player = wiki && wiki.ranking ? "#" + wiki.ranking : "fail";
 
     // ── RECENT FORM ──
     var form = discovered.finished.slice(0, 10).map(function (m) {
