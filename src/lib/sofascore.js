@@ -59,7 +59,7 @@ export var BROADCAST_MAP = {
   "Madrid Open": "ESPN / Disney+",
   "Italian Open": "ESPN / Disney+",
   "Roma Masters": "ESPN / Disney+",
-  "Roland Garros": "Globoplay",
+  "Roland Garros": "ESPN / Disney+",
   "Wimbledon": "ESPN",
   "Australian Open": "ESPN",
   "US Open": "ESPN",
