@@ -14,7 +14,7 @@ var BROADCAST_MAP = {
   "Miami Open": "ESPN",
   "Madrid Open": "ESPN",
   "Italian Open": "ESPN",
-  "Roland Garros": "Globoplay",
+  "Roland Garros": "ESPN / Disney+",
   "Wimbledon": "ESPN",
   "Australian Open": "ESPN",
   "US Open": "ESPN",
