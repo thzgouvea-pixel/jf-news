@@ -1518,6 +1518,19 @@ export default async function handler(req, res) {
       var statsOppMatch = ms.opponent_name && lm.opponent_name && ms.opponent_name.split(" ").pop() === lm.opponent_name.split(" ").pop();
       if (statsOppMatch || !ms.opponent_name) w.push(kv.set("fn:matchStats", JSON.stringify(ms), { ex: T7 }));
     }
+    // Limpa estatisticas velhas: se o KV guarda stats de um adversario diferente da
+    // ultima partida atual, apaga (evita servir os stats do jogo anterior enquanto o
+    // novo jogo ainda nao tem estatisticas publicadas).
+    if (lm && lm.opponent_name) {
+      try {
+        var exMsRaw = await kv.get("fn:matchStats");
+        var exMs = exMsRaw ? (typeof exMsRaw === "string" ? JSON.parse(exMsRaw) : exMsRaw) : null;
+        if (exMs && exMs.opponent_name &&
+            exMs.opponent_name.split(" ").pop() !== lm.opponent_name.split(" ").pop()) {
+          await kv.del("fn:matchStats");
+        }
+      } catch (e) { }
+    }
 
     if (form.length > 0) w.push(kv.set("fn:recentForm", JSON.stringify(form), { ex: T7 }));
 
@@ -1644,7 +1657,16 @@ export default async function handler(req, res) {
       }
     } catch (e) { log("season error: " + e.message); }
 
-    if (op) w.push(kv.set("fn:opponentProfile", JSON.stringify(op), { ex: T2 }));
+    // Trava de adversario: so grava o perfil se for do adversario ATUAL e definido.
+    // Senao apaga — evita exibir nome/pais/ranking/foto do adversario anterior depois
+    // que o Fonseca avanca (proximo = "A definir") ou troca de adversario.
+    var opMatchesOpp = op && op.name && nm && nm.opponent_name && nm.opponent_name !== "A definir" &&
+      stripAccents(op.name.split(" ").pop().toLowerCase()) === stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
+    if (opMatchesOpp) {
+      w.push(kv.set("fn:opponentProfile", JSON.stringify(op), { ex: T2 }));
+    } else {
+      try { await kv.del("fn:opponentProfile"); } catch (e) { }
+    }
     // Trava de adversario: so grava winProb se for do adversario ATUAL e definido.
     // Caso contrario apaga — evita exibir a probabilidade do jogo anterior (cache
     // ressuscitado quando as odds do novo jogo ainda nao sairam) ou sem adversario.
