@@ -437,18 +437,29 @@ export function enrichMatch(match) {
 export function buildRankingsLookup(rankingsList) {
   var lookup = {};
   if (!rankingsList || !rankingsList.rankings) return lookup;
+  var lastSeen = {};
   rankingsList.rankings.forEach(function (r) {
+    if (!r || !r.name) return; // ignora linha sem nome (evita throw no split)
+    lookup[stripAccents(r.name.toLowerCase())] = r.rank; // chave por nome completo (preferida)
     var lastName = stripAccents(r.name.split(" ").pop().toLowerCase());
-    lookup[lastName] = r.rank;
-    lookup[stripAccents(r.name.toLowerCase())] = r.rank;
+    // Atalho por sobrenome so se for unico: 2+ jogadores com mesmo sobrenome
+    // (ex: dois "Fonseca") se sobrescreveriam e dariam ranking errado.
+    if (lastSeen[lastName] === undefined) {
+      lastSeen[lastName] = r.rank;
+      lookup[lastName] = r.rank;
+    } else if (lastSeen[lastName] !== r.rank) {
+      delete lookup[lastName]; // sobrenome ambiguo -> remove o atalho
+    }
   });
   return lookup;
 }
 
-// Apply rankings lookup to a match object
+// Apply rankings lookup to a match object (nome completo primeiro, depois sobrenome)
 export function applyRanking(match, lookup) {
   if (!match || !lookup || !match.opponent_name) return;
   if (match.opponent_ranking) return; // already has ranking
+  var full = stripAccents(match.opponent_name.toLowerCase());
+  if (lookup[full]) { match.opponent_ranking = lookup[full]; return; }
   var lastName = stripAccents(match.opponent_name.split(" ").pop().toLowerCase());
   if (lookup[lastName]) match.opponent_ranking = lookup[lastName];
 }
