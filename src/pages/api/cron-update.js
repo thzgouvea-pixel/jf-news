@@ -452,8 +452,11 @@ async function fetchWinProb(nm) {
     var marketsEarly = Array.isArray(sdEarly) ? sdEarly : (sdEarly && sdEarly.markets);
     if (marketsEarly && Array.isArray(marketsEarly)) {
       var h2hEarly = marketsEarly.find(function (m) { return m.name === "Full time" || m.name === "1x2"; });
-      if (h2hEarly && h2hEarly.choices && h2hEarly.choices.length >= 2) {
-        var isFHE = nm.isFonsecaHome !== false;
+      // So usa odds posicionais do SofaScore ("1"=casa / "2"=visitante) quando sabemos
+      // de fato se o Fonseca e casa ou visitante. Se a flag for desconhecida, evita
+      // inverter a probabilidade e cai pro fallback por nome (Odds API).
+      if (h2hEarly && h2hEarly.choices && h2hEarly.choices.length >= 2 && typeof nm.isFonsecaHome === "boolean") {
+        var isFHE = nm.isFonsecaHome;
         var homeE = h2hEarly.choices.find(function(c) { return c.name === "1"; });
         var awayE = h2hEarly.choices.find(function(c) { return c.name === "2"; });
         var fE = isFHE ? homeE : awayE;
@@ -839,7 +842,7 @@ async function fetchPlayerData() {
           }
           if (!wp.prizeMoney) {
             // ATENCAO: campo correto eh 'careerprizemoney', NAO 'prizemoney'
-            var pmM = text.match(/\|\s*careerprizemoney\s*=\s*(?:US\s*)?\$\s*([\d,]+)/i);
+            var pmM = text.match(/\|\s*careerprizemoney\s*=\s*(?:US)?\s*\$?\s*([\d,]+)/i);
             if (pmM) {
               var amt = parseInt(pmM[1].replace(/,/g, ""), 10);
               if (!isNaN(amt) && amt > 0) wp.prizeMoney = amt;
@@ -999,7 +1002,7 @@ export default async function handler(req, res) {
       kv.get("fn:lastOddsCheck"), kv.get("fn:careerStats"), kv.get("fn:recentForm"),
       kv.get("fn:lastMatch"), kv.get("fn:careerNarrative"),
     ]);
-    function pk(val) { if (!val) return null; return typeof val === "string" ? JSON.parse(val) : val; }
+    function pk(val) { if (!val) return null; try { return typeof val === "string" ? JSON.parse(val) : val; } catch (e) { return null; } }
     var exRanking = pk(kvReads[0]);
     var exOpp = pk(kvReads[1]);
     var exRankingsList = pk(kvReads[2]);
@@ -1530,6 +1533,13 @@ export default async function handler(req, res) {
           await kv.del("fn:matchStats");
         }
       } catch (e) { }
+    }
+    // Quando a ultima partida muda de adversario, apaga o video de melhores momentos
+    // do jogo anterior (o payload nao tem identificador de jogo pra revalidar sozinho).
+    if (lm && lm.opponent_name && exLastMatch && exLastMatch.opponent_name &&
+        stripAccents(lm.opponent_name.split(" ").pop().toLowerCase()) !==
+        stripAccents(exLastMatch.opponent_name.split(" ").pop().toLowerCase())) {
+      try { await kv.del("fn:highlight-video"); } catch (e) { }
     }
 
     if (form.length > 0) w.push(kv.set("fn:recentForm", JSON.stringify(form), { ex: T7 }));
