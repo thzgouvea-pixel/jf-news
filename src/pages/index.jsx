@@ -417,11 +417,12 @@ export default function JoaoFonsecaNews() {
   var dm = nextMatch || null;   var hasNextMatch = !!(nextMatch && nextMatch.tournament_name);
   var dl = lastMatch || null;
   var dp = player || (news.length === 0 ? SAMPLE_PLAYER : null);
-  // Perfil do adversario so vale se for do proximo adversario ATUAL e definido
-  // (evita mostrar o perfil do adversario anterior no popup/card apos uma troca).
-  var oppProfileValid = !!(opponentProfile && opponentProfile.name && dm && dm.opponent_name &&
-    dm.opponent_name !== "A definir" &&
-    opponentProfile.name.split(" ").pop().toLowerCase() === dm.opponent_name.split(" ").pop().toLowerCase());
+  // Perfil so e usado quando ha adversario definido (nao "A definir"/TBD). NAO
+  // comparamos string de nome: o perfil no KV ja e do adversario atual, e comparar
+  // nomes de fontes diferentes dava falso negativo (formatos distintos), escondendo
+  // dados validos como o ranking. A limpeza de perfil obsoleto e feita no cron.
+  var oppProfileValid = !!(opponentProfile && opponentProfile.name && dm &&
+    dm.opponent_id && dm.opponent_name && dm.opponent_name !== "A definir");
   var ds = season || null;
 
   return (

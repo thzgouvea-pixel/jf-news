@@ -1667,12 +1667,12 @@ export default async function handler(req, res) {
       }
     } catch (e) { log("season error: " + e.message); }
 
-    // Trava de adversario: so grava o perfil se for do adversario ATUAL e definido.
-    // Senao apaga — evita exibir nome/pais/ranking/foto do adversario anterior depois
-    // que o Fonseca avanca (proximo = "A definir") ou troca de adversario.
-    var opMatchesOpp = op && op.name && nm && nm.opponent_name && nm.opponent_name !== "A definir" &&
-      stripAccents(op.name.split(" ").pop().toLowerCase()) === stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
-    if (opMatchesOpp) {
+    // Mantem o perfil quando ha adversario definido (op ja e do adversario atual,
+    // pois fetchOpponentProfile foi chamado com o nm corrente). So apaga quando o
+    // proximo adversario for "A definir" — evita exibir o perfil do adversario
+    // anterior, sem o risco de apagar um perfil valido por diferenca de formato de
+    // nome (o ranking do adversario vem desse perfil).
+    if (op && nm && nm.opponent_name && nm.opponent_name !== "A definir") {
       w.push(kv.set("fn:opponentProfile", JSON.stringify(op), { ex: T2 }));
     } else {
       try { await kv.del("fn:opponentProfile"); } catch (e) { }
