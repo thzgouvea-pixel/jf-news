@@ -452,8 +452,11 @@ async function fetchWinProb(nm) {
     var marketsEarly = Array.isArray(sdEarly) ? sdEarly : (sdEarly && sdEarly.markets);
     if (marketsEarly && Array.isArray(marketsEarly)) {
       var h2hEarly = marketsEarly.find(function (m) { return m.name === "Full time" || m.name === "1x2"; });
-      if (h2hEarly && h2hEarly.choices && h2hEarly.choices.length >= 2) {
-        var isFHE = nm.isFonsecaHome !== false;
+      // So usa odds posicionais do SofaScore ("1"=casa / "2"=visitante) quando sabemos
+      // de fato se o Fonseca e casa ou visitante. Se a flag for desconhecida, evita
+      // inverter a probabilidade e cai pro fallback por nome (Odds API).
+      if (h2hEarly && h2hEarly.choices && h2hEarly.choices.length >= 2 && typeof nm.isFonsecaHome === "boolean") {
+        var isFHE = nm.isFonsecaHome;
         var homeE = h2hEarly.choices.find(function(c) { return c.name === "1"; });
         var awayE = h2hEarly.choices.find(function(c) { return c.name === "2"; });
         var fE = isFHE ? homeE : awayE;
