@@ -1645,7 +1645,16 @@ export default async function handler(req, res) {
     } catch (e) { log("season error: " + e.message); }
 
     if (op) w.push(kv.set("fn:opponentProfile", JSON.stringify(op), { ex: T2 }));
-    if (wp) w.push(kv.set("fn:winProb", JSON.stringify(wp), { ex: T2 }));
+    // Trava de adversario: so grava winProb se for do adversario ATUAL e definido.
+    // Caso contrario apaga — evita exibir a probabilidade do jogo anterior (cache
+    // ressuscitado quando as odds do novo jogo ainda nao sairam) ou sem adversario.
+    var wpMatchesOpp = wp && wp.opponent_name && nm && nm.opponent_name && nm.opponent_name !== "A definir" &&
+      stripAccents(wp.opponent_name.split(" ").pop().toLowerCase()) === stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
+    if (wpMatchesOpp) {
+      w.push(kv.set("fn:winProb", JSON.stringify(wp), { ex: T2 }));
+    } else {
+      try { await kv.del("fn:winProb"); } catch (e) { }
+    }
     if (exRankingsList && !rankingsListFresh) w.push(kv.set("fn:atpRankings", JSON.stringify(exRankingsList), { ex: T7 }));
     if (h2hData) w.push(kv.set("fn:h2h", JSON.stringify(h2hData), { ex: T2 }));
     if (pregameFormData) w.push(kv.set("fn:pregameForm", JSON.stringify(pregameFormData), { ex: T2 }));
