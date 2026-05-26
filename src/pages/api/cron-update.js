@@ -1090,6 +1090,31 @@ export default async function handler(req, res) {
     var op = await fetchOpponentProfile(nm, exOpp);
     steps.opp = op ? (op.name || "ok") : "\u2014";
 
+    // \u2500\u2500 CROSS-VALIDA RANKING DO ADVERSARIO \u2500\u2500
+    // O SofaScore as vezes embute um ranking errado no evento do match (visto:
+    // Luka Pavlovic #51 quando o real e #240). Prefere o cache do team endpoint
+    // (alimentado por fetchOpponentProfile, mais fresco). Se nem a lista ATP nem
+    // o cache confirmarem, zera o numero \u2014 melhor sem ranking do que valor errado.
+    async function crossValidateRanking(m) {
+      if (!m || !m.opponent_name) return;
+      var lastN = stripAccents(m.opponent_name.split(" ").pop().toLowerCase());
+      var fullN = stripAccents(m.opponent_name.toLowerCase());
+      if (rankingsLookup[fullN] || rankingsLookup[lastN]) return; // ja confirmado pela lista
+      if (m.opponent_id) {
+        try {
+          var cachedRaw = await kv.get("fn:oppCache:" + m.opponent_id);
+          var pr = cachedRaw ? (typeof cachedRaw === "string" ? JSON.parse(cachedRaw) : cachedRaw) : null;
+          if (pr && typeof pr.ranking === "number" && pr.ranking > 0) {
+            m.opponent_ranking = pr.ranking;
+            return;
+          }
+        } catch (e) { }
+      }
+      m.opponent_ranking = null;
+    }
+    if (lm) await crossValidateRanking(lm);
+    if (nm) await crossValidateRanking(nm);
+
     // ── WIN PROBABILITY ──
     var wp = null;
     var oddsFresh = lastOddsTs && (now - lastOddsTs) < H6;
