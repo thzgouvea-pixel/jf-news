@@ -1094,18 +1094,48 @@ export default async function handler(req, res) {
     // O SofaScore as vezes tem ranking errado para jogadores fora do top tier,
     // tanto no embed do evento quanto no team endpoint (visto: Luka Pavlovic
     // #51 em todas as fontes do SofaScore, quando o real ATP e #240). So aceita
-    // o ranking que veio da lista ATP autoritativa (fn:atpRankings, Gemini/Sofa
-    // semanal). Para qualquer outro adversario, zera o numero \u2014 melhor sem
-    // ranking do que um valor incorreto.
-    function crossValidateRanking(m) {
+    // o ranking que veio da lista ATP (autoritativa). Para os demais, busca via
+    // Gemini com web grounding (cache de 24h por opponent_id) \u2014 fonte
+    // independente, mais confiavel para qualquer faixa do ranking.
+    async function fetchRankFromGemini(name) {
+      if (!name) return null;
+      var prompt = "Qual o ranking ATP atual em SINGLES (n\u00e3o duplas) do tenista " + name +
+        " em maio de 2026? Se ele n\u00e3o estiver no ranking ATP de simples, retorne null. " +
+        "APENAS JSON, sem comentarios: {\"ranking\":NUMBER_OR_NULL}";
+      var gTxt = await geminiSearch(prompt);
+      var parsed = parseGeminiJSON(gTxt);
+      if (!parsed || parsed.ranking == null) return null;
+      var n = typeof parsed.ranking === "number" ? parsed.ranking : parseInt(parsed.ranking, 10);
+      if (isNaN(n) || n < 1 || n > 5000) return null;
+      return n;
+    }
+    async function crossValidateRanking(m) {
       if (!m || !m.opponent_name) return;
       var lastN = stripAccents(m.opponent_name.split(" ").pop().toLowerCase());
       var fullN = stripAccents(m.opponent_name.toLowerCase());
       if (rankingsLookup[fullN] || rankingsLookup[lastN]) return; // confirmado pela lista
+      if (m.opponent_id) {
+        var cacheKey = "fn:rankingCache:" + m.opponent_id;
+        try {
+          var cachedRaw = await kv.get(cacheKey);
+          if (cachedRaw) {
+            var c = typeof cachedRaw === "string" ? JSON.parse(cachedRaw) : cachedRaw;
+            if (c && (typeof c.ranking === "number" || c.ranking === null)) {
+              m.opponent_ranking = c.ranking;
+              return;
+            }
+          }
+        } catch (e) { }
+        var r = await fetchRankFromGemini(m.opponent_name);
+        m.opponent_ranking = r;
+        try { await kv.set(cacheKey, JSON.stringify({ ranking: r }), { ex: 86400 }); } catch (e) { }
+        return;
+      }
+      // Sem opponent_id, sem como cachear de forma estavel \u2014 zera (raro).
       m.opponent_ranking = null;
     }
-    if (lm) crossValidateRanking(lm);
-    if (nm) crossValidateRanking(nm);
+    if (lm) await crossValidateRanking(lm);
+    if (nm) await crossValidateRanking(nm);
 
     // ── WIN PROBABILITY ──
     var wp = null;
@@ -1179,14 +1209,12 @@ export default async function handler(req, res) {
       });
     }
     form.forEach(function (m) {
-      // Mesma trava do lm/nm: so mantem opponent_ranking se a lista ATP confirmar.
-      // Evita exibir #51 e similares vindo do embed do evento do SofaScore.
-      if (m.opponent_name) {
+      // Preenche o ranking quando a lista ATP tem o jogador — caso contrario mantem
+      // o que veio do evento. Validacao de fonte externa (Gemini) e cara demais para
+      // 10 entradas; cobrimos lm e nm que sao os mais visiveis.
+      if (!m.opponent_ranking && m.opponent_name) {
         var ln = stripAccents(m.opponent_name.split(" ").pop().toLowerCase());
-        var fn = stripAccents(m.opponent_name.toLowerCase());
-        if (rankingsLookup[fn]) m.opponent_ranking = rankingsLookup[fn];
-        else if (rankingsLookup[ln]) m.opponent_ranking = rankingsLookup[ln];
-        else m.opponent_ranking = null;
+        if (rankingsLookup[ln]) m.opponent_ranking = rankingsLookup[ln];
       }
       if (m.tournament) { var mp = lookupTournament(m.tournament); if (mp) m.tournament = mp.name; }
     });
