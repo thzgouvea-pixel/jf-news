@@ -16,11 +16,21 @@ export default function MatchPrediction(props) {
   useEffect(function() {
     fetch("/api/predict?matchId=" + matchId).then(function(r) { return r.json(); }).then(function(d) { if (d && d.total > 0) setPredResults(d); }).catch(function() {});
   }, []);
-  var options = [
-    { label: "Fonseca 2x0", score: "fonseca_2x0", winner: "joao" },
-    { label: "Fonseca 2x1", score: "fonseca_2x1", winner: "joao" },
-    { label: oppShort + " 2x1", score: "opp_2x1", winner: "opp" },
-    { label: oppShort + " 2x0", score: "opp_2x0", winner: "opp" },
+  // Grand Slam masculino e melhor-de-5 (3 sets para vencer); demais torneios sao
+  // melhor-de-3. Ajusta as opcoes de placar de acordo.
+  var isGS = match.tournament_category === "Grand Slam";
+  var options = isGS ? [
+    { label: "Fonseca 3x0", display: "3x0", score: "fonseca_3x0", winner: "joao" },
+    { label: "Fonseca 3x1", display: "3x1", score: "fonseca_3x1", winner: "joao" },
+    { label: "Fonseca 3x2", display: "3x2", score: "fonseca_3x2", winner: "joao" },
+    { label: oppShort + " 3x2", display: "3x2", score: "opp_3x2", winner: "opp" },
+    { label: oppShort + " 3x1", display: "3x1", score: "opp_3x1", winner: "opp" },
+    { label: oppShort + " 3x0", display: "3x0", score: "opp_3x0", winner: "opp" },
+  ] : [
+    { label: "Fonseca 2x0", display: "2x0", score: "fonseca_2x0", winner: "joao" },
+    { label: "Fonseca 2x1", display: "2x1", score: "fonseca_2x1", winner: "joao" },
+    { label: oppShort + " 2x1", display: "2x1", score: "opp_2x1", winner: "opp" },
+    { label: oppShort + " 2x0", display: "2x0", score: "opp_2x0", winner: "opp" },
   ];
   var handlePredict = function(opt) {
     if (prediction) return;
@@ -40,8 +50,8 @@ export default function MatchPrediction(props) {
         <>
           <p style={{ margin: "0 0 4px", fontSize: 15, fontWeight: 700, color: TEXT, fontFamily: SERIF }}>Qual será o placar?</p>
           <p style={{ margin: "0 0 10px", fontSize: 11, color: SUB, fontFamily: SANS }}>Fonseca vs {oppName}{match.round ? " · " + match.round : ""}{predResults && predResults.total ? " · " + predResults.total + " palpites" : ""}</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
-            {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.score} onClick={function() { handlePredict(opt); }} style={{ padding: "7px 4px", background: isJ ? "rgba(0,168,89,0.08)" : "rgba(192,57,43,0.08)", border: "1px solid " + (isJ ? "rgba(0,168,89,0.2)" : "rgba(192,57,43,0.2)"), borderRadius: 8, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 13, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.score.includes("2x0") ? "2x0" : "2x1"}</span><span style={{ fontSize: 9, color: DIM, fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(" + (isGS ? 3 : 4) + ", 1fr)", gap: 8 }}>
+            {options.map(function(opt) { var isJ = opt.winner === "joao"; return (<button key={opt.score} onClick={function() { handlePredict(opt); }} style={{ padding: "7px 4px", background: isJ ? "rgba(0,168,89,0.08)" : "rgba(192,57,43,0.08)", border: "1px solid " + (isJ ? "rgba(0,168,89,0.2)" : "rgba(192,57,43,0.2)"), borderRadius: 8, cursor: "pointer", textAlign: "center" }}><span style={{ fontSize: 13, fontWeight: 700, color: isJ ? GREEN : RED, fontFamily: SANS, display: "block" }}>{opt.display}</span><span style={{ fontSize: 9, color: DIM, fontFamily: SANS }}>{isJ ? "Fonseca" : oppShort}</span></button>); })}
           </div>
         </>
       ) : (
