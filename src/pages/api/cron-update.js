@@ -1091,29 +1091,21 @@ export default async function handler(req, res) {
     steps.opp = op ? (op.name || "ok") : "\u2014";
 
     // \u2500\u2500 CROSS-VALIDA RANKING DO ADVERSARIO \u2500\u2500
-    // O SofaScore as vezes embute um ranking errado no evento do match (visto:
-    // Luka Pavlovic #51 quando o real e #240). Prefere o cache do team endpoint
-    // (alimentado por fetchOpponentProfile, mais fresco). Se nem a lista ATP nem
-    // o cache confirmarem, zera o numero \u2014 melhor sem ranking do que valor errado.
-    async function crossValidateRanking(m) {
+    // O SofaScore as vezes tem ranking errado para jogadores fora do top tier,
+    // tanto no embed do evento quanto no team endpoint (visto: Luka Pavlovic
+    // #51 em todas as fontes do SofaScore, quando o real ATP e #240). So aceita
+    // o ranking que veio da lista ATP autoritativa (fn:atpRankings, Gemini/Sofa
+    // semanal). Para qualquer outro adversario, zera o numero \u2014 melhor sem
+    // ranking do que um valor incorreto.
+    function crossValidateRanking(m) {
       if (!m || !m.opponent_name) return;
       var lastN = stripAccents(m.opponent_name.split(" ").pop().toLowerCase());
       var fullN = stripAccents(m.opponent_name.toLowerCase());
-      if (rankingsLookup[fullN] || rankingsLookup[lastN]) return; // ja confirmado pela lista
-      if (m.opponent_id) {
-        try {
-          var cachedRaw = await kv.get("fn:oppCache:" + m.opponent_id);
-          var pr = cachedRaw ? (typeof cachedRaw === "string" ? JSON.parse(cachedRaw) : cachedRaw) : null;
-          if (pr && typeof pr.ranking === "number" && pr.ranking > 0) {
-            m.opponent_ranking = pr.ranking;
-            return;
-          }
-        } catch (e) { }
-      }
+      if (rankingsLookup[fullN] || rankingsLookup[lastN]) return; // confirmado pela lista
       m.opponent_ranking = null;
     }
-    if (lm) await crossValidateRanking(lm);
-    if (nm) await crossValidateRanking(nm);
+    if (lm) crossValidateRanking(lm);
+    if (nm) crossValidateRanking(nm);
 
     // ── WIN PROBABILITY ──
     var wp = null;
@@ -1187,9 +1179,14 @@ export default async function handler(req, res) {
       });
     }
     form.forEach(function (m) {
-      if (!m.opponent_ranking && m.opponent_name) {
+      // Mesma trava do lm/nm: so mantem opponent_ranking se a lista ATP confirmar.
+      // Evita exibir #51 e similares vindo do embed do evento do SofaScore.
+      if (m.opponent_name) {
         var ln = stripAccents(m.opponent_name.split(" ").pop().toLowerCase());
-        if (rankingsLookup[ln]) m.opponent_ranking = rankingsLookup[ln];
+        var fn = stripAccents(m.opponent_name.toLowerCase());
+        if (rankingsLookup[fn]) m.opponent_ranking = rankingsLookup[fn];
+        else if (rankingsLookup[ln]) m.opponent_ranking = rankingsLookup[ln];
+        else m.opponent_ranking = null;
       }
       if (m.tournament) { var mp = lookupTournament(m.tournament); if (mp) m.tournament = mp.name; }
     });
