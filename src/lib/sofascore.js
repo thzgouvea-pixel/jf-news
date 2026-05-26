@@ -142,7 +142,7 @@ export function log(prefix, msg) {
 }
 
 export function stripAccents(s) {
-  return s.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
 export function lookupTournament(rawName) {
