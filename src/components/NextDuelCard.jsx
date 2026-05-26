@@ -684,7 +684,12 @@ export default function NextDuelCard(props) {
             </a>
             )}
             {(function(){
-              var bracketLink = (bracketUrl && bracketUrl.url) || getBracketUrl(match.tournament_name);
+              // So usa o link do KV se o torneio dele bater com o torneio atual
+              // (evita linkar o chaveamento de um torneio anterior).
+              var _bcT = (bracketUrl && bracketUrl.tournament || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+              var _mcT = (match.tournament_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+              var bracketTnMismatch = _bcT && _mcT && _bcT.indexOf(_mcT) === -1 && _mcT.indexOf(_bcT) === -1;
+              var bracketLink = (bracketUrl && bracketUrl.url && !bracketTnMismatch) ? bracketUrl.url : getBracketUrl(match.tournament_name);
               var hasCalendar = !!matchDate;
               var hasBracket = !!bracketLink;
               if (!hasCalendar && !hasBracket) return null;
