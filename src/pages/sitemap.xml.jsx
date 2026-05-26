@@ -4,6 +4,8 @@ var SITE = "https://fonsecanews.com.br";
 function generateSitemap() {
   var pages = [
     { url: SITE, changefreq: "hourly", priority: "1.0" },
+    { url: SITE + "/proximo-jogo", changefreq: "hourly", priority: "0.9" },
+    { url: SITE + "/ultimo-jogo", changefreq: "hourly", priority: "0.9" },
     { url: SITE + "/biografia", changefreq: "monthly", priority: "0.9" },
     { url: SITE + "/regras", changefreq: "monthly", priority: "0.8" },
     { url: SITE + "/raquetes", changefreq: "weekly", priority: "0.7" },
