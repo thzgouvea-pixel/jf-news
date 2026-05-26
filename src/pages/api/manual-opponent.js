@@ -6,40 +6,8 @@
 
 import { kv } from "@vercel/kv";
 import crypto from "crypto";
-
-var BROADCAST_MAP = {
-  "BMW Open": "ESPN 2 / Disney+",
-  "Monte Carlo Masters": "ESPN",
-  "Indian Wells Masters": "ESPN",
-  "Miami Open": "ESPN",
-  "Madrid Open": "ESPN",
-  "Italian Open": "ESPN",
-  "Roland Garros": "ESPN / Disney+",
-  "Wimbledon": "ESPN",
-  "Australian Open": "ESPN",
-  "US Open": "ESPN",
-  "Barcelona Open": "ESPN 4",
-  "Hamburg Open": "ESPN 4",
-  "Halle Open": "ESPN 4",
-  "Queen's Club": "ESPN 4",
-  "Swiss Indoors Basel": "ESPN 4",
-  "Vienna Open": "ESPN 4",
-  "Rotterdam Open": "ESPN 4",
-  "Rio Open": "ESPN",
-  "Argentina Open": "ESPN 4",
-  "ATP Finals": "ESPN",
-  "Canadian Open": "ESPN",
-  "Cincinnati Masters": "ESPN",
-  "Shanghai Masters": "ESPN",
-  "Paris Masters": "ESPN",
-};
-
-function lookupBroadcast(tournamentName) {
-  if (!tournamentName) return null;
-  if (BROADCAST_MAP[tournamentName]) return BROADCAST_MAP[tournamentName];
-  for (var k in BROADCAST_MAP) { if (tournamentName.toLowerCase().includes(k.toLowerCase())) return BROADCAST_MAP[k]; }
-  return null;
-}
+// Fonte unica do mapa de emissoras (evita copia desatualizada aqui).
+import { lookupBroadcast } from "../../lib/sofascore.js";
 
 function safeCompare(a, b) {
   if (!a || !b) return false;
