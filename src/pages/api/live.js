@@ -7,6 +7,37 @@ import {
   extractMatch, parseMatchStats, enrichMatch, lookupTournament, lookupBroadcast,
   translateRound, stripAccents, NEXT_ROUND, BROADCAST_MAP, log as _log,
 } from "../../lib/sofascore.js";
+import { detectEvents, PUSH_EVENT_KINDS } from "../../lib/liveThread.js";
+
+// Helper: dispara push notification via /api/push-send (mesma estrategia do cron-update).
+async function sendLivePush(event, liveResult) {
+  var secret = process.env.PUSH_SECRET;
+  if (!secret) return;
+  var host = "https://fonsecanews.com.br";
+  var title = "Fonseca News";
+  if (event.kind === "set_won_f") title = "🎾 Set para o João!";
+  else if (event.kind === "set_won_o") title = "🎾 Set do adversário";
+  // Remove emoji do inicio do texto (titulo ja tem) pra body ficar mais limpo
+  var body = (event.text || "").replace(/^[☀-➿\u{1F300}-\u{1FAFF}]+\s*/u, "");
+  try {
+    await fetch(host + "/api/push-send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-push-secret": secret },
+      body: JSON.stringify({ title: title, body: body, url: host, tag: "live-" + event.kind }),
+    });
+  } catch (e) { }
+}
+
+// Helper: le a thread persistida do match atual (pra incluir na resposta).
+async function readThread(matchId) {
+  if (!matchId) return [];
+  try {
+    var raw = await kv.get("fn:liveThread:" + matchId);
+    if (!raw) return [];
+    var arr = typeof raw === "string" ? JSON.parse(raw) : raw;
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+}
 
 function log(msg) { _log("live", msg); }
 
@@ -48,6 +79,9 @@ export default async function handler(req, res) {
       var cacheAge = data.checkedAt ? Date.now() - new Date(data.checkedAt).getTime() : Infinity;
       var maxAge = data.live ? 15000 : 90000;
       if (cacheAge < maxAge) {
+        // Sempre anexa a thread mais recente (guardada em chave separada,
+        // pra refletir eventos detectados na ultima refresh sem refazer aqui).
+        if (data.matchId) data.thread = await readThread(data.matchId);
         var smaxage = data.live ? 10 : (data.matchFound ? 120 : 300);
         res.setHeader("Cache-Control", "public, s-maxage=" + smaxage + ", stale-while-revalidate=" + (smaxage * 2));
         return res.status(200).json(data);
@@ -161,6 +195,46 @@ export default async function handler(req, res) {
       if (stats) liveResult.stats = { fonseca: stats.fonseca, opponent: stats.opponent };
     } catch (e) { }
 
+    // ── LIVE THREAD: detecta eventos novos comparando ao snapshot anterior ──
+    // Roda so neste caminho (cache-miss) — ja efetivamente puxamos do SofaScore.
+    // Chamadas de usuario que caem no cache nao re-executam a deteccao, o que
+    // tanto economiza KV quanto reduz risco de push duplicado por race.
+    try {
+      var matchIdStr = String(liveResult.matchId);
+      var snapKey = "fn:liveSnapshot:" + matchIdStr;
+      var prevRaw = await kv.get(snapKey);
+      var prev = prevRaw ? (typeof prevRaw === "string" ? JSON.parse(prevRaw) : prevRaw) : null;
+      var isBO5 = liveResult.tournament_category === "Grand Slam";
+      var detection = detectEvents(prev, {
+        fSets: liveResult.score.fonseca_sets || [],
+        oSets: liveResult.score.opponent_sets || [],
+        sets_won: liveResult.score.sets_won || { fonseca: 0, opponent: 0 },
+        serving: liveResult.score.serving || "",
+        live: true,
+        status: liveResult.status || "",
+        matchId: matchIdStr,
+      }, {
+        bestOf: isBO5 ? 5 : 3,
+        opponentName: (liveResult.opponent && liveResult.opponent.name) || "Adversário",
+      });
+
+      var thread = await readThread(matchIdStr);
+      if (detection.events.length > 0) {
+        thread = thread.concat(detection.events);
+        if (thread.length > 60) thread = thread.slice(-60);
+        await kv.set("fn:liveThread:" + matchIdStr, JSON.stringify(thread), { ex: 86400 });
+        // Pushes em paralelo, com timeout curto via fetch para nao travar a resposta
+        await Promise.all(detection.events.map(function (ev) {
+          if (!PUSH_EVENT_KINDS[ev.kind]) return null;
+          return sendLivePush(ev, liveResult);
+        }));
+      }
+      await kv.set(snapKey, JSON.stringify(detection.snapshot), { ex: 86400 });
+      liveResult.thread = thread;
+    } catch (e) {
+      log("liveThread error: " + e.message);
+    }
+
     await kv.set("fn:live", JSON.stringify(liveResult), { ex: 30 });
     res.setHeader("Cache-Control", "public, s-maxage=10, stale-while-revalidate=20");
     return res.status(200).json(liveResult);
@@ -245,6 +319,35 @@ async function handleMatchFinished(match, now) {
     } catch (e) { log("recentForm error: " + e.message); }
 
     log("lastMatch saved: " + lm.result + " " + lm.score + " vs " + lm.opponent_name);
+
+    // Fecha a live thread com o evento de fim de jogo (idempotente — nao duplica).
+    // Quando o jogo termina entre dois polls, nem sempre passa pelo set_won detectado
+    // pelo /api/live, entao garantimos aqui o ultimo evento da timeline.
+    try {
+      var threadKey = "fn:liveThread:" + String(match.id);
+      var threadRaw = await kv.get(threadKey);
+      var thread = threadRaw ? (typeof threadRaw === "string" ? JSON.parse(threadRaw) : threadRaw) : [];
+      if (!Array.isArray(thread)) thread = [];
+      var alreadyHas = thread.some(function (e) {
+        return e && (e.kind === "match_won_f" || e.kind === "match_won_o");
+      });
+      if (!alreadyHas) {
+        if (lm.result === "V") {
+          thread.push({
+            kind: "match_won_f",
+            text: "🎉 VITÓRIA! Fonseca vence " + (lm.score || ""),
+            ts: now.toISOString(),
+          });
+        } else if (lm.result === "D") {
+          thread.push({
+            kind: "match_won_o",
+            text: "💔 Derrota. Fonseca perde " + (lm.score || ""),
+            ts: now.toISOString(),
+          });
+        }
+        await kv.set(threadKey, JSON.stringify(thread), { ex: 86400 });
+      }
+    } catch (e) { log("liveThread end error: " + e.message); }
 
     // Only scan for next match if we actually cleared it
     if (shouldClearNext) {
