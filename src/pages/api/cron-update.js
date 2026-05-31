@@ -1091,16 +1091,17 @@ export default async function handler(req, res) {
     steps.opp = op ? (op.name || "ok") : "\u2014";
 
     // \u2500\u2500 CROSS-VALIDA RANKING DO ADVERSARIO \u2500\u2500
-    // O SofaScore as vezes tem ranking errado para jogadores fora do top tier,
-    // tanto no embed do evento quanto no team endpoint (visto: Luka Pavlovic
-    // #51 em todas as fontes do SofaScore, quando o real ATP e #240). So aceita
-    // o ranking que veio da lista ATP (autoritativa). Para os demais, busca via
-    // Gemini com web grounding (cache de 24h por opponent_id) \u2014 fonte
-    // independente, mais confiavel para qualquer faixa do ranking.
+    // Fonte primaria: Gemini com web grounding (cache 24h por opponent_id) \u2014 busca
+    // o ranking ATP atual de cada adversario de forma independente, evitando tanto
+    // o embed errado do SofaScore quanto valores desatualizados da lista semanal.
+    // Fallback: lista ATP (fn:atpRankings) caso Gemini falhe.
     async function fetchRankFromGemini(name) {
       if (!name) return null;
+      var monthsPT = ["janeiro","fevereiro","mar\u00e7o","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+      var nowD = new Date();
+      var periodPT = monthsPT[nowD.getUTCMonth()] + " de " + nowD.getUTCFullYear();
       var prompt = "Qual o ranking ATP atual em SINGLES (n\u00e3o duplas) do tenista " + name +
-        " em maio de 2026? Se ele n\u00e3o estiver no ranking ATP de simples, retorne null. " +
+        " em " + periodPT + "? Se ele n\u00e3o estiver no ranking ATP de simples, retorne null. " +
         "APENAS JSON, sem comentarios: {\"ranking\":NUMBER_OR_NULL}";
       var gTxt = await geminiSearch(prompt);
       var parsed = parseGeminiJSON(gTxt);
@@ -1111,9 +1112,6 @@ export default async function handler(req, res) {
     }
     async function crossValidateRanking(m) {
       if (!m || !m.opponent_name) return;
-      var lastN = stripAccents(m.opponent_name.split(" ").pop().toLowerCase());
-      var fullN = stripAccents(m.opponent_name.toLowerCase());
-      if (rankingsLookup[fullN] || rankingsLookup[lastN]) return; // confirmado pela lista
       if (m.opponent_id) {
         var cacheKey = "fn:rankingCache:" + m.opponent_id;
         try {
@@ -1127,11 +1125,17 @@ export default async function handler(req, res) {
           }
         } catch (e) { }
         var r = await fetchRankFromGemini(m.opponent_name);
-        m.opponent_ranking = r;
-        try { await kv.set(cacheKey, JSON.stringify({ ranking: r }), { ex: 86400 }); } catch (e) { }
-        return;
+        if (r !== null) {
+          m.opponent_ranking = r;
+          try { await kv.set(cacheKey, JSON.stringify({ ranking: r }), { ex: 86400 }); } catch (e) { }
+          return;
+        }
       }
-      // Sem opponent_id, sem como cachear de forma estavel \u2014 zera (raro).
+      // Fallback: lista ATP (top semanal) \u2014 usada so se Gemini falhou ou sem opponent_id.
+      var lastN = stripAccents(m.opponent_name.split(" ").pop().toLowerCase());
+      var fullN = stripAccents(m.opponent_name.toLowerCase());
+      if (rankingsLookup[fullN]) { m.opponent_ranking = rankingsLookup[fullN]; return; }
+      if (rankingsLookup[lastN]) { m.opponent_ranking = rankingsLookup[lastN]; return; }
       m.opponent_ranking = null;
     }
     if (lm) await crossValidateRanking(lm);
