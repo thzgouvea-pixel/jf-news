@@ -1,0 +1,30 @@
+name: Cron Live Pinger
+
+# Pinga /api/cron-live a cada 5min (intervalo minimo do GitHub Actions).
+# cron-live e leve: ~80% das execucoes sao early-return (so KV reads) porque so
+# entra em "janela ativa" 90min antes / durante / 6h apos um jogo do Joao.
+# Quando ativo, chama /api/live que faz o refresh do score e dispara a deteccao
+# da live thread (eventos e pushes de set_won).
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    concurrency:
+      group: cron-live-ping
+      cancel-in-progress: false
+    steps:
+      - name: Ping /api/cron-live
+        run: |
+          echo "Pinging cron-live at $(date -u +%FT%TZ)"
+          curl -fsS --max-time 60 -A "GHA-cron-live-pinger/1.0" \
+            "https://fonsecanews.com.br/api/cron-live" \
+            -o /tmp/cron-live-resp.json -w "HTTP %{http_code} in %{time_total}s\n"
+          echo "--- Response ---"
+          head -c 500 /tmp/cron-live-resp.json
+          echo

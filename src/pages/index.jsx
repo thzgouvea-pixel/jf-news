@@ -4,6 +4,7 @@ import Head from "next/head";
 import { GREEN, YELLOW, BG_ALT, TEXT, SUB, DIM, BORDER, RED, SERIF, SANS, CARD_SHADOW, CARD_SHADOW_MD, CARD_RADIUS, CACHE_DURATION_MS, surfaceColorMap, countryFlags, catColors, PLAYER_DB } from "../lib/constants";
 import { findPlayer, getATPImage, getESPNImage, getSofaScoreImage, formatTimeAgo, formatMatchDate, detectDevice } from "../lib/utils";
 import NextDuelCard from "../components/NextDuelCard";
+import LiveThread from "../components/LiveThread";
 import LiveScoreCard from "../components/LiveScoreCard";
 import PlayerBlock from "../components/PlayerBlock";
 import MatchCarousel from "../components/MatchCarousel";
@@ -646,6 +647,7 @@ export default function JoaoFonsecaNews() {
           <NextDuelCard match={dm} player={dp} onOppClick={oppProfileValid ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={oppProfileValid ? opponentProfile : null} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} bracketUrl={bracketUrl} />
           </div>
         </section>
+        <LiveThread thread={liveMatch && liveMatch.thread} />
         <section style={{ padding: "12px 0 0" }}>
           <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
           {highlightVideo && highlightVideo.videoId ? (
