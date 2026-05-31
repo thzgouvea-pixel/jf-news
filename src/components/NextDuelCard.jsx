@@ -237,16 +237,16 @@ export default function NextDuelCard(props) {
 
   // DETECCAO DE ATRASO: compara horario original (scheduledTimestamp, congelado no inicio do dia)
   // com o startTimestamp atual (atualizado pelo SofaScore quando o jogo atrasa).
-  // Mostra badge informativo abaixo do horario quando diff >= 15min.
-  // Esconde quando: ao vivo, finalizado, sem oponente, ou diff irrelevante.
+  // So mostra a badge quando o jogo esta proximo (<= 2h pra comecar) — antes disso
+  // mudancas de horario sao normais e nao acionaveis pelo usuario.
   var delayInfo = null;
   if (match.scheduledTimestamp && match.startTimestamp && !isLive && match.opponent_name && match.opponent_name !== "A definir") {
     var schedDiffSec = match.startTimestamp - match.scheduledTimestamp;
     var schedDiffMin = Math.abs(schedDiffSec) / 60;
-    var hoursUntilSched = (match.scheduledTimestamp - Date.now() / 1000) / 3600;
+    var hoursUntilStart = (match.startTimestamp - Date.now() / 1000) / 3600;
     var isOperationalDelay = schedDiffMin >= 15 && schedDiffMin <= 12 * 60;
-    var isNearScheduledTime = hoursUntilSched <= 6;
-  if (isOperationalDelay && isNearScheduledTime) {
+    var isNearMatchTime = hoursUntilStart <= 2 && hoursUntilStart >= -0.5; // ate 2h antes do jogo, sem ja estar muito atrasado
+  if (isOperationalDelay && isNearMatchTime) {
       var origDate = new Date(match.scheduledTimestamp * 1000);
       var origTimeBR = origDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
       var diffMin = Math.round(Math.abs(schedDiffSec) / 60);
