@@ -52,7 +52,15 @@ function findFonseca(data) {
   return null;
 }
 
-// Never overwrite good data with empty data
+// Never overwrite good data with empty data.
+// EXCETO campos especificos do adversario: esses NAO podem vazar entre matches
+// diferentes (ex.: ranking de Djokovic nao pode aparecer no card de Ruud quando
+// o novo lm vier sem ranking). Para esses, o valor do novo payload e final
+// (mesmo se for null).
+var DO_NOT_INHERIT = [
+  "opponent_ranking", "opponent_id", "opponent_country", "opponent_name",
+  "opponent_atp_slug",
+];
 async function protectKV(key, newData) {
   if (!newData) return newData;
   try {
@@ -61,6 +69,7 @@ async function protectKV(key, newData) {
     var old = typeof raw === "string" ? JSON.parse(raw) : raw;
     if (!old || typeof old !== "object") return newData;
     for (var f in old) {
+      if (DO_NOT_INHERIT.indexOf(f) !== -1) continue;
       if (old[f] !== null && old[f] !== undefined && old[f] !== "" && old[f] !== 0) {
         if (newData[f] === null || newData[f] === undefined || newData[f] === "" || newData[f] === 0) {
           newData[f] = old[f];
@@ -261,7 +270,11 @@ async function handleMatchFinished(match, now) {
     lm = await protectKV("fn:lastMatch", lm);
 
     // Check if nextMatch already has a DIFFERENT opponent (= next round already set)
-    // If so, DON'T delete nextMatch or winProb — they belong to the NEXT game
+    // If so, DON'T delete nextMatch or winProb — they belong to the NEXT game.
+    // Tambem ja aproveita pra HERDAR o ranking validado do nextMatch quando o
+    // adversario que acabou de jogar = o que estava como proximo. Garante que a
+    // transicao "proximo/ao vivo -> ultima partida" ja vai com ranking certo,
+    // sem esperar o proximo cron-update validar.
     var shouldClearNext = true;
     try {
       var existingNm = await kv.get("fn:nextMatch");
@@ -273,6 +286,25 @@ async function handleMatchFinished(match, now) {
           if (nextOpp !== finishedOpp && parsedNm.opponent_name !== "A definir") {
             shouldClearNext = false;
             log("nextMatch has different opponent (" + parsedNm.opponent_name + "), preserving nextMatch + winProb");
+          } else if (nextOpp === finishedOpp && parsedNm.opponent_ranking) {
+            // Mesmo adversario que estava como proximo -> herda ranking validado.
+            lm.opponent_ranking = parsedNm.opponent_ranking;
+            log("inherited opponent_ranking from nextMatch: #" + lm.opponent_ranking);
+          }
+        }
+      }
+      // Fallback: se o ranking ainda nao bate, tenta fn:opponentProfile (team endpoint).
+      if (!lm.opponent_ranking) {
+        var opRaw = await kv.get("fn:opponentProfile");
+        if (opRaw) {
+          var op = typeof opRaw === "string" ? JSON.parse(opRaw) : opRaw;
+          if (op && op.name && op.ranking && lm.opponent_name) {
+            var opLast = stripAccents(op.name.split(" ").pop().toLowerCase());
+            var lmLast = stripAccents(lm.opponent_name.split(" ").pop().toLowerCase());
+            if (opLast === lmLast) {
+              lm.opponent_ranking = op.ranking;
+              log("inherited opponent_ranking from opponentProfile: #" + lm.opponent_ranking);
+            }
           }
         }
       }
