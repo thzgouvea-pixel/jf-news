@@ -1616,6 +1616,78 @@ export default async function handler(req, res) {
       try { await kv.del("fn:highlight-video"); } catch (e) { }
     }
 
+    // ── HIGHLIGHT VIDEO AUTO-FIND ──
+    // Canais oficiais (Roland Garros / Tennis TV / ATP Tour / Wimbledon / US Open /
+    // AO) sobem o video do jogo no YouTube ~30-40min apos o termino. O cron roda a
+    // cada ~10min, entao busca dentro dessa janela ate achar (max 6 tentativas).
+    // Override manual (source:"manual" no payload) e respeitado e nunca sobrescrito.
+    try {
+      if (lm && lm.finished && lm.id && lm.opponent_name) {
+        var existingVid = await kv.get("fn:highlight-video");
+        var parsedVid = existingVid ? (typeof existingVid === "string" ? JSON.parse(existingVid) : existingVid) : null;
+        var matchedExisting = parsedVid && parsedVid.videoId && String(parsedVid.matchId) === String(lm.id);
+        var manualLocked = parsedVid && parsedVid.source === "manual";
+        // Janela de ate ~24h apos o startTimestamp (cobre WO/retirada tardios e jogos longos)
+        var withinWindow = !lm.startTimestamp || (Date.now() - (lm.startTimestamp * 1000) < 86400 * 1000);
+        if (!matchedExisting && !manualLocked && withinWindow) {
+          var stateKey = "fn:videoState:" + lm.id;
+          var stateRaw = await kv.get(stateKey);
+          var vState = stateRaw ? (typeof stateRaw === "string" ? JSON.parse(stateRaw) : stateRaw) : { attempts: 0 };
+          if ((vState.attempts || 0) < 6) {
+            var oppShort = lm.opponent_name.split(" ").pop();
+            var year = lm.date ? (new Date(lm.date).getFullYear()) : new Date().getFullYear();
+            var roundHint = lm.round ? (" (" + lm.round + ")") : "";
+            var prompt = "Encontre o ID do video do YouTube com os melhores momentos (highlights) " +
+              "oficiais da partida de tenis Joao Fonseca vs " + lm.opponent_name + " no torneio " +
+              (lm.tournament_name || "ATP") + " " + year + roundHint + ". " +
+              "Procure nos canais oficiais: Roland Garros, Tennis TV, ATP Tour, Wimbledon, US Open, " +
+              "Australian Open. O video DEVE ser desse jogo especifico (mesmo adversario, mesmo " +
+              "torneio, mesmo ano). " +
+              "APENAS JSON: {\"videoId\":\"ID-de-11-caracteres-OU-null\",\"title\":\"titulo do video ou null\"}";
+            var gTxt = await geminiSearch(prompt);
+            var parsedG = parseGeminiJSON(gTxt);
+            var candidateId = parsedG && parsedG.videoId;
+            vState.attempts = (vState.attempts || 0) + 1;
+            vState.lastTried = new Date().toISOString();
+            await kv.set(stateKey, JSON.stringify(vState), { ex: 86400 * 2 });
+            if (candidateId && /^[A-Za-z0-9_-]{11}$/.test(candidateId)) {
+              // Sanity: bate o oEmbed (sem API key) e exige "fonseca" + sobrenome do
+              // oponente no titulo pra evitar reupload aleatorio.
+              try {
+                var oembed = await fetch("https://www.youtube.com/oembed?format=json&url=https://www.youtube.com/watch?v=" + candidateId, {
+                  headers: { "User-Agent": "FonsecaNews/1.0 (https://fonsecanews.com.br)" },
+                });
+                if (oembed.ok) {
+                  var oData = await oembed.json();
+                  var ytTitle = (oData && oData.title) || "";
+                  var t = ytTitle.toLowerCase();
+                  var hasFonseca = t.indexOf("fonseca") !== -1;
+                  var hasOpp = t.indexOf(oppShort.toLowerCase()) !== -1 ||
+                               t.indexOf(stripAccents(oppShort.toLowerCase())) !== -1;
+                  if (hasFonseca && hasOpp) {
+                    w.push(kv.set("fn:highlight-video", JSON.stringify({
+                      videoId: candidateId,
+                      title: ytTitle,
+                      matchId: String(lm.id),
+                      source: "auto",
+                      foundAt: new Date().toISOString(),
+                    }), { ex: T7 }));
+                    log("highlight: " + candidateId + " (\"" + ytTitle.substring(0, 60) + "\")");
+                  } else {
+                    log("highlight: rejected (title \"" + ytTitle.substring(0, 60) + "\" missing fonseca/opp)");
+                  }
+                } else {
+                  log("highlight: oembed " + oembed.status);
+                }
+              } catch (e) { log("highlight: oembed error " + e.message); }
+            } else {
+              log("highlight: not found yet (attempt " + vState.attempts + "/6)");
+            }
+          }
+        }
+      }
+    } catch (e) { log("highlight finder error: " + e.message); }
+
     if (form.length > 0) w.push(kv.set("fn:recentForm", JSON.stringify(form), { ex: T7 }));
 
     if (wiki) {
