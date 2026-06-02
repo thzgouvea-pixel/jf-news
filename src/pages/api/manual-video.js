@@ -91,6 +91,7 @@ export default async function handler(req, res) {
     videoId: videoId,
     title: title,
     updatedAt: new Date().toISOString(),
+    source: "manual",
   };
 
   // Salva por 7 dias (depois expira sozinho)
