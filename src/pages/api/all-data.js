@@ -61,6 +61,7 @@ export default async function handler(req, res) {
       getKV("fn:pregameForm"),
       getKV("fn:careerNarrative"),
       getKV("fn:rankingHistory"),
+      getKV("fn:opponentSeasonStats"),
     ]);
 
     var matchStats = results[0];
@@ -88,6 +89,7 @@ export default async function handler(req, res) {
     var pregameForm = results[22];
     var careerNarrative = results[23];
     var rankingHistory = results[24];
+    var opponentSeasonStats = results[25];
 
     var parse = function(val) {
       if (!val) return null;
@@ -141,6 +143,7 @@ export default async function handler(req, res) {
       pregameForm: pregameForm || null,
       careerNarrative: careerNarrative || null,
       rankingHistory: rankingHistory || [],
+      opponentSeasonStats: opponentSeasonStats || null,
     });
   } catch (e) {
     return res.status(500).json({ error: e.message });

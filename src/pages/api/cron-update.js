@@ -1878,6 +1878,76 @@ export default async function handler(req, res) {
     } else {
       try { await kv.del("fn:opponentProfile"); } catch (e) { }
     }
+
+    // ── PERFIL APROFUNDADO DO ADVERSARIO (estatisticas da temporada) ──
+    // Card abaixo do "Proximo jogo" so quando ha adversario definido. 1 chamada
+    // Gemini grounded por jogador (cache 7 dias) puxando da pagina oficial da
+    // ATP. So refaz se o adversario mudar (cached.name != nm.name) ou a cache
+    // expirar. Limpa quando o adversario virar "A definir".
+    try {
+      if (nm && nm.opponent_name && nm.opponent_name !== "A definir" && nm.opponent_id) {
+        var seasonCacheKey = "fn:opponentSeasonStats";
+        var cachedSS = await kv.get(seasonCacheKey);
+        var cachedParsed = cachedSS ? (typeof cachedSS === "string" ? JSON.parse(cachedSS) : cachedSS) : null;
+        var sameOpp = cachedParsed && cachedParsed.opponent_name &&
+          stripAccents(cachedParsed.opponent_name.split(" ").pop().toLowerCase()) ===
+          stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
+        if (!sameOpp) {
+          var ssYear = new Date().getUTCFullYear();
+          var ssPrompt =
+            "Sobre o tenista " + nm.opponent_name + " (ATP Tour, singles) na temporada " + ssYear +
+            ". Busque dados oficiais (atptour.com, perfil do jogador). APENAS JSON valido, sem " +
+            "markdown, com estes campos. Use null quando NAO souber (NUNCA invente):\n" +
+            "{\n" +
+            "  \"rank_start_year\": <ranking ATP no inicio de " + ssYear + ", numero inteiro 1-3000 ou null>,\n" +
+            "  \"rank_current\": <ranking ATP atual em singles, numero inteiro 1-3000 ou null>,\n" +
+            "  \"wins_year\": <vitorias em singles em " + ssYear + ", inteiro ou null>,\n" +
+            "  \"losses_year\": <derrotas em singles em " + ssYear + ", inteiro ou null>,\n" +
+            "  \"titles_year\": <numero de titulos ATP conquistados em " + ssYear + ", inteiro ou null>,\n" +
+            "  \"first_serve_pct\": <% medio de 1o saque bom em " + ssYear + ", 0 a 100 ou null>,\n" +
+            "  \"first_serve_won_pct\": <% pontos ganhos no 1o saque em " + ssYear + ", 0-100 ou null>,\n" +
+            "  \"break_points_won_pct\": <% break points convertidos em " + ssYear + ", 0-100 ou null>,\n" +
+            "  \"aces_per_match\": <media de aces por partida em " + ssYear + ", numero >=0 ou null>,\n" +
+            "  \"double_faults_per_match\": <media de duplas faltas por partida em " + ssYear + ", numero >=0 ou null>,\n" +
+            "  \"best_win_year\": <frase em portugues do Brasil descrevendo a melhor vitoria do ano (ex.: 'vs Alcaraz em Madrid R32'), max 80 chars, ou null>\n" +
+            "}";
+          var ssTxt = await geminiSearch(ssPrompt);
+          var ssParsed = parseGeminiJSON(ssTxt);
+          if (ssParsed) {
+            function ssNum(v, min, max) {
+              if (typeof v !== "number" || isNaN(v)) return null;
+              if (min != null && v < min) return null;
+              if (max != null && v > max) return null;
+              return v;
+            }
+            var ssClean = {
+              opponent_name: nm.opponent_name,
+              opponent_id: nm.opponent_id,
+              year: ssYear,
+              rank_start_year: ssNum(ssParsed.rank_start_year, 1, 3000),
+              rank_current: ssNum(ssParsed.rank_current, 1, 3000),
+              wins_year: ssNum(ssParsed.wins_year, 0, 200),
+              losses_year: ssNum(ssParsed.losses_year, 0, 200),
+              titles_year: ssNum(ssParsed.titles_year, 0, 30),
+              first_serve_pct: ssNum(ssParsed.first_serve_pct, 0, 100),
+              first_serve_won_pct: ssNum(ssParsed.first_serve_won_pct, 0, 100),
+              break_points_won_pct: ssNum(ssParsed.break_points_won_pct, 0, 100),
+              aces_per_match: ssNum(ssParsed.aces_per_match, 0, 100),
+              double_faults_per_match: ssNum(ssParsed.double_faults_per_match, 0, 100),
+              best_win_year: typeof ssParsed.best_win_year === "string" && ssParsed.best_win_year.length > 2 && ssParsed.best_win_year.length <= 120 ? ssParsed.best_win_year : null,
+              fetchedAt: new Date().toISOString(),
+            };
+            await kv.set(seasonCacheKey, JSON.stringify(ssClean), { ex: 86400 * 7 });
+            log("opponentSeasonStats: " + nm.opponent_name + " (" + ssYear + ")");
+          }
+        } else {
+          log("opponentSeasonStats: cached for " + cachedParsed.opponent_name);
+        }
+      } else {
+        // Sem adversario definido — limpa pra nao mostrar dado do adversario anterior
+        try { await kv.del("fn:opponentSeasonStats"); } catch (e) { }
+      }
+    } catch (e) { log("opponentSeasonStats error: " + e.message); }
     // Trava de adversario: so grava winProb se for do adversario ATUAL e definido.
     // Caso contrario apaga — evita exibir a probabilidade do jogo anterior (cache
     // ressuscitado quando as odds do novo jogo ainda nao sairam) ou sem adversario.
