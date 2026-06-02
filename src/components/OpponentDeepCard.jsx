@@ -31,6 +31,10 @@ function ProgressBar(props) {
 export default function OpponentDeepCard(props) {
   var stats = props.stats;
   var opponent = props.opponent; // { name, country, ranking }
+  // Se o backend marcou os dados como stale pro contexto atual (janela critica
+  // antes/durante o jogo), esconde em vez de mostrar valor obsoleto. Vai voltar
+  // assim que o cron refrescar.
+  if (props.stale) return null;
   if (!stats || !opponent || !opponent.name) return null;
 
   var lastN = opponent.name.split(" ").pop().toLowerCase();

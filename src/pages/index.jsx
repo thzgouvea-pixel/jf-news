@@ -149,6 +149,8 @@ export default function JoaoFonsecaNews() {
   var _biography = useState(null); var biography = _biography[0]; var setBiography = _biography[1];
   var _opponentProfile = useState(null); var opponentProfile = _opponentProfile[0]; var setOpponentProfile = _opponentProfile[1];
   var _opponentSeasonStats = useState(null); var opponentSeasonStats = _opponentSeasonStats[0]; var setOpponentSeasonStats = _opponentSeasonStats[1];
+  var _serverCtx = useState({ kind: "idle" }); var serverCtx = _serverCtx[0]; var setServerCtx = _serverCtx[1];
+  var _freshness = useState({}); var freshness = _freshness[0]; var setFreshness = _freshness[1];
   var _nextTournament = useState(null); var nextTournament = _nextTournament[0]; var setNextTournament = _nextTournament[1];
   var _showOppPopup = useState(false); var showOppPopup = _showOppPopup[0]; var setShowOppPopup = _showOppPopup[1];
 
@@ -344,6 +346,7 @@ export default function JoaoFonsecaNews() {
       if (d.biography) setBiography(d.biography);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.opponentSeasonStats) setOpponentSeasonStats(d.opponentSeasonStats); else setOpponentSeasonStats(null);
+      if (d.context) setServerCtx(d.context); if (d.freshness) setFreshness(d.freshness);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
       if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
       if (d.bracketUrl && d.bracketUrl.url) setBracketUrl(d.bracketUrl); else setBracketUrl(null);
@@ -373,6 +376,7 @@ export default function JoaoFonsecaNews() {
       if (d.biography) setBiography(d.biography);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.opponentSeasonStats) setOpponentSeasonStats(d.opponentSeasonStats); else setOpponentSeasonStats(null);
+      if (d.context) setServerCtx(d.context); if (d.freshness) setFreshness(d.freshness);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
       if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
       if (d.bracketUrl && d.bracketUrl.url) setBracketUrl(d.bracketUrl); else setBracketUrl(null);
@@ -631,7 +635,7 @@ export default function JoaoFonsecaNews() {
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
-            <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
+            <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} matchStatsStale={freshness && freshness.matchStats === "stale"} />
           )}
           </div>
         </section>
@@ -648,17 +652,21 @@ export default function JoaoFonsecaNews() {
         <>
         <section style={{ padding: "8px 0 0" }}>
           <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
-          <NextDuelCard match={dm} player={dp} onOppClick={oppProfileValid ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={oppProfileValid ? opponentProfile : null} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} bracketUrl={bracketUrl} />
+          <NextDuelCard match={dm} player={dp} onOppClick={oppProfileValid ? function(){ setShowOppPopup(true); } : null} winProb={winProb} oppProfile={oppProfileValid ? opponentProfile : null} onPushClick={handlePushSubscribe} pushEnabled={pushEnabled} pushLoading={pushLoading} liveData={liveMatch} nextTournament={nextTournament} bracketUrl={bracketUrl} winProbStale={freshness && freshness.winProb === "stale" && (serverCtx.kind === "live" || serverCtx.kind === "pre")} />
           </div>
         </section>
         <LiveThread thread={liveMatch && liveMatch.thread} />
-        <OpponentDeepCard stats={opponentSeasonStats} opponent={oppProfileValid ? opponentProfile : (dm && dm.opponent_name && dm.opponent_name !== "A definir" ? { name: dm.opponent_name, country: dm.opponent_country, ranking: dm.opponent_ranking } : null)} />
+        <OpponentDeepCard
+          stats={opponentSeasonStats}
+          opponent={oppProfileValid ? opponentProfile : (dm && dm.opponent_name && dm.opponent_name !== "A definir" ? { name: dm.opponent_name, country: dm.opponent_country, ranking: dm.opponent_ranking } : null)}
+          stale={freshness && freshness.opponentSeasonStats === "stale"}
+        />
         <section style={{ padding: "12px 0 0" }}>
           <div style={{ borderRadius: 22, overflow: "hidden", boxShadow: "0 4px 20px rgba(10,18,32,0.25)", background: "#0a1220" }}>
           {highlightVideo && highlightVideo.videoId ? (
             <MatchCarousel matchStats={matchStats} lastMatch={dl} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} highlightVideo={highlightVideo} />
           ) : (
-            <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} />
+            <PlayerBlock lastMatch={dl} matchStats={matchStats} recentForm={recentForm} prizeMoney={prizeMoney} playerRanking={dp ? dp.ranking : null} opponentProfile={opponentProfile} matchStatsStale={freshness && freshness.matchStats === "stale"} />
           )}
           </div>
         </section>

@@ -3,6 +3,21 @@
 // s-maxage=120 (2min edge cache) — cron updates KV every 4h, live.js handles real-time scores
 
 import { kv } from "@vercel/kv";
+import { getMatchContext, FRESHNESS_BUDGET } from "../../lib/matchContext.js";
+
+// Marca, pra cada chave com budget definido, se o dado esta dentro do prazo
+// (fresh), expirado (stale), ou nao tem timestamp pra avaliar. O front consulta
+// isso pra esconder valores fora do orcamento em contextos criticos (live/pre).
+function classifyFreshness(val, contextKind, key, now) {
+  if (val == null) return "missing";
+  var budget = FRESHNESS_BUDGET[key] && FRESHNESS_BUDGET[key][contextKind];
+  if (!budget) return "ok";
+  var ts = val && (val.updatedAt || val.foundAt || val.checkedAt || val.fetchedAt);
+  if (!ts) return "no-timestamp";
+  var age = now - new Date(ts).getTime();
+  if (isNaN(age) || age < 0) return "no-timestamp";
+  return age <= budget ? "fresh" : "stale";
+}
 
 async function getKV(key) {
   try {
@@ -108,7 +123,26 @@ export default async function handler(req, res) {
     for (var pk in predParsed) { predTotal += predParsed[pk]; }
     for (var pk2 in predParsed) { predictions[pk2] = { count: predParsed[pk2], pct: predTotal > 0 ? Math.round((predParsed[pk2] / predTotal) * 100) : 0 }; }
 
+    // Contexto + frescor — front usa pra esconder dado obsoleto em janelas criticas
+    var nowMs = Date.now();
+    var ctx = getMatchContext({ nextMatch: nextMatch, lastMatch: lastMatch, now: nowMs });
+    var freshness = {
+      nextMatch: classifyFreshness(nextMatch, ctx.kind, "fn:nextMatch", nowMs),
+      lastMatch: classifyFreshness(lastMatch, ctx.kind, "fn:lastMatch", nowMs),
+      matchStats: classifyFreshness(matchStats, ctx.kind, "fn:matchStats", nowMs),
+      opponentProfile: classifyFreshness(opponentProfile, ctx.kind, "fn:opponentProfile", nowMs),
+      opponentSeasonStats: classifyFreshness(opponentSeasonStats, ctx.kind, "fn:opponentSeasonStats", nowMs),
+      winProb: classifyFreshness(winProb, ctx.kind, "fn:winProb", nowMs),
+      ranking: classifyFreshness(ranking, ctx.kind, "fn:ranking", nowMs),
+      atpRankings: classifyFreshness(atpRankings, ctx.kind, "fn:atpRankings", nowMs),
+      nextTournament: classifyFreshness(nextTournament, ctx.kind, "fn:nextTournament", nowMs),
+      h2h: classifyFreshness(h2h, ctx.kind, "fn:h2h", nowMs),
+      recentForm: classifyFreshness(recentForm, ctx.kind, "fn:recentForm", nowMs),
+    };
+
     return res.status(200).json({
+      context: ctx,
+      freshness: freshness,
       // sofascore-data fields (same shape as /api/sofascore-data)
       matchStats: matchStats || null,
       recentForm: recentForm || null,

@@ -31,7 +31,10 @@ export default function PlayerBlock(props) {
   return (
     <div>
       {(matchStats && matchStats.fonseca || lastMatch) && (function() {
-        var msValid = matchStats && matchStats.fonseca && lastMatch && lastMatch.opponent_name && matchStats.opponent_name && matchStats.opponent_name.split(" ").pop() === lastMatch.opponent_name.split(" ").pop();
+        // Alem do match-opponent guard, descarta stats marcadas como stale pelo
+        // backend (/api/all-data). Em vez de mostrar valores velhos, deixa o
+        // grid vazio (atualiza assim que o cron refresh).
+        var msValid = !props.matchStatsStale && matchStats && matchStats.fonseca && lastMatch && lastMatch.opponent_name && matchStats.opponent_name && matchStats.opponent_name.split(" ").pop() === lastMatch.opponent_name.split(" ").pop();
         // W.O / retirement: esconde stats (nao houve jogo efetivo ou foi interrompido)
         // Detecta por flag walkover/retired OU por score contendo "W.O" OU por todos os campos = 0 (indicativo de WO nao-flagado)
         var isWO = lastMatch && (lastMatch.walkover || lastMatch.retired || (lastMatch.score && lastMatch.score.indexOf("W.O") !== -1));

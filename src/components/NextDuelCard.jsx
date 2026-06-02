@@ -237,12 +237,14 @@ export default function NextDuelCard(props) {
   // aparece e o card volta automaticamente ao layout prematch normal.
   var isPlaceholderMatch = !isLive && isOppTBD && !match.startTimestamp && !match.date;
 
-  // So usa o winProb se ele for do adversario ATUAL e houver adversario definido.
-  // Evita mostrar a % de um jogo anterior, ou uma % quando ainda nao ha adversario.
+  // So usa o winProb se ele for do adversario ATUAL e houver adversario definido,
+  // E o dado estiver fresco pro contexto (props.winProbStale vem do /api/all-data).
+  // Evita mostrar a % de um jogo anterior, sem adversario, ou velha demais.
   var _wpOppLast = (winProb && winProb.opponent_name || "").split(" ").pop().toLowerCase();
   var _curOppLast = (match && match.opponent_name || "").split(" ").pop().toLowerCase();
   var winProbValid = !!(winProb && winProb.opponent_name && match && match.opponent_name &&
-    match.opponent_name !== "A definir" && _wpOppLast && _wpOppLast === _curOppLast);
+    match.opponent_name !== "A definir" && _wpOppLast && _wpOppLast === _curOppLast &&
+    !props.winProbStale);
   var fPct = winProbValid && winProb.fonseca ? Math.round(winProb.fonseca) : null;
   var oPct = winProbValid && winProb.opponent ? Math.round(winProb.opponent) : null;
   var probSource = winProbValid ? (winProb.source || "api") : null;
