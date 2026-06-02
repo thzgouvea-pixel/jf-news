@@ -1496,10 +1496,65 @@ export default async function handler(req, res) {
       }
 
       if (!shouldKeepNextMatch) {
+        // === DESCOBERTA DINAMICA via Gemini grounded ===
+        // O ATP_CALENDAR_2026 e estatico e nao reflete inscricoes de ultima hora
+        // (wild cards, mudancas de calendario, ATPs 250 nao listados). Primeiro
+        // tenta achar via Gemini com web grounding (entry lists ATP, news oficial).
+        // Cache 3 dias pra nao gastar quota.
+        var gemNextT = null;
+        try {
+          var gemNextCacheKey = "fn:gemini:nextEnteredTourn";
+          var cachedGem = await kv.get(gemNextCacheKey);
+          if (cachedGem) {
+            var parsedCG = typeof cachedGem === "string" ? JSON.parse(cachedGem) : cachedGem;
+            // Invalida se o torneio cacheado ja comecou (precisa do PROXIMO)
+            if (parsedCG && parsedCG.start) {
+              var startCheck = new Date(parsedCG.start + "T00:00:00Z");
+              if (!isNaN(startCheck.getTime()) && startCheck > new Date()) {
+                gemNextT = parsedCG;
+                log("nextTournament Gemini (cached): " + parsedCG.name);
+              }
+            }
+          }
+          if (!gemNextT) {
+            var monthsPT2 = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+            var nowD2 = new Date();
+            var nowLabel = monthsPT2[nowD2.getUTCMonth()] + " de " + nowD2.getUTCFullYear();
+            var nextPrompt =
+              "Qual e o PROXIMO torneio do circuito ATP em que o tenista Joao Fonseca esta " +
+              "OFICIALMENTE INSCRITO/CONFIRMADO a partir de hoje (" + nowLabel + ")? Considere " +
+              "TODOS os niveis (ATP 250, ATP 500, Masters 1000, Grand Slam, ATP Finals), incluindo " +
+              "wild cards e inscricoes de ultima hora. Consulte ATP entry lists e noticias oficiais. " +
+              "Se houver duvida real, retorne name:null. APENAS JSON valido sem markdown: " +
+              "{\"name\":\"nome canonico em ingles\",\"city\":\"cidade\",\"country\":\"pais em portugues\"," +
+              "\"start\":\"YYYY-MM-DD\",\"end\":\"YYYY-MM-DD\"," +
+              "\"surface\":\"Clay\" ou \"Grass\" ou \"Hard\"," +
+              "\"category\":\"ATP 250\" ou \"ATP 500\" ou \"Masters 1000\" ou \"Grand Slam\" ou \"Finals\"}";
+            var gemTxt2 = await geminiSearch(nextPrompt);
+            var parsedG2 = parseGeminiJSON(gemTxt2);
+            if (parsedG2 && parsedG2.name && parsedG2.start) {
+              var sD = new Date(parsedG2.start + "T00:00:00Z");
+              if (!isNaN(sD.getTime()) && sD > new Date()) {
+                gemNextT = {
+                  name: String(parsedG2.name).substring(0, 80),
+                  city: String(parsedG2.city || "").substring(0, 60),
+                  country: String(parsedG2.country || "").substring(0, 60),
+                  start: parsedG2.start,
+                  end: parsedG2.end || parsedG2.start,
+                  surface: ["Clay","Grass","Hard"].indexOf(parsedG2.surface) !== -1 ? parsedG2.surface : "Hard",
+                  cat: ["ATP 250","ATP 500","Masters 1000","Grand Slam","Finals"].indexOf(parsedG2.category) !== -1 ? parsedG2.category : "",
+                };
+                await kv.set(gemNextCacheKey, JSON.stringify(gemNextT), { ex: 86400 * 3 });
+                log("nextTournament Gemini (fresh): " + gemNextT.name + " (" + gemNextT.start + ")");
+              }
+            }
+          }
+        } catch (e) { log("nextTournament Gemini error: " + e.message); }
+
         // Select only FUTURE tournaments (start date > today), never ongoing ones
         var todayForTourn = new Date();
         todayForTourn.setUTCHours(0, 0, 0, 0);
-        var nextT = ATP_CALENDAR_2026.find(function (t) {
+        var nextT = gemNextT || ATP_CALENDAR_2026.find(function (t) {
           if (!t.start) return false;
           return new Date(t.start + "T00:00:00Z") > todayForTourn;
         });
