@@ -92,6 +92,28 @@ export default function NextDuelCard(props) {
     return function() { clearInterval(iv); };
   }, []);
 
+  // Timezone do usuario: brasileiros veem BRT (mais familiar); resto do mundo ve o
+  // fuso local. SSR/hidratacao inicial usa BRT pra evitar mismatch; depois useEffect
+  // detecta o TZ do navegador e atualiza se for diferente.
+  var _userTZ = useState({ tz: "America/Sao_Paulo", label: "BRT" });
+  var userTZ = _userTZ[0]; var setUserTZ = _userTZ[1];
+  useEffect(function() {
+    try {
+      var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (!tz) return;
+      var BRAZIL_TZ = /^America\/(Sao_Paulo|Bahia|Belem|Fortaleza|Maceio|Recife|Manaus|Cuiaba|Campo_Grande|Boa_Vista|Rio_Branco|Porto_Velho|Eirunepe|Noronha|Araguaina)$/;
+      if (BRAZIL_TZ.test(tz)) return; // BRT default ja esta no estado inicial
+      // Pega abreviacao curta do TZ via Intl
+      var dtf = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "short" });
+      var parts = dtf.formatToParts(new Date());
+      var found = "";
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].type === "timeZoneName") { found = parts[i].value; break; }
+      }
+      setUserTZ({ tz: tz, label: found || tz.split("/").pop().replace(/_/g, " ") });
+    } catch (e) { }
+  }, []);
+
   var nextTournament = props.nextTournament || null;
 
   // Cai no placeholder "Proximo torneio" APENAS quando nao temos nenhuma partida agendada.
@@ -228,9 +250,9 @@ export default function NextDuelCard(props) {
   var matchDate = match.startTimestamp ? new Date(match.startTimestamp * 1000).toISOString() : match.date;
   var dateInfo = matchDate ? (function() {
     var d = new Date(matchDate);
-    var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
-    var diaSemana = d.toLocaleDateString("pt-BR", { weekday: "short", timeZone: "America/Sao_Paulo" });
-    var diaNum = d.toLocaleDateString("pt-BR", { day: "numeric", month: "short", timeZone: "America/Sao_Paulo" });
+    var h = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: userTZ.tz });
+    var diaSemana = d.toLocaleDateString("pt-BR", { weekday: "short", timeZone: userTZ.tz });
+    var diaNum = d.toLocaleDateString("pt-BR", { day: "numeric", month: "short", timeZone: userTZ.tz });
     var weekdayClean = diaSemana.charAt(0).toUpperCase() + diaSemana.slice(1).replace(".", "");
     return { weekday: weekdayClean, date: diaNum.replace(".", ""), time: h };
   })() : null;
@@ -248,7 +270,7 @@ export default function NextDuelCard(props) {
     var isNearMatchTime = hoursUntilStart <= 2 && hoursUntilStart >= -0.5; // ate 2h antes do jogo, sem ja estar muito atrasado
   if (isOperationalDelay && isNearMatchTime) {
       var origDate = new Date(match.scheduledTimestamp * 1000);
-      var origTimeBR = origDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+      var origTimeBR = origDate.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: userTZ.tz });
       var diffMin = Math.round(Math.abs(schedDiffSec) / 60);
       var diffH = Math.floor(diffMin / 60);
       var diffM = diffMin % 60;
@@ -639,7 +661,7 @@ export default function NextDuelCard(props) {
               <div style={{ fontSize: 14, fontWeight: 700, color: dateInfo ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)", fontFamily: SANS }}>{dateInfo ? dateInfo.weekday + ", " + dateInfo.date : "A definir"}</div>
             </div>
             <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid " + (delayInfo ? "rgba(251,146,60,0.3)" : "rgba(255,255,255,0.06)"), borderRadius: 14, padding: "14px 12px", textAlign: "center", display: "flex", flexDirection: "column", justifyContent: "center", minHeight: 70 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Horário (BRT)</div>
+              <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>{"Horário (" + userTZ.label + ")"}</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: dateInfo ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.4)", fontFamily: SANS }}>{dateInfo ? dateInfo.time : "A definir"}</div>
               {delayInfo && (
                 <div style={{ marginTop: 6, fontSize: 9, fontWeight: 700, color: "#fb923c", fontFamily: SANS, lineHeight: 1.35, letterSpacing: "0.01em" }}>
