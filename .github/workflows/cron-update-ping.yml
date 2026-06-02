@@ -10,9 +10,10 @@ name: Cron Update Pinger
 
 on:
   schedule:
-    - cron: "*/10 * * * *"   # a cada 10min — janela curta o suficiente pra eventos
-                              # de jogo, sem estourar limite de invocacao do Hobby
-                              # (~4320 chamadas/mes, dentro da cota grosso modo).
+    # Minuto 7 + 17 + 27... (a cada 10min). Evita os minutos "redondos" :00/:10/:20
+    # que o GitHub Actions notoriamente atrasa em horarios de pico de carga da
+    # plataforma. https://docs.github.com/actions/using-workflows/events-that-trigger-workflows#schedule
+    - cron: "7-59/10 * * * *"
   workflow_dispatch:         # botao manual no GitHub UI
 
 jobs:
