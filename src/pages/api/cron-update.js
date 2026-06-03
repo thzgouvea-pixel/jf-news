@@ -1786,19 +1786,55 @@ export default async function handler(req, res) {
         } catch (e) { }
       }
 
-      // CAREER STATS: s\u00f3 sobrescreve se Wikipedia retornou wins+losses (ambos) E source atual != manual
-      // CRITICAL: nunca grava parcial. Se faltar wins ou losses, n\u00e3o sobrescreve.
-      if (wiki.wins !== undefined && wiki.losses !== undefined && wiki.wins > 0 && wiki.losses > 0) {
-        if (!exCareer || exCareer.source !== "manual") {
-          var cW = wiki.wins, cL = wiki.losses;
+      // CAREER STATS: combina Wikipedia (fonte oficial mas com lag de dias) com
+      // contagem incremental nossa (cada lm.id novo finalizado conta na hora).
+      // - Quando Wikipedia >= nosso interno: rebaseamos para Wikipedia (catch-up).
+      // - Quando interno > Wikipedia: usamos interno (Wiki ainda nao acompanhou
+      //   o jogo mais recente). Lista countedIds rastreia quais ids ja foram
+      //   somados, garante idempotencia entre execucoes do cron.
+      // - Manual lock continua sagrado.
+      if (!exCareer || exCareer.source !== "manual") {
+        var prevCountedIds = (exCareer && Array.isArray(exCareer.countedIds)) ? exCareer.countedIds : [];
+        var deltaW = 0, deltaL = 0;
+        var newCountedIds = prevCountedIds.slice();
+        if (lm && lm.id && lm.finished && (lm.result === "V" || lm.result === "D")) {
+          var lmIdStr = String(lm.id);
+          if (newCountedIds.indexOf(lmIdStr) === -1) {
+            if (lm.result === "V") deltaW = 1; else deltaL = 1;
+            newCountedIds.unshift(lmIdStr);
+            if (newCountedIds.length > 100) newCountedIds = newCountedIds.slice(0, 100);
+          }
+        }
+        var baseW = (exCareer && typeof exCareer.wins === "number") ? exCareer.wins : 0;
+        var baseL = (exCareer && typeof exCareer.losses === "number") ? exCareer.losses : 0;
+        var internalW = baseW + deltaW, internalL = baseL + deltaL;
+        var hasWiki = wiki.wins !== undefined && wiki.losses !== undefined && wiki.wins > 0 && wiki.losses > 0;
+        var finalW, finalL, sourceTag;
+        if (hasWiki && wiki.wins >= internalW && wiki.losses >= internalL) {
+          finalW = wiki.wins; finalL = wiki.losses;
+          newCountedIds = []; // Wiki caught up \u2014 limpa nosso log
+          sourceTag = "wikipedia";
+        } else if (internalW > 0 && internalL > 0) {
+          finalW = internalW; finalL = internalL;
+          sourceTag = (deltaW > 0 || deltaL > 0) ? "auto-increment" : "cached";
+        } else if (hasWiki) {
+          finalW = wiki.wins; finalL = wiki.losses;
+          sourceTag = "wikipedia";
+        }
+        var changed = finalW !== undefined && (!exCareer || finalW !== exCareer.wins || finalL !== exCareer.losses);
+        if (changed && finalW > 0 && finalL > 0) {
           w.push(kv.set("fn:careerStats", JSON.stringify({
-            wins: cW,
-            losses: cL,
-            winPct: (cW + cL) > 0 ? Math.round(cW / (cW + cL) * 100) : 0,
-            titles: wiki.titles || (exCareer && exCareer.titles) || null,
+            wins: finalW,
+            losses: finalL,
+            winPct: (finalW + finalL) > 0 ? Math.round(finalW / (finalW + finalL) * 100) : 0,
+            titles: (wiki && wiki.titles) || (exCareer && exCareer.titles) || null,
+            countedIds: newCountedIds,
             updatedAt: new Date().toISOString(),
-            source: "wikipedia"
+            source: sourceTag,
           }), { ex: T7 }));
+          if (deltaW > 0 || deltaL > 0) {
+            log("careerStats: +" + (deltaW ? "1W" : "1L") + " (match " + lm.id + ") -> " + finalW + "-" + finalL);
+          }
         }
       }
     }
