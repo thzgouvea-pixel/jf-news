@@ -1503,7 +1503,9 @@ export default async function handler(req, res) {
         // Cache 3 dias pra nao gastar quota.
         var gemNextT = null;
         try {
-          var gemNextCacheKey = "fn:gemini:nextEnteredTourn";
+          // v2 — descarta cache antigo (que tinha cacheado Wimbledon pulando a
+          // temporada de grama). TTL agora 12h (era 3d) pra auto-correcao rapida.
+          var gemNextCacheKey = "fn:gemini:nextEnteredTourn:v2";
           var cachedGem = await kv.get(gemNextCacheKey);
           if (cachedGem) {
             var parsedCG = typeof cachedGem === "string" ? JSON.parse(cachedGem) : cachedGem;
@@ -1521,11 +1523,15 @@ export default async function handler(req, res) {
             var nowD2 = new Date();
             var nowLabel = monthsPT2[nowD2.getUTCMonth()] + " de " + nowD2.getUTCFullYear();
             var nextPrompt =
-              "Qual e o PROXIMO torneio do circuito ATP em que o tenista Joao Fonseca esta " +
-              "OFICIALMENTE INSCRITO/CONFIRMADO a partir de hoje (" + nowLabel + ")? Considere " +
-              "TODOS os niveis (ATP 250, ATP 500, Masters 1000, Grand Slam, ATP Finals), incluindo " +
-              "wild cards e inscricoes de ultima hora. Consulte ATP entry lists e noticias oficiais. " +
-              "Se houver duvida real, retorne name:null. APENAS JSON valido sem markdown: " +
+              "Qual e o PRIMEIRO/MAIS IMEDIATO torneio ATP a partir de hoje (" + nowLabel + ") em que " +
+              "o tenista Joao Fonseca esta OFICIALMENTE INSCRITO/CONFIRMADO? " +
+              "IMPORTANTE: NAO pule torneios menores. Se ele esta inscrito num ATP 250 ou 500 que " +
+              "comeca antes de um Grand Slam, retorne o ATP 250/500, NAO o Grand Slam. " +
+              "Considere TODOS os niveis (ATP 250, ATP 500, Masters 1000, Grand Slam, ATP Finals), " +
+              "incluindo wild cards e inscricoes de ultima hora. Consulte ATP entry lists e noticias " +
+              "oficiais recentes (atptour.com, anuncios do jogador/equipe). " +
+              "Se houver duvida real sobre a inscricao, retorne name:null em vez de chutar. " +
+              "APENAS JSON valido sem markdown: " +
               "{\"name\":\"nome canonico em ingles\",\"city\":\"cidade\",\"country\":\"pais em portugues\"," +
               "\"start\":\"YYYY-MM-DD\",\"end\":\"YYYY-MM-DD\"," +
               "\"surface\":\"Clay\" ou \"Grass\" ou \"Hard\"," +
@@ -1544,7 +1550,9 @@ export default async function handler(req, res) {
                   surface: ["Clay","Grass","Hard"].indexOf(parsedG2.surface) !== -1 ? parsedG2.surface : "Hard",
                   cat: ["ATP 250","ATP 500","Masters 1000","Grand Slam","Finals"].indexOf(parsedG2.category) !== -1 ? parsedG2.category : "",
                 };
-                await kv.set(gemNextCacheKey, JSON.stringify(gemNextT), { ex: 86400 * 3 });
+                // Cache 12h (encurtado de 3d) — auto-corrige rapido quando o Gemini
+                // erra ou quando entry list muda de ultima hora.
+                await kv.set(gemNextCacheKey, JSON.stringify(gemNextT), { ex: 86400 / 2 });
                 log("nextTournament Gemini (fresh): " + gemNextT.name + " (" + gemNextT.start + ")");
               }
             }

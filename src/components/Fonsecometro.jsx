@@ -4,33 +4,40 @@ import { SANS, SERIF, GREEN, TEXT, SUB, DIM } from "../lib/constants";
 function calcHype(recentForm) {
   if (!recentForm || recentForm.length === 0) return { pct: 50, mood: "Sem dados" };
   var last10 = recentForm.slice(0, 10);
-  var score = 50;
+  var score = 55; // arranque levemente positivo (tendencia de alta do Joao)
   last10.forEach(function(m, i) {
     var weight = last10.length - i;
-    if (i === 0) weight *= 1.5; // Última partida pesa 50% mais
-    var rank = m.opponent_ranking || 80;
+    if (i === 0) weight *= 1.5; // ultima partida pesa 50% mais
+    var rank = m.opponent_ranking || 100;
     var isWin = (m.result || "").toUpperCase() === "V";
     if (isWin) {
-      if (rank <= 10) score += weight * 2.0;
-      else if (rank <= 20) score += weight * 1.5;
-      else if (rank <= 50) score += weight * 1.1;
-      else score += weight * 0.7;
+      // Vitorias bonificadas em toda a faixa. Bater rank 50-100 (cenario tipico de
+      // primeiras rodadas de Slam) era +0.7, agora vale +1.0.
+      if (rank <= 10) score += weight * 2.2;
+      else if (rank <= 20) score += weight * 1.7;
+      else if (rank <= 50) score += weight * 1.3;
+      else if (rank <= 100) score += weight * 1.0;
+      else score += weight * 0.8;
     } else {
-      if (rank <= 5) score -= weight * 0.3;
-      else if (rank <= 10) score -= weight * 0.5;
-      else if (rank <= 20) score -= weight * 1.0;
-      else score -= weight * 2.0;
+      // Derrotas amenizadas. Perder pra elite eh esperado; perder pra rank 21-100
+      // nao pode custar o mesmo que perder pro #200 (formula antiga puniva igual).
+      if (rank <= 5) score -= weight * 0.2;
+      else if (rank <= 10) score -= weight * 0.4;
+      else if (rank <= 20) score -= weight * 0.8;
+      else if (rank <= 50) score -= weight * 1.2;
+      else if (rank <= 100) score -= weight * 1.5;
+      else score -= weight * 1.7;
     }
   });
   var pct = Math.max(0, Math.min(100, Math.round(score)));
   var mood;
-  if (pct >= 80) mood = "Imparável";
-  else if (pct >= 70) mood = "Em grande fase";
-  else if (pct >= 60) mood = "Confiante";
-  else if (pct >= 50) mood = "Estável";
-  else if (pct >= 40) mood = "Pé no chão";
-  else if (pct >= 30) mood = "Oscilando";
-  else if (pct >= 20) mood = "Buscando ritmo";
+  if (pct >= 78) mood = "Imparável";
+  else if (pct >= 65) mood = "Em grande fase";
+  else if (pct >= 55) mood = "Confiante";
+  else if (pct >= 45) mood = "Estável";
+  else if (pct >= 35) mood = "Pé no chão";
+  else if (pct >= 25) mood = "Oscilando";
+  else if (pct >= 15) mood = "Buscando ritmo";
   else mood = "Fase de adaptação";
   return { pct: pct, mood: mood };
 }
