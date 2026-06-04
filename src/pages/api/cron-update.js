@@ -1584,10 +1584,75 @@ export default async function handler(req, res) {
         // Select only FUTURE tournaments (start date > today), never ongoing ones
         var todayForTourn = new Date();
         todayForTourn.setUTCHours(0, 0, 0, 0);
-        var nextT = gemNextT || ATP_CALENDAR_2026.find(function (t) {
+        var futureCalendarTs = ATP_CALENDAR_2026.filter(function (t) {
           if (!t.start) return false;
           return new Date(t.start + "T00:00:00Z") > todayForTourn;
         });
+
+        // Se gemNextT nao foi achado (ou foi descartado pela validacao), em vez de
+        // pegar o cronologicamente primeiro (que pode ser um ATP 250 que Fonseca
+        // pula, ex.: Stuttgart enquanto ele vai pro Halle), faz uma chamada Gemini
+        // pra escolher entre os candidatos do calendario. Zero alucinacao possivel
+        // porque o Gemini so pode escolher nomes que existem na lista.
+        if (!gemNextT && futureCalendarTs.length > 0) {
+          try {
+            var pickCacheKey = "fn:gemini:confirmedNextPick:v1";
+            var cachedPick = await kv.get(pickCacheKey);
+            if (cachedPick) {
+              var parsedPick = typeof cachedPick === "string" ? JSON.parse(cachedPick) : cachedPick;
+              if (parsedPick && parsedPick.name) {
+                for (var ic = 0; ic < futureCalendarTs.length; ic++) {
+                  if (futureCalendarTs[ic].name === parsedPick.name) {
+                    var startCheck2 = new Date(futureCalendarTs[ic].start + "T00:00:00Z");
+                    if (startCheck2 > new Date()) {
+                      gemNextT = futureCalendarTs[ic];
+                      log("nextTournament confirmedPick (cached): " + gemNextT.name);
+                    }
+                    break;
+                  }
+                }
+              }
+            }
+            if (!gemNextT) {
+              var candidates = futureCalendarTs.slice(0, 8);
+              var listing = candidates.map(function (t, i) {
+                return (i + 1) + ". " + t.name + " — " + t.city + ", " + t.country + " (" + t.cat + ", " + t.start + " a " + t.end + ")";
+              }).join("\n");
+              var pickPrompt = "Dos torneios ATP listados abaixo (ordem cronologica), em quais o tenista Joao Fonseca esta OFICIALMENTE INSCRITO/CONFIRMADO?\n\n" +
+                listing + "\n\n" +
+                "REGRAS:\n" +
+                "- Use entry lists oficiais ATP (atptour.com), player activity dele, anuncios da equipe.\n" +
+                "- Se nao tiver certeza absoluta de algum, NAO INCLUA — preferimos pular do que mentir.\n" +
+                "- So liste os realmente confirmados, na ordem cronologica em que ele jogara.\n" +
+                "- Use exatamente o nome canonico da lista acima.\n\n" +
+                "APENAS JSON sem markdown: {\"confirmed\":[\"nome 1\",\"nome 2\",...]}";
+              var pickTxt = await geminiSearch(pickPrompt);
+              var pickParsed = parseGeminiJSON(pickTxt);
+              if (pickParsed && Array.isArray(pickParsed.confirmed) && pickParsed.confirmed.length > 0) {
+                // Acha o PRIMEIRO da lista cronologica que esta na resposta do Gemini
+                for (var ic2 = 0; ic2 < futureCalendarTs.length; ic2++) {
+                  var ct = futureCalendarTs[ic2];
+                  var ctNorm = ct.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+                  var confirmed = pickParsed.confirmed.some(function (cn) {
+                    var cnNorm = String(cn).toLowerCase().replace(/[^a-z0-9]/g, "");
+                    return cnNorm === ctNorm || cnNorm.indexOf(ctNorm) !== -1 || ctNorm.indexOf(cnNorm) !== -1;
+                  });
+                  if (confirmed) {
+                    gemNextT = ct;
+                    await kv.set(pickCacheKey, JSON.stringify({ name: ct.name }), { ex: 86400 / 2 });
+                    log("nextTournament confirmedPick (fresh): " + ct.name + " (" + ct.start + ")");
+                    break;
+                  }
+                }
+              } else {
+                log("nextTournament confirmedPick: Gemini nao confirmou nenhum dos " + candidates.length + " candidatos");
+              }
+            }
+          } catch (e) { log("nextTournament confirmedPick error: " + e.message); }
+        }
+
+        // Ultimo fallback: cronologico primeiro do calendario.
+        var nextT = gemNextT || futureCalendarTs[0];
 
         if (nextT) {
         // Check if Fonseca is confirmed to play — cache 3 days per tournament
