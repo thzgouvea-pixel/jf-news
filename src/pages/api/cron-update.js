@@ -1503,9 +1503,10 @@ export default async function handler(req, res) {
         // Cache 3 dias pra nao gastar quota.
         var gemNextT = null;
         try {
-          // v2 — descarta cache antigo (que tinha cacheado Wimbledon pulando a
-          // temporada de grama). TTL agora 12h (era 3d) pra auto-correcao rapida.
-          var gemNextCacheKey = "fn:gemini:nextEnteredTourn:v2";
+          // v3 — descarta cache anterior (que pode ter pego nome alucinado pelo
+          // Gemini). Agora o resultado so eh aceito se o nome existir no
+          // ATP_CALENDAR_2026. TTL 12h.
+          var gemNextCacheKey = "fn:gemini:nextEnteredTourn:v3";
           var cachedGem = await kv.get(gemNextCacheKey);
           if (cachedGem) {
             var parsedCG = typeof cachedGem === "string" ? JSON.parse(cachedGem) : cachedGem;
@@ -1541,19 +1542,40 @@ export default async function handler(req, res) {
             if (parsedG2 && parsedG2.name && parsedG2.start) {
               var sD = new Date(parsedG2.start + "T00:00:00Z");
               if (!isNaN(sD.getTime()) && sD > new Date()) {
-                gemNextT = {
-                  name: String(parsedG2.name).substring(0, 80),
-                  city: String(parsedG2.city || "").substring(0, 60),
-                  country: String(parsedG2.country || "").substring(0, 60),
-                  start: parsedG2.start,
-                  end: parsedG2.end || parsedG2.start,
-                  surface: ["Clay","Grass","Hard"].indexOf(parsedG2.surface) !== -1 ? parsedG2.surface : "Hard",
-                  cat: ["ATP 250","ATP 500","Masters 1000","Grand Slam","Finals"].indexOf(parsedG2.category) !== -1 ? parsedG2.category : "",
-                };
-                // Cache 12h (encurtado de 3d) — auto-corrige rapido quando o Gemini
-                // erra ou quando entry list muda de ultima hora.
-                await kv.set(gemNextCacheKey, JSON.stringify(gemNextT), { ex: 86400 / 2 });
-                log("nextTournament Gemini (fresh): " + gemNextT.name + " (" + gemNextT.start + ")");
+                // TRAVA ANTI-ALUCINACAO: o nome retornado pelo Gemini precisa
+                // existir no ATP_CALENDAR_2026. Se ele inventar um torneio
+                // ("Sao Paulo Open", "Bahia Masters" etc), descartamos. O
+                // calendario agora cobre todo o circuito 2026 — se Fonseca
+                // entrar mesmo num torneio que nao esta la, e melhor mostrar
+                // calendario estatico do que dado fantasma.
+                var gName = parsedG2.name.toLowerCase().replace(/[^a-z0-9]/g, "");
+                var calMatch = null;
+                for (var ic = 0; ic < ATP_CALENDAR_2026.length; ic++) {
+                  var calName = ATP_CALENDAR_2026[ic].name.toLowerCase().replace(/[^a-z0-9]/g, "");
+                  if (calName === gName || calName.indexOf(gName) !== -1 || gName.indexOf(calName) !== -1) {
+                    calMatch = ATP_CALENDAR_2026[ic];
+                    break;
+                  }
+                }
+                if (!calMatch) {
+                  log("nextTournament Gemini DISCARD: '" + parsedG2.name + "' (nao bate calendario, possivel alucinacao)");
+                } else {
+                  // Usa NOMES E DATAS do calendario (autoridade), enriquece com
+                  // cidade/pais do Gemini se faltar no calendario.
+                  gemNextT = {
+                    name: calMatch.name,
+                    city: calMatch.city || String(parsedG2.city || "").substring(0, 60),
+                    country: calMatch.country || String(parsedG2.country || "").substring(0, 60),
+                    start: calMatch.start,
+                    end: calMatch.end,
+                    surface: calMatch.surface,
+                    cat: calMatch.cat,
+                  };
+                  // Cache 12h. Chave :v3 — descarta cache anterior (que pode ter
+                  // dado fantasma).
+                  await kv.set(gemNextCacheKey, JSON.stringify(gemNextT), { ex: 86400 / 2 });
+                  log("nextTournament Gemini (validado contra calendario): " + gemNextT.name + " (" + gemNextT.start + ")");
+                }
               }
             }
           }
