@@ -1461,6 +1461,45 @@ export default async function handler(req, res) {
         try {
           var nextTRawPh = await kv.get("fn:nextTournament");
           var nextT_KV = nextTRawPh ? (typeof nextTRawPh === "string" ? JSON.parse(nextTRawPh) : nextTRawPh) : null;
+
+          // === RE-VALIDA CACHE ANTES DE USAR ===
+          // fn:nextTournament pode estar cached como confirmed=true por engano de
+          // um run anterior (ex.: Gemini errou e disse YES para Stuttgart). Antes
+          // de criar o placeholder, pergunta de novo ao Gemini (cache curto 4h) se
+          // Fonseca REALMENTE joga esse torneio. NO -> descarta cache, deixa o
+          // writer block redeterminar.
+          if (nextT_KV && nextT_KV.tournament_name) {
+            var rvKey = "fn:gemini:nextTournRevalidate:" + nextT_KV.tournament_name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+            var rvOk = null;
+            try {
+              var rvCached = await kv.get(rvKey);
+              if (rvCached === "yes" || rvCached === true) rvOk = true;
+              else if (rvCached === "no" || rvCached === false) rvOk = false;
+            } catch (e) { }
+            if (rvOk === null) {
+              try {
+                var rvPrompt = "O tenista Joao Fonseca esta OFICIALMENTE INSCRITO/CONFIRMADO no torneio " +
+                  nextT_KV.tournament_name + " (" + (nextT_KV.city || "") + ", inicio " + nextT_KV.start_date + ")? " +
+                  "Use entry list oficial ATP, player activity, anuncios recentes. Se houver QUALQUER duvida, " +
+                  "responda NO. Responda APENAS: YES ou NO.";
+                var rvTxt = await geminiSearch(rvPrompt);
+                if (rvTxt) {
+                  var rvUp = rvTxt.trim().toUpperCase();
+                  if (rvUp.indexOf("YES") !== -1 && rvUp.indexOf("NO") === -1) { rvOk = true; await kv.set(rvKey, "yes", { ex: 4 * 3600 }); }
+                  else if (rvUp.indexOf("NO") !== -1) { rvOk = false; await kv.set(rvKey, "no", { ex: 4 * 3600 }); }
+                }
+              } catch (e) { }
+            }
+            if (rvOk === false) {
+              log("placeholder revalidate: " + nextT_KV.tournament_name + " NAO confirmado, descarta caches");
+              try { await kv.del("fn:nextTournament"); } catch (e) { }
+              try { await kv.del("fn:gemini:confirmedNextPick:v1"); } catch (e) { }
+              try { await kv.del("fn:gemini:nextEnteredTourn:v3"); } catch (e) { }
+              try { await kv.del("fn:gemini:tournConfirmed:" + nextT_KV.tournament_name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()); } catch (e) { }
+              nextT_KV = null;
+            }
+          }
+
           if (nextT_KV && nextT_KV.fonsecaConfirmed === true && nextT_KV.start_date) {
             var startMsTour = new Date(nextT_KV.start_date + "T00:00:00Z").getTime();
             var endMsTour = nextT_KV.end_date ? new Date(nextT_KV.end_date + "T23:59:59Z").getTime() : (startMsTour + 14 * 86400000);
