@@ -1767,6 +1767,18 @@ export default async function handler(req, res) {
           if (cachedConf !== null && cachedConf !== undefined) {
             fonsecaConfirmed = cachedConf === "yes" || cachedConf === true;
             log("tournament confirmed (cached): " + nextT.name + " = " + fonsecaConfirmed);
+            // Propaga cache NO antigo pra fn:disconfirmed (consistencia entre os dois mecanismos).
+            // Caches escritos antes do fn:disconfirmed existir nao tinham essa entrada.
+            if (fonsecaConfirmed === false) {
+              try {
+                var propKey = "fn:disconfirmed:" + nextT.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                var propExists = await kv.get(propKey);
+                if (propExists == null) {
+                  await kv.set(propKey, "yes", { ex: 21 * 86400 });
+                  log("disconfirmed propagado do cache antigo: " + nextT.name);
+                }
+              } catch (e) { }
+            }
           }
         } catch (e) { }
 
