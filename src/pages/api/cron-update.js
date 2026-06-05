@@ -1463,9 +1463,8 @@ export default async function handler(req, res) {
           var nextT_KV = nextTRawPh ? (typeof nextTRawPh === "string" ? JSON.parse(nextTRawPh) : nextTRawPh) : null;
 
           // Limpeza de legado: writes antigos podem ter fonsecaConfirmed=null/false.
-          // Esses entries poluem /api/all-data (que servia sem checar confirmed).
-          // Descarta e deixa o writer block reescrever com confirmed=true ou nada.
-          if (nextT_KV && nextT_KV.fonsecaConfirmed !== true) {
+          // EXCEÇÃO: source:"manual" e sagrado (admin override via /api/admin-set-tournament).
+          if (nextT_KV && nextT_KV.fonsecaConfirmed !== true && nextT_KV.source !== "manual") {
             log("placeholder: fn:nextTournament confirmed=" + nextT_KV.fonsecaConfirmed + " (legado, incompleto) — descarta");
             try { await kv.del("fn:nextTournament"); } catch (e) { }
             nextT_KV = null;
@@ -1477,7 +1476,7 @@ export default async function handler(req, res) {
           // de criar o placeholder, pergunta de novo ao Gemini (cache curto 4h) se
           // Fonseca REALMENTE joga esse torneio. NO -> descarta cache, deixa o
           // writer block redeterminar.
-          if (nextT_KV && nextT_KV.tournament_name) {
+          if (nextT_KV && nextT_KV.tournament_name && nextT_KV.source !== "manual") {
             // v2 — descarta cache anterior (que pode ter YES antigo segurando torneio errado)
             var rvKey = "fn:gemini:nextTournRevalidate:v2:" + nextT_KV.tournament_name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
             var rvOk = null;
