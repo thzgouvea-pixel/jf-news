@@ -1702,13 +1702,18 @@ export default async function handler(req, res) {
               var listing = candidates.map(function (t, i) {
                 return (i + 1) + ". " + t.name + " — " + t.city + ", " + t.country + " (" + t.cat + ", " + t.start + " a " + t.end + ")";
               }).join("\n");
-              var pickPrompt = "Dos torneios ATP listados abaixo (ordem cronologica), em quais o tenista Joao Fonseca esta OFICIALMENTE INSCRITO/CONFIRMADO?\n\n" +
+              var todayLabel = new Date().toISOString().split("T")[0];
+              var pickPrompt = "Hoje e " + todayLabel + ". Joao Fonseca (tenista brasileiro, ATP #" +
+                "30 aproximadamente, joga predominantemente ATP 500s, Masters 1000 e Grand Slams) " +
+                "acabou de cair em Roland Garros. Dos torneios ATP abaixo, em quais ele esta inscrito " +
+                "ou e altamente provavel que jogue baseado em (a) entry lists oficiais ATP, (b) anuncios " +
+                "da equipe/imprensa brasileira (estadao, globoesporte, uol), (c) padrao de carreira dele:\n\n" +
                 listing + "\n\n" +
                 "REGRAS:\n" +
-                "- Use entry lists oficiais ATP (atptour.com), player activity dele, anuncios da equipe.\n" +
-                "- Se nao tiver certeza absoluta de algum, NAO INCLUA — preferimos pular do que mentir.\n" +
-                "- So liste os realmente confirmados, na ordem cronologica em que ele jogara.\n" +
-                "- Use exatamente o nome canonico da lista acima.\n\n" +
+                "- Considere ATP 500 e acima como mais provaveis. ATP 250 so se tem confirmacao explicita.\n" +
+                "- Liste em ordem cronologica.\n" +
+                "- Use exatamente o nome canonico da lista acima.\n" +
+                "- Se nada e razoavelmente provavel, retorne lista vazia.\n\n" +
                 "APENAS JSON sem markdown: {\"confirmed\":[\"nome 1\",\"nome 2\",...]}";
               var pickTxt = await geminiSearch(pickPrompt);
               var pickParsed = parseGeminiJSON(pickTxt);
