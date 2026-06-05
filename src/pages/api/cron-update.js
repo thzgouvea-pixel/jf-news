@@ -1469,7 +1469,8 @@ export default async function handler(req, res) {
           // Fonseca REALMENTE joga esse torneio. NO -> descarta cache, deixa o
           // writer block redeterminar.
           if (nextT_KV && nextT_KV.tournament_name) {
-            var rvKey = "fn:gemini:nextTournRevalidate:" + nextT_KV.tournament_name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+            // v2 — descarta cache anterior (que pode ter YES antigo segurando torneio errado)
+            var rvKey = "fn:gemini:nextTournRevalidate:v2:" + nextT_KV.tournament_name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
             var rvOk = null;
             try {
               var rvCached = await kv.get(rvKey);
@@ -1496,6 +1497,8 @@ export default async function handler(req, res) {
               try { await kv.del("fn:gemini:confirmedNextPick:v1"); } catch (e) { }
               try { await kv.del("fn:gemini:nextEnteredTourn:v3"); } catch (e) { }
               try { await kv.del("fn:gemini:tournConfirmed:" + nextT_KV.tournament_name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()); } catch (e) { }
+              // Memoria de desconfirmacao 21d — torneio rejeitado nao volta a ser sugerido
+              try { await kv.set("fn:disconfirmed:" + nextT_KV.tournament_name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase(), "yes", { ex: 21 * 86400 }); } catch (e) { }
               nextT_KV = null;
             }
           }
@@ -1518,6 +1521,8 @@ export default async function handler(req, res) {
                 broadcast: lookupBroadcast(nextT_KV.tournament_name) || "",
               };
               w.push(kv.set("fn:nextMatch", JSON.stringify(placeholderFromTourn), { ex: T7 }));
+              // Re-escreve pra estender TTL — uma vez locked como confirmado, fica fixo enquanto valido
+              w.push(kv.set("fn:nextTournament", JSON.stringify(nextT_KV), { ex: 21 * 86400 }));
               try { await kv.del("fn:winProb"); await kv.del("fn:bracketUrl"); } catch (e) { }
               shouldKeepNextMatch = true;
               steps.next = "placeholder (proximo torneio)";
@@ -1599,6 +1604,16 @@ export default async function handler(req, res) {
                 if (!calMatch) {
                   log("nextTournament Gemini DISCARD: '" + parsedG2.name + "' (nao bate calendario, possivel alucinacao)");
                 } else {
+                  // Verifica desconfirmacao: se Gemini esta sugerindo torneio ja rejeitado, ignora
+                  var fmDcKey = "fn:disconfirmed:" + calMatch.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                  var fmDcVal = null;
+                  try { fmDcVal = await kv.get(fmDcKey); } catch (e) { }
+                  if (fmDcVal != null) {
+                    log("nextTournament Gemini DISCARD: '" + calMatch.name + "' (desconfirmado recentemente)");
+                    calMatch = null;
+                  }
+                }
+                if (calMatch) {
                   // Usa NOMES E DATAS do calendario (autoridade), enriquece com
                   // cidade/pais do Gemini se faltar no calendario.
                   gemNextT = {
@@ -1640,20 +1655,41 @@ export default async function handler(req, res) {
             if (cachedPick) {
               var parsedPick = typeof cachedPick === "string" ? JSON.parse(cachedPick) : cachedPick;
               if (parsedPick && parsedPick.name) {
-                for (var ic = 0; ic < futureCalendarTs.length; ic++) {
-                  if (futureCalendarTs[ic].name === parsedPick.name) {
-                    var startCheck2 = new Date(futureCalendarTs[ic].start + "T00:00:00Z");
-                    if (startCheck2 > new Date()) {
-                      gemNextT = futureCalendarTs[ic];
-                      log("nextTournament confirmedPick (cached): " + gemNextT.name);
+                // Cache pode estar com nome desconfirmado em outro caminho — descarta nesse caso
+                var cpDcKey = "fn:disconfirmed:" + parsedPick.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                var cpDcVal = null;
+                try { cpDcVal = await kv.get(cpDcKey); } catch (e) { }
+                if (cpDcVal != null) {
+                  log("confirmedPick cached MAS desconfirmado: " + parsedPick.name + " — descarta cache");
+                  try { await kv.del(pickCacheKey); } catch (e) { }
+                } else {
+                  for (var ic = 0; ic < futureCalendarTs.length; ic++) {
+                    if (futureCalendarTs[ic].name === parsedPick.name) {
+                      var startCheck2 = new Date(futureCalendarTs[ic].start + "T00:00:00Z");
+                      if (startCheck2 > new Date()) {
+                        gemNextT = futureCalendarTs[ic];
+                        log("nextTournament confirmedPick (cached): " + gemNextT.name);
+                      }
+                      break;
                     }
-                    break;
                   }
                 }
               }
             }
             if (!gemNextT) {
-              var candidates = futureCalendarTs.slice(0, 8);
+              // Filtra candidatos desconfirmados (rejeitados recentemente) antes de perguntar de novo
+              var candidatesUnfiltered = futureCalendarTs.slice(0, 14);
+              var candidates = [];
+              for (var ifc = 0; ifc < candidatesUnfiltered.length && candidates.length < 8; ifc++) {
+                var ifcDcKey = "fn:disconfirmed:" + candidatesUnfiltered[ifc].name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+                var ifcDcVal = null;
+                try { ifcDcVal = await kv.get(ifcDcKey); } catch (e) { }
+                if (ifcDcVal != null) {
+                  log("multi-choice skip (desconfirmado): " + candidatesUnfiltered[ifc].name);
+                  continue;
+                }
+                candidates.push(candidatesUnfiltered[ifc]);
+              }
               var listing = candidates.map(function (t, i) {
                 return (i + 1) + ". " + t.name + " — " + t.city + ", " + t.country + " (" + t.cat + ", " + t.start + " a " + t.end + ")";
               }).join("\n");
@@ -1718,7 +1754,9 @@ export default async function handler(req, res) {
               log("tournament confirmed (Gemini): " + nextT.name + " = YES");
             } else if (confClean === "NO") {
               fonsecaConfirmed = false;
-              try { await kv.set(confirmedCacheKey, "no", { ex: 259200 }); } catch (e) { }
+              try { await kv.set(confirmedCacheKey, "no", { ex: 21 * 86400 }); } catch (e) { }
+              // Memoria de desconfirmacao 21d — outros caminhos pulam esse nome
+              try { await kv.set("fn:disconfirmed:" + nextT.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase(), "yes", { ex: 21 * 86400 }); } catch (e) { }
               log("tournament confirmed (Gemini): " + nextT.name + " = NO");
             } else {
               fonsecaConfirmed = null;
@@ -1766,16 +1804,23 @@ export default async function handler(req, res) {
         }
         var extrasObj = tournExtras || {};
 
-        w.push(kv.set("fn:nextTournament", JSON.stringify({
-          tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface,
-          city: nextT.city, country: nextT.country, start_date: nextT.start, end_date: nextT.end,
-          fonsecaConfirmed: fonsecaConfirmed,
-          defending_points: extrasObj.defending_points != null ? extrasObj.defending_points : null,
-          seed: extrasObj.seed != null ? extrasObj.seed : null,
-          joao_last_year: extrasObj.joao_last_year || null,
-          source: "calendar", updatedAt: new Date().toISOString(),
-        }), { ex: T2 }));
-        log("nextTournament: " + nextT.name + " (confirmed=" + fonsecaConfirmed + ")");
+        // So escreve fn:nextTournament se Fonseca foi confirmado. NO/UNKNOWN nao
+        // polui o KV — placeholder #2 nao serve dado nao confirmado, e melhor
+        // null do que "torneio X com confirmed=false" que confunde o ciclo.
+        if (fonsecaConfirmed === true) {
+          w.push(kv.set("fn:nextTournament", JSON.stringify({
+            tournament_name: nextT.name, tournament_category: nextT.cat, surface: nextT.surface,
+            city: nextT.city, country: nextT.country, start_date: nextT.start, end_date: nextT.end,
+            fonsecaConfirmed: true,
+            defending_points: extrasObj.defending_points != null ? extrasObj.defending_points : null,
+            seed: extrasObj.seed != null ? extrasObj.seed : null,
+            joao_last_year: extrasObj.joao_last_year || null,
+            source: "calendar", updatedAt: new Date().toISOString(),
+          }), { ex: 21 * 86400 }));
+          log("nextTournament ESCRITO: " + nextT.name + " (TTL 21d)");
+        } else {
+          log("nextTournament NAO ESCRITO: " + nextT.name + " (confirmed=" + fonsecaConfirmed + ")");
+        }
       }
       }  // fim do if (!shouldKeepNextMatch)
     }
