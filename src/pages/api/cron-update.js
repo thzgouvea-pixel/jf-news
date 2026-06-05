@@ -1462,6 +1462,15 @@ export default async function handler(req, res) {
           var nextTRawPh = await kv.get("fn:nextTournament");
           var nextT_KV = nextTRawPh ? (typeof nextTRawPh === "string" ? JSON.parse(nextTRawPh) : nextTRawPh) : null;
 
+          // Limpeza de legado: writes antigos podem ter fonsecaConfirmed=null/false.
+          // Esses entries poluem /api/all-data (que servia sem checar confirmed).
+          // Descarta e deixa o writer block reescrever com confirmed=true ou nada.
+          if (nextT_KV && nextT_KV.fonsecaConfirmed !== true) {
+            log("placeholder: fn:nextTournament confirmed=" + nextT_KV.fonsecaConfirmed + " (legado, incompleto) — descarta");
+            try { await kv.del("fn:nextTournament"); } catch (e) { }
+            nextT_KV = null;
+          }
+
           // === RE-VALIDA CACHE ANTES DE USAR ===
           // fn:nextTournament pode estar cached como confirmed=true por engano de
           // um run anterior (ex.: Gemini errou e disse YES para Stuttgart). Antes

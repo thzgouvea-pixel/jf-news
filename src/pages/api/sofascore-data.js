@@ -44,7 +44,7 @@ export default async function handler(req, res) {
       tournamentFacts: tournamentFacts ?? null,
       opponentProfile: opponentProfile ?? null,
       prizeMoney: (prizeMoney && prizeMoney.amount != null) ? prizeMoney.amount : null,
-      nextTournament: nextTournament ?? null,
+      nextTournament: (nextTournament && nextTournament.fonsecaConfirmed === true) ? nextTournament : null,
     };
 
     res.setHeader("Cache-Control", "s-maxage=120, stale-while-revalidate=300");

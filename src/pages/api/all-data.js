@@ -158,7 +158,10 @@ export default async function handler(req, res) {
       tournamentFacts: tournamentFacts || null,
       opponentProfile: opponentProfile || null,
       prizeMoney: (prizeMoney && prizeMoney.amount != null) ? prizeMoney.amount : null,
-      nextTournament: nextTournament || null,
+      // So serve fn:nextTournament se Fonseca foi confirmado. confirmed=null/false
+      // sao entries inutilizaveis (writes antigos pre-fix ou Gemini disse NO/UNKNOWN).
+      // Preferimos pular do que mentir.
+      nextTournament: (nextTournament && nextTournament.fonsecaConfirmed === true) ? nextTournament : null,
       // rankings (same shape as /api/rankings response)
       rankings: atpRankings || { rankings: [], updatedAt: null },
       // stats (same shape as /api/stats response, nested under "stats")
