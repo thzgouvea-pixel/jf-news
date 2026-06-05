@@ -8,8 +8,9 @@ import { ATP_CALENDAR_2026, lookupBroadcast } from "../../lib/sofascore.js";
 
 export default async function handler(req, res) {
   var secret = req.query.secret || (req.body && req.body.secret);
-  // Reuse CRON_SECRET (already set in Vercel env) so no new env var needed
-  if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
+  // Reuse PUSH_SECRET (ja existe no Vercel env), aceita CRON_SECRET tambem se setado
+  var expected = process.env.PUSH_SECRET || process.env.CRON_SECRET;
+  if (!expected || secret !== expected) {
     return res.status(401).json({ error: "unauthorized" });
   }
 
