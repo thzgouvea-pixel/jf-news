@@ -1771,9 +1771,14 @@ export default async function handler(req, res) {
         } catch (e) { }
 
         if (fonsecaConfirmed === null) {
-          var confPrompt = "O tenista Jo\u00e3o Fonseca est\u00e1 inscrito/confirmado para jogar o torneio " +
-            nextT.name + " em " + nextT.city + " (" + nextT.start + " a " + nextT.end + ")? " +
-            "Responda APENAS: YES ou NO ou UNKNOWN. Sem explica\u00e7\u00f5es.";
+          // YES inclui "confirmado" E "muito provavel" (entry list nem sempre publica cedo;
+          // padrao de carreira + imprensa basta). NO so se ha evidencia clara que ele NAO joga
+          // (ex.: anuncio de withdraw, torneio que ele tradicionalmente pula).
+          var confPrompt = "O tenista Joao Fonseca (#30 ATP, brasileiro) vai jogar o torneio " +
+            nextT.name + " em " + nextT.city + " (" + nextT.start + " a " + nextT.end + ", " + nextT.cat + ")? " +
+            "Considere entry lists ATP, anuncios de imprensa, padrao de carreira (ele joga ATP 500+, " +
+            "pula maioria dos ATP 250). YES = confirmado OU muito provavel. NO = evidencia clara que nao. " +
+            "UNKNOWN = sem informacao. Responda APENAS: YES, NO ou UNKNOWN.";
           var confTxt = await geminiSearch(confPrompt);
           if (confTxt) {
             var confClean = confTxt.trim().toUpperCase().split(/\s+/)[0].replace(/[^A-Z]/g, "");
