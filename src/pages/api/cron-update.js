@@ -1740,8 +1740,23 @@ export default async function handler(req, res) {
           } catch (e) { log("nextTournament confirmedPick error: " + e.message); }
         }
 
-        // Ultimo fallback: cronologico primeiro do calendario.
-        var nextT = gemNextT || futureCalendarTs[0];
+        // Ultimo fallback: cronologico primeiro do calendario, MAS pulando desconfirmados.
+        // Sem o filtro, o cron pegava Stuttgart toda vez (1o cronologicamente), Gemini dizia
+        // NO, repetia 21 dias seguidos. Agora avanca pra proximo candidato nao-desconfirmado.
+        var nextT = gemNextT || null;
+        if (!nextT && futureCalendarTs.length > 0) {
+          for (var fcb = 0; fcb < futureCalendarTs.length; fcb++) {
+            var fcbCand = futureCalendarTs[fcb];
+            var fcbDcKey = "fn:disconfirmed:" + fcbCand.name.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+            var fcbDcVal = null;
+            try { fcbDcVal = await kv.get(fcbDcKey); } catch (e) { }
+            if (fcbDcVal == null) {
+              nextT = fcbCand;
+              if (fcb > 0) log("nextTournament fallback: pulou " + fcb + " desconfirmado(s), pegou " + nextT.name);
+              break;
+            }
+          }
+        }
 
         if (nextT) {
         // Check if Fonseca is confirmed to play — cache 3 days per tournament
