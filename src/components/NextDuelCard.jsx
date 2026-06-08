@@ -309,6 +309,31 @@ export default function NextDuelCard(props) {
     return { primary: primary, deadline: deadline };
   })();
 
+  // Contexto do torneio pra enriquecer o card enquanto a chave nao sai.
+  // Só dados confiáveis do calendário (período/sede) + retrospecto do João.
+  var tournamentInfo = (function() {
+    if (!isPlaceholderMatch || !nextTournament) return null;
+    var nt = nextTournament;
+    var rows = [];
+    if (nt.start_date) {
+      var mesesLong = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+      var sd = new Date(nt.start_date + "T00:00:00Z");
+      var ed = nt.end_date ? new Date(nt.end_date + "T00:00:00Z") : null;
+      var periodo;
+      if (!ed) periodo = sd.getUTCDate() + " de " + mesesLong[sd.getUTCMonth()];
+      else if (ed.getUTCMonth() === sd.getUTCMonth()) periodo = sd.getUTCDate() + "–" + ed.getUTCDate() + " de " + mesesLong[sd.getUTCMonth()];
+      else periodo = sd.getUTCDate() + " de " + mesesLong[sd.getUTCMonth()] + " a " + ed.getUTCDate() + " de " + mesesLong[ed.getUTCMonth()];
+      var dias = Math.ceil((sd.getTime() - Date.now()) / 86400000);
+      if (dias > 0) periodo += "  ·  faltam " + dias + (dias === 1 ? " dia" : " dias");
+      else if (dias === 0) periodo += "  ·  começa hoje";
+      rows.push({ icon: "🗓️", label: "Período", value: periodo });
+    }
+    if (nt.city) rows.push({ icon: "📍", label: "Sede", value: nt.city + (nt.country ? ", " + nt.country : "") });
+    if (nt.joao_last_year) rows.push({ icon: "↩️", label: "Retrospecto", value: nt.joao_last_year });
+    if (nt.seed) rows.push({ icon: "⭐", label: "Cabeça de chave", value: "Nº " + nt.seed });
+    return rows.length > 0 ? rows : null;
+  })();
+
   var downloadICS = function() {
     if (!matchDate) return;
     var d = new Date(matchDate);
@@ -800,6 +825,25 @@ export default function NextDuelCard(props) {
           </div>
           <p style={{ margin: 0, fontSize: 14, color: "rgba(255,255,255,0.95)", fontFamily: SANS, lineHeight: 1.45, fontWeight: 600 }}>{placeholderTexts.primary}</p>
           <p style={{ margin: "6px 0 0", fontSize: 12.5, color: "rgba(255,255,255,0.6)", fontFamily: SANS, lineHeight: 1.45 }}>{placeholderTexts.deadline}</p>
+        </div>
+      )}
+
+      {/* Sobre o torneio — enriquece o card enquanto a chave nao sai */}
+      {tournamentInfo && (
+        <div style={{ margin: "0 20px 20px", background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "14px 18px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 14 }}>🎾</span>
+            <span style={{ fontSize: 11, fontWeight: 800, color: GREEN, fontFamily: SANS, letterSpacing: "0.08em", textTransform: "uppercase" }}>Sobre o torneio</span>
+          </div>
+          {tournamentInfo.map(function(row, i) {
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                <span style={{ fontSize: 13, width: 18, flexShrink: 0 }}>{row.icon}</span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS, width: 96, flexShrink: 0 }}>{row.label}</span>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.92)", fontFamily: SANS, fontWeight: 600, flex: 1, lineHeight: 1.35 }}>{row.value}</span>
+              </div>
+            );
+          })}
         </div>
       )}
 
