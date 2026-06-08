@@ -453,11 +453,13 @@ export default function JoaoFonsecaNews() {
         <meta property="og:url" content="https://fonsecanews.com.br" />
         <meta property="og:locale" content="pt_BR" />
 
-        {/* Twitter/X: preview desabilitado intencionalmente (tweets do bot ficam focados no texto).
-            og:image acima continua ativo para WhatsApp, Facebook, LinkedIn, Discord, etc. */}
+        {/* Twitter/X: card grande — mostra o banner 1200x630 INTEIRO em vez do
+            thumbnail quadrado cortado (que comia o "fo" de fonsecanews). */}
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@JFonsecaNews" />
         <meta name="twitter:title" content="Fonseca News — Guia de bolso sobre João Fonseca" />
         <meta name="twitter:description" content="Acompanhe a carreira do tenista João Fonseca: notícias, ranking, estatísticas, próximos jogos e mais." />
+        <meta name="twitter:image" content="https://fonsecanews.com.br/og-image.PNG" />
 
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
           "@context": "https://schema.org",
