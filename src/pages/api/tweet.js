@@ -21,7 +21,7 @@ function percentEncode(str) {
     .replace(/'/g, "%27").replace(/\(/g, "%28").replace(/\)/g, "%29");
 }
 
-async function postTweet(text, replyTo) {
+export async function postTweet(text, replyTo) {
   var ck = process.env.TWITTER_CONSUMER_KEY;
   var cs = process.env.TWITTER_CONSUMER_SECRET;
   var at = process.env.TWITTER_ACCESS_TOKEN;
@@ -65,7 +65,7 @@ async function postTweet(text, replyTo) {
   return JSON.parse(raw);
 }
 
-async function postWithLinkReply(mainText, linkText) {
+export async function postWithLinkReply(mainText, linkText) {
   var result = await postTweet(mainText);
   if (result.data && result.data.id && linkText) {
     try { await postTweet(linkText, result.data.id); } catch (e) { console.log("[tweet] Reply error:", e.message); }

@@ -10,6 +10,8 @@ import {
   lookupTournament, lookupBroadcast, translateRound, stripAccents,
   NEXT_ROUND, ATP_CALENDAR_2026, log as _log,
 } from "../../lib/sofascore.js";
+import { postPendingEventTweets } from "../../lib/eventTweets.js";
+import { postWithLinkReply } from "./tweet.js";
 
 function log(msg) { _log("cron", msg); }
 
@@ -2246,6 +2248,26 @@ export default async function handler(req, res) {
 
     await Promise.all(w);
     steps.kv = w.length + "k";
+
+    // ===== AUTO-POST DE EVENTOS NO X (modo hibrido) =====
+    // So os 2 eventos factuais: resultado de jogo + torneio confirmado.
+    // Le o estado FINAL do KV (pos-write), idempotente via tw:event:* no proprio
+    // helper. Nunca quebra o cron — Twitter falhando e so um log.
+    try {
+      var evLm = await kv.get("fn:lastMatch");
+      var evNt = await kv.get("fn:nextTournament");
+      var evRf = await kv.get("fn:recentForm");
+      var parseEv = function (v) { return v ? (typeof v === "string" ? JSON.parse(v) : v) : null; };
+      var evRes = await postPendingEventTweets({
+        kv: kv,
+        postWithLinkReply: postWithLinkReply,
+        log: log,
+        lastMatch: parseEv(evLm),
+        nextTournament: parseEv(evNt),
+        recentForm: parseEv(evRf),
+      });
+      if (evRes && evRes.posted) steps.xpost = evRes.posted;
+    } catch (e) { log("event tweet block error: " + e.message); }
 
     // ===== PUSH NOTIFICATION TRIGGERS =====
     // Compara estado atual vs ultimo estado ja notificado (fn:pushState).
