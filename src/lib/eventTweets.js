@@ -32,6 +32,19 @@ function winStreak(rf) {
   return c;
 }
 
+// vitorias recentes notaveis (nomes) pra dar gancho quente aos teasers
+function recentWins(rf, max) {
+  var out = [];
+  if (!Array.isArray(rf)) return out;
+  for (var i = 0; i < rf.length && out.length < (max || 3); i++) {
+    if ((rf[i].result || "").toUpperCase() === "V") {
+      var s = surname(rf[i].opponent_name);
+      if (s) out.push(s);
+    }
+  }
+  return out;
+}
+
 // Marca que postamos: atualiza tw:last_post (bot segura cooldown 2h) + conta no dia.
 async function recordPosted(kv) {
   try { await kv.set("tw:last_post", Date.now()); } catch (e) {}
@@ -42,34 +55,15 @@ async function recordPosted(kv) {
   } catch (e) {}
 }
 
-// deps: { kv, postWithLinkReply|postTweet, log, lastMatch, nextMatch, nextTournament,
-//         recentForm, winProb, matchStats, h2h, season, ranking, rankingHistory }
-export async function postPendingEventTweets(deps) {
+// Monta a lista de candidatos a post (ordem de prioridade), cada um com fatos
+// verificados + fallback seguro. Sem efeito colateral — usado pelo poster E pelo preview.
+export function buildEventCandidates(deps) {
   deps = deps || {};
-  var kv = deps.kv;
-  var post = deps.postWithLinkReply || deps.postTweet;
-  var log = deps.log || function () {};
-  if (!kv || !post) return { posted: null, reason: "no-deps" };
-
   var lm = deps.lastMatch, nm = deps.nextMatch, nt = deps.nextTournament, rf = deps.recentForm;
   var wp = deps.winProb, ms = deps.matchStats, h2h = deps.h2h, season = deps.season;
   var ranking = deps.ranking, history = deps.rankingHistory;
-  var nowMs = Date.now();
-  var LINK = "🎾 fonsecanews.com.br";
+  var nowMs = deps.nowMs || Date.now();
 
-  // ===== ESPACAMENTO: segura se houve QUALQUER post nos ultimos 20min =====
-  try {
-    var lastPostRaw = await kv.get("tw:last_post");
-    if (lastPostRaw) {
-      var since = nowMs - parseInt(lastPostRaw, 10);
-      if (!isNaN(since) && since >= 0 && since < MIN_GAP_MS) {
-        log("event tweet HELD (espacamento): ultimo post ha " + Math.round(since / 60000) + "min");
-        return { posted: null, reason: "spacing" };
-      }
-    }
-  } catch (e) {}
-
-  // templates de fallback (seguros) gerados uma vez
   var tmpl = buildPosts({ lastMatch: lm, nextMatch: nm, nextTournament: nt, ranking: ranking, recentForm: rf });
 
   // frescor da ultima partida: resultado e estatisticas so saem nas primeiras 48h
@@ -80,21 +74,18 @@ export async function postPendingEventTweets(deps) {
     else if (lm.date) { var hhy = (nowMs - new Date(lm.date).getTime()) / 3600000; if (!isNaN(hhy) && (hhy > 48 || hhy < -3)) lmFresh = false; }
   }
 
-  // ===== REGISTRO DE CANDIDATOS (ordem de prioridade) =====
   var cands = [];
 
   // 1) RESULTADO (vitoria/derrota) — gancho: aproveitamento na temporada
-  if (lm && lm.finished && lm.id && (lm.result === "V" || lm.result === "D")) {
-    if (lmFresh) {
-      var rLines = [];
-      rLines.push((lm.result === "V" ? "Joao Fonseca venceu" : "Joao Fonseca perdeu para") + " " + surname(lm.opponent_name) + (lm.score ? " por " + lm.score : ""));
-      if (lm.tournament_name) rLines.push("No " + lm.tournament_name + (lm.round ? " (" + lm.round + ")" : ""));
-      if (lm.opponent_ranking) rLines.push(surname(lm.opponent_name) + " era #" + lm.opponent_ranking + " do mundo");
-      if (season && typeof season.winPct === "number" && season.wins != null && season.losses != null) {
-        rLines.push("Aproveitamento na temporada 2026: " + season.winPct + "% (" + season.wins + "V " + season.losses + "D)");
-      }
-      cands.push({ id: "resultado", key: "tw:event:result:" + lm.id, facts: { lines: rLines, hashtags: TAGS }, fallback: (pick(tmpl, "resultado") || {}).text });
+  if (lm && lm.finished && lm.id && (lm.result === "V" || lm.result === "D") && lmFresh) {
+    var rLines = [];
+    rLines.push((lm.result === "V" ? "Joao Fonseca venceu" : "Joao Fonseca perdeu para") + " " + surname(lm.opponent_name) + (lm.score ? " por " + lm.score : ""));
+    if (lm.tournament_name) rLines.push("No " + lm.tournament_name + (lm.round ? " (" + lm.round + ")" : ""));
+    if (lm.opponent_ranking) rLines.push(surname(lm.opponent_name) + " era #" + lm.opponent_ranking + " do mundo");
+    if (season && typeof season.winPct === "number" && season.wins != null && season.losses != null) {
+      rLines.push("Aproveitamento na temporada 2026: " + season.winPct + "% (" + season.wins + "V " + season.losses + "D)");
     }
+    cands.push({ id: "resultado", key: "tw:event:result:" + lm.id, facts: { lines: rLines, hashtags: TAGS }, fallback: (pick(tmpl, "resultado") || {}).text });
   }
 
   // 2) PROBABILIDADE DE VITORIA
@@ -130,7 +121,7 @@ export async function postPendingEventTweets(deps) {
     });
   }
 
-  // 4) ESTATISTICAS DA PARTIDA (so se a partida e recente — mesma trava de 48h)
+  // 4) ESTATISTICAS DA PARTIDA (so se recente)
   if (ms && ms.fonseca && lm && lm.id && lmFresh) {
     var f = ms.fonseca;
     var sLines = [];
@@ -144,7 +135,7 @@ export async function postPendingEventTweets(deps) {
     }
   }
 
-  // 5) MUDANCA DE RANKING (usa rankingHistory pra detectar mudanca REAL)
+  // 5) MUDANCA DE RANKING (detecta pela rankingHistory) — enriquecido com o gancho
   if (ranking && ranking.ranking && Array.isArray(history) && history.length >= 2) {
     var prevH = history[history.length - 2], curH = history[history.length - 1];
     if (prevH && curH && prevH.rank && curH.rank && prevH.rank !== curH.rank && curH.rank === ranking.ranking) {
@@ -152,6 +143,8 @@ export async function postPendingEventTweets(deps) {
       var rLines2 = [];
       rLines2.push("Joao Fonseca " + (up ? "subiu" : "caiu") + " no ranking ATP: de #" + prevH.rank + " para #" + curH.rank);
       if (ranking.bestRanking) rLines2.push("Melhor ranking da carreira dele: #" + ranking.bestRanking);
+      var rw = recentWins(rf, 3);
+      if (up && rw.length >= 2) rLines2.push("A subida veio apos vitorias recentes sobre " + rw.join(", "));
       cands.push({
         id: "rank",
         key: "tw:event:rank:" + curH.rank,
@@ -176,7 +169,7 @@ export async function postPendingEventTweets(deps) {
   if (streak >= 3 && rf && rf[0] && rf[0].opponent_name) {
     cands.push({
       id: "streak",
-      key: "tw:event:streak:" + streak + ":" + slug(rf[0].tournament || rf[0].tournament_name || "") + slug(rf[0].opponent_name),
+      key: "tw:event:streak:" + streak + ":" + slug((rf[0].tournament || rf[0].tournament_name || "") + rf[0].opponent_name),
       facts: { lines: ["Joao Fonseca esta com uma sequencia de " + streak + " vitorias seguidas"], hashtags: TAGS },
       fallback: "🔥 João emplaca " + streak + " vitórias seguidas! Acompanhe a sequência no site 🇧🇷\n\n" + TAGS,
     });
@@ -197,22 +190,52 @@ export async function postPendingEventTweets(deps) {
     }
   }
 
-  // ===== PROCESSA: primeiro candidato pendente (dedup nao setado) =====
+  return cands;
+}
+
+// deps: { kv, postWithLinkReply|postTweet, log, lastMatch, nextMatch, nextTournament,
+//         recentForm, winProb, matchStats, h2h, season, ranking, rankingHistory }
+export async function postPendingEventTweets(deps) {
+  deps = deps || {};
+  var kv = deps.kv;
+  var post = deps.postWithLinkReply || deps.postTweet;
+  var log = deps.log || function () {};
+  if (!kv || !post) return { posted: null, reason: "no-deps" };
+
+  var nowMs = Date.now();
+  var LINK = "🎾 fonsecanews.com.br";
+
+  // ===== ESPACAMENTO: segura se houve QUALQUER post nos ultimos 20min =====
+  try {
+    var lastPostRaw = await kv.get("tw:last_post");
+    if (lastPostRaw) {
+      var since = nowMs - parseInt(lastPostRaw, 10);
+      if (!isNaN(since) && since >= 0 && since < MIN_GAP_MS) {
+        log("event tweet HELD (espacamento): ultimo post ha " + Math.round(since / 60000) + "min");
+        return { posted: null, reason: "spacing" };
+      }
+    }
+  } catch (e) {}
+
+  deps.nowMs = nowMs;
+  var cands = buildEventCandidates(deps);
+
   for (var i = 0; i < cands.length; i++) {
     var c = cands[i];
     if (!c || !c.key) continue;
     var done = null;
     try { done = await kv.get(c.key); } catch (e) {}
     if (done) continue;
-    var text = await composeTeaser(c.facts, c.fallback);
-    if (!text) continue;
+    var composed = await composeTeaser(c.facts, c.fallback, log);
+    if (!composed || !composed.text) continue;
+    var text = composed.text;
     try {
-      log("event compose [" + c.id + "]: " + text.replace(/\n+/g, " ").substring(0, 140));
+      log("event post [" + c.id + "/" + composed.source + "]: " + text.replace(/\n+/g, " ").substring(0, 140));
       await post(text, LINK);
       try { await kv.set(c.key, nowMs, { ex: 60 * 86400 }); } catch (e) {}
       await recordPosted(kv);
       log("event tweet POSTED: " + c.id);
-      return { posted: c.id };
+      return { posted: c.id, source: composed.source };
     } catch (e) {
       log("event tweet " + c.id + " FAIL: " + e.message);
       return { posted: null, error: e.message };

@@ -39,55 +39,72 @@ function numbersIn(s) {
 }
 
 // Valida o teaser da IA. Retorna o texto se OK, ou null (cai no fallback).
+// reason() opcional recebe o motivo da rejeicao (pra log/diagnostico).
 // Exportado pra teste.
-export function validateTeaser(txt, factsStr) {
-  if (!txt) return null;
+export function validateTeaser(txt, factsStr, reason) {
+  var rej = function (r) { if (reason) reason(r); return null; };
+  if (!txt) return rej("vazio");
   var len = txt.length;
-  if (len < 50 || len > 270) return null;
-  // NUMBER-GUARD: todo numero no texto precisa existir nos fatos (anti-invencao)
+  if (len < 45) return rej("curto:" + len);
+  if (len > 275) return rej("longo:" + len);
+  // NUMBER-GUARD: todo numero no texto precisa existir nos fatos (anti-invencao de
+  // estatistica). EXCECAO: anos (4 digitos, 1900-2099) sao contexto seguro, nao stat.
   var factNums = numbersIn(factsStr);
   var txtNums = numbersIn(txt);
   for (var i = 0; i < txtNums.length; i++) {
-    if (factNums.indexOf(txtNums[i]) === -1) return null;
+    var nv = parseFloat(txtNums[i]);
+    if (txtNums[i].length === 4 && nv >= 1900 && nv <= 2099) continue; // ano: ok
+    if (factNums.indexOf(txtNums[i]) === -1) return rej("numero inventado:" + txtNums[i]);
   }
   // precisa terminar em pontuacao ou emoji (nao cortado no meio)
   var stripped = txt.replace(/\s+$/g, "");
-  var lastChar = stripped.charAt(stripped.length - 1);
-  var endsPunct = /[.!?…)]/.test(lastChar);
-  var tail = stripped.slice(-2);
-  var endsEmoji = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}️]/u.test(tail);
-  if (!endsPunct && !endsEmoji) return null;
+  var chars = Array.from(stripped);
+  var last = chars[chars.length - 1] || "";
+  var endsPunct = /[.!?…)]/.test(last);
+  var endsEmoji = (last.codePointAt(0) || 0) >= 0x2190; // setas, simbolos e emojis
+  if (!endsPunct && !endsEmoji) return rej("fim:" + last);
   return txt;
 }
 
 // facts: { lines: ["fato 1", "fato 2", ...], hashtags: "#a #b" }
 // fallback: texto template seguro usado se a IA falhar ou violar a trava.
-// Retorna o texto final (com hashtags anexadas se faltarem) ou null.
-export async function composeTeaser(facts, fallback) {
+// log: funcao opcional pra registrar o que a IA gerou e se passou (diagnostico).
+// Retorna { text, source } — source = "ia" ou "template".
+export async function composeTeaser(facts, fallback, log) {
+  log = log || function () {};
   facts = facts || {};
   var lines = facts.lines || [];
   var factsStr = lines.join(" | ");
-  var body = null;
+  var body = null, src = "template";
   try {
     var prompt =
       "Voce e o social media do Fonseca News (@JFonsecaNews), site de fas do tenista brasileiro Joao Fonseca.\n" +
-      "Escreva UM tweet em portugues do Brasil que funcione como TEASER pra levar a pessoa a abrir o site.\n\n" +
+      "Escreva UM tweet em portugues do Brasil que sirva de TEASER pra fazer a pessoa CLICAR e abrir o site.\n\n" +
       "FATOS (use SOMENTE estes — nao acrescente nenhum outro):\n- " + lines.join("\n- ") + "\n\n" +
-      "REGRAS OBRIGATORIAS:\n" +
-      "- Gere CURIOSIDADE ou faca uma PERGUNTA. Nao publique o dado seco.\n" +
-      "- Use SOMENTE os numeros que aparecem nos fatos. NAO escreva nenhum outro numero.\n" +
-      "- NAO invente estatistica, nome, recorde, data ou qualquer afirmacao fora dos fatos.\n" +
-      "- Tom de torcedor brasileiro com classe. 1 ou 2 emojis (nunca no inicio).\n" +
-      "- Maximo 220 caracteres.\n" +
-      "- Termine instigando a ver mais no site (ex: 'confira no site', 'veja o raio-x', 'detalhes la').\n" +
-      "- Sem hashtags. Sem aspas em volta. Responda APENAS o texto do tweet.";
+      "COMO ESCREVER:\n" +
+      "- Comece com energia. Crie CURIOSIDADE ou faca uma PERGUNTA instigante — nunca publique o dado seco.\n" +
+      "- Tom de torcedor brasileiro empolgado, mas com classe e credibilidade.\n" +
+      "- Destaque o que tem de mais interessante nos fatos (um nome forte, um numero marcante, uma virada).\n" +
+      "- Termine puxando pro site, sem ser generico (ex: 'o raio-x ta la', 'veja como', 'detalhes no site').\n\n" +
+      "REGRAS DURAS (credibilidade):\n" +
+      "- Use SOMENTE numeros que aparecem nos fatos (anos como 2026 sao permitidos). NAO invente estatistica.\n" +
+      "- NAO invente nome, recorde, placar ou qualquer afirmacao fora dos fatos.\n" +
+      "- 1 ou 2 emojis (nunca no inicio). Maximo 215 caracteres. Sem hashtags. Sem aspas em volta.\n" +
+      "- Responda APENAS o texto do tweet.";
     var raw = await geminiCompose(prompt);
-    body = validateTeaser(raw, factsStr);
+    var why = "";
+    body = validateTeaser(raw, factsStr, function (r) { why = r; });
+    if (body) {
+      src = "ia";
+      log("teaser IA OK: " + body.replace(/\n+/g, " ").substring(0, 130));
+    } else {
+      log("teaser IA rejeitado (" + (why || "?") + ")" + (raw ? " raw='" + raw.replace(/\n+/g, " ").substring(0, 90) + "'" : " (vazio)") + " -> usa template");
+    }
   } catch (e) { body = null; }
-  if (!body) body = fallback || null;
+  if (!body) { body = fallback || null; src = "template"; }
   if (!body) return null;
   if (facts.hashtags && body.indexOf("#") === -1 && (body.length + facts.hashtags.length + 2) <= 275) {
     body = body + "\n\n" + facts.hashtags;
   }
-  return body;
+  return { text: body, source: src };
 }
