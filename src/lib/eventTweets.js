@@ -140,8 +140,9 @@ export function buildEventCandidates(deps) {
     var prevH = history[history.length - 2], curH = history[history.length - 1];
     if (prevH && curH && prevH.rank && curH.rank && prevH.rank !== curH.rank && curH.rank === ranking.ranking) {
       var up = curH.rank < prevH.rank;
+      var delta = Math.abs(prevH.rank - curH.rank);
       var rLines2 = [];
-      rLines2.push("Joao Fonseca " + (up ? "subiu" : "caiu") + " no ranking ATP: de #" + prevH.rank + " para #" + curH.rank);
+      rLines2.push("Joao Fonseca " + (up ? "subiu" : "caiu") + " " + delta + " posicoes no ranking ATP: de #" + prevH.rank + " para #" + curH.rank);
       if (ranking.bestRanking) rLines2.push("Melhor ranking da carreira dele: #" + ranking.bestRanking);
       var rw = recentWins(rf, 3);
       if (up && rw.length >= 2) rLines2.push("A subida veio apos vitorias recentes sobre " + rw.join(", "));
