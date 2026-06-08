@@ -11,7 +11,7 @@ import {
   NEXT_ROUND, ATP_CALENDAR_2026, log as _log,
 } from "../../lib/sofascore.js";
 import { postPendingEventTweets } from "../../lib/eventTweets.js";
-import { postWithLinkReply } from "./tweet.js";
+import { postWithLinkReply, postTweet } from "./tweet.js";
 
 function log(msg) { _log("cron", msg); }
 
@@ -2313,6 +2313,7 @@ export default async function handler(req, res) {
       var evRes = await postPendingEventTweets({
         kv: kv,
         postWithLinkReply: postWithLinkReply,
+        postTweet: postTweet,
         log: log,
         lastMatch: parseEv(evVals[0]),
         nextMatch: parseEv(evVals[1]),

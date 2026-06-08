@@ -21,7 +21,7 @@ function percentEncode(str) {
     .replace(/'/g, "%27").replace(/\(/g, "%28").replace(/\)/g, "%29");
 }
 
-export async function postTweet(text, replyTo) {
+export async function postTweet(text, replyTo, mediaIds) {
   var ck = process.env.TWITTER_CONSUMER_KEY;
   var cs = process.env.TWITTER_CONSUMER_SECRET;
   var at = process.env.TWITTER_ACCESS_TOKEN;
@@ -52,6 +52,7 @@ export async function postTweet(text, replyTo) {
 
   var body = { text: text };
   if (replyTo) body.reply = { in_reply_to_tweet_id: replyTo };
+  if (mediaIds && mediaIds.length) body.media = { media_ids: mediaIds };
 
   var res = await fetch(url, {
     method: "POST",
