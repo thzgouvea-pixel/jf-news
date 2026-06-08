@@ -15,6 +15,21 @@ function TournIcon(p) {
   return null;
 }
 
+// Bandeira do país-sede do torneio (nomes em PT-BR; cai no mapa EN como fallback).
+var COUNTRY_FLAG_PT = {
+  "Alemanha": "🇩🇪", "Holanda": "🇳🇱", "Países Baixos": "🇳🇱", "Reino Unido": "🇬🇧", "Inglaterra": "🇬🇧",
+  "Espanha": "🇪🇸", "França": "🇫🇷", "Itália": "🇮🇹", "Estados Unidos": "🇺🇸", "EUA": "🇺🇸",
+  "Austrália": "🇦🇺", "Canadá": "🇨🇦", "China": "🇨🇳", "Japão": "🇯🇵", "Suíça": "🇨🇭", "Áustria": "🇦🇹",
+  "Mônaco": "🇲🇨", "Brasil": "🇧🇷", "México": "🇲🇽", "Marrocos": "🇲🇦", "Catar": "🇶🇦",
+  "Emirados Árabes Unidos": "🇦🇪", "Grécia": "🇬🇷", "Sérvia": "🇷🇸", "Croácia": "🇭🇷", "Bélgica": "🇧🇪",
+  "Portugal": "🇵🇹", "Suécia": "🇸🇪", "Dinamarca": "🇩🇰", "Chile": "🇨🇱", "Argentina": "🇦🇷",
+  "Romênia": "🇷🇴", "Hungria": "🇭🇺",
+};
+function tournamentFlag(country) {
+  if (!country) return "";
+  return COUNTRY_FLAG_PT[country] || countryFlags[country] || "";
+}
+
 var BROADCAST_URLS = {
   "disney+": "https://www.disneyplus.com",
   "disneyplus": "https://www.disneyplus.com",
@@ -509,6 +524,7 @@ export default function NextDuelCard(props) {
   var liveRound = (isLive && liveData.round) ? liveData.round : (match.round || "");
   var liveSurface = isLive && liveData.surface ? liveData.surface : surfaceLabel;
   var liveSc = surfaceColorMap[liveSurface] || sc;
+  var hostFlag = tournamentFlag((nextTournament && nextTournament.country) || (isLive && liveData && liveData.country) || match.country || "");
 
   return (
     <section style={{ margin: "4px 0 0", padding: 0, background: "linear-gradient(160deg, #0a1220 0%, #111d33 40%, #0d1828 100%)", borderRadius: 22, position: "relative", overflow: "hidden", boxShadow: isLive ? "0 4px 24px rgba(239,68,68,0.15), 0 4px 20px rgba(10,18,32,0.25)" : "0 4px 20px rgba(10,18,32,0.25)" }}>
@@ -549,9 +565,9 @@ export default function NextDuelCard(props) {
       {/* ===== TOURNAMENT TITLE ===== */}
       <div style={{ textAlign: "center", padding: "14px 20px 0" }}>
         {isLive ? (
-          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(liveData.tournament_category || match.tournament_category ? (liveData.tournament_category || match.tournament_category) + " · " : "") + (liveData.tournament || match.tournament_name || "Partida ao vivo")}</h2>
+          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(liveData.tournament_category || match.tournament_category ? (liveData.tournament_category || match.tournament_category) + " · " : "") + (liveData.tournament || match.tournament_name || "Partida ao vivo") + (hostFlag ? " " + hostFlag : "")}</h2>
         ) : (
-          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(match.tournament_category ? match.tournament_category + " · " : "") + (match.tournament_name || "Próxima Partida")}</h2>
+          <h2 style={{ fontFamily: SERIF, fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: "-0.02em", lineHeight: 1.3 }}>{(match.tournament_category ? match.tournament_category + " · " : "") + (match.tournament_name || "Próxima Partida") + (hostFlag ? " " + hostFlag : "")}</h2>
         )}
       </div>
 
