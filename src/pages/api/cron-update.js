@@ -2304,17 +2304,26 @@ export default async function handler(req, res) {
     // Le o estado FINAL do KV (pos-write), idempotente via tw:event:* no proprio
     // helper. Nunca quebra o cron — Twitter falhando e so um log.
     try {
-      var evLm = await kv.get("fn:lastMatch");
-      var evNt = await kv.get("fn:nextTournament");
-      var evRf = await kv.get("fn:recentForm");
       var parseEv = function (v) { return v ? (typeof v === "string" ? JSON.parse(v) : v) : null; };
+      var evVals = await Promise.all([
+        kv.get("fn:lastMatch"), kv.get("fn:nextMatch"), kv.get("fn:nextTournament"),
+        kv.get("fn:recentForm"), kv.get("fn:winProb"), kv.get("fn:matchStats"),
+        kv.get("fn:h2h"), kv.get("fn:season"), kv.get("fn:ranking"), kv.get("fn:rankingHistory"),
+      ]);
       var evRes = await postPendingEventTweets({
         kv: kv,
         postWithLinkReply: postWithLinkReply,
         log: log,
-        lastMatch: parseEv(evLm),
-        nextTournament: parseEv(evNt),
-        recentForm: parseEv(evRf),
+        lastMatch: parseEv(evVals[0]),
+        nextMatch: parseEv(evVals[1]),
+        nextTournament: parseEv(evVals[2]),
+        recentForm: parseEv(evVals[3]),
+        winProb: parseEv(evVals[4]),
+        matchStats: parseEv(evVals[5]),
+        h2h: parseEv(evVals[6]),
+        season: parseEv(evVals[7]),
+        ranking: parseEv(evVals[8]),
+        rankingHistory: parseEv(evVals[9]),
       });
       if (evRes && evRes.posted) steps.xpost = evRes.posted;
     } catch (e) { log("event tweet block error: " + e.message); }
