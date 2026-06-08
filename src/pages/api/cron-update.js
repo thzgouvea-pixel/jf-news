@@ -60,6 +60,25 @@ function parseGeminiJSON(txt) {
   return null;
 }
 
+// Ranking ATP de simples OFICIAL e atual do Joao, via busca grounded. Wikipedia e
+// SofaScore atrasam a atualizacao semanal (2a-feira); o ATP oficial sai antes.
+// Pede JSON pra evitar confundir numero do ranking com numero de data.
+async function geminiFonsecaRank() {
+  try {
+    var prompt = "Qual e o ranking ATP de simples ATUAL e oficial (atualizacao mais recente desta semana) " +
+      "do tenista brasileiro Joao Fonseca? Use o ranking oficial da ATP. " +
+      "Responda APENAS JSON valido sem markdown: {\"rank\": <numero inteiro do ranking>}";
+    var txt = await geminiSearch(prompt);
+    var parsed = parseGeminiJSON(txt);
+    if (parsed && typeof parsed.rank === "number" && parsed.rank >= 1 && parsed.rank <= 300) return parsed.rank;
+    if (txt) {
+      var m = txt.match(/"rank"\s*:\s*(\d{1,3})/);
+      if (m) { var n = parseInt(m[1], 10); if (n >= 1 && n <= 300) return n; }
+    }
+    return null;
+  } catch (e) { log("geminiFonsecaRank error: " + e.message); return null; }
+}
+
 // ===== SCRAPE FALLBACK: pega proximo match do Fonseca quando o proxy sofascore6 esconde placeholders (R64P19) =====
 // Retorna { id, event? } onde event eh o objeto completo (vindo da API publica) — economiza fetch redundante.
 // Estrategia em 3 niveis (do mais robusto pro mais fragil):
@@ -1972,21 +1991,44 @@ export default async function handler(req, res) {
     if (form.length > 0) w.push(kv.set("fn:recentForm", JSON.stringify(form), { ex: T7 }));
 
     if (wiki) {
-      // RANKING: s\u00f3 sobrescreve se Wikipedia retornou ranking E (KV vazio OU source != manual)
-      if (wiki.ranking && (!exRanking || exRanking.source !== "manual")) {
+      // ===== RANKING =====
+      // Fonte primaria: ATP oficial via grounded (Wikipedia e SofaScore atrasam a
+      // atualizacao de 2a-feira; o oficial sai antes). Wikipedia vira fallback.
+      // Cache 6h pra custo baixo. Manual continua sagrado.
+      var groundedRank = null;
+      if (!exRanking || exRanking.source !== "manual") {
+        try {
+          var gRankCache = await kv.get("fn:gemini:fonsecaRank:v2");
+          if (gRankCache != null) { var gpi = parseInt(gRankCache, 10); if (!isNaN(gpi)) groundedRank = gpi; }
+        } catch (e) {}
+        if (groundedRank === null) {
+          groundedRank = await geminiFonsecaRank();
+          if (groundedRank !== null) { try { await kv.set("fn:gemini:fonsecaRank:v2", String(groundedRank), { ex: 6 * 3600 }); } catch (e) {} }
+        }
+        // trava anti-alucinacao: descarta salto > 20 posicoes do valor conhecido
+        if (groundedRank !== null && exRanking && exRanking.ranking && Math.abs(groundedRank - exRanking.ranking) > 20) {
+          log("ranking grounded REJECT: salto " + exRanking.ranking + " -> " + groundedRank);
+          groundedRank = null;
+        }
+      }
+      var chosenRank = groundedRank || wiki.ranking;
+      if (chosenRank && (!exRanking || exRanking.source !== "manual")) {
         // Preserva updatedAt antigo se o valor nao mudou e veio do cache.
         var rankingUpdatedAt;
-        if (rankingFresh && exRanking && exRanking.ranking === wiki.ranking) {
+        if (rankingFresh && exRanking && exRanking.ranking === chosenRank) {
           rankingUpdatedAt = exRanking.updatedAt;
         } else {
           rankingUpdatedAt = new Date().toISOString();
         }
+        var chosenBest = wiki.bestRanking || (exRanking && exRanking.bestRanking) || null;
+        if (chosenBest) chosenBest = Math.min(chosenBest, chosenRank); else chosenBest = chosenRank;
         w.push(kv.set("fn:ranking", JSON.stringify({
-          ranking: wiki.ranking,
-          bestRanking: wiki.bestRanking || (exRanking && exRanking.bestRanking) || null,
+          ranking: chosenRank,
+          bestRanking: chosenBest,
           updatedAt: rankingUpdatedAt,
-          source: "wikipedia"
+          source: groundedRank ? "atp" : "wikipedia"
         }), { ex: T7 }));
+        if (groundedRank) log("ranking: ATP oficial #" + chosenRank + (exRanking && exRanking.ranking !== chosenRank ? " (era #" + (exRanking && exRanking.ranking) + ")" : ""));
       }
 
       // PRIZE MONEY: s\u00f3 sobrescreve se Wikipedia retornou valor v\u00e1lido E source atual != manual
@@ -2060,7 +2102,8 @@ export default async function handler(req, res) {
     // ── RANKING HISTORY (snapshot semanal) ──
     // Grava 1 ponto por semana (segunda UTC) em fn:rankingHistory pra montar grafico historico.
     // Idempotente: nao duplica snapshot da mesma segunda. Mantem ultimos 78 pontos (~1.5 ano).
-    if (wiki && wiki.ranking) {
+    var snapRank = (typeof groundedRank !== "undefined" && groundedRank) ? groundedRank : (wiki && wiki.ranking);
+    if (wiki && snapRank) {
       try {
         var historyRaw = await kv.get("fn:rankingHistory");
         var history = historyRaw ? (typeof historyRaw === "string" ? JSON.parse(historyRaw) : historyRaw) : [];
@@ -2073,18 +2116,25 @@ export default async function handler(req, res) {
         thisMondayUTC.setUTCHours(0, 0, 0, 0);
         var thisMondayStr = thisMondayUTC.toISOString().split("T")[0];
         var lastEntry = history.length > 0 ? history[history.length - 1] : null;
+        var fonsecaPts = null;
+        if (exRankingsList && exRankingsList.rankings) {
+          var fEntry = exRankingsList.rankings.find(function(p) {
+            return p.name && p.name.toLowerCase().indexOf("fonseca") !== -1;
+          });
+          if (fEntry) fonsecaPts = fEntry.points;
+        }
         if (!lastEntry || lastEntry.date !== thisMondayStr) {
-          var fonsecaPts = null;
-          if (exRankingsList && exRankingsList.rankings) {
-            var fEntry = exRankingsList.rankings.find(function(p) {
-              return p.name && p.name.toLowerCase().indexOf("fonseca") !== -1;
-            });
-            if (fEntry) fonsecaPts = fEntry.points;
-          }
-          history.push({ date: thisMondayStr, rank: wiki.ranking, points: fonsecaPts });
+          history.push({ date: thisMondayStr, rank: snapRank, points: fonsecaPts });
           if (history.length > 78) history = history.slice(-78);
           w.push(kv.set("fn:rankingHistory", JSON.stringify(history)));
-          log("rankingHistory: snapshot " + thisMondayStr + " #" + wiki.ranking + " (" + history.length + " total)");
+          log("rankingHistory: snapshot " + thisMondayStr + " #" + snapRank + " (" + history.length + " total)");
+        } else if (lastEntry.date === thisMondayStr && lastEntry.rank !== snapRank) {
+          // corrige o snapshot desta segunda se o ranking foi atualizado depois
+          // (ex.: grounded trouxe o oficial apos a Wikipedia ter gravado o antigo)
+          lastEntry.rank = snapRank;
+          if (fonsecaPts != null) lastEntry.points = fonsecaPts;
+          w.push(kv.set("fn:rankingHistory", JSON.stringify(history)));
+          log("rankingHistory: corrigido " + thisMondayStr + " -> #" + snapRank);
         }
       } catch (e) { log("rankingHistory error: " + e.message); }
     }
