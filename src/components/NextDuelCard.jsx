@@ -2,6 +2,17 @@ import { useState, useEffect } from 'react';
 import { GREEN, YELLOW, TEXT, DIM, SANS, SERIF, BORDER, CARD_SHADOW, surfaceColorMap, countryFlags, FONSECA_IMG, FONSECA_IMG_FALLBACK } from '../lib/constants';
 import { findPlayer, getATPImage, getESPNImage, getSofaScoreImage } from '../lib/utils';
 
+// Ícones de linha (SVG) pro bloco "Sobre o torneio" — sem emoji generico.
+function TournIcon(p) {
+  var c = p.color || "rgba(255,255,255,0.5)";
+  var common = { width: 15, height: 15, viewBox: "0 0 24 24", fill: "none", stroke: c, strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", style: { display: "block" } };
+  if (p.name === "calendar") return (<svg {...common}><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>);
+  if (p.name === "pin") return (<svg {...common}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>);
+  if (p.name === "history") return (<svg {...common}><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l3 2" /></svg>);
+  if (p.name === "star") return (<svg {...common}><polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.6 5.8 21 7 14 2 9.3 9 8.5 12 2" /></svg>);
+  return null;
+}
+
 var BROADCAST_URLS = {
   "disney+": "https://www.disneyplus.com",
   "disneyplus": "https://www.disneyplus.com",
@@ -326,11 +337,11 @@ export default function NextDuelCard(props) {
       var dias = Math.ceil((sd.getTime() - Date.now()) / 86400000);
       if (dias > 0) periodo += "  ·  faltam " + dias + (dias === 1 ? " dia" : " dias");
       else if (dias === 0) periodo += "  ·  começa hoje";
-      rows.push({ icon: "🗓️", label: "Período", value: periodo });
+      rows.push({ icon: "calendar", label: "Período", value: periodo });
     }
-    if (nt.city) rows.push({ icon: "📍", label: "Sede", value: nt.city + (nt.country ? ", " + nt.country : "") });
-    if (nt.joao_last_year) rows.push({ icon: "↩️", label: "Retrospecto", value: nt.joao_last_year });
-    if (nt.seed) rows.push({ icon: "⭐", label: "Cabeça de chave", value: "Nº " + nt.seed });
+    if (nt.city) rows.push({ icon: "pin", label: "Sede", value: nt.city + (nt.country ? ", " + nt.country : "") });
+    if (nt.joao_last_year) rows.push({ icon: "history", label: "Retrospecto", value: nt.joao_last_year });
+    if (nt.seed) rows.push({ icon: "star", label: "Cabeça de chave", value: "Nº " + nt.seed });
     return rows.length > 0 ? rows : null;
   })();
 
@@ -831,15 +842,15 @@ export default function NextDuelCard(props) {
       {/* Sobre o torneio — enriquece o card enquanto a chave nao sai */}
       {tournamentInfo && (
         <div style={{ margin: "0 20px 20px", background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "14px 18px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 14 }}>🎾</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 12 }}>
+            <span style={{ display: "block", width: 4, height: 13, background: GREEN, borderRadius: 2 }} />
             <span style={{ fontSize: 11, fontWeight: 800, color: GREEN, fontFamily: SANS, letterSpacing: "0.08em", textTransform: "uppercase" }}>Sobre o torneio</span>
           </div>
           {tournamentInfo.map(function(row, i) {
             return (
-              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "8px 0", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                <span style={{ fontSize: 13, width: 18, flexShrink: 0 }}>{row.icon}</span>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS, width: 96, flexShrink: 0 }}>{row.label}</span>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, padding: "8px 0", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                <span style={{ width: 16, flexShrink: 0, display: "flex", justifyContent: "center" }}><TournIcon name={row.icon} /></span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS, width: 92, flexShrink: 0 }}>{row.label}</span>
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.92)", fontFamily: SANS, fontWeight: 600, flex: 1, lineHeight: 1.35 }}>{row.value}</span>
               </div>
             );
