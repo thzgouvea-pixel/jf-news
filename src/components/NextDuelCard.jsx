@@ -10,6 +10,8 @@ function TournIcon(p) {
   if (p.name === "pin") return (<svg {...common}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>);
   if (p.name === "history") return (<svg {...common}><path d="M3 12a9 9 0 1 0 9-9 9.7 9.7 0 0 0-6.7 2.7L3 8" /><path d="M3 3v5h5" /><path d="M12 7v5l3 2" /></svg>);
   if (p.name === "star") return (<svg {...common}><polygon points="12 2 15 8.5 22 9.3 17 14 18.2 21 12 17.6 5.8 21 7 14 2 9.3 9 8.5 12 2" /></svg>);
+  if (p.name === "tv") return (<svg {...common}><rect x="2" y="7" width="20" height="15" rx="2" /><path d="M17 2l-5 5-5-5" /></svg>);
+  if (p.name === "clock") return (<svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>);
   return null;
 }
 
@@ -340,6 +342,7 @@ export default function NextDuelCard(props) {
       rows.push({ icon: "calendar", label: "Período", value: periodo });
     }
     if (nt.city) rows.push({ icon: "pin", label: "Sede", value: nt.city + (nt.country ? ", " + nt.country : "") });
+    if (match.broadcast) rows.push({ icon: "tv", label: "Transmissão", value: match.broadcast });
     if (nt.joao_last_year) rows.push({ icon: "history", label: "Retrospecto", value: nt.joao_last_year });
     if (nt.seed) rows.push({ icon: "star", label: "Cabeça de chave", value: "Nº " + nt.seed });
     return rows.length > 0 ? rows : null;
@@ -689,6 +692,24 @@ export default function NextDuelCard(props) {
             </span>
           </div>
         </>
+      ) : isPlaceholderMatch ? (
+        <>
+          {/* ===== PLACEHOLDER (chave não saiu): card enxuto =====
+              Sem grid "A definir", sem probabilidade apagada, sem "Assistir".
+              O aviso + "Sobre o torneio" renderizam abaixo (nível da section). */}
+          {nextTournament && nextTournament.start_date && (
+            <div style={{ padding: "20px 20px 4px" }}>
+              <button onClick={downloadTournamentICS} style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 700,
+                fontFamily: SANS, width: "100%", boxSizing: "border-box",
+              }}>
+                <TournIcon name="calendar" color="rgba(255,255,255,0.7)" /> Adicionar período ao calendário
+              </button>
+            </div>
+          )}
+        </>
       ) : (
         <>
           {/* ===== PREMATCH CONTENT ===== */}
@@ -831,7 +852,7 @@ export default function NextDuelCard(props) {
           boxShadow: "0 4px 20px rgba(79,195,247,0.08)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 16 }}>⏳</span>
+            <span style={{ display: "flex" }}><TournIcon name="clock" color="#4FC3F7" /></span>
             <span style={{ fontSize: 11, fontWeight: 800, color: "#4FC3F7", fontFamily: SANS, letterSpacing: "0.08em", textTransform: "uppercase" }}>Aguardando definição da chave</span>
           </div>
           <p style={{ margin: 0, fontSize: 14, color: "rgba(255,255,255,0.95)", fontFamily: SANS, lineHeight: 1.45, fontWeight: 600 }}>{placeholderTexts.primary}</p>
