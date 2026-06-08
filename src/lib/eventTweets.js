@@ -10,11 +10,27 @@
 
 import { buildPosts } from "./postTemplates.js";
 
+// Espaçamento minimo entre QUALQUER post (evento ou bot). Evita posts grudados
+// ou muito parecidos num intervalo curto. Compartilha a chave tw:last_post com
+// o bot /api/tweet (que tem cooldown proprio de 2h).
+var MIN_GAP_MS = 20 * 60 * 1000;
+
 function pickPost(posts, id) {
   for (var i = 0; i < posts.length; i++) {
     if (posts[i] && posts[i].id === id) return posts[i];
   }
   return null;
+}
+
+// Marca que postamos: atualiza tw:last_post (faz o bot segurar o cooldown de 2h)
+// e incrementa a contagem diaria (eventos contam no limite, controla volume).
+async function recordPosted(kv) {
+  try { await kv.set("tw:last_post", Date.now()); } catch (e) {}
+  try {
+    var d = new Date().toISOString().split("T")[0];
+    await kv.incr("tw:count:" + d);
+    await kv.expire("tw:count:" + d, 172800);
+  } catch (e) {}
 }
 
 // deps: { kv, postTweet, postWithLinkReply, log, lastMatch, nextTournament, recentForm }
@@ -29,6 +45,20 @@ export async function postPendingEventTweets(deps) {
   var nt = deps.nextTournament;
   var nowMs = Date.now();
   var LINK = "🎾 fonsecanews.com.br";
+
+  // ===== ESPAÇAMENTO: nao posta evento se houve QUALQUER post (bot ou evento)
+  // nos ultimos 20min. Segura este tick; o proximo cron reavalia. Evita clusters
+  // e posts parecidos saindo grudados. =====
+  try {
+    var lastPostRaw = await kv.get("tw:last_post");
+    if (lastPostRaw) {
+      var since = nowMs - parseInt(lastPostRaw, 10);
+      if (!isNaN(since) && since >= 0 && since < MIN_GAP_MS) {
+        log("event tweet HELD (espacamento): ultimo post ha " + Math.round(since / 60000) + "min");
+        return { posted: null, reason: "spacing" };
+      }
+    }
+  } catch (e) {}
 
   // ===== 1) RESULTADO =====
   if (lm && lm.finished && lm.id && (lm.result === "V" || lm.result === "D")) {
@@ -53,6 +83,7 @@ export async function postPendingEventTweets(deps) {
           try {
             await post(rPost.text, LINK);
             try { await kv.set(rKey, nowMs, { ex: 60 * 86400 }); } catch (e) {}
+            await recordPosted(kv);
             log("event tweet POSTED: resultado id=" + lm.id + " (" + lm.result + ")");
             return { posted: "resultado", id: lm.id };
           } catch (e) {
@@ -85,6 +116,7 @@ export async function postPendingEventTweets(deps) {
           try {
             await post(tPost.text, LINK);
             try { await kv.set(tKey, nowMs, { ex: 60 * 86400 }); } catch (e) {}
+            await recordPosted(kv);
             log("event tweet POSTED: torneio " + nt.tournament_name);
             return { posted: "torneio", name: nt.tournament_name };
           } catch (e) {
