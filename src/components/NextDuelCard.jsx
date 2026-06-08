@@ -857,8 +857,12 @@ export default function NextDuelCard(props) {
         </>
       )}
 
-      {/* Aviso elaborado quando aguardando definição da chave (placeholder) */}
-      {placeholderTexts && (
+      {/* Aviso elaborado quando aguardando definição da chave (placeholder)
+          OBS: no estado placeholder (chave nao saiu) este aviso fica redundante
+          com o cabeçalho ("Próximo jogo" + "A definir" + "chave pendente") e
+          com o bloco "Sobre o torneio". So renderiza fora desse estado — ex.:
+          Masters com bye, ou quando o site mostra placeholder por outro motivo. */}
+      {placeholderTexts && !isPlaceholderMatch && (
         <div style={{
           margin: "16px 20px 20px",
           background: "linear-gradient(135deg, rgba(79,195,247,0.14) 0%, rgba(79,195,247,0.05) 100%)",
