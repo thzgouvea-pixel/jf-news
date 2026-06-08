@@ -714,10 +714,10 @@ export default function NextDuelCard(props) {
               Sem grid "A definir", sem probabilidade apagada, sem "Assistir".
               O aviso + "Sobre o torneio" renderizam abaixo (nível da section). */}
           {nextTournament && nextTournament.start_date && (
-            <div style={{ padding: "20px 20px 4px" }}>
+            <div style={{ padding: "34px 20px 10px" }}>
               <button onClick={downloadTournamentICS} style={{
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                padding: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                padding: "18px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)",
                 borderRadius: 14, cursor: "pointer", color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: 700,
                 fontFamily: SANS, width: "100%", boxSizing: "border-box",
               }}>
@@ -882,17 +882,17 @@ export default function NextDuelCard(props) {
 
       {/* Sobre o torneio — enriquece o card enquanto a chave nao sai */}
       {tournamentInfo && (
-        <div style={{ margin: "0 20px 20px", background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "14px 18px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 12 }}>
+        <div style={{ margin: "6px 20px 26px", background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "20px 22px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 18 }}>
             <span style={{ display: "block", width: 4, height: 13, background: GREEN, borderRadius: 2 }} />
             <span style={{ fontSize: 11, fontWeight: 800, color: GREEN, fontFamily: SANS, letterSpacing: "0.08em", textTransform: "uppercase" }}>Sobre o torneio</span>
           </div>
           {tournamentInfo.map(function(row, i) {
             return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 11, padding: "8px 0", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
                 <span style={{ width: 16, flexShrink: 0, display: "flex", justifyContent: "center" }}><TournIcon name={row.icon} /></span>
                 <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS, width: 92, flexShrink: 0 }}>{row.label}</span>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.92)", fontFamily: SANS, fontWeight: 600, flex: 1, lineHeight: 1.35 }}>{row.value}</span>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.92)", fontFamily: SANS, fontWeight: 600, flex: 1, lineHeight: 1.45 }}>{row.value}</span>
               </div>
             );
           })}
