@@ -352,9 +352,10 @@ export default function NextDuelCard(props) {
       else if (ed.getUTCMonth() === sd.getUTCMonth()) periodo = sd.getUTCDate() + "–" + ed.getUTCDate() + " de " + mesesLong[sd.getUTCMonth()];
       else periodo = sd.getUTCDate() + " de " + mesesLong[sd.getUTCMonth()] + " a " + ed.getUTCDate() + " de " + mesesLong[ed.getUTCMonth()];
       var dias = Math.ceil((sd.getTime() - Date.now()) / 86400000);
-      if (dias > 0) periodo += "  ·  faltam " + dias + (dias === 1 ? " dia" : " dias");
-      else if (dias === 0) periodo += "  ·  começa hoje";
-      rows.push({ icon: "calendar", label: "Período", value: periodo });
+      var meta = null;
+      if (dias > 0) meta = "Faltam " + dias + (dias === 1 ? " dia" : " dias");
+      else if (dias === 0) meta = "Começa hoje";
+      rows.push({ icon: "calendar", label: "Período", value: periodo, meta: meta });
     }
     if (nt.city) rows.push({ icon: "pin", label: "Sede", value: nt.city + (nt.country ? ", " + nt.country : "") });
     if (match.broadcast) rows.push({ icon: "tv", label: "Transmissão", value: match.broadcast });
@@ -882,17 +883,20 @@ export default function NextDuelCard(props) {
 
       {/* Sobre o torneio — enriquece o card enquanto a chave nao sai */}
       {tournamentInfo && (
-        <div style={{ margin: "6px 20px 26px", background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "20px 22px" }}>
+        <div style={{ margin: "6px 20px 26px", background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 14, padding: "20px 18px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 18 }}>
             <span style={{ display: "block", width: 4, height: 13, background: GREEN, borderRadius: 2 }} />
             <span style={{ fontSize: 11, fontWeight: 800, color: GREEN, fontFamily: SANS, letterSpacing: "0.08em", textTransform: "uppercase" }}>Sobre o torneio</span>
           </div>
           {tournamentInfo.map(function(row, i) {
             return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
-                <span style={{ width: 16, flexShrink: 0, display: "flex", justifyContent: "center" }}><TournIcon name={row.icon} /></span>
-                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS, width: 92, flexShrink: 0 }}>{row.label}</span>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.92)", fontFamily: SANS, fontWeight: 600, flex: 1, lineHeight: 1.45 }}>{row.value}</span>
+              <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "13px 0", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.06)" : "none" }}>
+                <span style={{ width: 16, flexShrink: 0, display: "flex", justifyContent: "center", marginTop: 2 }}><TournIcon name={row.icon} /></span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS, width: 78, flexShrink: 0, marginTop: 1 }}>{row.label}</span>
+                <span style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.92)", fontFamily: SANS, fontWeight: 600, lineHeight: 1.4 }}>{row.value}</span>
+                  {row.meta && <span style={{ fontSize: 11.5, color: "rgba(255,255,255,0.4)", fontFamily: SANS, fontWeight: 500, marginTop: 3 }}>{row.meta}</span>}
+                </span>
               </div>
             );
           })}
