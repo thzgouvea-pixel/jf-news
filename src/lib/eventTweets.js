@@ -17,7 +17,7 @@ function eventImageUrl(img) {
     "?label=" + encodeURIComponent(img.label || "Fonseca News") +
     "&head=" + encodeURIComponent(img.head) +
     "&sub=" + encodeURIComponent(img.sub || "") +
-    "&emoji=" + encodeURIComponent(img.emoji || "🎾") +
+    (img.badge ? "&badge=" + encodeURIComponent(img.badge) : "") +
     "&accent=" + encodeURIComponent(img.accent || "00A859");
 }
 
@@ -177,7 +177,7 @@ export function buildEventCandidates(deps) {
         key: "tw:event:rank:" + curH.rank,
         facts: { lines: rLines2, hashtags: TAGS + " #ATP" },
         fallback: "📈 João " + (up ? "subiu" : "caiu") + " para #" + curH.rank + " no ranking ATP (era #" + prevH.rank + "). Veja a evolução no site!\n\n" + TAGS + " #ATP",
-        image: { label: "Ranking ATP", head: "#" + curH.rank, sub: "João " + (up ? "subiu" : "caiu") + " " + delta + " posições, de #" + prevH.rank + " para #" + curH.rank, emoji: up ? "📈" : "📉", accent: up ? "00A859" : "FFCB05" },
+        image: { label: "Ranking ATP", head: "#" + curH.rank, badge: (up ? "▲ " : "▼ ") + delta, sub: "João " + (up ? "subiu" : "caiu") + " " + delta + " posições, de #" + prevH.rank + " para #" + curH.rank, accent: up ? "00A859" : "FFCB05" },
       });
     }
   }
