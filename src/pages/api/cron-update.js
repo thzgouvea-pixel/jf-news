@@ -684,6 +684,14 @@ async function fetchCareerNarrative(season, ranking, recentForm) {
     parts.forEach(function (p) { if (p.text && !p.thought) txt += p.text; });
     txt = (txt || "").trim().replace(/^["']+|["']+$/g, "").replace(/\s+/g, " ");
     if (txt.length < 50 || txt.length > 800) { log("narrative: invalid length " + txt.length); return null; }
+    // Anti-truncamento: precisa terminar com pontuacao final. Texto cortado no meio
+    // ("No saibro,") nao pode ir pra biografia. Se truncou, corta na ultima frase completa.
+    var last = txt.charAt(txt.length - 1);
+    if (".!?".indexOf(last) === -1) {
+      var idx = Math.max(txt.lastIndexOf("."), txt.lastIndexOf("!"), txt.lastIndexOf("?"));
+      if (idx >= 50) txt = txt.substring(0, idx + 1).trim();
+      else { log("narrative: truncated mid-sentence, no fallback (" + txt.length + " chars)"); return null; }
+    }
     log("narrative: generated " + txt.length + " chars");
     return { text: txt, updatedAt: new Date().toISOString() };
   } catch (e) {
@@ -2303,9 +2311,11 @@ export default async function handler(req, res) {
     // ── CAREER NARRATIVE (1 paragrafo da temporada 2026 pra biografia) ──
     // Atualizado 1x a cada 24h. Usa Gemini com grounding.
     try {
+      var lastChar = exNarrative && exNarrative.text ? exNarrative.text.charAt(exNarrative.text.length - 1) : "";
+      var endsClean = ".!?".indexOf(lastChar) !== -1;
       var narrativeFresh = exNarrative && exNarrative.updatedAt &&
         (Date.now() - new Date(exNarrative.updatedAt).getTime()) < TWENTY_FOUR_HOURS_MS &&
-        exNarrative.text && exNarrative.text.length > 50;
+        exNarrative.text && exNarrative.text.length > 50 && endsClean;
       if (!narrativeFresh) {
         var newNarrative = await fetchCareerNarrative(seasonToWrite || null, wiki || exRanking, form);
         if (newNarrative) {

@@ -206,10 +206,10 @@ var DailyPoll = function() {
   var results = _r[0]; var setResults = _r[1];
   var polls = [
     { q: "O João vai vencer o próximo jogo?", a: "Sim!", b: "Não" },
-    { q: "O João chega ao Top 30 até o fim de 2026?", a: "Com certeza!", b: "Difícil" },
+    { q: "O João termina 2026 no Top 15?", a: "Com certeza!", b: "Top 20 já é ótimo" },
     { q: "O João vai conquistar um Masters 1000 na carreira?", a: "Vai sim!", b: "Acho que não" },
     { q: "Quem vai ter a melhor carreira?", a: "João 🇧🇷", b: "Tien 🇺🇸" },
-    { q: "O João chega às quartas de final em Roland Garros?", a: "Chega sim!", b: "Ainda é cedo" },
+    { q: "O João chega às quartas em Wimbledon?", a: "Chega sim!", b: "Ainda é cedo" },
     { q: "O João entra no Top 10 até 2027?", a: "Com certeza!", b: "Precisa de tempo" },
     { q: "Quem é mais talentoso aos 19 anos?", a: "João 🇧🇷", b: "Alcaraz 🇪🇸" },
     { q: "O João chega ao Top 5 antes dos 21 anos?", a: "Sem dúvida!", b: "É muito cedo" },
@@ -221,7 +221,7 @@ var DailyPoll = function() {
     { q: "Quem tem o melhor saque da NextGen?", a: "João 🇧🇷", b: "Mensik 🇨🇿" },
     { q: "O João deve jogar mais torneios de saibro?", a: "Sim, é sua força", b: "Precisa variar" },
     { q: "O João vai superar o Guga em conquistas?", a: "Com certeza!", b: "Guga é lenda" },
-    { q: "O melhor jogo do João até agora foi vs Rublev no AO?", a: "Foi sim!", b: "Tem outros" },
+    { q: "A maior vitória do João foi sobre Djokovic em Roland Garros?", a: "Sem dúvida!", b: "Teve maiores" },
     { q: "O João deveria focar em simples ou jogar duplas também?", a: "Só simples", b: "Duplas ajuda" },
     { q: "Quem chega primeiro ao Top 10?", a: "João 🇧🇷", b: "Fils 🇫🇷" },
     { q: "O João faz semifinal de Grand Slam em 2026?", a: "Faz sim!", b: "Ainda não" },
@@ -1786,7 +1786,7 @@ export default function JoaoFonsecaNews() {
           <p style={{ margin: "0 0 12px", fontSize: 11, fontWeight: 700, color: DIM, fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Explore também</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {[
-              { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, bg: GREEN + "10", title: "Evolução no Ranking", sub: "De #145 ao Top 40 — a ascensão do João", action: function(){setShowRankingChart(true);} },
+              { icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, bg: GREEN + "10", title: "Evolução no Ranking", sub: (dp && dp.ranking ? "Atual: #" + dp.ranking + " — veja a trajetória dele" : "Veja a trajetória do João no ranking ATP"), action: function(){setShowRankingChart(true);} },
               { href: "/raquetes", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b8860b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>, bg: YELLOW + "10", title: "Venda sua raquete", sub: "Anuncie grátis na comunidade do Telegram" },
               { href: "/game", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 12h4M8 10v4M15 11h.01M18 13h.01"/></svg>, bg: "#7C3AED10", title: "Tennis Career 26", sub: "Simulador de carreira profissional" },
               { href: "/regras", icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, bg: "#2563EB10", title: "Regras do Tênis", sub: "Aprenda como funciona o esporte" },

@@ -18,10 +18,10 @@ export default function DailyPoll() {
   var results = _r[0]; var setResults = _r[1];
   var polls = [
     { q: "O João vai vencer o próximo jogo?", a: "Sim!", b: "Não" },
-    { q: "O João chega ao Top 30 até o fim de 2026?", a: "Com certeza!", b: "Difícil" },
+    { q: "O João termina 2026 no Top 15?", a: "Com certeza!", b: "Top 20 já é ótimo" },
     { q: "O João vai conquistar um Masters 1000 na carreira?", a: "Vai sim!", b: "Acho que não" },
     { q: "Quem vai ter a melhor carreira?", a: "João 🇧🇷", b: "Tien 🇺🇸" },
-    { q: "O João chega às quartas de final em Roland Garros?", a: "Chega sim!", b: "Ainda é cedo" },
+    { q: "O João chega às quartas em Wimbledon?", a: "Chega sim!", b: "Ainda é cedo" },
     { q: "O João entra no Top 10 até 2027?", a: "Com certeza!", b: "Precisa de tempo" },
     { q: "Quem é mais talentoso aos 19 anos?", a: "João 🇧🇷", b: "Alcaraz 🇪🇸" },
     { q: "O João chega ao Top 5 antes dos 21 anos?", a: "Sem dúvida!", b: "É muito cedo" },
@@ -33,7 +33,7 @@ export default function DailyPoll() {
     { q: "Quem tem o melhor saque da NextGen?", a: "João 🇧🇷", b: "Mensik 🇨🇿" },
     { q: "O João deve jogar mais torneios de saibro?", a: "Sim, é sua força", b: "Precisa variar" },
     { q: "O João vai superar o Guga em conquistas?", a: "Com certeza!", b: "Guga é lenda" },
-    { q: "O melhor jogo do João até agora foi vs Rublev no AO?", a: "Foi sim!", b: "Tem outros" },
+    { q: "A maior vitória do João foi sobre Djokovic em Roland Garros?", a: "Sem dúvida!", b: "Teve maiores" },
     { q: "O João deveria focar em simples ou jogar duplas também?", a: "Só simples", b: "Duplas ajuda" },
     { q: "Quem chega primeiro ao Top 10?", a: "João 🇧🇷", b: "Fils 🇫🇷" },
     { q: "O João faz semifinal de Grand Slam em 2026?", a: "Faz sim!", b: "Ainda não" },
