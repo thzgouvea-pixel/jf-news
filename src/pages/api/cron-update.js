@@ -12,6 +12,7 @@ import {
 } from "../../lib/sofascore.js";
 import { postPendingEventTweets } from "../../lib/eventTweets.js";
 import { postWithLinkReply, postTweet } from "./tweet.js";
+import { buildAchievementFromMatch, mergeAchievement, ensureSeed } from "../../lib/achievements.js";
 
 function log(msg) { _log("cron", msg); }
 
@@ -2138,7 +2139,32 @@ export default async function handler(req, res) {
         }
       } catch (e) { log("rankingHistory error: " + e.message); }
     }
-  
+
+    // ── ACHIEVEMENTS ── (titulos do Joao)
+    // Cron mantem fn:achievements: garante o seed na 1a execucao e adiciona
+    // automaticamente titulos novos (lm com round="Final" + V + categoria ATP).
+    // Idempotente — nao duplica pelo id.
+    try {
+      var exAchRaw = await kv.get("fn:achievements");
+      var exAch = exAchRaw ? (typeof exAchRaw === "string" ? JSON.parse(exAchRaw) : exAchRaw) : null;
+      var seedRes = ensureSeed(exAch);
+      var list = seedRes.list;
+      var addedSeed = seedRes.added;
+      var addedAuto = false;
+      if (lm) {
+        var cand = buildAchievementFromMatch(lm);
+        if (cand) {
+          var mergeRes = mergeAchievement(list, cand);
+          list = mergeRes.list;
+          if (mergeRes.added) { addedAuto = true; log("achievement NOVO: " + cand.t + " (" + cand.d + ")"); }
+        }
+      }
+      if (addedSeed > 0 || addedAuto || !Array.isArray(exAch)) {
+        w.push(kv.set("fn:achievements", JSON.stringify(list)));
+        if (addedSeed > 0) log("achievements: seed +" + addedSeed + " (total " + list.length + ")");
+      }
+    } catch (e) { log("achievements error: " + e.message); }
+
     // ── SEASON ──
     try {
       var exSeason = await kv.get("fn:season");

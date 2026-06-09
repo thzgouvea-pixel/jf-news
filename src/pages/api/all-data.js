@@ -77,6 +77,7 @@ export default async function handler(req, res) {
       getKV("fn:careerNarrative"),
       getKV("fn:rankingHistory"),
       getKV("fn:opponentSeasonStats"),
+      getKV("fn:achievements"),
     ]);
 
     var matchStats = results[0];
@@ -105,6 +106,7 @@ export default async function handler(req, res) {
     var careerNarrative = results[23];
     var rankingHistory = results[24];
     var opponentSeasonStats = results[25];
+    var achievements = results[26];
 
     var parse = function(val) {
       if (!val) return null;
@@ -181,6 +183,7 @@ export default async function handler(req, res) {
       careerNarrative: careerNarrative || null,
       rankingHistory: rankingHistory || [],
       opponentSeasonStats: opponentSeasonStats || null,
+      achievements: Array.isArray(achievements) ? achievements : [],
     });
   } catch (e) {
     return res.status(500).json({ error: e.message });

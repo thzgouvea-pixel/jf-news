@@ -27,6 +27,7 @@ import InstallBanner from "../components/InstallBanner";
 import Modal from "../components/Modal";
 import Skeleton from "../components/Skeleton";
 import NextTournamentCard from "../components/NextTournamentCard";
+import TitlesModal from "../components/TitlesModal";
 
 var SAMPLE_PLAYER = { ranking: 40, rankingChange: "+4" };
 var SAMPLE_LAST_MATCH = { result: "V", score: "6-3 6-4", opponent: "T. Nakashima", opponent_name: "T. Nakashima", tournament: "Indian Wells", tournament_name: "Indian Wells", round: "R2" };
@@ -149,6 +150,7 @@ export default function JoaoFonsecaNews() {
   var _biography = useState(null); var biography = _biography[0]; var setBiography = _biography[1];
   var _opponentProfile = useState(null); var opponentProfile = _opponentProfile[0]; var setOpponentProfile = _opponentProfile[1];
   var _opponentSeasonStats = useState(null); var opponentSeasonStats = _opponentSeasonStats[0]; var setOpponentSeasonStats = _opponentSeasonStats[1];
+  var _achievements = useState([]); var achievements = _achievements[0]; var setAchievements = _achievements[1];
   var _serverCtx = useState({ kind: "idle" }); var serverCtx = _serverCtx[0]; var setServerCtx = _serverCtx[1];
   var _freshness = useState({}); var freshness = _freshness[0]; var setFreshness = _freshness[1];
   var _nextTournament = useState(null); var nextTournament = _nextTournament[0]; var setNextTournament = _nextTournament[1];
@@ -346,6 +348,7 @@ export default function JoaoFonsecaNews() {
       if (d.biography) setBiography(d.biography);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.opponentSeasonStats) setOpponentSeasonStats(d.opponentSeasonStats); else setOpponentSeasonStats(null);
+      if (Array.isArray(d.achievements)) setAchievements(d.achievements);
       if (d.context) setServerCtx(d.context); if (d.freshness) setFreshness(d.freshness);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
       if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
@@ -376,6 +379,7 @@ export default function JoaoFonsecaNews() {
       if (d.biography) setBiography(d.biography);
       if (d.opponentProfile) setOpponentProfile(d.opponentProfile);
       if (d.opponentSeasonStats) setOpponentSeasonStats(d.opponentSeasonStats); else setOpponentSeasonStats(null);
+      if (Array.isArray(d.achievements)) setAchievements(d.achievements);
       if (d.context) setServerCtx(d.context); if (d.freshness) setFreshness(d.freshness);
       if (d.nextTournament) setNextTournament(d.nextTournament); else setNextTournament(null);
       if (d.highlightVideo && d.highlightVideo.videoId) setHighlightVideo(d.highlightVideo);
@@ -772,7 +776,7 @@ export default function JoaoFonsecaNews() {
       {showRankingChart && (<Modal title="📈 Evolução no Ranking" onClose={function(){setShowRankingChart(false);}} maxWidth={650}><RankingChart currentRanking={dp ? dp.ranking : null} /></Modal>)}
       {showCalendar && (<Modal title="🗓️ Calendário ATP 2026" onClose={function(){setShowCalendar(false);}} maxWidth={520}><ATPCalendar recentForm={recentForm} lastMatch={dl} nextMatch={dm} nextTournament={nextTournament} atpCalendar={atpCalendar} /></Modal>)}
       {showBracket && (<Modal title={"🏟️ Chave · " + ((dm && dm.tournament_name) || (dl && dl.tournament_name) || "Torneio")} onClose={function(){setShowBracket(false);}} maxWidth={420}><TournamentBracket recentForm={recentForm} lastMatch={dl} nextMatch={dm} /></Modal>)}
-      {showTitles && (<Modal title="🏆 Conquistas" onClose={function(){setShowTitles(false);}} maxWidth={460}><div><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour — Singles</p>{[{t:"ATP 500 Basel",d:"Out 2025",det:"vs Davidovich Fokina · 6-3 6-4",note:"1º brasileiro a ganhar ATP 500"},{t:"ATP 250 Buenos Aires",d:"Fev 2025",det:"vs Cerúndolo · 6-4 7-6(1)",note:"Brasileiro mais jovem a ganhar ATP"}].map(function(t,i){return(<div key={i} style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>{t.det}</p>{t.note&&<p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>{t.note}</p>}</div>);})}<div style={{height:1,background:"#e8e8e8",margin:"14px 0"}} /><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:GREEN,fontFamily:SANS}}>ATP Tour — Duplas</p><div style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>Rio Open 500</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>Fev 2026</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>Duplas · Rio de Janeiro</p></div><div style={{height:1,background:"#e8e8e8",margin:"14px 0"}} /><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:"#b8860b",fontFamily:SANS}}>NextGen ATP Finals</p><div style={{padding:"10px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:14,fontWeight:700,color:TEXT,fontFamily:SERIF}}>Campeão invicto</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>Dez 2024</span></div><p style={{margin:0,fontSize:12,color:SUB,fontFamily:SANS}}>5 vitórias, 0 derrotas · Jeddah</p><p style={{margin:"4px 0 0",fontSize:11,color:GREEN,fontFamily:SANS,fontWeight:600}}>1º sul-americano campeão do NextGen Finals</p></div><div style={{height:1,background:"#e8e8e8",margin:"14px 0"}} /><p style={{margin:"0 0 8px",fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:SUB,fontFamily:SANS}}>ATP Challenger</p>{[{t:"Phoenix Challenger",d:"Mar 2025",det:"vs Bublik"},{t:"Canberra International",d:"Jan 2025",det:"vs Quinn · sem perder sets"},{t:"Lexington Challenger",d:"Ago 2024",det:"Mais jovem campeão Challenger de 2024"}].map(function(t,i){return(<div key={i} style={{padding:"8px 0",borderBottom:"1px solid #f0f0f0"}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}><span style={{fontSize:13,fontWeight:600,color:TEXT,fontFamily:SANS}}>{t.t}</span><span style={{fontSize:11,color:DIM,fontFamily:SANS}}>{t.d}</span></div><p style={{margin:0,fontSize:11,color:SUB,fontFamily:SANS}}>{t.det}</p></div>);})}</div></Modal>)}
+      {showTitles && (<Modal title="🏆 Conquistas" onClose={function(){setShowTitles(false);}} maxWidth={460}><TitlesModal achievements={achievements} /></Modal>)}
 
       {showOppPopup && oppProfileValid && (
         <div onClick={function(){ setShowOppPopup(false); }} style={{ position: "fixed", inset: 0, zIndex: 350, background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 0, animation: "fadeInO 0.2s ease" }}>
