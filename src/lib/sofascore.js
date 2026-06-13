@@ -266,11 +266,22 @@ export function isFonseca(m) {
 }
 
 export function isSingles(m) {
+  if (!m) return false;
+  var home = m.homeTeam || {};
+  var away = m.awayTeam || {};
+  // Sinal estrutural do SofaScore (mais confiavel que nome): time tipo 2 = duplas,
+  // e duplas trazem subTeams (o par de jogadores).
+  if (home.type === 2 || away.type === 2) return false;
+  if (Array.isArray(home.subTeams) && home.subTeams.length > 1) return false;
+  if (Array.isArray(away.subTeams) && away.subTeams.length > 1) return false;
+  // Heuristicas de nome (fallback): "doubles" no slug/torneio, ou nome de par
+  // ("Fonseca/Melo", "Fonseca & Melo"). Nome de jogador de simples nao tem "/".
   var slug = (m.slug || "").toLowerCase();
   var tName = (m.tournament && m.tournament.name || "").toLowerCase();
   if (slug.includes("doubles") || slug.includes("double") || tName.includes("doubles") || tName.includes("double")) return false;
-  var h = (m.homeTeam && (m.homeTeam.name || "")).toLowerCase();
-  if (h.includes(" / ") || h.includes(" & ")) return false;
+  var hn = (home.name || "").toLowerCase();
+  var an = (away.name || "").toLowerCase();
+  if (hn.includes("/") || hn.includes(" & ") || an.includes("/") || an.includes(" & ")) return false;
   return true;
 }
 

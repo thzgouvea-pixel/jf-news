@@ -47,6 +47,12 @@ function findFonseca(data) {
   else if (data && data.events) matches = data.events;
   else if (data) { for (var k in data) { if (Array.isArray(data[k])) { matches = data[k]; break; } } }
   for (var i = 0; i < matches.length; i++) {
+    // So jogos de SIMPLES. Duplas do Joao sao ignoradas por ora (arquitetura
+    // de duplas ainda nao existe) — pula e continua procurando um simples.
+    if (isFonseca(matches[i]) && !isSingles(matches[i])) {
+      log("ignorando partida de duplas do Joao (id:" + (matches[i].id || "?") + ")");
+      continue;
+    }
     if (isFonseca(matches[i])) return matches[i];
   }
   return null;
