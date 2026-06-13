@@ -412,6 +412,9 @@ async function fetchOpponentProfile(nm, existingProfile) {
     var exLast = stripAccents(existingProfile.name.split(" ").pop().toLowerCase());
     var nmLast = stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
     if (exLast === nmLast) {
+      // Limpa o campo "titles" de caches antigos: era um numero do Gemini que
+      // delirava (Hanfmann "7" no lugar de 0). Some do KV no proximo write.
+      if ("titles" in existingProfile) delete existingProfile.titles;
       log("opponent: cached (" + existingProfile.name + ")");
       return existingProfile;
     }
@@ -425,7 +428,7 @@ async function fetchOpponentProfile(nm, existingProfile) {
         name: t.shortName || t.name,
         country: t.country ? t.country.name : (nm.opponent_country || ""),
         ranking: t.ranking || nm.opponent_ranking || null,
-        age: null, height: null, hand: null, titles: null, style: null, careerHigh: null,
+        age: null, height: null, hand: null, style: null, careerHigh: null,
       };
       if (t.playerTeamInfo) {
         if (t.playerTeamInfo.birthDateTimestamp) pr.age = Math.floor((Date.now() - t.playerTeamInfo.birthDateTimestamp * 1000) / (365.25 * 24 * 3600000));
@@ -433,14 +436,17 @@ async function fetchOpponentProfile(nm, existingProfile) {
         if (t.playerTeamInfo.plays) pr.hand = t.playerTeamInfo.plays === "right-handed" ? "Destro" : "Canhoto";
       }
 
+      // NAO pedimos "titulos ATP": mesmo grounded, o Gemini delirava a contagem
+      // (ex.: Hanfmann com "7 titulos" quando o real e 0). Sem fonte confiavel
+      // pra esse numero, preferimos nao exibir do que mentir. Mantemos estilo e
+      // career-high (fato estavel e verificavel).
       var gTxt = await geminiSearch(
-        "Tenista " + (pr.name || nm.opponent_name) + ": estilo de jogo breve em portugu\u00eas, t\u00edtulos ATP, career-high ranking. " +
-        "APENAS JSON: {\"style\":\"descri\u00e7\u00e3o breve\",\"titles\":NUMBER_OR_NULL,\"careerHigh\":NUMBER_OR_NULL}"
+        "Tenista " + (pr.name || nm.opponent_name) + ": estilo de jogo breve em portugu\u00eas e career-high ranking (singles). " +
+        "APENAS JSON: {\"style\":\"descri\u00e7\u00e3o breve\",\"careerHigh\":NUMBER_OR_NULL}"
       );
       var gData = parseGeminiJSON(gTxt);
       if (gData) {
         if (gData.style) pr.style = gData.style;
-        if (gData.titles) pr.titles = gData.titles;
         if (gData.careerHigh) pr.careerHigh = gData.careerHigh;
       }
 
@@ -453,12 +459,13 @@ async function fetchOpponentProfile(nm, existingProfile) {
   log("opponent: Gemini fallback for " + nm.opponent_name);
   var gTxt2 = await geminiSearch(
     "Tenista " + nm.opponent_name + ". APENAS JSON: {\"name\":\"nome curto\",\"country\":\"pa\u00eds\",\"ranking\":N," +
-    "\"age\":N,\"height\":\"X.XXm\",\"hand\":\"Destro ou Canhoto\",\"titles\":N,\"style\":\"breve em portugu\u00eas\",\"careerHigh\":N}"
+    "\"age\":N,\"height\":\"X.XXm\",\"hand\":\"Destro ou Canhoto\",\"style\":\"breve em portugu\u00eas\",\"careerHigh\":N}"
   );
   var gProfile = parseGeminiJSON(gTxt2);
   if (gProfile && gProfile.name) {
     gProfile.ranking = gProfile.ranking || nm.opponent_ranking || null;
     gProfile.country = gProfile.country || nm.opponent_country || "";
+    if ("titles" in gProfile) delete gProfile.titles;
     return gProfile;
   }
   return null;
@@ -2245,8 +2252,6 @@ export default async function handler(req, res) {
             ". Busque dados oficiais (atptour.com, perfil do jogador). APENAS JSON valido, sem " +
             "markdown, com estes campos. Use null quando NAO souber (NUNCA invente):\n" +
             "{\n" +
-            "  \"rank_start_year\": <ranking ATP no inicio de " + ssYear + ", numero inteiro 1-3000 ou null>,\n" +
-            "  \"rank_current\": <ranking ATP atual em singles, numero inteiro 1-3000 ou null>,\n" +
             "  \"wins_year\": <vitorias em singles em " + ssYear + ", inteiro ou null>,\n" +
             "  \"losses_year\": <derrotas em singles em " + ssYear + ", inteiro ou null>,\n" +
             "  \"titles_year\": <numero de titulos ATP conquistados em " + ssYear + ", inteiro ou null>,\n" +
@@ -2266,12 +2271,17 @@ export default async function handler(req, res) {
               if (max != null && v > max) return null;
               return v;
             }
+            // Ranking atual: SEMPRE a fonte autoritativa (SofaScore, via perfil do
+            // adversario / nextMatch). O numero do Gemini delirava (ex.: Hanfmann
+            // #53 quando o real era #59). So cai pro Gemini se nao houver autoritativo.
+            var authoritativeRank =
+              (op && typeof op.ranking === "number" ? op.ranking : null) ||
+              (nm && typeof nm.opponent_ranking === "number" ? nm.opponent_ranking : null);
             var ssClean = {
               opponent_name: nm.opponent_name,
               opponent_id: nm.opponent_id,
               year: ssYear,
-              rank_start_year: ssNum(ssParsed.rank_start_year, 1, 3000),
-              rank_current: ssNum(ssParsed.rank_current, 1, 3000),
+              rank_current: authoritativeRank || ssNum(ssParsed.rank_current, 1, 3000),
               wins_year: ssNum(ssParsed.wins_year, 0, 200),
               losses_year: ssNum(ssParsed.losses_year, 0, 200),
               titles_year: ssNum(ssParsed.titles_year, 0, 30),

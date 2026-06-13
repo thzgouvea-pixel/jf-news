@@ -798,7 +798,7 @@ export default function JoaoFonsecaNews() {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 18, padding: "14px 0", borderTop: "1px solid rgba(255,255,255,0.06)", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              {[{ label: "Idade", value: opponentProfile.age || "—" },{ label: "Altura", value: opponentProfile.height || "—" },{ label: "Mão", value: opponentProfile.hand || "—" },{ label: "Títulos", value: opponentProfile.titles !== undefined && opponentProfile.titles !== null ? opponentProfile.titles : "—" }].map(function(s, i) {
+              {[{ label: "Idade", value: opponentProfile.age || "—" },{ label: "Altura", value: opponentProfile.height || "—" },{ label: "Mão", value: opponentProfile.hand || "—" },{ label: "Melhor", value: opponentProfile.careerHigh ? "#" + opponentProfile.careerHigh : "—" }].map(function(s, i) {
                 return (<div key={i} style={{ textAlign: "center" }}><span style={{ fontSize: 16, fontWeight: 700, color: "#fff", fontFamily: SANS, display: "block", lineHeight: 1 }}>{s.value}</span><span style={{ fontSize: 9, color: "rgba(255,255,255,0.3)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.04em", marginTop: 3, display: "block" }}>{s.label}</span></div>);
               })}
             </div>
@@ -806,11 +806,6 @@ export default function JoaoFonsecaNews() {
               <div style={{ marginBottom: 16 }}>
                 <p style={{ margin: "0 0 6px", fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.25)", fontFamily: SANS, textTransform: "uppercase", letterSpacing: "0.06em" }}>Estilo de jogo</p>
                 <p style={{ margin: 0, fontSize: 13, color: "rgba(255,255,255,0.7)", fontFamily: SANS, lineHeight: 1.6 }}>{opponentProfile.style}</p>
-              </div>
-            )}
-            {opponentProfile.careerHigh && (
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", fontFamily: SANS, textAlign: "center" }}>
-                Melhor ranking: <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.6)" }}>#{opponentProfile.careerHigh}</span>
               </div>
             )}
           </div>
