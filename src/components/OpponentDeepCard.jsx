@@ -41,14 +41,11 @@ export default function OpponentDeepCard(props) {
   var statsName = (stats.opponent_name || "").split(" ").pop().toLowerCase();
   if (lastN !== statsName) return null; // sanity: dados precisam ser deste adversario
 
-  // Calcula movimento no ranking
-  var rankMove = null;
-  if (typeof stats.rank_start_year === "number" && typeof stats.rank_current === "number") {
-    var diff = stats.rank_start_year - stats.rank_current;
-    if (diff > 0) rankMove = { dir: "up", pos: diff, color: GREEN, icon: "↑" };
-    else if (diff < 0) rankMove = { dir: "down", pos: -diff, color: "#ef4444", icon: "↓" };
-    else rankMove = { dir: "flat", pos: 0, color: "rgba(255,255,255,0.5)", icon: "→" };
-  }
+  // Ranking exibido: SEMPRE o autoritativo (SofaScore, via opponent.ranking).
+  // Antes mostravamos stats.rank_current do Gemini, que delirava (#53 quando o
+  // real era #59). Caimos pro rank_current so se nao houver o autoritativo.
+  var displayRank = typeof opponent.ranking === "number" ? opponent.ranking
+    : (typeof stats.rank_current === "number" ? stats.rank_current : null);
 
   // W-L
   var hasWL = typeof stats.wins_year === "number" && typeof stats.losses_year === "number";
@@ -65,7 +62,7 @@ export default function OpponentDeepCard(props) {
     typeof stats.double_faults_per_match === "number";
 
   // Se nao tem NENHUMA stat util, nao mostra o card (evita card vazio)
-  if (!rankMove && !hasWL && !hasServeStats && !hasMisc && !stats.best_win_year) return null;
+  if (!hasWL && !hasServeStats && !hasMisc && !stats.best_win_year && typeof stats.titles_year !== "number") return null;
 
   var year = stats.year || new Date().getFullYear();
   var atpImg = getATPImage(opponent.name);
@@ -125,44 +122,13 @@ export default function OpponentDeepCard(props) {
               }}>
                 {flag && <span>{flag}</span>}
                 {opponent.country && <span>{opponent.country}</span>}
-                {typeof stats.rank_current === "number" && (
-                  <span style={{ color: "#4FC3F7", fontWeight: 700 }}>#{stats.rank_current}</span>
+                {typeof displayRank === "number" && (
+                  <span style={{ color: "#4FC3F7", fontWeight: 700 }}>#{displayRank}</span>
                 )}
               </div>
             </div>
           </div>
         </div>
-
-        {/* Movimento no ranking */}
-        {rankMove && (
-          <div style={{ padding: "0 20px 16px" }}>
-            <div style={{
-              background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.05)",
-              borderRadius: 14, padding: "12px 14px",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-            }}>
-              <div>
-                <div style={{
-                  fontSize: 9, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.45)", fontFamily: SANS, marginBottom: 4,
-                }}>Movimento no ranking</div>
-                <div style={{
-                  fontSize: 14, color: "rgba(255,255,255,0.85)", fontFamily: SANS, fontWeight: 600,
-                }}>
-                  {rankMove.dir === "flat"
-                    ? "Estável em " + year
-                    : (rankMove.dir === "up" ? "Subiu " : "Caiu ") + rankMove.pos + (rankMove.pos === 1 ? " posição" : " posições") + " em " + year}
-                </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: SANS, marginTop: 2 }}>
-                  #{stats.rank_start_year} <span style={{ opacity: 0.4 }}>→</span> #{stats.rank_current}
-                </div>
-              </div>
-              <div style={{
-                fontSize: 28, fontWeight: 900, color: rankMove.color, fontFamily: SANS, lineHeight: 1,
-              }}>{rankMove.icon}</div>
-            </div>
-          </div>
-        )}
 
         {/* W-L + titulos */}
         {(hasWL || typeof stats.titles_year === "number") && (

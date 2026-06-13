@@ -1,10 +1,12 @@
 import { SANS, SERIF } from '../lib/constants';
+import { ATP_CALENDAR_2026 } from '../lib/calendar2026';
 
 var FLAGS = {
   "Australia": "🇦🇺", "Austrália": "🇦🇺",
   "Argentina": "🇦🇷",
   "Brasil": "🇧🇷", "Brazil": "🇧🇷",
   "EUA": "🇺🇸", "USA": "🇺🇸", "United States": "🇺🇸",
+  "México": "🇲🇽", "Mexico": "🇲🇽",
   "Mônaco": "🇲🇨", "Monaco": "🇲🇨",
   "Espanha": "🇪🇸", "Spain": "🇪🇸",
   "Itália": "🇮🇹", "Italy": "🇮🇹",
@@ -25,20 +27,11 @@ var CAT_COLORS = { "Grand Slam": "#6D35D0", "Masters 1000": "#c0392b", "ATP 500"
 
 var GENERIC_WORDS = ["open", "masters", "grand", "slam", "atp", "finals", "international", "championship", "cup", "classic"];
 
-var FALLBACK = [
-  { name: "Australian Open", cat: "Grand Slam", surface: "Duro", city: "Melbourne", country: "Austrália", start: "2026-01-18", end: "2026-02-01" },
-  { name: "Rio Open", cat: "ATP 500", surface: "Saibro", city: "Rio de Janeiro", country: "Brasil", start: "2026-02-16", end: "2026-02-22" },
-  { name: "Indian Wells Masters", cat: "Masters 1000", surface: "Duro", city: "Indian Wells", country: "EUA", start: "2026-03-09", end: "2026-03-22" },
-  { name: "Miami Open", cat: "Masters 1000", surface: "Duro", city: "Miami", country: "EUA", start: "2026-03-23", end: "2026-04-05" },
-  { name: "Monte Carlo", cat: "Masters 1000", surface: "Saibro", city: "Monte Carlo", country: "Mônaco", start: "2026-04-05", end: "2026-04-12" },
-  { name: "BMW Open", cat: "ATP 500", surface: "Saibro", city: "Munique", country: "Alemanha", start: "2026-04-13", end: "2026-04-19" },
-  { name: "Madrid Open", cat: "Masters 1000", surface: "Saibro", city: "Madri", country: "Espanha", start: "2026-04-22", end: "2026-05-03" },
-  { name: "Roma Masters", cat: "Masters 1000", surface: "Saibro", city: "Roma", country: "Itália", start: "2026-05-06", end: "2026-05-17" },
-  { name: "Roland Garros", cat: "Grand Slam", surface: "Saibro", city: "Paris", country: "França", start: "2026-05-24", end: "2026-06-07" },
-  { name: "Wimbledon", cat: "Grand Slam", surface: "Grama", city: "Londres", country: "Reino Unido", start: "2026-06-29", end: "2026-07-12" },
-  { name: "US Open", cat: "Grand Slam", surface: "Duro", city: "Nova York", country: "EUA", start: "2026-08-31", end: "2026-09-13" },
-  { name: "ATP Finals", cat: "Finals", surface: "Duro", city: "Turim", country: "Itália", start: "2026-11-15", end: "2026-11-22" },
-];
+// Calendario completo da temporada (mesma fonte do resto do site). Antes havia
+// uma copia parcial aqui sem a temporada de grama (Halle/Queen's etc.) — isso
+// fazia a ancora "torneio atual" errar e a "Próxima parada" pular pra US Open
+// quando o Joao estava em Halle. Usar o calendario inteiro corrige a ancora.
+var CALENDAR = ATP_CALENDAR_2026;
 
 function matchesName(calName, tournName) {
   if (!calName || !tournName) return false;
@@ -85,7 +78,7 @@ export default function NextStopCard(props) {
   else if (lastMatch && lastMatch.tournament_name) currentTourn = lastMatch.tournament_name;
   if (!currentTourn) return null;
 
-  var sorted = FALLBACK.slice().sort(function(a, b) { return (a.start || "").localeCompare(b.start || ""); });
+  var sorted = CALENDAR.slice().sort(function(a, b) { return (a.start || "").localeCompare(b.start || ""); });
 
   var currentIdx = -1;
   for (var i = 0; i < sorted.length; i++) {
