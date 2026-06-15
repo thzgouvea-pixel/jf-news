@@ -50,7 +50,10 @@ function verify(np, summary) {
   if (!thumb) return false;
   var text = (summary.description || "") + " " + (summary.extract || "");
   if (!TENNIS_RE.test(text)) return false; // tem que ser tenista
-  var titleToks = norm(summary.title).split(" ").filter(Boolean);
+  // Remove o desambiguador entre parenteses ("(tennis)", "(tennis player)")
+  // ANTES de tokenizar, senao o ultimo token vira "tennis" e o sobrenome nunca
+  // bate (Joao Fonseca (tennis), Lazar Pavlovic (tennis), etc.).
+  var titleToks = norm(String(summary.title).replace(/\(.*?\)/g, " ")).split(" ").filter(Boolean);
   if (!titleToks.length) return false;
   var titleSurname = titleToks[titleToks.length - 1];
   if (titleSurname !== np.surname) return false; // sobrenome tem que bater
