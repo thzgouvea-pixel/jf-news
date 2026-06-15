@@ -154,5 +154,9 @@ export const PLAYER_DB = {
   "Safiullin": { slug: null, espn: "11714", sofa: null },
 };
 
-export const FONSECA_IMG = "https://www.atptour.com/-/media/alias/player-headshot/f0fv";
+// Foto do Fonseca via NOSSO proxy (serve do nosso dominio -> sem hotlink-block).
+// O CDN da ATP/ESPN nao carrega no <img> do navegador do usuario (some a foto),
+// entao a foto dele tambem precisa passar pelo /api/player-image. O proxy
+// resolve "Joao Fonseca" -> pagina verificada do tenista no Wikipedia.
+export const FONSECA_IMG = "/api/player-image?name=" + encodeURIComponent("Joao Fonseca");
 export const FONSECA_IMG_FALLBACK = "https://a.espncdn.com/combiner/i?img=/i/headshots/tennis/players/full/11745.png&w=200&h=145";
