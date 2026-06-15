@@ -415,11 +415,17 @@ async function fetchOpponentProfile(nm, existingProfile) {
       // Limpa o campo "titles" de caches antigos: era um numero do Gemini que
       // delirava (Hanfmann "7" no lugar de 0). Some do KV no proximo write.
       if ("titles" in existingProfile) delete existingProfile.titles;
-      // NAO escravizamos o ranking do perfil ao nm.opponent_ranking: o nm pode ter
-      // sido poluido pela lista Gemini (#46 alucinado). O perfil mantem o ranking
-      // do SofaScore (/v1/team), que e a fonte autoritativa, e e quem manda no nm
-      // (ver bloco "ranking do adversario -> SofaScore" no fim). O perfil se renova
-      // do SofaScore quando o cache expira (T2) ou o adversario muda.
+      // SEMPRE refresca o ranking do /v1/team (fonte autoritativa), mesmo em
+      // cache-hit: o ranking muda toda semana e o valor cacheado pode estar velho
+      // ou poluido (#46 alucinado da lista Gemini que vazou antes). Estilo/altura/
+      // career-high (caros, do Gemini) continuam cacheados. So o ranking refresca.
+      if (nm.opponent_id) {
+        try {
+          var freshTeam = await sofaFetch("/v1/team/" + nm.opponent_id);
+          var ftRank = freshTeam && freshTeam.team && freshTeam.team.ranking;
+          existingProfile.ranking = (typeof ftRank === "number" && ftRank > 0) ? ftRank : null;
+        } catch (e) { }
+      }
       log("opponent: cached (" + existingProfile.name + " #" + (existingProfile.ranking || "?") + ")");
       return existingProfile;
     }
@@ -432,7 +438,11 @@ async function fetchOpponentProfile(nm, existingProfile) {
       var pr = {
         name: t.shortName || t.name,
         country: t.country ? t.country.name : (nm.opponent_country || ""),
-        ranking: t.ranking || nm.opponent_ranking || null,
+        // SO o ranking do SofaScore /v1/team. NAO caimos pra nm.opponent_ranking:
+        // o nm pode ter sido poluido pela lista Gemini (Hanfmann #46 no lugar do
+        // real ~#59), e esse fallback estava vazando o numero alucinado pro perfil
+        // quando t.ranking vinha vazio. Sem fonte confiavel -> null (mostra nada).
+        ranking: (typeof t.ranking === "number" && t.ranking > 0) ? t.ranking : null,
         age: null, height: null, hand: null, style: null, careerHigh: null,
       };
       if (t.playerTeamInfo) {
@@ -1103,9 +1113,17 @@ export default async function handler(req, res) {
       steps.rankings = "cached";
     }
 
+    // A lista top-50 so e confiavel quando vem do SofaScore. Desde abr/2026 ela
+    // vem do Gemini (SofaScore rankings 404), cujo rabo (36-50) alucina e ja
+    // mostrou Hanfmann #46 no lugar do real ~#59. Entao NAO usamos a lista Gemini
+    // pra preencher/sobrescrever ranking de adversario — o ranking vem so do
+    // SofaScore /v1/team (opp.ranking, fresco por jogo). Sem isso, nada.
+    var listIsSofa = !!(exRankingsList && exRankingsList.source === "sofa");
     var rankingsLookup = buildRankingsLookup(exRankingsList);
-    if (lm) applyRanking(lm, rankingsLookup);
-    if (nm) applyRanking(nm, rankingsLookup);
+    if (listIsSofa) {
+      if (lm) applyRanking(lm, rankingsLookup);
+      if (nm) applyRanking(nm, rankingsLookup);
+    }
 
     // ── MATCH STATS (lastMatch) ──
     var ms = null;
@@ -1362,25 +1380,26 @@ export default async function handler(req, res) {
 
     // ── KV WRITE ──
     var rankingsLookup2 = buildRankingsLookup(exRankingsList);
-    if (lm && !lm.opponent_ranking && lm.opponent_name) {
+    if (listIsSofa && lm && !lm.opponent_ranking && lm.opponent_name) {
       var lmLn = stripAccents(lm.opponent_name.split(" ").pop().toLowerCase());
       if (rankingsLookup2[lmLn]) { lm.opponent_ranking = rankingsLookup2[lmLn]; log("forced lm ranking: #" + lm.opponent_ranking); }
     }
-    if (nm && !nm.opponent_ranking && nm.opponent_name && nm.opponent_name !== "A definir") {
+    if (listIsSofa && nm && !nm.opponent_ranking && nm.opponent_name && nm.opponent_name !== "A definir") {
       var nmLn = stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
       if (rankingsLookup2[nmLn]) { nm.opponent_ranking = rankingsLookup2[nmLn]; log("forced nm ranking: #" + nm.opponent_ranking); }
     }
 
-    // ── RANKING DO ADVERSARIO -> SofaScore tem a palavra final ──
-    // O perfil (op.ranking) vem de /v1/team do SofaScore, que e a fonte autoritativa
-    // por jogador. Aqui forcamos o nm a seguir esse numero, sobrescrevendo qualquer
-    // valor poluido pela lista Gemini (ex.: #46 alucinado) OU um nm.opponent_ranking
-    // velho ressuscitado do cache. Garante #59 (real) no card, e que os dois cards
-    // (NextDuelCard e OpponentDeepCard) mostrem o MESMO numero.
-    if (op && typeof op.ranking === "number" && nm && nm.opponent_name && nm.opponent_name !== "A definir" && op.name &&
+    // ── RANKING DO ADVERSARIO: tudo segue o /v1/team do SofaScore ──
+    // op.ranking foi refrescado do /v1/team (autoritativo por jogador; o
+    // opp.ranking do evento costuma vir null). nm pode ter ficado null (sem fill
+    // Gemini, de proposito). Aqui alinhamos os dois ao valor do perfil pros cards
+    // NextDuelCard e OpponentDeepCard mostrarem o MESMO numero — ou nada, se o
+    // SofaScore nao tem ranking (preferimos pular do que mostrar o #46 alucinado).
+    if (op && nm && nm.opponent_name && nm.opponent_name !== "A definir" && op.name &&
         stripAccents(op.name.split(" ").pop().toLowerCase()) === stripAccents(nm.opponent_name.split(" ").pop().toLowerCase())) {
-      if (nm.opponent_ranking !== op.ranking) log("nm ranking -> SofaScore #" + op.ranking + " (era #" + (nm.opponent_ranking || "?") + ")");
-      nm.opponent_ranking = op.ranking;
+      var authRank = (typeof op.ranking === "number") ? op.ranking : null;
+      if (nm.opponent_ranking !== authRank) log("nm ranking -> SofaScore /team #" + (authRank || "?") + " (era #" + (nm.opponent_ranking || "?") + ")");
+      nm.opponent_ranking = authRank;
     }
 
     function protectData(newData, existingData) {
