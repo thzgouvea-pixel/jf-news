@@ -9,11 +9,21 @@ export default async function handler(req, res) {
     "https://api.sofascore.app/api/v1/player/" + id + "/image",
   ];
 
+  // User-Agent de browser real + Referer: o SofaScore comecou a 403 pro UA
+  // "FonsecaNewsBot/1.0" (provavel upgrade de bot-block via Cloudflare), o que
+  // derrubou todas as fotos dos adversarios na producao. Mesma estrategia do
+  // refresh-opponent.js, que segue funcionando.
+  var browserHeaders = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+    "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+    "Referer": "https://www.sofascore.com/",
+  };
+
+  var lastStatus = null;
   for (var i = 0; i < sources.length; i++) {
     try {
-      var r = await fetch(sources[i], {
-        headers: { "User-Agent": "Mozilla/5.0 FonsecaNewsBot/1.0" }
-      });
+      var r = await fetch(sources[i], { headers: browserHeaders });
+      lastStatus = r.status;
       if (r.ok) {
         var buf = await r.arrayBuffer();
         if (buf.byteLength < 1000) continue;
@@ -26,5 +36,6 @@ export default async function handler(req, res) {
       console.error("[player-image] Error source " + i + ":", e.message);
     }
   }
+  console.warn("[player-image] all sources failed for id=" + id + " (lastStatus=" + lastStatus + ")");
   return res.status(404).send("Not found");
 }
