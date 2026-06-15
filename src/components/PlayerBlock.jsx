@@ -122,15 +122,17 @@ export default function PlayerBlock(props) {
         var oppShort = oppName.length > 12 ? oppName.split(" ").pop() : oppName;
         var isWin = (lastMatch && lastMatch.result) === "V";
         var oppFlag = countryFlags[(lastMatch && lastMatch.opponent_country) || ""] || "";
-        // Cascata: ATP CDN -> proxy SofaScore -> ESPN. ATP primeiro porque
-        // funciona direto do browser (mesma fonte que serve a foto do Fonseca).
-        // O proxy estava como primario, mas o SofaScore passou a 403 nosso IP
-        // (bot-block) — quando isso quebrou, ate adversarios famosos perdiam
-        // foto porque o proxy nunca devolvia. Agora o proxy e queda, nao base.
-        var oppImg = getATPImage(oppName) || getSofaScoreImage(oppName, lastMatch && lastMatch.opponent_id) || getESPNImage(oppName);
-        var oppImgFallback = getATPImage(oppName)
-          ? (getSofaScoreImage(oppName, lastMatch && lastMatch.opponent_id) || getESPNImage(oppName))
-          : (getSofaScoreImage(oppName, lastMatch && lastMatch.opponent_id) ? getESPNImage(oppName) : null);
+        // Cascata: NOSSO proxy primeiro (serve do nosso dominio -> sem
+        // hotlink-block), ATP/ESPN como queda. Os CDNs sao bloqueados no <img>
+        // do navegador do usuario, entao o proxy (que busca server-side e
+        // entrega pelo nosso host) tem que vir primeiro.
+        var imgChain = [
+          getSofaScoreImage(oppName, lastMatch && lastMatch.opponent_id),
+          getATPImage(oppName),
+          getESPNImage(oppName),
+        ].filter(Boolean);
+        var oppImg = imgChain[0] || null;
+        var oppImgFallback = imgChain[1] || null;
         // Match opponentProfile (Gemini) ao oppName via sobrenome
         var oppProfileMatch = opponentProfile && opponentProfile.name && lastNameKey(opponentProfile.name) === lastNameKey(oppName);
         // PRIORIZA opponentProfile.ranking (Gemini eh mais confiavel; SofaScore as vezes retorna ranking de outro jogador).
