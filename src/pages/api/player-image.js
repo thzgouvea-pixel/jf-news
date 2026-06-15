@@ -34,41 +34,67 @@ async function trySofaScore(id) {
   return null;
 }
 
+async function wikiSearchTitles(query, limit) {
+  var url = "https://en.wikipedia.org/w/api.php?action=opensearch&format=json&limit=" + (limit || 5) +
+    "&search=" + encodeURIComponent(query);
+  var r = await fetch(url, { headers: { "User-Agent": WIKI_UA, "Accept": "application/json" } });
+  if (!r.ok) return [];
+  var data = await r.json();
+  return (data && Array.isArray(data[1])) ? data[1] : [];
+}
+
+async function wikiSummary(title) {
+  var url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title);
+  var r = await fetch(url, { headers: { "User-Agent": WIKI_UA, "Accept": "application/json" } });
+  if (!r.ok) return null;
+  return r.json();
+}
+
 async function tryWikipedia(name) {
   if (!name) return null;
-  // Pega o ultimo "token" do nome ("Y. Hanfmann" -> "Hanfmann"), tira pontos,
-  // e busca como "{lastName} tennis" pra desambiguar do mundo non-tenis.
-  var lastName = String(name).split(/\s+/).pop().replace(/\./g, "").trim();
+  // Pega o ultimo "token" do nome ("Y. Hanfmann" -> "Hanfmann"), tira pontos.
+  var tokens = String(name).split(/\s+/).filter(function (t) { return t && !t.endsWith("."); });
+  var lastName = (tokens.pop() || "").replace(/\./g, "").trim();
   if (!lastName || lastName.length < 3) return null;
+  var fullName = String(name).replace(/\./g, "").trim();
 
-  try {
-    // ── 1) opensearch pra achar o titulo da pagina ──
-    var searchUrl = "https://en.wikipedia.org/w/api.php?action=opensearch&format=json&limit=1&search="
-      + encodeURIComponent(lastName + " tennis");
-    var sRes = await fetch(searchUrl, { headers: { "User-Agent": WIKI_UA, "Accept": "application/json" } });
-    if (!sRes.ok) return null;
-    var sData = await sRes.json();
-    var title = sData && sData[1] && sData[1][0];
-    if (!title) return null;
+  // Tenta varias buscas: nome completo > sobrenome+tennis > sobrenome. Pra cada
+  // resposta, anda pelas TOP-N paginas (nao so a primeira — pode ser disambig).
+  // E pra cada pagina, pega o thumbnail SE ela parecer ser de pessoa (type=standard).
+  var queries = [];
+  if (fullName !== lastName) queries.push(fullName);
+  queries.push(lastName + " tennis");
+  queries.push(lastName);
 
-    // ── 2) page summary pega o thumbnail ──
-    var sumUrl = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title);
-    var pRes = await fetch(sumUrl, { headers: { "User-Agent": WIKI_UA, "Accept": "application/json" } });
-    if (!pRes.ok) return null;
-    var pData = await pRes.json();
-    var thumb = pData && (pData.thumbnail && pData.thumbnail.source) || (pData.originalimage && pData.originalimage.source);
-    if (!thumb) return null;
-
-    // ── 3) baixa a imagem ──
-    var iRes = await fetch(thumb, { headers: { "User-Agent": WIKI_UA } });
-    if (!iRes.ok) return null;
-    var ibuf = await iRes.arrayBuffer();
-    if (ibuf.byteLength < 1000) return null;
-    return { contentType: iRes.headers.get("content-type") || "image/jpeg", buffer: ibuf };
-  } catch (e) {
-    console.warn("[player-image/wiki] error: " + e.message);
-    return null;
+  var tried = {};
+  for (var qi = 0; qi < queries.length; qi++) {
+    var q = queries[qi];
+    var titles = [];
+    try { titles = await wikiSearchTitles(q, 5); } catch (e) { continue; }
+    if (!titles.length) continue;
+    for (var ti = 0; ti < titles.length; ti++) {
+      var title = titles[ti];
+      if (!title || tried[title]) continue;
+      tried[title] = 1;
+      var sum;
+      try { sum = await wikiSummary(title); } catch (e) { continue; }
+      if (!sum) continue;
+      // Disambiguation nao serve
+      if (sum.type === "disambiguation") continue;
+      var thumb = (sum.thumbnail && sum.thumbnail.source) || (sum.originalimage && sum.originalimage.source);
+      if (!thumb) continue;
+      try {
+        var iRes = await fetch(thumb, { headers: { "User-Agent": WIKI_UA } });
+        if (!iRes.ok) continue;
+        var ibuf = await iRes.arrayBuffer();
+        if (ibuf.byteLength < 1000) continue;
+        console.log("[player-image/wiki] hit: '" + q + "' -> '" + title + "' (" + ibuf.byteLength + " bytes)");
+        return { contentType: iRes.headers.get("content-type") || "image/jpeg", buffer: ibuf };
+      } catch (e) { continue; }
+    }
   }
+  console.warn("[player-image/wiki] miss for name='" + name + "' (queries=" + queries.join(" | ") + ")");
+  return null;
 }
 
 export default async function handler(req, res) {
