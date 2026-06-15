@@ -248,20 +248,18 @@ export default function NextDuelCard(props) {
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { var fp = findPlayer(oppName); if (fp && fp.data.slug) oppAtpSlug = fp.data.slug; }
 
-  // Cascata: ATP CDN -> proxy (SofaScore + Wikipedia) -> ESPN. ATP primeiro
-  // porque funciona direto do browser. O proxy era o primario antes, mas o
-  // SofaScore passou a 403 nosso IP (bot-block) e isso derrubava ate
-  // adversarios que estao no PLAYER_DB curado. Agora o proxy e a queda — e
-  // ele mesmo ja tem Wikipedia como fallback interno pra cobrir adversarios
-  // fora da lista curada (Hanfmann etc.).
-  var atpImg = getATPImage(oppName);
-  var oppImgSofa = getSofaScoreImage(oppName, match.opponent_id);
-  var espnImg = getESPNImage(oppName);
-  var oppImg = atpImg || oppImgSofa || espnImg;
-  var oppImgFallback = atpImg
-    ? (oppImgSofa || espnImg)
-    : (oppImgSofa ? espnImg : null);
-  var oppImgFallback2 = (atpImg && oppImgSofa) ? espnImg : null;
+  // Cascata: NOSSO proxy primeiro (serve do nosso dominio -> sem hotlink-block),
+  // depois ATP/ESPN como queda. Antes ATP/SofaScore vinham primeiro, mas ambos
+  // os CDNs sao bloqueados no <img> do navegador do usuario (todas as fotos
+  // sumiam). O proxy busca a foto no servidor e entrega pelo nosso host.
+  var imgChain = [
+    getSofaScoreImage(oppName, match.opponent_id),
+    getATPImage(oppName),
+    getESPNImage(oppName),
+  ].filter(Boolean);
+  var oppImg = imgChain[0] || null;
+  var oppImgFallback = imgChain[1] || null;
+  var oppImgFallback2 = imgChain[2] || null;
 
   var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
