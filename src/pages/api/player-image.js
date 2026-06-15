@@ -64,22 +64,31 @@ function verify(np, summary) {
   return true;
 }
 
-async function wikiOpenSearch(query) {
+// Busca FULLTEXT (generator=search) — ao contrario do opensearch (prefixo, que
+// nunca acha "Novak Djokovic" a partir de "N. Djokovic"). Traz titulo, descricao
+// (Wikidata) e thumbnail numa chamada so. Retorna [{title, desc, thumb, index}].
+async function wikiSearch(query) {
   try {
-    var url = "https://en.wikipedia.org/w/api.php?action=opensearch&format=json&limit=5&redirects=resolve&search=" + encodeURIComponent(query);
+    var url = "https://en.wikipedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=0&gsrlimit=6" +
+      "&prop=pageimages|description&piprop=thumbnail&pithumbsize=400&pilimit=6&gsrsearch=" + encodeURIComponent(query);
     var r = await fetch(url, { headers: { "User-Agent": WIKI_UA, "Accept": "application/json" } });
     if (!r.ok) return [];
     var d = await r.json();
-    return (d && Array.isArray(d[1])) ? d[1] : [];
+    var pages = d && d.query && d.query.pages;
+    if (!pages) return [];
+    var out = [];
+    for (var k in pages) {
+      var p = pages[k];
+      out.push({
+        title: p.title || "",
+        desc: p.description || "",
+        thumb: (p.thumbnail && p.thumbnail.source) || null,
+        index: typeof p.index === "number" ? p.index : 999,
+      });
+    }
+    out.sort(function (a, b) { return a.index - b.index; });
+    return out;
   } catch (e) { return []; }
-}
-async function wikiSummary(title) {
-  try {
-    var url = "https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(title);
-    var r = await fetch(url, { headers: { "User-Agent": WIKI_UA, "Accept": "application/json" } });
-    if (!r.ok) return null;
-    return await r.json();
-  } catch (e) { return null; }
 }
 
 // Acha a pagina do tenista certo. Retorna {title, thumb, desc} ou null.
@@ -87,18 +96,17 @@ async function resolvePage(name) {
   var np = parseName(name);
   if (!np) return null;
   var raw = String(name).replace(/\./g, "").trim();
-  var queries = [raw + " tennis", raw, np.surname + " tennis player"];
+  var queries = [raw + " tennis player", np.surname + " tennis player ATP"];
   var seen = {};
   for (var qi = 0; qi < queries.length; qi++) {
-    var titles = await wikiOpenSearch(queries[qi]);
-    for (var ti = 0; ti < titles.length; ti++) {
-      var title = titles[ti];
-      if (!title || seen[title]) continue;
-      seen[title] = 1;
-      var sum = await wikiSummary(title);
-      if (sum && verify(np, sum)) {
-        var thumb = (sum.thumbnail && sum.thumbnail.source) || (sum.originalimage && sum.originalimage.source);
-        return { title: sum.title, thumb: thumb, desc: sum.description || "" };
+    var hits = await wikiSearch(queries[qi]);
+    for (var hi = 0; hi < hits.length; hi++) {
+      var h = hits[hi];
+      if (!h.title || seen[h.title]) continue;
+      seen[h.title] = 1;
+      // verify() espera o formato do summary; adaptamos os campos do search.
+      if (h.thumb && verify(np, { type: "standard", title: h.title, description: h.desc, extract: h.desc, thumbnail: { source: h.thumb } })) {
+        return { title: h.title, thumb: h.thumb, desc: h.desc };
       }
     }
   }
