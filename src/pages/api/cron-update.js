@@ -2305,14 +2305,21 @@ export default async function handler(req, res) {
       }
     } catch (e) { log("opponentSeasonStats error: " + e.message); }
     // Trava de adversario: so grava winProb se for do adversario ATUAL e definido.
-    // Caso contrario apaga — evita exibir a probabilidade do jogo anterior (cache
-    // ressuscitado quando as odds do novo jogo ainda nao sairam) ou sem adversario.
+    // So apaga quando ha motivo de verdade: sem adversario, ou adversario mudou
+    // (odds antigas viraram lixo). Se wp veio null porque a fonte piscou (Cloudflare,
+    // rate-limit, mercado "Full time" temp ausente), PRESERVA o cache — caso
+    // contrario uma unica falha transiente apaga a probabilidade que ja estava certa.
     var wpMatchesOpp = wp && wp.opponent_name && nm && nm.opponent_name && nm.opponent_name !== "A definir" &&
       stripAccents(wp.opponent_name.split(" ").pop().toLowerCase()) === stripAccents(nm.opponent_name.split(" ").pop().toLowerCase());
     if (wpMatchesOpp) {
       w.push(kv.set("fn:winProb", JSON.stringify(wp), { ex: T2 }));
     } else {
-      try { await kv.del("fn:winProb"); } catch (e) { }
+      var realChange = !nm || nm.opponent_name === "A definir" || oppChanged;
+      if (realChange) {
+        try { await kv.del("fn:winProb"); } catch (e) { }
+      } else {
+        log("odds: fetch null transiente, mantendo cache existente");
+      }
     }
     if (exRankingsList && !rankingsListFresh) w.push(kv.set("fn:atpRankings", JSON.stringify(exRankingsList), { ex: T7 }));
     if (h2hData) w.push(kv.set("fn:h2h", JSON.stringify(h2hData), { ex: T2 }));
