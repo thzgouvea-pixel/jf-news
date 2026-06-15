@@ -415,7 +415,15 @@ async function fetchOpponentProfile(nm, existingProfile) {
       // Limpa o campo "titles" de caches antigos: era um numero do Gemini que
       // delirava (Hanfmann "7" no lugar de 0). Some do KV no proximo write.
       if ("titles" in existingProfile) delete existingProfile.titles;
-      log("opponent: cached (" + existingProfile.name + ")");
+      // Refresca o ranking escravo da fonte autoritativa (SofaScore via nm).
+      // Antes o perfil cacheado mantinha o snapshot do dia em que foi gravado.
+      // Quando o ATP atualizava na segunda, dava drift visivel entre cards
+      // (NextDuelCard mostrava #46 e OpponentDeepCard #59 pro mesmo jogador).
+      if (typeof nm.opponent_ranking === "number" && nm.opponent_ranking !== existingProfile.ranking) {
+        log("opponent: ranking refresh #" + (existingProfile.ranking || "?") + " -> #" + nm.opponent_ranking);
+        existingProfile.ranking = nm.opponent_ranking;
+      }
+      log("opponent: cached (" + existingProfile.name + " #" + (existingProfile.ranking || "?") + ")");
       return existingProfile;
     }
   }
