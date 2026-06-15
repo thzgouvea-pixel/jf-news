@@ -82,7 +82,12 @@ export var FRESHNESS_BUDGET = {
   "fn:matchStats":           { live: 30 * 60 * 1000, pre: 24 * HOUR_MS, post: 1 * HOUR_MS, tournament: 24 * HOUR_MS, idle: 7 * DAY_MS },
   "fn:opponentProfile":      { live: 6 * HOUR_MS,  pre: 6 * HOUR_MS,  post: 24 * HOUR_MS, tournament: 24 * HOUR_MS, idle: 7 * DAY_MS },
   "fn:opponentSeasonStats":  { live: 24 * HOUR_MS, pre: 24 * HOUR_MS, post: 24 * HOUR_MS, tournament: 3 * DAY_MS, idle: 7 * DAY_MS },
-  "fn:winProb":              { live: 30 * 60 * 1000, pre: 1 * HOUR_MS,  post: 6 * HOUR_MS, tournament: 24 * HOUR_MS, idle: 24 * HOUR_MS },
+  // pre: 12h (NAO 1h). As odds do cron so refrescam a cada ~6h; com budget de 1h
+  // a probabilidade ficava "stale" e o front a escondia ~5 de cada 6 horas —
+  // parecia "sumir sozinha" na pre-partida. Odds de pre-jogo sao estaveis, entao
+  // 12h e seguro. live segue curto (30min) de proposito: odds ao vivo mudam
+  // rapido, melhor esconder do que mostrar valor velho.
+  "fn:winProb":              { live: 30 * 60 * 1000, pre: 12 * HOUR_MS, post: 6 * HOUR_MS, tournament: 24 * HOUR_MS, idle: 24 * HOUR_MS },
   "fn:ranking":              { live: 24 * HOUR_MS, pre: 24 * HOUR_MS, post: 12 * HOUR_MS, tournament: 24 * HOUR_MS, idle: 3 * DAY_MS },
   "fn:atpRankings":          { live: 7 * DAY_MS,   pre: 7 * DAY_MS,   post: 7 * DAY_MS,   tournament: 7 * DAY_MS,    idle: 14 * DAY_MS },
   "fn:nextTournament":       { live: 24 * HOUR_MS, pre: 24 * HOUR_MS, post: 6 * HOUR_MS, tournament: 24 * HOUR_MS, idle: 3 * DAY_MS },
