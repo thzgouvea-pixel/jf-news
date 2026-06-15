@@ -1,14 +1,14 @@
 // Proxy de foto de jogador. Busca SOMENTE por identificador exato (id numerico
 // do SofaScore) — nunca por nome. Buscar por nome era um chute que retornava a
-// PESSOA ERRADA (ex.: sobrenomes comuns como Pavlovic/Medjedovic no Wikipedia),
-// e mostrar a cara errada e pior do que nao mostrar nada.
+// PESSOA ERRADA (sobrenomes comuns no Wikipedia); mostrar a cara errada e pior
+// do que nao mostrar nada.
 //
-// Ordem: SofaScore direto -> SofaScore via proxy publico de imagem (wsrv.nl,
-// que busca a partir do servidor DELES, contornando o bloqueio de IP que o
-// Cloudflare do SofaScore aplica ao egress da Vercel). Tudo chaveado pelo id,
-// entao o resultado e SEMPRE aquele jogador ou 404 (cai pra inicial no cliente).
-//
-// Aceita ?id=NNNN. (?name= e aceito mas IGNORADO — nao chutamos mais por nome.)
+// O Cloudflare do SofaScore bloqueia o egress da Vercel por IP. Tentamos:
+//   1) SofaScore direto (caso o IP nao esteja bloqueado);
+//   2) proxies publicos de imagem (wsrv.nl / images.weserv.nl), que buscam a
+//      partir do servidor DELES — IP diferente. Note o prefixo "ssl:" exigido
+//      por esses proxies pra upstream https.
+// Tudo chaveado pelo id -> e sempre AQUELE jogador ou 404 (cai pra inicial).
 
 var BROWSER_HEADERS = {
   "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
@@ -16,44 +16,50 @@ var BROWSER_HEADERS = {
   "Referer": "https://www.sofascore.com/",
 };
 
-function isImage(r) {
-  var ct = (r.headers.get("content-type") || "").toLowerCase();
-  return ct.indexOf("image/") === 0;
+// Detecta imagem por magic number (mais confiavel que content-type, que vem
+// inconsistente dos proxies; tambem rejeita paginas de erro HTML/JSON).
+function sniffImage(bytes) {
+  if (!bytes || bytes.length < 12) return null;
+  var b = bytes;
+  if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return "image/jpeg";
+  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return "image/png";
+  if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return "image/gif";
+  if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+      b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return "image/webp";
+  return null;
 }
 
-async function tryFetchImage(url, headers) {
+async function tryFetchImage(label, url, headers) {
   try {
     var r = await fetch(url, headers ? { headers: headers } : undefined);
-    if (!r.ok || !isImage(r)) return null;
+    if (!r.ok) { console.log("[player-image] " + label + " -> HTTP " + r.status); return null; }
     var buf = await r.arrayBuffer();
-    if (buf.byteLength < 1000) return null; // placeholder/erro disfarcado
-    return { contentType: r.headers.get("content-type") || "image/png", buffer: buf };
+    var bytes = new Uint8Array(buf);
+    var type = sniffImage(bytes);
+    if (!type || buf.byteLength < 1000) {
+      console.log("[player-image] " + label + " -> not-an-image (ct=" + (r.headers.get("content-type") || "?") + ", bytes=" + buf.byteLength + ")");
+      return null;
+    }
+    console.log("[player-image] " + label + " -> OK " + type + " (" + buf.byteLength + " bytes)");
+    return { contentType: type, buffer: buf };
   } catch (e) {
+    console.log("[player-image] " + label + " -> error " + e.message);
     return null;
   }
 }
 
 async function fetchPlayerImage(id) {
-  var sofaPath = "img.sofascore.com/api/v1/team/" + id + "/image";
-  // 1) SofaScore direto (funciona quando o IP nao esta bloqueado)
-  var direct = [
-    "https://img.sofascore.com/api/v1/team/" + id + "/image",
-    "https://api.sofascore.app/api/v1/team/" + id + "/image",
-    "https://api.sofascore.app/api/v1/player/" + id + "/image",
+  var sofaSsl = "ssl:img.sofascore.com/api/v1/team/" + id + "/image";
+  var attempts = [
+    ["sofa-direct-img", "https://img.sofascore.com/api/v1/team/" + id + "/image", BROWSER_HEADERS],
+    ["sofa-direct-app", "https://api.sofascore.app/api/v1/team/" + id + "/image", BROWSER_HEADERS],
+    ["wsrv-ssl", "https://wsrv.nl/?url=" + encodeURIComponent(sofaSsl), null],
+    ["weserv-ssl", "https://images.weserv.nl/?url=" + encodeURIComponent(sofaSsl), null],
+    ["wsrv-plain", "https://wsrv.nl/?url=" + encodeURIComponent("img.sofascore.com/api/v1/team/" + id + "/image"), null],
   ];
-  for (var i = 0; i < direct.length; i++) {
-    var d = await tryFetchImage(direct[i], BROWSER_HEADERS);
-    if (d) return d;
-  }
-  // 2) Proxy publico de imagem (busca do servidor deles -> contorna bloqueio de IP).
-  //    Continua sendo a imagem do MESMO id, entao nunca e o jogador errado.
-  var proxied = [
-    "https://wsrv.nl/?url=" + encodeURIComponent(sofaPath),
-    "https://images.weserv.nl/?url=" + encodeURIComponent(sofaPath),
-  ];
-  for (var j = 0; j < proxied.length; j++) {
-    var p = await tryFetchImage(proxied[j], null);
-    if (p) return p;
+  for (var i = 0; i < attempts.length; i++) {
+    var got = await tryFetchImage(attempts[i][0], attempts[i][1], attempts[i][2]);
+    if (got) return got;
   }
   return null;
 }
