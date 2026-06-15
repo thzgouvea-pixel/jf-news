@@ -248,10 +248,20 @@ export default function NextDuelCard(props) {
   var oppAtpSlug = match.opponent_atp_slug || null;
   if (!oppAtpSlug) { var fp = findPlayer(oppName); if (fp && fp.data.slug) oppAtpSlug = fp.data.slug; }
 
+  // Cascata: ATP CDN -> proxy (SofaScore + Wikipedia) -> ESPN. ATP primeiro
+  // porque funciona direto do browser. O proxy era o primario antes, mas o
+  // SofaScore passou a 403 nosso IP (bot-block) e isso derrubava ate
+  // adversarios que estao no PLAYER_DB curado. Agora o proxy e a queda — e
+  // ele mesmo ja tem Wikipedia como fallback interno pra cobrir adversarios
+  // fora da lista curada (Hanfmann etc.).
+  var atpImg = getATPImage(oppName);
   var oppImgSofa = getSofaScoreImage(oppName, match.opponent_id);
-  var oppImg = oppImgSofa || getATPImage(oppName);
-  var oppImgFallback = oppImgSofa ? getATPImage(oppName) : getESPNImage(oppName);
-  var oppImgFallback2 = getESPNImage(oppName);
+  var espnImg = getESPNImage(oppName);
+  var oppImg = atpImg || oppImgSofa || espnImg;
+  var oppImgFallback = atpImg
+    ? (oppImgSofa || espnImg)
+    : (oppImgSofa ? espnImg : null);
+  var oppImgFallback2 = (atpImg && oppImgSofa) ? espnImg : null;
 
   var sc = surfaceColorMap[match.surface] || "#999";
   var surfaceTranslate = { "Clay": "Saibro", "Hard": "Duro", "Grass": "Grama", "Clay court": "Saibro", "Hard court": "Duro", "Saibro": "Saibro", "Duro": "Duro", "Grama": "Grama" };
